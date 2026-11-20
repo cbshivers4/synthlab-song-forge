@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
-  KEYS_GROUPS, KEYS_PROGRESSIONS, KEYS_SOUNDS, KEYS_STYLES, chordAt, chordName, defaultKeys, genKeysBar, keysBarOptions, keysBars, keysPatch,
-  keysToNotes, parseChord, parseProgression, voiceChord,
+  KEYS_GROUPS,
+  KEYS_PROGRESSIONS,
+  KEYS_SOUNDS,
+  KEYS_STYLES,
+  chordAt,
+  chordName,
+  defaultKeys,
+  genKeysBar,
+  keysBarOptions,
+  keysBars,
+  keysPatch,
+  keysToNotes,
+  parseChord,
+  parseProgression,
+  voiceChord,
 } from "./keyboardist";
 import { SYNTH_PRESETS } from "./presets";
 
@@ -9,19 +22,24 @@ describe("live keys styles", () => {
   it("covers every genre group, jazz and rock included, with unique styles", () => {
     expect(KEYS_GROUPS).toContain("Jazz");
     expect(KEYS_GROUPS).toContain("Rock");
-    for (const g of KEYS_GROUPS) expect(KEYS_STYLES.filter((s) => s.group === g).length, g).toBeGreaterThanOrEqual(6);
+    for (const g of KEYS_GROUPS)
+      expect(KEYS_STYLES.filter((s) => s.group === g).length, g).toBeGreaterThanOrEqual(6);
     expect(new Set(KEYS_STYLES.map((s) => s.id)).size).toBe(KEYS_STYLES.length);
   });
 
   it("every chord in every progression can be read", () => {
     for (const p of [...KEYS_STYLES.map((s) => s.prog), ...KEYS_PROGRESSIONS.map((p) => p.prog)]) {
-      for (const bar of p.split(/\s+/)) for (const tok of bar.split(",")) expect(parseChord(tok), `${p}: ${tok}`).not.toBeNull();
+      for (const bar of p.split(/\s+/))
+        for (const tok of bar.split(",")) expect(parseChord(tok), `${p}: ${tok}`).not.toBeNull();
     }
   });
 
   it("every keyboard sound is a real factory preset, played without the arpeggiator", () => {
     for (const s of KEYS_SOUNDS) {
-      expect(SYNTH_PRESETS.some((p) => p.name === s.preset), s.preset).toBe(true);
+      expect(
+        SYNTH_PRESETS.some((p) => p.name === s.preset),
+        s.preset,
+      ).toBe(true);
       const patch = keysPatch(s.id);
       expect(patch.arp.on).toBe(false);
       expect(patch.voiceMode).toBe("poly");
@@ -60,11 +78,18 @@ describe("chords", () => {
   it("voices chords in the chosen range", () => {
     const s = defaultKeys("pop-piano");
     const c = chordAt(s, 0, 0);
-    const avg = (r: number) => { const v = voiceChord({ ...s, range: r }, c, "triad"); return v.reduce((a, b) => a + b, 0) / v.length; };
+    const avg = (r: number) => {
+      const v = voiceChord({ ...s, range: r }, c, "triad");
+      return v.reduce((a, b) => a + b, 0) / v.length;
+    };
     expect(avg(1)).toBeGreaterThan(avg(0));
     expect(avg(0)).toBeGreaterThan(avg(-1));
     // a C major triad holds C, E and G
-    expect(voiceChord({ ...s, tonic: 0 }, c, "triad").map((p) => p % 12).sort((a, b) => a - b)).toEqual([0, 4, 7]);
+    expect(
+      voiceChord({ ...s, tonic: 0 }, c, "triad")
+        .map((p) => p % 12)
+        .sort((a, b) => a - b),
+    ).toEqual([0, 4, 7]);
   });
 });
 
@@ -72,15 +97,28 @@ describe("live keys bars", () => {
   it("every style plays both hands inside the bar", () => {
     for (const st of KEYS_STYLES) {
       const notes = genKeysBar(defaultKeys(st.id), 1, 16);
-      expect(notes.some((n) => n.hand === "R"), st.id).toBe(true);
-      expect(notes.some((n) => n.hand === "L"), st.id).toBe(true);
-      expect(notes.every((n) => n.step >= 0 && n.step < 16 && n.step + n.length <= 16.01 && n.vel > 0 && n.vel <= 1)).toBe(true);
+      expect(
+        notes.some((n) => n.hand === "R"),
+        st.id,
+      ).toBe(true);
+      expect(
+        notes.some((n) => n.hand === "L"),
+        st.id,
+      ).toBe(true);
+      expect(
+        notes.every(
+          (n) =>
+            n.step >= 0 && n.step < 16 && n.step + n.length <= 16.01 && n.vel > 0 && n.vel <= 1,
+        ),
+      ).toBe(true);
     }
   });
 
   it("is the same every time for the same bar and settings (live = printed)", () => {
     const s = defaultKeys("neo-soul-keys");
-    expect(genKeysBar(s, 3, 16, keysBarOptions(s, 3))).toEqual(genKeysBar(s, 3, 16, keysBarOptions(s, 3)));
+    expect(genKeysBar(s, 3, 16, keysBarOptions(s, 3))).toEqual(
+      genKeysBar(s, 3, 16, keysBarOptions(s, 3)),
+    );
   });
 
   it("plays more when complex", () => {
@@ -154,7 +192,8 @@ describe("keys struck together stay balanced", () => {
       const s = { ...defaultKeys(st.id), complexity: 1, loudness: 1, fills: 1 };
       for (const { notes } of keysBars(s, 0, 8, 16)) {
         const at = new Map<number, number>();
-        for (const n of notes) at.set(Math.round(n.step * 100), (at.get(Math.round(n.step * 100)) ?? 0) + n.vel);
+        for (const n of notes)
+          at.set(Math.round(n.step * 100), (at.get(Math.round(n.step * 100)) ?? 0) + n.vel);
         for (const sum of at.values()) expect(sum, st.id).toBeLessThanOrEqual(5.5);
       }
     }

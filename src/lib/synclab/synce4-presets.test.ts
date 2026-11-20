@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import { applyPreset, SYNTH_PRESETS } from "./presets";
 
 describe("SYNCE 4 strings and stabs", () => {
-  const added = SYNTH_PRESETS.filter(p => p.name.startsWith("SYNCE 4 "));
+  const added = SYNTH_PRESETS.filter((p) => p.name.startsWith("SYNCE 4 "));
 
   it("provides playable, distinct strings and stabs in the general synth library", () => {
-    expect(added.filter(p => p.category === "Strings")).toHaveLength(6);
-    expect(added.filter(p => p.category === "Stabs")).toHaveLength(6);
-    const sounds = added.map(def => {
+    expect(added.filter((p) => p.category === "Strings")).toHaveLength(6);
+    expect(added.filter((p) => p.category === "Stabs")).toHaveLength(6);
+    const sounds = added.map((def) => {
       const patch = applyPreset(def.name);
       expect(patch.voiceMode).toBe("poly");
       expect(patch.modular).toBeUndefined();
-      expect(patch.oscillators.some(o => o.on && o.level > 0)).toBe(true);
+      expect(patch.oscillators.some((o) => o.on && o.level > 0)).toBe(true);
       expect(patch.amp.attack).toBeGreaterThan(0);
       if (def.category === "Stabs") {
         expect(patch.amp.sustain).toBe(0);

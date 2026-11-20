@@ -110,12 +110,20 @@ export function XYPad({
         <div className="pointer-events-none absolute inset-y-0" style={{ left: `${px * 100}%` }}>
           <div className="h-full w-px bg-primary/40" />
         </div>
-        <div className="pointer-events-none absolute inset-x-0" style={{ top: `${(1 - py) * 100}%` }}>
+        <div
+          className="pointer-events-none absolute inset-x-0"
+          style={{ top: `${(1 - py) * 100}%` }}
+        >
           <div className="h-px w-full bg-primary/40" />
         </div>
         <div
           className="pointer-events-none absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
-          style={{ left: `${px * 100}%`, top: `${(1 - py) * 100}%`, background: 'var(--display-pink)', borderColor: 'var(--display-point)' }}
+          style={{
+            left: `${px * 100}%`,
+            top: `${(1 - py) * 100}%`,
+            background: "var(--display-pink)",
+            borderColor: "var(--display-point)",
+          }}
         />
         <span className="pointer-events-none absolute bottom-1 left-1.5 font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
           {xP?.name ?? "—"} {xP ? xP.value.toFixed(2) : ""}

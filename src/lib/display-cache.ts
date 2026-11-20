@@ -23,7 +23,10 @@ export function elementSize(el: HTMLElement): Size {
     for (const entry of entries) {
       const target = entry.target as HTMLElement;
       const s = sizes.get(target);
-      if (s) { s.w = target.clientWidth; s.h = target.clientHeight; }
+      if (s) {
+        s.w = target.clientWidth;
+        s.h = target.clientHeight;
+      }
     }
   });
   observer.observe(el);

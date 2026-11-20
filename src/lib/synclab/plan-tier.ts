@@ -5,7 +5,16 @@
  * - Pro: paid monthly or yearly.
  * - Free: the studio works, but projects can't be saved (and no export / mastered files).
  */
+/**
+ * The one founder list in app code. The database keeps its own copy inside
+ * public.can_save_projects (migrations); if this list ever changes, add a new
+ * migration that updates that function too — never edit an old migration.
+ */
 export const FOUNDER_EMAILS = ["christophershivers@synclabsapp.com", "cbshivers@gmail.com"];
+
+/** True for a founder login, ignoring letter case. */
+export const isFounderEmail = (email: string | null | undefined) =>
+  !!email && FOUNDER_EMAILS.includes(email.toLowerCase());
 
 export const TRIAL_DAYS = 14;
 
@@ -42,10 +51,12 @@ export function planTier(
   justCheckedOut: boolean,
   now = Date.now(),
 ): { tier: Tier; trialDaysLeft: number } {
-  if (email && FOUNDER_EMAILS.includes(email.toLowerCase())) return { tier: "founder", trialDaysLeft: 0 };
+  if (isFounderEmail(email)) return { tier: "founder", trialDaysLeft: 0 };
   if (subscriptionIsActive(sub, now)) {
     if (sub!.status === "trialing") {
-      const end = sub!.current_period_end ? new Date(sub!.current_period_end).getTime() : now + TRIAL_DAYS * DAY;
+      const end = sub!.current_period_end
+        ? new Date(sub!.current_period_end).getTime()
+        : now + TRIAL_DAYS * DAY;
       return { tier: "trial", trialDaysLeft: Math.max(1, Math.ceil((end - now) / DAY)) };
     }
     return { tier: "pro", trialDaysLeft: 0 };

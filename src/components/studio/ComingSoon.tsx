@@ -13,7 +13,10 @@ export function ComingSoon({ title }: { title: string }) {
       </div>
       <h2 className="text-xl font-bold tracking-wide uppercase">{title}</h2>
       <p className="max-w-sm text-sm font-semibold text-primary">Coming soon</p>
-      <p className="max-w-sm text-sm text-muted-foreground">Not available now. This tool is still in the works and will arrive in a future update of SYNCLAB.</p>
+      <p className="max-w-sm text-sm text-muted-foreground">
+        Not available now. This tool is still in the works and will arrive in a future update of
+        SYNCLAB.
+      </p>
     </div>
   );
 }

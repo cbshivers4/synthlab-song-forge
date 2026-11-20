@@ -15,7 +15,9 @@ const listeners = new Set<() => void>();
 type ReleaseHandler = (trackId: string, pitches: number[]) => void;
 const releaseHandlers = new Set<ReleaseHandler>();
 
-const emit = () => { for (const fn of listeners) fn(); };
+const emit = () => {
+  for (const fn of listeners) fn();
+};
 
 /** Only synth channels hold notes; samplers, drums and audio channels do not. */
 export function canHold(track: Pick<Track, "kind" | "patch"> | null | undefined): boolean {
@@ -26,12 +28,17 @@ export function isHoldOn(trackId: string): boolean {
   return holding.has(trackId);
 }
 
-export function holdApplies(track: (Pick<Track, "kind" | "patch" | "id">) | null | undefined): boolean {
+export function holdApplies(
+  track: Pick<Track, "kind" | "patch" | "id"> | null | undefined,
+): boolean {
   return !!track && canHold(track) && holding.has(track.id);
 }
 
 /** How long a hand-played note sounds: until released when HOLD is on, otherwise `base`. */
-export function liveNoteSeconds(track: Pick<Track, "kind" | "patch" | "id"> | null | undefined, base: number): number {
+export function liveNoteSeconds(
+  track: Pick<Track, "kind" | "patch" | "id"> | null | undefined,
+  base: number,
+): number {
   return holdApplies(track) ? HELD_NOTE_SECONDS : base;
 }
 
@@ -72,12 +79,16 @@ export function toggleHold(trackId: string) {
 /** Called with the channel and its latched pitches whenever held notes are let go. */
 export function onHoldRelease(fn: ReleaseHandler): () => void {
   releaseHandlers.add(fn);
-  return () => { releaseHandlers.delete(fn); };
+  return () => {
+    releaseHandlers.delete(fn);
+  };
 }
 
 export function subscribeHold(fn: () => void): () => void {
   listeners.add(fn);
-  return () => { listeners.delete(fn); };
+  return () => {
+    listeners.delete(fn);
+  };
 }
 
 export function useSynthHold(trackId: string | null | undefined): boolean {

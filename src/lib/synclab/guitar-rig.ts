@@ -15,18 +15,28 @@ export function insertRigDevice(chain: PluginInstance[], inst: PluginInstance): 
   const list = [...chain];
   if (isPedal(inst.kind)) {
     const amp = list.findIndex((p) => isAmp(p.kind));
-    if (amp >= 0) { list.splice(amp, 0, inst); return list; }
+    if (amp >= 0) {
+      list.splice(amp, 0, inst);
+      return list;
+    }
   }
   let last = -1;
-  list.forEach((p, i) => { if (isRigDevice(p.kind)) last = i; });
+  list.forEach((p, i) => {
+    if (isRigDevice(p.kind)) last = i;
+  });
   list.splice(last + 1, 0, inst);
   return list;
 }
 
 /** The rig devices on a track, in signal order, with their real position in the whole chain. */
-export function rigDevices(chain: PluginInstance[] = []): { plugin: PluginInstance; index: number }[] {
-  return chain.map((plugin, index) => ({ plugin, index })).filter((x) => isRigDevice(x.plugin.kind));
+export function rigDevices(
+  chain: PluginInstance[] = [],
+): { plugin: PluginInstance; index: number }[] {
+  return chain
+    .map((plugin, index) => ({ plugin, index }))
+    .filter((x) => isRigDevice(x.plugin.kind));
 }
 
 /** Other inserts on the same track (EQ, reverb…) that the sound also passes through. */
-export const otherInserts = (chain: PluginInstance[] = []) => chain.filter((p) => !isRigDevice(p.kind)).length;
+export const otherInserts = (chain: PluginInstance[] = []) =>
+  chain.filter((p) => !isRigDevice(p.kind)).length;

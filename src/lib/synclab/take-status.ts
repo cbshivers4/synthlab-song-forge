@@ -15,6 +15,8 @@ export function consumeTakeFailure(): boolean {
 }
 export class TakeNotKeptError extends Error {
   constructor() {
-    super("A recording couldn't be kept, so nothing was saved. Your project is still open — record again, or close without saving.");
+    super(
+      "A recording couldn't be kept, so nothing was saved. Your project is still open — record again, or close without saving.",
+    );
   }
 }

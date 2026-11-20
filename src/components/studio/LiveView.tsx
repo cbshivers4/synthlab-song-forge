@@ -47,7 +47,8 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
     const move = (axis: "x" | "y") => (v: number) => {
       const prev = posRef.current;
       const next = { x: prev?.x ?? 0.5, y: prev?.y ?? 0.5, [axis]: v };
-      if (prev) getLiveFx().move(fx.id, next.x, next.y); else getLiveFx().engage(fx.id, next.x, next.y);
+      if (prev) getLiveFx().move(fx.id, next.x, next.y);
+      else getLiveFx().engage(fx.id, next.x, next.y);
       posRef.current = next;
       setPos(next);
       window.clearTimeout(idle);
@@ -60,17 +61,29 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
     };
     const offX = registerCcAction(`livefx:${fx.id}`, "x", move("x"));
     const offY = registerCcAction(`livefx:${fx.id}`, "y", move("y"));
-    return () => { offX(); offY(); window.clearTimeout(idle); };
+    return () => {
+      offX();
+      offY();
+      window.clearTimeout(idle);
+    };
   }, [fx.id]);
 
   const active = pos !== null;
   return (
     <div
       className="panel flex flex-col gap-1.5 p-2 transition-colors"
-      style={{ borderColor: active ? fx.color : `${fx.color}55`, boxShadow: active ? `0 0 18px ${fx.color}44` : undefined }}
+      style={{
+        borderColor: active ? fx.color : `${fx.color}55`,
+        boxShadow: active ? `0 0 18px ${fx.color}44` : undefined,
+      }}
     >
       <div className="flex items-center justify-between gap-1">
-        <span className="font-display text-[11px] font-semibold tracking-[0.14em] uppercase" style={{ color: fx.color }}>{fx.name}</span>
+        <span
+          className="font-display text-[11px] font-semibold tracking-[0.14em] uppercase"
+          style={{ color: fx.color }}
+        >
+          {fx.name}
+        </span>
         <button
           type="button"
           onClick={() => setHold((h) => !h)}
@@ -79,7 +92,11 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
             "rounded-[3px] border px-2 py-1 font-mono text-[9px] tracking-widest uppercase",
             hold ? "text-background" : "text-muted-foreground",
           )}
-          style={hold ? { background: fx.color, borderColor: fx.color } : { borderColor: `${fx.color}66` }}
+          style={
+            hold
+              ? { background: fx.color, borderColor: fx.color }
+              : { borderColor: `${fx.color}66` }
+          }
         >
           Hold
         </button>
@@ -112,19 +129,39 @@ function FxPad({ fx }: { fx: LiveFxInfo }) {
         onPointerCancel={end}
       >
         <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [background-size:25%_25%]" />
-        <div className="pointer-events-none absolute inset-0" style={{ background: `radial-gradient(circle at 50% 120%, ${fx.color}22, transparent 70%)` }} />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `radial-gradient(circle at 50% 120%, ${fx.color}22, transparent 70%)`,
+          }}
+        />
         {pos && (
           <>
-            <div className="pointer-events-none absolute inset-y-0 w-px" style={{ left: `${pos.x * 100}%`, background: `${fx.color}88` }} />
-            <div className="pointer-events-none absolute inset-x-0 h-px" style={{ top: `${(1 - pos.y) * 100}%`, background: `${fx.color}88` }} />
+            <div
+              className="pointer-events-none absolute inset-y-0 w-px"
+              style={{ left: `${pos.x * 100}%`, background: `${fx.color}88` }}
+            />
+            <div
+              className="pointer-events-none absolute inset-x-0 h-px"
+              style={{ top: `${(1 - pos.y) * 100}%`, background: `${fx.color}88` }}
+            />
             <div
               className="pointer-events-none absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={{ left: `${pos.x * 100}%`, top: `${(1 - pos.y) * 100}%`, background: fx.color, boxShadow: `0 0 18px ${fx.color}` }}
+              style={{
+                left: `${pos.x * 100}%`,
+                top: `${(1 - pos.y) * 100}%`,
+                background: fx.color,
+                boxShadow: `0 0 18px ${fx.color}`,
+              }}
             />
           </>
         )}
-        <span className="pointer-events-none absolute bottom-1 left-1.5 font-mono text-[9px] text-muted-foreground uppercase">X · {fx.x}</span>
-        <span className="pointer-events-none absolute left-1.5 top-1 font-mono text-[9px] text-muted-foreground uppercase">Y · {fx.y}</span>
+        <span className="pointer-events-none absolute bottom-1 left-1.5 font-mono text-[9px] text-muted-foreground uppercase">
+          X · {fx.x}
+        </span>
+        <span className="pointer-events-none absolute left-1.5 top-1 font-mono text-[9px] text-muted-foreground uppercase">
+          Y · {fx.y}
+        </span>
       </div>
     </div>
   );
@@ -134,17 +171,30 @@ export function LiveView() {
   const skin = useSkin("live");
   const drop = useImageDrop("live");
   const { transport } = useStudio();
-  useEffect(() => { getLiveFx().bpm = transport.bpm; }, [transport.bpm]);
+  useEffect(() => {
+    getLiveFx().bpm = transport.bpm;
+  }, [transport.bpm]);
   useEffect(() => () => getLiveFx().detach(), []);
   return (
-    <section className="studio-wallpaper space-y-3 rounded-md p-3" data-studio-panel="live" style={skinBackground(skin)} {...drop}>
+    <section
+      className="studio-wallpaper space-y-3 rounded-md p-3"
+      data-studio-panel="live"
+      style={skinBackground(skin)}
+      {...drop}
+    >
       <SkinControls skinKey="live" image />
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-display text-xs font-semibold tracking-[0.2em]">PERFORMANCE FX · WHOLE SONG</h3>
-        <p className="text-[11px] text-muted-foreground">Touch and drag a pad to play the effect. Let go to return to dry, or tap HOLD to latch it.</p>
+        <h3 className="font-display text-xs font-semibold tracking-[0.2em]">
+          PERFORMANCE FX · WHOLE SONG
+        </h3>
+        <p className="text-[11px] text-muted-foreground">
+          Touch and drag a pad to play the effect. Let go to return to dry, or tap HOLD to latch it.
+        </p>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {LIVE_FX.map((fx) => <FxPad key={fx.id} fx={fx} />)}
+        {LIVE_FX.map((fx) => (
+          <FxPad key={fx.id} fx={fx} />
+        ))}
       </div>
     </section>
   );

@@ -6,13 +6,23 @@
  */
 import type { DrumPad, Track } from "./types";
 
-export interface DrumChainItem { slot: number; bars: number }
-export interface DrumChain { on: boolean; items: DrumChainItem[] }
+export interface DrumChainItem {
+  slot: number;
+  bars: number;
+}
+export interface DrumChain {
+  on: boolean;
+  items: DrumChainItem[];
+}
 
 const clampSlot = (v: number) => Math.max(0, Math.min(7, Math.round(v)));
 
 /** Which chain item plays at song step `n`, and the step inside that item. */
-export function chainPosition(items: DrumChainItem[], n: number, stepsPerBar: number): { item: DrumChainItem; index: number; stepInItem: number } | null {
+export function chainPosition(
+  items: DrumChainItem[],
+  n: number,
+  stepsPerBar: number,
+): { item: DrumChainItem; index: number; stepInItem: number } | null {
   const list = items.filter((i) => i.bars > 0);
   const totalBars = list.reduce((sum, i) => sum + i.bars, 0);
   if (!totalBars) return null;
@@ -31,7 +41,14 @@ export function chainPosition(items: DrumChainItem[], n: number, stepsPerBar: nu
  * The pads to play at song step `n` with their step index, following the chain.
  * Returns null when the track has no active chain (play its pads as usual).
  */
-export function chainedPads(t: Pick<Track, "pads" | "steps" | "drumChain" | "drumSequences" | "activeDrumPattern" | "activeDrumSequence">, n: number, stepsPerBar: number): { pads: DrumPad[]; s: number; slot: number } | null {
+export function chainedPads(
+  t: Pick<
+    Track,
+    "pads" | "steps" | "drumChain" | "drumSequences" | "activeDrumPattern" | "activeDrumSequence"
+  >,
+  n: number,
+  stepsPerBar: number,
+): { pads: DrumPad[]; s: number; slot: number } | null {
   const chain = t.drumChain;
   if (!chain?.on || !chain.items.length || !t.pads) return null;
   const at = chainPosition(chain.items, n, stepsPerBar);
@@ -46,7 +63,16 @@ export function chainedPads(t: Pick<Track, "pads" | "steps" | "drumChain" | "dru
   const len = Math.max(1, seq.steps);
   const pads = t.pads.map((pad) => {
     const h = seq.hits[pad.id];
-    return { ...pad, steps: h?.steps ?? [], probability: h?.probability, stepPitch: h?.stepPitch, stepDecay: h?.stepDecay, flam: h?.flam, retrig: h?.retrig, glitch: h?.glitch };
+    return {
+      ...pad,
+      steps: h?.steps ?? [],
+      probability: h?.probability,
+      stepPitch: h?.stepPitch,
+      stepDecay: h?.stepDecay,
+      flam: h?.flam,
+      retrig: h?.retrig,
+      glitch: h?.glitch,
+    };
   });
   return { pads, s: at.stepInItem % len, slot };
 }

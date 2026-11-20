@@ -7,8 +7,17 @@
  * Results are quantised to sixteenth-note steps at the song tempo.
  */
 
-export interface HumNote { step: number; length: number; pitch: number; velocity: number }
-export interface BeatHit { step: number; kind: "kick" | "snare" | "hat"; velocity: number }
+export interface HumNote {
+  step: number;
+  length: number;
+  pitch: number;
+  velocity: number;
+}
+export interface BeatHit {
+  step: number;
+  kind: "kick" | "snare" | "hat";
+  velocity: number;
+}
 
 function rms(d: Float32Array, start: number, n: number) {
   let s = 0;
@@ -42,16 +51,26 @@ export function detectPitch(d: Float32Array, start: number, rate: number): numbe
   const diff = new Float32Array(tauMax + 1);
   for (let tau = 1; tau <= tauMax; tau++) {
     let s = 0;
-    for (let j = 0; j < W; j++) { const v = d[start + j]! - d[start + j + tau]!; s += v * v; }
+    for (let j = 0; j < W; j++) {
+      const v = d[start + j]! - d[start + j + tau]!;
+      s += v * v;
+    }
     diff[tau] = s;
   }
   let run = 0;
   const cm = new Float32Array(tauMax + 1);
   cm[0] = 1;
-  for (let tau = 1; tau <= tauMax; tau++) { run += diff[tau]!; cm[tau] = run > 0 ? (diff[tau]! * tau) / run : 1; }
+  for (let tau = 1; tau <= tauMax; tau++) {
+    run += diff[tau]!;
+    cm[tau] = run > 0 ? (diff[tau]! * tau) / run : 1;
+  }
   let tau = -1;
   for (let t = tauMin; t <= tauMax; t++) {
-    if (cm[t]! < 0.2) { while (t + 1 <= tauMax && cm[t + 1]! < cm[t]!) t++; tau = t; break; }
+    if (cm[t]! < 0.2) {
+      while (t + 1 <= tauMax && cm[t + 1]! < cm[t]!) t++;
+      tau = t;
+      break;
+    }
   }
   if (tau < 0) {
     let best = tauMin;
@@ -59,7 +78,9 @@ export function detectPitch(d: Float32Array, start: number, rate: number): numbe
     if (cm[best]! > 0.35) return 0;
     tau = best;
   }
-  const a = cm[tau - 1] ?? cm[tau]!, b = cm[tau]!, c = cm[tau + 1] ?? cm[tau]!;
+  const a = cm[tau - 1] ?? cm[tau]!,
+    b = cm[tau]!,
+    c = cm[tau + 1] ?? cm[tau]!;
   const den = a - 2 * b + c;
   const shift = den > 1e-9 ? (a - c) / (2 * den) : 0;
   return rate / (tau + Math.max(-1, Math.min(1, shift)));
@@ -82,7 +103,10 @@ export function analyseMelody(raw: Float32Array, rawRate: number, bpm: number): 
   // median-of-5 over voiced neighbours removes octave blips
   const sm = frames.map((v, i) => {
     if (!v) return 0;
-    const a = frames.slice(Math.max(0, i - 2), i + 3).filter((x) => x > 0).sort((x, y) => x - y);
+    const a = frames
+      .slice(Math.max(0, i - 2), i + 3)
+      .filter((x) => x > 0)
+      .sort((x, y) => x - y);
     return a[a.length >> 1]!;
   });
   const notes: HumNote[] = [];
@@ -96,7 +120,12 @@ export function analyseMelody(raw: Float32Array, rawRate: number, bpm: number): 
       const pitch = Math.round(sorted[sorted.length >> 1]!);
       const t0 = startF * frameSec;
       const t1 = endF * frameSec;
-      notes.push({ step: Math.round(t0 / stepSec), length: Math.max(1, Math.round((t1 - t0) / stepSec)), pitch: Math.max(24, Math.min(96, pitch)), velocity: Math.min(1, 0.55 + loud) });
+      notes.push({
+        step: Math.round(t0 / stepSec),
+        length: Math.max(1, Math.round((t1 - t0) / stepSec)),
+        pitch: Math.max(24, Math.min(96, pitch)),
+        velocity: Math.min(1, 0.55 + loud),
+      });
     }
     group = [];
     gap = 0;
@@ -123,11 +152,15 @@ export function analyseMelody(raw: Float32Array, rawRate: number, bpm: number): 
   for (const n of notes) {
     const prev = out[out.length - 1];
     if (prev && n.step <= prev.step) {
-      if (n.pitch === prev.pitch) prev.length = Math.max(prev.length, n.step + n.length - prev.step);
+      if (n.pitch === prev.pitch)
+        prev.length = Math.max(prev.length, n.step + n.length - prev.step);
       continue;
     }
     if (prev && prev.step + prev.length > n.step) prev.length = Math.max(1, n.step - prev.step);
-    if (prev && prev.pitch === n.pitch && prev.step + prev.length >= n.step) { prev.length = n.step + n.length - prev.step; continue; }
+    if (prev && prev.pitch === n.pitch && prev.step + prev.length >= n.step) {
+      prev.length = n.step + n.length - prev.step;
+      continue;
+    }
     out.push(n);
   }
   return out;
@@ -155,15 +188,20 @@ export function analyseBeatbox(d: Float32Array, rate: number, bpm: number): Beat
       const a = 1 - Math.exp((-2 * Math.PI * 200) / rate);
       for (let k = 1; k < n; k++) {
         const x = d[s0 + k]!;
-        if ((x >= 0) !== (d[s0 + k - 1]! >= 0)) zc++;
+        if (x >= 0 !== d[s0 + k - 1]! >= 0) zc++;
         lp += a * (x - lp);
         low += lp * lp;
         tot += x * x;
       }
       const zcr = zc / Math.max(1, n);
       const lowRatio = low / Math.max(1e-9, tot);
-      const kind: BeatHit["kind"] = lowRatio > 0.45 && zcr < 0.06 ? "kick" : zcr > 0.18 ? "hat" : "snare";
-      hits.push({ step: Math.round((s0 / rate) / stepSec), kind, velocity: Math.min(1, 0.4 + env[i]! / peak) });
+      const kind: BeatHit["kind"] =
+        lowRatio > 0.45 && zcr < 0.06 ? "kick" : zcr > 0.18 ? "hat" : "snare";
+      hits.push({
+        step: Math.round(s0 / rate / stepSec),
+        kind,
+        velocity: Math.min(1, 0.4 + env[i]! / peak),
+      });
     }
   }
   return hits;
@@ -182,13 +220,26 @@ const SCALE = { major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10] } a
  * Edits a hummed melody before it goes on the timeline: shifts every note by `transpose` semitones,
  * then (when a key is chosen) moves each note to the nearest note of that key, preferring the lower one on ties.
  */
-export function shapeMelody(notes: HumNote[], transpose: number, key: { tonic: number; minor: boolean } | null): HumNote[] {
+export function shapeMelody(
+  notes: HumNote[],
+  transpose: number,
+  key: { tonic: number; minor: boolean } | null,
+): HumNote[] {
   return notes.map((n) => {
     let p = n.pitch + transpose;
     if (key) {
       const scale = key.minor ? SCALE.minor : SCALE.major;
       const inKey = (q: number) => scale.includes(((((q - key.tonic) % 12) + 12) % 12) as never);
-      for (let d = 0; d <= 6; d++) { if (inKey(p - d)) { p -= d; break; } if (inKey(p + d)) { p += d; break; } }
+      for (let d = 0; d <= 6; d++) {
+        if (inKey(p - d)) {
+          p -= d;
+          break;
+        }
+        if (inKey(p + d)) {
+          p += d;
+          break;
+        }
+      }
     }
     return { ...n, pitch: Math.max(0, Math.min(127, p)) };
   });

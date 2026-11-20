@@ -11,7 +11,11 @@ type Out = {
   send: (data: number[], ts?: number) => void;
   clear?: () => void;
 };
-type Access = { outputs: Map<string, Out>; onstatechange?: ((e: unknown) => void) | null; addEventListener?: (t: string, fn: () => void) => void };
+type Access = {
+  outputs: Map<string, Out>;
+  onstatechange?: ((e: unknown) => void) | null;
+  addEventListener?: (t: string, fn: () => void) => void;
+};
 
 let access: Access | null = null;
 let pendingAccess: Promise<Access | null> | null = null;
@@ -28,7 +32,9 @@ export type ExtRoute = {
 let routes: Record<string, ExtRoute> = {};
 try {
   routes = typeof localStorage === "undefined" ? {} : JSON.parse(localStorage.getItem(KEY) || "{}");
-} catch { routes = {}; }
+} catch {
+  routes = {};
+}
 const listeners = new Set<() => void>();
 const notify = () => listeners.forEach((l) => l());
 
@@ -38,7 +44,10 @@ const sounding = new Map<string, Map<string, number>>();
 const held = new Map<string, { portId: string; ch: number; note: number }>();
 
 export function midiOutSupported(): boolean {
-  return typeof navigator !== "undefined" && typeof (navigator as never as { requestMIDIAccess?: unknown }).requestMIDIAccess === "function";
+  return (
+    typeof navigator !== "undefined" &&
+    typeof (navigator as never as { requestMIDIAccess?: unknown }).requestMIDIAccess === "function"
+  );
 }
 
 export function getOutputAccess(): Promise<Access | null> {
@@ -46,16 +55,25 @@ export function getOutputAccess(): Promise<Access | null> {
   if (pendingAccess) return pendingAccess;
   const nav = navigator as never as { requestMIDIAccess?: (o?: unknown) => Promise<Access> };
   if (!nav.requestMIDIAccess) return Promise.resolve(null);
-  pendingAccess = nav.requestMIDIAccess.call(navigator, { sysex: false }).then((a) => {
-    access = a;
-    const changed = () => { relinkRoutes(); notify(); };
-    if (a.addEventListener) a.addEventListener("statechange", changed);
-    else a.onstatechange = changed;
-    relinkRoutes();
-    for (const r of Object.values(routes)) sendProgram(r);
-    notify();
-    return a;
-  }).catch(() => null).finally(() => { pendingAccess = null; });
+  pendingAccess = nav.requestMIDIAccess
+    .call(navigator, { sysex: false })
+    .then((a) => {
+      access = a;
+      const changed = () => {
+        relinkRoutes();
+        notify();
+      };
+      if (a.addEventListener) a.addEventListener("statechange", changed);
+      else a.onstatechange = changed;
+      relinkRoutes();
+      for (const r of Object.values(routes)) sendProgram(r);
+      notify();
+      return a;
+    })
+    .catch(() => null)
+    .finally(() => {
+      pendingAccess = null;
+    });
   return pendingAccess;
 }
 
@@ -66,7 +84,11 @@ export function restoreExternalRoutes() {
 
 export function listOutputs(): { id: string; name: string; connected: boolean }[] {
   return access
-    ? Array.from(access.outputs.values()).map((o) => ({ id: o.id, name: o.name || "MIDI OUTPUT", connected: o.state !== "disconnected" }))
+    ? Array.from(access.outputs.values()).map((o) => ({
+        id: o.id,
+        name: o.name || "MIDI OUTPUT",
+        connected: o.state !== "disconnected",
+      }))
     : [];
 }
 
@@ -77,13 +99,20 @@ function relinkRoutes() {
   for (const [trackId, r] of Object.entries(routes)) {
     if (access.outputs.has(r.portId) || !r.portName) continue;
     const match = Array.from(access.outputs.values()).find((o) => o.name === r.portName);
-    if (match) { routes[trackId] = { ...r, portId: match.id }; moved = true; }
+    if (match) {
+      routes[trackId] = { ...r, portId: match.id };
+      moved = true;
+    }
   }
   if (moved) save();
 }
 
 function save() {
-  try { localStorage.setItem(KEY, JSON.stringify(routes)); } catch { /* blocked */ }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(routes));
+  } catch {
+    /* blocked */
+  }
 }
 
 function port(r: ExtRoute | undefined): Out | null {
@@ -95,12 +124,22 @@ function port(r: ExtRoute | undefined): Out | null {
 function sendProgram(r: ExtRoute) {
   const out = port(r);
   if (!out || r.program == null) return;
-  try { out.send([0xc0 | ((r.channel - 1) & 0x0f), Math.max(0, Math.min(127, r.program - 1))]); } catch { /* port went away */ }
+  try {
+    out.send([0xc0 | ((r.channel - 1) & 0x0f), Math.max(0, Math.min(127, r.program - 1))]);
+  } catch {
+    /* port went away */
+  }
 }
 
-export function getRoutes() { return routes; }
-export function getRoute(trackId: string): ExtRoute | undefined { return routes[trackId]; }
-export function isExternal(trackId: string) { return Boolean(routes[trackId]); }
+export function getRoutes() {
+  return routes;
+}
+export function getRoute(trackId: string): ExtRoute | undefined {
+  return routes[trackId];
+}
+export function isExternal(trackId: string) {
+  return Boolean(routes[trackId]);
+}
 /** "connected" when the route's output is present, "missing" when routed but the instrument isn't reachable. */
 export function routeStatus(trackId: string): "none" | "connected" | "missing" {
   const r = routes[trackId];
@@ -120,7 +159,12 @@ export function setRoute(trackId: string, r: ExtRoute | null) {
   save();
   notify();
 }
-export function onRoutesChange(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; }
+export function onRoutesChange(fn: () => void) {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
 
 const clampNote = (midi: number) => Math.max(0, Math.min(127, Math.round(midi)));
 const clampVel = (v: number) => Math.max(1, Math.min(127, Math.round(v * 127)));
@@ -128,7 +172,8 @@ const clampVel = (v: number) => Math.max(1, Math.min(127, Math.round(v * 127)));
 function mark(portId: string, key: string, delta: number) {
   const m = sounding.get(portId) ?? new Map<string, number>();
   const n = (m.get(key) ?? 0) + delta;
-  if (n > 0) m.set(key, n); else m.delete(key);
+  if (n > 0) m.set(key, n);
+  else m.delete(key);
   sounding.set(portId, m);
 }
 
@@ -136,7 +181,13 @@ function mark(portId: string, key: string, delta: number) {
  * Send a note of known length (song playback, on-screen keys, recordings).
  * Returns true when the track is routed out, so the built-in synth stays silent.
  */
-export function sendExternalNote(trackId: string, midi: number, duration: number, velocity: number, delaySec: number): boolean {
+export function sendExternalNote(
+  trackId: string,
+  midi: number,
+  duration: number,
+  velocity: number,
+  delaySec: number,
+): boolean {
   const r = routes[trackId];
   if (!r) return false;
   const out = port(r);
@@ -151,7 +202,9 @@ export function sendExternalNote(trackId: string, midi: number, duration: number
     out.send([0x80 | ch, note, 0], end);
     mark(r.portId, key, 1);
     setTimeout(() => mark(r.portId, key, -1), Math.max(0, end - performance.now()) + 20);
-  } catch { /* port went away */ }
+  } catch {
+    /* port went away */
+  }
   return true;
 }
 
@@ -169,7 +222,9 @@ export function externalNoteOn(trackId: string, midi: number, velocity: number):
     out.send([0x90 | ch, note, clampVel(velocity)]);
     held.set(k, { portId: r.portId, ch, note });
     mark(r.portId, `${ch}:${note}`, 1);
-  } catch { /* port went away */ }
+  } catch {
+    /* port went away */
+  }
   return true;
 }
 
@@ -179,7 +234,11 @@ export function externalNoteOff(trackId: string, midi: number) {
   if (!h) return;
   held.delete(k);
   const out = access?.outputs.get(h.portId);
-  try { out?.send([0x80 | h.ch, h.note, 0]); } catch { /* port went away */ }
+  try {
+    out?.send([0x80 | h.ch, h.note, 0]);
+  } catch {
+    /* port went away */
+  }
   mark(h.portId, `${h.ch}:${h.note}`, -1);
 }
 
@@ -189,7 +248,11 @@ export function sendExternalBend(trackId: string, value: number): boolean {
   const r = routes[trackId];
   if (!out || !r) return Boolean(r);
   const v = Math.max(0, Math.min(16383, Math.round(value * 16383)));
-  try { out.send([0xe0 | ((r.channel - 1) & 0x0f), v & 0x7f, v >> 7]); } catch { /* port went away */ }
+  try {
+    out.send([0xe0 | ((r.channel - 1) & 0x0f), v & 0x7f, v >> 7]);
+  } catch {
+    /* port went away */
+  }
   return true;
 }
 
@@ -198,7 +261,15 @@ export function sendExternalCc(trackId: string, cc: number, value: number): bool
   const out = port(routes[trackId]);
   const r = routes[trackId];
   if (!out || !r) return false;
-  try { out.send([0xb0 | ((r.channel - 1) & 0x0f), cc & 0x7f, Math.max(0, Math.min(127, Math.round(value * 127)))]); } catch { /* port went away */ }
+  try {
+    out.send([
+      0xb0 | ((r.channel - 1) & 0x0f),
+      cc & 0x7f,
+      Math.max(0, Math.min(127, Math.round(value * 127))),
+    ]);
+  } catch {
+    /* port went away */
+  }
   return true;
 }
 
@@ -220,17 +291,30 @@ export function stopExternalNotes(trackIds: string[]) {
   for (const [portId, chans] of targets) {
     const out = access.outputs.get(portId);
     if (!out) continue;
-    try { out.clear?.(); } catch { /* not supported */ }
+    try {
+      out.clear?.();
+    } catch {
+      /* not supported */
+    }
     const m = sounding.get(portId);
     for (const [key] of m ?? []) {
       const [ch, note] = key.split(":").map(Number) as [number, number];
-      if (chans.has(ch)) { try { out.send([0x80 | ch, note, 0]); } catch { /* gone */ } m?.delete(key); }
+      if (chans.has(ch)) {
+        try {
+          out.send([0x80 | ch, note, 0]);
+        } catch {
+          /* gone */
+        }
+        m?.delete(key);
+      }
     }
     for (const ch of chans) {
       try {
         out.send([0xb0 | ch, 64, 0]); // sustain pedal up
         out.send([0xb0 | ch, 123, 0]); // all notes off
-      } catch { /* gone */ }
+      } catch {
+        /* gone */
+      }
     }
   }
 }
@@ -242,6 +326,8 @@ export function sendTestNote(portId: string, channel: number) {
   try {
     out.send([0x90 | ch, 60, 100]);
     out.send([0x80 | ch, 60, 0], performance.now() + 400);
-  } catch { return false; }
+  } catch {
+    return false;
+  }
   return true;
 }

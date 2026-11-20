@@ -1,10 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { DRUM_GENRES, GENRE_GROUPS, barOptions, defaultDrummer, fillEvery, genBar, grooveBars, isFillBar, padForRole, writeHitsToPads } from "./drummer";
+import {
+  DRUM_GENRES,
+  GENRE_GROUPS,
+  barOptions,
+  defaultDrummer,
+  fillEvery,
+  genBar,
+  grooveBars,
+  isFillBar,
+  padForRole,
+  writeHitsToPads,
+} from "./drummer";
 import { defaultPads } from "./presets";
 
 describe("live drummer grooves", () => {
   it("covers all four genre groups with many styles", () => {
-    for (const g of GENRE_GROUPS) expect(DRUM_GENRES.filter((x) => x.group === g).length).toBeGreaterThanOrEqual(8);
+    for (const g of GENRE_GROUPS)
+      expect(DRUM_GENRES.filter((x) => x.group === g).length).toBeGreaterThanOrEqual(8);
     expect(new Set(DRUM_GENRES.map((g) => g.id)).size).toBe(DRUM_GENRES.length);
   });
 
@@ -30,7 +42,10 @@ describe("live drummer grooves", () => {
   });
 
   it("plays harder when louder", () => {
-    const avg = (l: number) => { const h = genBar({ ...defaultDrummer("rock"), loudness: l, humanize: 0 }, 0); return h.reduce((a, x) => a + x.vel, 0) / h.length; };
+    const avg = (l: number) => {
+      const h = genBar({ ...defaultDrummer("rock"), loudness: l, humanize: 0 }, 0);
+      return h.reduce((a, x) => a + x.vel, 0) / h.length;
+    };
     expect(avg(1)).toBeGreaterThan(avg(0.2));
   });
 
@@ -46,7 +61,10 @@ describe("live drummer grooves", () => {
   });
 
   it("leaves out drum pieces you switch off", () => {
-    const s = { ...defaultDrummer("house"), pieces: { kick: false, snare: true, hats: true, cymbals: true, toms: true, perc: true } };
+    const s = {
+      ...defaultDrummer("house"),
+      pieces: { kick: false, snare: true, hats: true, cymbals: true, toms: true, perc: true },
+    };
     expect(genBar(s, 1).some((h) => h.role === "kick")).toBe(false);
   });
 

@@ -7,8 +7,16 @@ import type { SongClock } from "./song-clock";
  *   so pressing Generate again keeps the groove going instead of jumping back to the start.
  * - Otherwise: from the top.
  */
-export function loopPreviewOffset({ when, loopSec, loopSteps, song, previous }: {
-  when: number; loopSec: number; loopSteps: number;
+export function loopPreviewOffset({
+  when,
+  loopSec,
+  loopSteps,
+  song,
+  previous,
+}: {
+  when: number;
+  loopSec: number;
+  loopSteps: number;
   song: SongClock | null;
   previous: { startedAt: number; loopSec: number } | null;
 }): number {

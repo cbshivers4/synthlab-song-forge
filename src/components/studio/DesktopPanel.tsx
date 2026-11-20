@@ -1,7 +1,26 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Monitor, Cpu, HardDrive, Cloud, Sparkles, Waves, LayoutGrid, Plug, Download, Apple, AppWindow } from "lucide-react";
-import { ARCHITECTURE, isDesktop, runtimeLabel, platformName, desktopApi, saveBytes } from "@/lib/synclab/desktop";
+import {
+  Monitor,
+  Cpu,
+  HardDrive,
+  Cloud,
+  Sparkles,
+  Waves,
+  LayoutGrid,
+  Plug,
+  Download,
+  Apple,
+  AppWindow,
+} from "lucide-react";
+import {
+  ARCHITECTURE,
+  isDesktop,
+  runtimeLabel,
+  platformName,
+  desktopApi,
+  saveBytes,
+} from "@/lib/synclab/desktop";
 import { useBridge } from "@/components/studio/PluginBridge";
 import { bridge, savedBridgeUrl } from "@/lib/synclab/bridge";
 import { toast } from "sonner";
@@ -39,18 +58,24 @@ function DesktopDownloads() {
         {DOWNLOADS.map(({ key, label, sub, Icon }) => {
           const url = release?.downloads?.[key] ?? "";
           return (
-            <div key={key} className="flex flex-col gap-2 rounded-md border border-border/60 bg-background p-2.5">
+            <div
+              key={key}
+              className="flex flex-col gap-2 rounded-md border border-border/60 bg-background p-2.5"
+            >
               <div className="flex items-center gap-2">
                 <Icon className="size-4 text-primary" />
                 <div>
                   <div className="text-[13px] font-semibold">{label}</div>
-                  <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">{sub}</div>
+                  <div className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+                    {sub}
+                  </div>
                 </div>
               </div>
               {url ? (
                 <Button size="sm" asChild>
                   <a href={url} download>
-                    <Download className="size-3.5" /> Download {release?.version ? `v${release.version}` : ""}
+                    <Download className="size-3.5" /> Download{" "}
+                    {release?.version ? `v${release.version}` : ""}
                   </a>
                 </Button>
               ) : (
@@ -63,8 +88,9 @@ function DesktopDownloads() {
         })}
       </div>
       <p className="text-[11px] leading-relaxed text-muted-foreground">
-        Installers are built and signed on a real Mac or Windows machine (see DESKTOP_BUILD.md) and published here —
-        this panel reads the live release list, so a button appears the moment a build is published. No fake links.
+        Installers are built and signed on a real Mac or Windows machine (see DESKTOP_BUILD.md) and
+        published here — this panel reads the live release list, so a button appears the moment a
+        build is published. No fake links.
       </p>
     </div>
   );
@@ -107,11 +133,17 @@ export function DesktopPanel() {
             onClick={async () => {
               const res = await saveBytes(
                 "synclab-desktop-check.txt",
-                new Blob([`SYNCLAB runtime check\n${runtimeLabel()}\n${new Date().toISOString()}\n`]),
+                new Blob([
+                  `SYNCLAB runtime check\n${runtimeLabel()}\n${new Date().toISOString()}\n`,
+                ]),
                 [{ name: "Text", extensions: ["txt"] }],
               );
               if (res.canceled) return;
-              toast.success(res.path ? `Written to ${res.path}` : "Downloaded (browser tabs cannot choose a folder)");
+              toast.success(
+                res.path
+                  ? `Written to ${res.path}`
+                  : "Downloaded (browser tabs cannot choose a folder)",
+              );
             }}
           >
             Test file saving
@@ -119,8 +151,9 @@ export function DesktopPanel() {
         </div>
         {!desktop && (
           <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-            You are in a browser tab. Everything in the studio works here except native plugin hosting and saving
-            straight to a folder you pick — those need the desktop app, and the app tells you so wherever they appear.
+            You are in a browser tab. Everything in the studio works here except native plugin
+            hosting and saving straight to a folder you pick — those need the desktop app, and the
+            app tells you so wherever they appear.
           </p>
         )}
       </div>
@@ -131,7 +164,10 @@ export function DesktopPanel() {
           {ARCHITECTURE.map((layer) => {
             const Icon = ICONS[layer.id] ?? Monitor;
             return (
-              <div key={layer.id} className="flex gap-3 rounded-md border border-border/60 bg-background p-2.5">
+              <div
+                key={layer.id}
+                className="flex gap-3 rounded-md border border-border/60 bg-background p-2.5"
+              >
                 <Icon className="mt-0.5 size-4 shrink-0 text-primary" />
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -145,7 +181,9 @@ export function DesktopPanel() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{layer.detail}</p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                    {layer.detail}
+                  </p>
                 </div>
               </div>
             );
@@ -161,9 +199,10 @@ export function DesktopPanel() {
       <div className="rounded-lg border border-border bg-surface p-3">
         <div className="label-xs mb-2">Desktop app</div>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          The macOS and Windows app is the same studio in its own window, plus real Save and Open dialogs on your disk
-          and a home for the Audio Bridge. It loads the studio over the network, so it needs a connection to start.
-          Plugin hosting stays in the bridge process — that is the only way a plugin binary can run on your machine.
+          The macOS and Windows app is the same studio in its own window, plus real Save and Open
+          dialogs on your disk and a home for the Audio Bridge. It loads the studio over the
+          network, so it needs a connection to start. Plugin hosting stays in the bridge process —
+          that is the only way a plugin binary can run on your machine.
         </p>
       </div>
     </div>

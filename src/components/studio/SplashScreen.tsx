@@ -51,8 +51,12 @@ export function SplashScreen() {
           className="spin-logo w-[min(38vw,290px)] rounded-2xl shadow-[0_0_60px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
         />
       </div>
-      <p className="mt-8 font-mono text-xs tracking-[0.5em] text-muted-foreground uppercase">Sound Design Studio</p>
-      <p className="mt-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground/60 uppercase">Detroit Electronic</p>
+      <p className="mt-8 font-mono text-xs tracking-[0.5em] text-muted-foreground uppercase">
+        Sound Design Studio
+      </p>
+      <p className="mt-2 font-mono text-[10px] tracking-[0.3em] text-muted-foreground/60 uppercase">
+        Detroit Electronic
+      </p>
       <button
         onClick={(e) => {
           e.stopPropagation();

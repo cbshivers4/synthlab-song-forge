@@ -5,7 +5,11 @@ import type { DrumRole } from "./drummer";
  * publishes it with that time; the picture queues it and plays the animation when the audio clock
  * reaches it, so you see the stick land when you hear it. Pure (no DOM, no audio).
  */
-export interface QueuedHit { at: number; role: DrumRole; vel: number }
+export interface QueuedHit {
+  at: number;
+  role: DrumRole;
+  vel: number;
+}
 
 export class HitQueue {
   private items: QueuedHit[] = [];
@@ -23,37 +27,82 @@ export class HitQueue {
     if (!n) return [];
     return this.items.splice(0, n).filter((h) => now - h.at <= stale);
   }
-  clear() { this.items = []; }
-  get size() { return this.items.length; }
+  clear() {
+    this.items = [];
+  }
+  get size() {
+    return this.items.length;
+  }
 }
 
 /** The pieces of the real-looking acoustic drum set. */
-export type AcousticPiece = "kick" | "snare" | "hat" | "crash1" | "crash2" | "ride" | "tomHi" | "tomMid" | "tomLo" | "cowbell" | "tamb";
+export type AcousticPiece =
+  | "kick"
+  | "snare"
+  | "hat"
+  | "crash1"
+  | "crash2"
+  | "ride"
+  | "tomHi"
+  | "tomMid"
+  | "tomLo"
+  | "cowbell"
+  | "tamb";
 
 /**
  * Which piece of the acoustic set shows a drummer role. Crash hits alternate between the left and
  * right crash like a drummer's two hands (same crash sound — only the picture alternates).
  */
-export function acousticPieceFor(role: DrumRole, crashCount: number): { piece: AcousticPiece; open?: boolean } {
+export function acousticPieceFor(
+  role: DrumRole,
+  crashCount: number,
+): { piece: AcousticPiece; open?: boolean } {
   switch (role) {
-    case "kick": return { piece: "kick" };
-    case "snare": case "rim": case "clap": return { piece: "snare" };
-    case "hat": return { piece: "hat", open: false };
-    case "openhat": return { piece: "hat", open: true };
-    case "ride": return { piece: "ride" };
-    case "crash": return { piece: crashCount % 2 === 0 ? "crash1" : "crash2" };
-    case "tomHi": case "conga": return { piece: "tomHi" };
-    case "tomMid": case "congaLo": return { piece: "tomMid" };
-    case "tomLo": return { piece: "tomLo" };
-    case "cowbell": case "clave": case "perc": return { piece: "cowbell" };
-    case "tamb": case "shaker": return { piece: "tamb" };
+    case "kick":
+      return { piece: "kick" };
+    case "snare":
+    case "rim":
+    case "clap":
+      return { piece: "snare" };
+    case "hat":
+      return { piece: "hat", open: false };
+    case "openhat":
+      return { piece: "hat", open: true };
+    case "ride":
+      return { piece: "ride" };
+    case "crash":
+      return { piece: crashCount % 2 === 0 ? "crash1" : "crash2" };
+    case "tomHi":
+    case "conga":
+      return { piece: "tomHi" };
+    case "tomMid":
+    case "congaLo":
+      return { piece: "tomMid" };
+    case "tomLo":
+      return { piece: "tomLo" };
+    case "cowbell":
+    case "clave":
+    case "perc":
+      return { piece: "cowbell" };
+    case "tamb":
+    case "shaker":
+      return { piece: "tamb" };
   }
 }
 
 /** Roles a tap on each piece plays (first that the kit has a pad for). */
 export const ACOUSTIC_TAP: Record<AcousticPiece, DrumRole[]> = {
-  kick: ["kick"], snare: ["snare", "rim", "clap"], hat: ["hat", "openhat"], crash1: ["crash"], crash2: ["crash"], ride: ["ride"],
-  tomHi: ["tomHi", "conga"], tomMid: ["tomMid", "congaLo"], tomLo: ["tomLo"], cowbell: ["cowbell", "clave", "perc"], tamb: ["tamb", "shaker"],
+  kick: ["kick"],
+  snare: ["snare", "rim", "clap"],
+  hat: ["hat", "openhat"],
+  crash1: ["crash"],
+  crash2: ["crash"],
+  ride: ["ride"],
+  tomHi: ["tomHi", "conga"],
+  tomMid: ["tomMid", "congaLo"],
+  tomLo: ["tomLo"],
+  cowbell: ["cowbell", "clave", "perc"],
+  tamb: ["tamb", "shaker"],
 };
 
 /** How far an animation swings for a hit (soft ghost notes barely move, accents swing hard). */

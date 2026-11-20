@@ -8,7 +8,9 @@ export const DEFAULT_INPUT_LATENCY_MS = 10;
 let cached: number | null = null;
 
 export function clampLatencyMs(ms: number): number {
-  return Number.isFinite(ms) ? Math.max(0, Math.min(300, Math.round(ms))) : DEFAULT_INPUT_LATENCY_MS;
+  return Number.isFinite(ms)
+    ? Math.max(0, Math.min(300, Math.round(ms)))
+    : DEFAULT_INPUT_LATENCY_MS;
 }
 
 export function getInputLatencyMs(): number {
@@ -32,7 +34,9 @@ export function setInputLatencyMs(ms: number) {
 }
 
 /** Seconds between scheduling a sound and it leaving the speakers. */
-export function outputDelay(ctx: { baseLatency?: number; outputLatency?: number } | null | undefined): number {
+export function outputDelay(
+  ctx: { baseLatency?: number; outputLatency?: number } | null | undefined,
+): number {
   if (!ctx) return 0;
   const d = (ctx.baseLatency ?? 0) + (ctx.outputLatency ?? 0);
   return Number.isFinite(d) ? Math.max(0, Math.min(0.3, d)) : 0;
@@ -55,7 +59,13 @@ export function alignedTake(startStep: number, duration: number, inputSec: numbe
  * channel print, the time it was produced); the audio recorded before that is skipped via
  * the clip offset, plus `inputSec` of microphone delay for mic takes.
  */
-export function preRollTake(songStep: number, songHeardAt: number, recStartedAt: number, duration: number, inputSec: number) {
+export function preRollTake(
+  songStep: number,
+  songHeardAt: number,
+  recStartedAt: number,
+  duration: number,
+  inputSec: number,
+) {
   const lead = Math.max(0, songHeardAt - recStartedAt);
   const offset = Math.max(0, Math.min(duration, lead + inputSec));
   return { start: Math.max(0, songStep), offset, length: Math.max(0, duration - offset) };

@@ -150,19 +150,44 @@ export const MASTER_PRESETS: MasterPreset[] = [
     id: "loud",
     name: "Loud & Modern",
     note: "-9 LUFS, hard and forward for club systems and playlists.",
-    settings: { ...MASTER_DEFAULTS, targetLufs: -9, ceilingDb: -0.8, glue: 0.65, drive: 0.3, air: 1.5 },
+    settings: {
+      ...MASTER_DEFAULTS,
+      targetLufs: -9,
+      ceilingDb: -0.8,
+      glue: 0.65,
+      drive: 0.3,
+      air: 1.5,
+    },
   },
   {
     id: "detroit",
     name: "Detroit Techno",
     note: "-8 LUFS, tight mono low end, wide hats and pads.",
-    settings: { ...MASTER_DEFAULTS, targetLufs: -8, ceilingDb: -0.8, bass: 1.5, air: 1, width: 1.2, glue: 0.7, drive: 0.35, monoBass: 140 },
+    settings: {
+      ...MASTER_DEFAULTS,
+      targetLufs: -8,
+      ceilingDb: -0.8,
+      bass: 1.5,
+      air: 1,
+      width: 1.2,
+      glue: 0.7,
+      drive: 0.35,
+      monoBass: 140,
+    },
   },
   {
     id: "hiphop",
     name: "Hip-Hop / Trap",
     note: "-9 LUFS with weight under 100 Hz and crisp top.",
-    settings: { ...MASTER_DEFAULTS, targetLufs: -9, bass: 2.5, air: 2, glue: 0.55, drive: 0.25, monoBass: 150 },
+    settings: {
+      ...MASTER_DEFAULTS,
+      targetLufs: -9,
+      bass: 2.5,
+      air: 2,
+      glue: 0.55,
+      drive: 0.25,
+      monoBass: 150,
+    },
   },
   {
     id: "vocal",
@@ -174,7 +199,15 @@ export const MASTER_PRESETS: MasterPreset[] = [
     id: "club",
     name: "Club / DJ WAV",
     note: "-7 LUFS, -0.3 dBTP, maximum energy for a DJ set.",
-    settings: { ...MASTER_DEFAULTS, targetLufs: -7, ceilingDb: -0.3, glue: 0.75, drive: 0.4, bass: 1, monoBass: 160 },
+    settings: {
+      ...MASTER_DEFAULTS,
+      targetLufs: -7,
+      ceilingDb: -0.3,
+      glue: 0.75,
+      drive: 0.4,
+      bass: 1,
+      monoBass: 160,
+    },
   },
   {
     id: "transparent",
@@ -203,10 +236,16 @@ const db = (x: number) => 20 * Math.log10(Math.max(x, 1e-9));
 
 function makeOffline(length: number, sampleRate: number, channels = 2) {
   const Ctor =
-    (globalThis as unknown as { OfflineAudioContext?: typeof OfflineAudioContext; webkitOfflineAudioContext?: typeof OfflineAudioContext })
-      .OfflineAudioContext ??
-    (globalThis as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext }).webkitOfflineAudioContext;
-  if (!Ctor) throw new Error("This browser cannot render audio offline, so mastering is unavailable here.");
+    (
+      globalThis as unknown as {
+        OfflineAudioContext?: typeof OfflineAudioContext;
+        webkitOfflineAudioContext?: typeof OfflineAudioContext;
+      }
+    ).OfflineAudioContext ??
+    (globalThis as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext })
+      .webkitOfflineAudioContext;
+  if (!Ctor)
+    throw new Error("This browser cannot render audio offline, so mastering is unavailable here.");
   return new Ctor(channels, Math.max(1, Math.floor(length)), sampleRate);
 }
 
@@ -307,12 +346,18 @@ export async function measure(cap: Capture): Promise<LoudnessReport> {
   const lufs = Number.isFinite(abs) ? gatedMean(momentary, abs - 10) : Number.NEGATIVE_INFINITY;
 
   // loudness range from the 10th–95th percentile of gated short-term blocks
-  const shortGated = short.filter((b) => b > -70 && (!Number.isFinite(abs) || b > abs - 20)).sort((a, b) => a - b);
-  const pick = (p: number) => shortGated[Math.min(shortGated.length - 1, Math.max(0, Math.round(p * (shortGated.length - 1))))] ?? 0;
+  const shortGated = short
+    .filter((b) => b > -70 && (!Number.isFinite(abs) || b > abs - 20))
+    .sort((a, b) => a - b);
+  const pick = (p: number) =>
+    shortGated[
+      Math.min(shortGated.length - 1, Math.max(0, Math.round(p * (shortGated.length - 1))))
+    ] ?? 0;
   const lra = shortGated.length > 1 ? pick(0.95) - pick(0.1) : 0;
 
   let peak = 0;
-  for (let i = 0; i < cap.left.length; i++) peak = Math.max(peak, Math.abs(cap.left[i] ?? 0), Math.abs(cap.right[i] ?? 0));
+  for (let i = 0; i < cap.left.length; i++)
+    peak = Math.max(peak, Math.abs(cap.left[i] ?? 0), Math.abs(cap.right[i] ?? 0));
   const tp = truePeak(cap);
   const shortMax = short.length ? Math.max(...short) : Number.NEGATIVE_INFINITY;
 
@@ -499,12 +544,23 @@ async function renderChain(cap: Capture, s: MasterSettings): Promise<Capture> {
     if (s.imgOn) {
       const sum = ctx.createGain();
       const bandsIn: Array<{ filters: BiquadFilterNode[]; width: number }> = [
-        { filters: [lr(ctx, "lowpass", s.imgLowX), lr(ctx, "lowpass", s.imgLowX)], width: s.imgLow },
         {
-          filters: [lr(ctx, "highpass", s.imgLowX), lr(ctx, "highpass", s.imgLowX), lr(ctx, "lowpass", s.imgHighX), lr(ctx, "lowpass", s.imgHighX)],
+          filters: [lr(ctx, "lowpass", s.imgLowX), lr(ctx, "lowpass", s.imgLowX)],
+          width: s.imgLow,
+        },
+        {
+          filters: [
+            lr(ctx, "highpass", s.imgLowX),
+            lr(ctx, "highpass", s.imgLowX),
+            lr(ctx, "lowpass", s.imgHighX),
+            lr(ctx, "lowpass", s.imgHighX),
+          ],
           width: s.imgMid,
         },
-        { filters: [lr(ctx, "highpass", s.imgHighX), lr(ctx, "highpass", s.imgHighX)], width: s.imgHigh },
+        {
+          filters: [lr(ctx, "highpass", s.imgHighX), lr(ctx, "highpass", s.imgHighX)],
+          width: s.imgHigh,
+        },
       ];
       for (const band of bandsIn) {
         let head: AudioNode = sideOut;
@@ -537,14 +593,29 @@ async function renderChain(cap: Capture, s: MasterSettings): Promise<Capture> {
   if (s.mbOn) {
     const sum = ctx.createGain();
     const bands = [
-      { filters: [lr(ctx, "lowpass", s.mbLowX), lr(ctx, "lowpass", s.mbLowX)], thr: s.mbLowThr, ratio: s.mbLowRatio, gain: s.mbLowGain },
       {
-        filters: [lr(ctx, "highpass", s.mbLowX), lr(ctx, "highpass", s.mbLowX), lr(ctx, "lowpass", s.mbHighX), lr(ctx, "lowpass", s.mbHighX)],
+        filters: [lr(ctx, "lowpass", s.mbLowX), lr(ctx, "lowpass", s.mbLowX)],
+        thr: s.mbLowThr,
+        ratio: s.mbLowRatio,
+        gain: s.mbLowGain,
+      },
+      {
+        filters: [
+          lr(ctx, "highpass", s.mbLowX),
+          lr(ctx, "highpass", s.mbLowX),
+          lr(ctx, "lowpass", s.mbHighX),
+          lr(ctx, "lowpass", s.mbHighX),
+        ],
         thr: s.mbMidThr,
         ratio: s.mbMidRatio,
         gain: s.mbMidGain,
       },
-      { filters: [lr(ctx, "highpass", s.mbHighX), lr(ctx, "highpass", s.mbHighX)], thr: s.mbHighThr, ratio: s.mbHighRatio, gain: s.mbHighGain },
+      {
+        filters: [lr(ctx, "highpass", s.mbHighX), lr(ctx, "highpass", s.mbHighX)],
+        thr: s.mbHighThr,
+        ratio: s.mbHighRatio,
+        gain: s.mbHighGain,
+      },
     ];
     for (const band of bands) {
       let head: AudioNode = node;
@@ -573,9 +644,21 @@ async function renderChain(cap: Capture, s: MasterSettings): Promise<Capture> {
       f.Q.value = 0.7071;
       return f;
     };
-    bands.push({ filters: [mk("lowpass", 200), mk("lowpass", 200)], ratio: 2 + s.glue * 2, threshold: -18 - s.glue * 6 });
-    bands.push({ filters: [mk("highpass", 200), mk("lowpass", 3000)], ratio: 1.8 + s.glue * 2, threshold: -16 - s.glue * 6 });
-    bands.push({ filters: [mk("highpass", 3000), mk("highpass", 3000)], ratio: 1.6 + s.glue * 1.5, threshold: -20 - s.glue * 5 });
+    bands.push({
+      filters: [mk("lowpass", 200), mk("lowpass", 200)],
+      ratio: 2 + s.glue * 2,
+      threshold: -18 - s.glue * 6,
+    });
+    bands.push({
+      filters: [mk("highpass", 200), mk("lowpass", 3000)],
+      ratio: 1.8 + s.glue * 2,
+      threshold: -16 - s.glue * 6,
+    });
+    bands.push({
+      filters: [mk("highpass", 3000), mk("highpass", 3000)],
+      ratio: 1.6 + s.glue * 1.5,
+      threshold: -20 - s.glue * 5,
+    });
     for (const band of bands) {
       let head: AudioNode = node;
       for (const f of band.filters) {
@@ -674,7 +757,13 @@ export async function master(
   if (Number.isFinite(after.lufs) && Math.abs(after.lufs - settings.targetLufs) > 0.4) {
     const trim = Math.max(-6, Math.min(6, settings.targetLufs - after.lufs));
     const retryStats = { minGain: 1 };
-    const retried = brickwall(applyGain(levelled, Math.pow(10, (matchDb + trim) / 20)), ceiling, look, rel, retryStats);
+    const retried = brickwall(
+      applyGain(levelled, Math.pow(10, (matchDb + trim) / 20)),
+      ceiling,
+      look,
+      rel,
+      retryStats,
+    );
     if (settings.dither) ditherInPlace(retried);
     const check = await measure(retried);
     if (Math.abs(check.lufs - settings.targetLufs) < Math.abs(after.lufs - settings.targetLufs)) {

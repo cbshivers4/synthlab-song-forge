@@ -45,7 +45,9 @@ function supabasePublishableKey(): string {
   }
   const legacy = configuredEnv(["SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"]);
   if (legacy) return legacy;
-  throw new Error("SUPABASE_PUBLISHABLE_KEY, SUPABASE_PUBLISHABLE_KEYS, or SUPABASE_ANON_KEY is required");
+  throw new Error(
+    "SUPABASE_PUBLISHABLE_KEY, SUPABASE_PUBLISHABLE_KEYS, or SUPABASE_ANON_KEY is required",
+  );
 }
 
 /** Database client acting as the verified caller, so row-level security applies to every query. */

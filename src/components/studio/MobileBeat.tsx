@@ -1,7 +1,20 @@
 import { getPlayStep } from "@/lib/synclab/playhead";
 import { useStepLights } from "./use-step-lights";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Disc3, Grid2x2, Mic, Minus, Play, Plus, Settings2, Shuffle, SlidersHorizontal, Square, Waves, X } from "lucide-react";
+import {
+  Disc3,
+  Grid2x2,
+  Mic,
+  Minus,
+  Play,
+  Plus,
+  Settings2,
+  Shuffle,
+  SlidersHorizontal,
+  Square,
+  Waves,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
@@ -18,7 +31,12 @@ type Tab = "pads" | "steps" | "sound" | "rec" | "sample";
 
 const SAMPLE_PADS = 8;
 
-const makeSavedPad = (loaded: { url: string; name: string; peaks: number[]; duration: number }): SavedPad => ({
+const makeSavedPad = (loaded: {
+  url: string;
+  name: string;
+  peaks: number[];
+  duration: number;
+}): SavedPad => ({
   name: loaded.name.slice(0, 18),
   url: loaded.url,
   duration: loaded.duration,
@@ -55,8 +73,20 @@ function buzz(ms = 12) {
  * same project state as the desktop studio — no separate engine, no demo mode.
  */
 export function MobileBeat({ onClose }: { onClose: () => void }) {
-  const { tracks, addTrack, updatePad, generateBeat, transport, setTransport, togglePlay, stop, updateTrack, addClip, previewClip, setPanel } =
-    useStudio();
+  const {
+    tracks,
+    addTrack,
+    updatePad,
+    generateBeat,
+    transport,
+    setTransport,
+    togglePlay,
+    stop,
+    updateTrack,
+    addClip,
+    previewClip,
+    setPanel,
+  } = useStudio();
   const rootRef = useRef<HTMLDivElement>(null);
   useStepLights(rootRef, transport.playing);
   const [tab, setTab] = useState<Tab>("pads");
@@ -89,7 +119,12 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
   const [recStream, setRecStream] = useState<MediaStream | null>(null);
   const [sampArm, setSampArm] = useState(false);
   const [playingPad, setPlayingPad] = useState<number | null>(null);
-  const sampRecRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; pad: number } | null>(null);
+  const sampRecRef = useRef<{
+    rec: MediaRecorder;
+    stream: MediaStream;
+    chunks: Blob[];
+    pad: number;
+  } | null>(null);
   const sampHoldRef = useRef<{ pad: number; active: boolean } | null>(null);
   const samplePadsRef = useRef(samplePads);
   samplePadsRef.current = samplePads;
@@ -116,7 +151,10 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
     if (!pad) return;
     buzz();
     const engine = getEngine();
-    engine.init().resume().catch(() => undefined);
+    engine
+      .init()
+      .resume()
+      .catch(() => undefined);
     engine.playSample(
       ensureSamplerTrack(),
       {
@@ -265,7 +303,10 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
     });
   };
 
-  const drumTrack: Track | undefined = useMemo(() => tracks.find((t) => t.kind === "drum"), [tracks]);
+  const drumTrack: Track | undefined = useMemo(
+    () => tracks.find((t) => t.kind === "drum"),
+    [tracks],
+  );
 
   // A beat needs a drum track — make one the first time this screen opens.
   useEffect(() => {
@@ -346,10 +387,25 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
           </Button>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <Button size="icon" variant="secondary" className="size-11" aria-label="Phone settings" onClick={() => { onClose(); setPanel("settings"); }}>
+          <Button
+            size="icon"
+            variant="secondary"
+            className="size-11"
+            aria-label="Phone settings"
+            onClick={() => {
+              onClose();
+              setPanel("settings");
+            }}
+          >
             <Settings2 className="size-5" />
           </Button>
-          <Button size="icon" variant="ghost" className="size-11" aria-label="Leave beat mode" onClick={onClose}>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="size-11"
+            aria-label="Leave beat mode"
+            onClick={onClose}
+          >
             <X className="size-6" />
           </Button>
         </div>
@@ -368,7 +424,10 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
             style={{
               borderColor: i === padIdx ? padColor(i) : "var(--color-border)",
               color: i === padIdx ? padColor(i) : undefined,
-              background: i === padIdx ? `color-mix(in oklab, ${padColor(i)} 18%, transparent)` : "transparent",
+              background:
+                i === padIdx
+                  ? `color-mix(in oklab, ${padColor(i)} 18%, transparent)`
+                  : "transparent",
             }}
           >
             {p.name}
@@ -394,11 +453,16 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
                     borderColor: c,
                     color: c,
                     background: `linear-gradient(150deg, color-mix(in oklab, ${c} 22%, transparent), transparent)`,
-                    boxShadow: i === padIdx ? `0 0 20px color-mix(in oklab, ${c} 55%, transparent)` : undefined,
+                    boxShadow:
+                      i === padIdx
+                        ? `0 0 20px color-mix(in oklab, ${c} 55%, transparent)`
+                        : undefined,
                   }}
                 >
                   {p.name}
-                  <span className="text-[10px] opacity-60">{p.steps.filter((v) => v > 0).length} hits</span>
+                  <span className="text-[10px] opacity-60">
+                    {p.steps.filter((v) => v > 0).length} hits
+                  </span>
                 </button>
               );
             })}
@@ -408,7 +472,10 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
         {tab === "steps" && pad && (
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-xs tracking-widest uppercase" style={{ color: padColor(padIdx) }}>
+              <span
+                className="font-mono text-xs tracking-widest uppercase"
+                style={{ color: padColor(padIdx) }}
+              >
                 {pad.name}
               </span>
               {pages > 1 && (
@@ -481,7 +548,9 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
               <div className="font-mono text-4xl font-bold tabular-nums">
                 {`${Math.floor(recElapsed / 60)}:${String(Math.floor(recElapsed % 60)).padStart(2, "0")}`}
               </div>
-              <div className="label-xs mt-1">{recording ? "Recording — lift to stop" : "Hold the mic to record"}</div>
+              <div className="label-xs mt-1">
+                {recording ? "Recording — lift to stop" : "Hold the mic to record"}
+              </div>
             </div>
             <div className="h-2.5 w-56 overflow-hidden rounded-full border border-border bg-surface-2">
               <div
@@ -506,13 +575,17 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
               onPointerUp={() => void stopRec()}
               onPointerCancel={() => void stopRec()}
               className={`grid size-40 touch-none place-items-center rounded-full border-4 font-mono text-xs tracking-widest uppercase select-none active:scale-95 ${
-                recording ? "animate-pulse border-destructive text-destructive" : "border-primary text-primary"
+                recording
+                  ? "animate-pulse border-destructive text-destructive"
+                  : "border-primary text-primary"
               }`}
               style={{
                 background: recording
                   ? "color-mix(in oklab, var(--destructive) 22%, transparent)"
                   : "color-mix(in oklab, var(--primary) 14%, transparent)",
-                boxShadow: recording ? "0 0 34px color-mix(in oklab, var(--destructive) 60%, transparent)" : undefined,
+                boxShadow: recording
+                  ? "0 0 34px color-mix(in oklab, var(--destructive) 60%, transparent)"
+                  : undefined,
               }}
             >
               <Mic className="size-12" />
@@ -582,8 +655,16 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
                       recording ? "animate-pulse" : ""
                     } ${!pad && !recording ? "border-dashed" : ""}`}
                     style={{
-                      borderColor: recording ? "var(--destructive)" : pad ? c : "var(--color-border)",
-                      color: recording ? "var(--destructive)" : pad ? c : "var(--color-muted-foreground)",
+                      borderColor: recording
+                        ? "var(--destructive)"
+                        : pad
+                          ? c
+                          : "var(--color-border)",
+                      color: recording
+                        ? "var(--destructive)"
+                        : pad
+                          ? c
+                          : "var(--color-muted-foreground)",
                       background: pad
                         ? `linear-gradient(150deg, color-mix(in oklab, ${c} 22%, transparent), transparent)`
                         : "transparent",
@@ -596,14 +677,25 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
                     }}
                   >
                     {recording && recStream ? (
-                      <LiveWave stream={recStream} color="var(--destructive)" label="Recording waveform" />
+                      <LiveWave
+                        stream={recStream}
+                        color="var(--destructive)"
+                        label="Recording waveform"
+                      />
                     ) : pad ? (
-                      <div className="flex h-10 w-full items-end justify-center gap-px px-3" aria-hidden>
+                      <div
+                        className="flex h-10 w-full items-end justify-center gap-px px-3"
+                        aria-hidden
+                      >
                         {pad.peaks.slice(0, 40).map((p, j) => (
                           <span
                             key={j}
                             className="w-full rounded-sm"
-                            style={{ height: `${Math.max(8, p * 100)}%`, background: c, opacity: 0.85 }}
+                            style={{
+                              height: `${Math.max(8, p * 100)}%`,
+                              background: c,
+                              opacity: 0.85,
+                            }}
                           />
                         ))}
                       </div>
@@ -611,14 +703,16 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
                       <Mic className="size-7 opacity-70" />
                     )}
                     <span>{recording ? "RECORDING…" : pad ? pad.name : `HOLD ${i + 1}`}</span>
-                    {pad && <span className="text-[10px] opacity-60">{pad.duration.toFixed(1)}s</span>}
+                    {pad && (
+                      <span className="text-[10px] opacity-60">{pad.duration.toFixed(1)}s</span>
+                    )}
                   </button>
                 );
               })}
             </div>
             <p className="label-xs px-1 text-center">
-              These are the same pads as the Pad Sampler — samples you record here show up there too, and save with
-              your project.
+              These are the same pads as the Pad Sampler — samples you record here show up there
+              too, and save with your project.
             </p>
           </div>
         )}
@@ -626,19 +720,66 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
         {tab === "sound" && pad && (
           <div className="space-y-4">
             <div className="flex flex-wrap justify-center gap-4">
-              <Knob size={64} label="VOL" value={pad.volume} onChange={(v) => updatePad(drumTrack.id, pad.id, { volume: v })} />
-              <Knob size={64} label="PAN" min={-1} max={1} value={pad.pan} onChange={(v) => updatePad(drumTrack.id, pad.id, { pan: v })} />
-              <Knob size={64} label="PITCH" min={-12} max={12} step={1} value={pad.pitch} onChange={(v) => updatePad(drumTrack.id, pad.id, { pitch: v })} />
-              <Knob size={64} label="DECAY" value={pad.decay} onChange={(v) => updatePad(drumTrack.id, pad.id, { decay: v })} />
-              <Knob size={64} label="TONE" value={pad.tone ?? 0.5} onChange={(v) => updatePad(drumTrack.id, pad.id, { tone: v })} />
-              <Knob size={64} label="DRIVE" value={pad.drive ?? 0} onChange={(v) => updatePad(drumTrack.id, pad.id, { drive: v })} />
-              <Knob size={64} label="SNAP" value={pad.snap ?? 0} onChange={(v) => updatePad(drumTrack.id, pad.id, { snap: v })} />
-              <Knob size={64} label="NOISE" value={pad.noise ?? 0} onChange={(v) => updatePad(drumTrack.id, pad.id, { noise: v })} />
+              <Knob
+                size={64}
+                label="VOL"
+                value={pad.volume}
+                onChange={(v) => updatePad(drumTrack.id, pad.id, { volume: v })}
+              />
+              <Knob
+                size={64}
+                label="PAN"
+                min={-1}
+                max={1}
+                value={pad.pan}
+                onChange={(v) => updatePad(drumTrack.id, pad.id, { pan: v })}
+              />
+              <Knob
+                size={64}
+                label="PITCH"
+                min={-12}
+                max={12}
+                step={1}
+                value={pad.pitch}
+                onChange={(v) => updatePad(drumTrack.id, pad.id, { pitch: v })}
+              />
+              <Knob
+                size={64}
+                label="DECAY"
+                value={pad.decay}
+                onChange={(v) => updatePad(drumTrack.id, pad.id, { decay: v })}
+              />
+              <Knob
+                size={64}
+                label="TONE"
+                value={pad.tone ?? 0.5}
+                onChange={(v) => updatePad(drumTrack.id, pad.id, { tone: v })}
+              />
+              <Knob
+                size={64}
+                label="DRIVE"
+                value={pad.drive ?? 0}
+                onChange={(v) => updatePad(drumTrack.id, pad.id, { drive: v })}
+              />
+              <Knob
+                size={64}
+                label="SNAP"
+                value={pad.snap ?? 0}
+                onChange={(v) => updatePad(drumTrack.id, pad.id, { snap: v })}
+              />
+              <Knob
+                size={64}
+                label="NOISE"
+                value={pad.noise ?? 0}
+                onChange={(v) => updatePad(drumTrack.id, pad.id, { noise: v })}
+              />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="label-xs">Swing</span>
-                <span className="font-mono text-xs">{Math.round((transport.swing ?? 0) * 100)}%</span>
+                <span className="font-mono text-xs">
+                  {Math.round((transport.swing ?? 0) * 100)}%
+                </span>
               </div>
               <Slider
                 value={[transport.swing ?? 0]}
@@ -670,7 +811,9 @@ export function MobileBeat({ onClose }: { onClose: () => void }) {
             key={id}
             onClick={() => setTab(id)}
             className={`flex h-16 flex-col items-center justify-center gap-1 rounded-md border-2 font-mono text-[11px] font-semibold tracking-widest ${
-              tab === id ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+              tab === id
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground"
             }`}
           >
             {icon}

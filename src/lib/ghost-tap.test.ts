@@ -22,6 +22,8 @@ describe("menu ghost-tap guard", () => {
   it("blocks the script click fired by a stray finger lift, only within the window", () => {
     const blockUntil = 1000 + GHOST_TAP_WINDOW_MS;
     expect(shouldBlockMenuClick({ ...base, detail: 0, blockUntil })).toBe(true);
-    expect(shouldBlockMenuClick({ ...base, detail: 0, blockUntil, now: blockUntil + 1 })).toBe(false);
+    expect(shouldBlockMenuClick({ ...base, detail: 0, blockUntil, now: blockUntil + 1 })).toBe(
+      false,
+    );
   });
 });

@@ -10,13 +10,25 @@ const NOT_YOURS = "That stem separation job was not found for your account.";
 
 /** True only when the signed-in caller started this job (RLS limits rows to the caller's own). */
 async function ownsJob(supabase: SupabaseClient<Database>, id: string) {
-  const { data, error } = await supabase.from("stem_split_jobs").select("prediction_id").eq("prediction_id", id).maybeSingle();
+  const { data, error } = await supabase
+    .from("stem_split_jobs")
+    .select("prediction_id")
+    .eq("prediction_id", id)
+    .maybeSingle();
   return !error && !!data;
 }
 
 export const startStemSplitFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ audio: z.string().min(16).max(60_000_000), name: z.string().max(200), mime: z.string().max(100) }).parse(d))
+  .validator((d) =>
+    z
+      .object({
+        audio: z.string().min(16).max(60_000_000),
+        name: z.string().max(200),
+        mime: z.string().max(100),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { startStemSplit } = await import("@/lib/stem-split.server");
     const use = await reserveAiUse(context.supabase, "stems");
@@ -28,7 +40,9 @@ export const startStemSplitFn = createServerFn({ method: "POST" })
       const id = await startStemSplit(bytes, data.name, data.mime);
       // Bind the job to this account (service role only, so nobody can claim someone else's job ID).
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error } = await supabaseAdmin.from("stem_split_jobs").insert({ prediction_id: id, user_id: context.userId });
+      const { error } = await supabaseAdmin
+        .from("stem_split_jobs")
+        .insert({ prediction_id: id, user_id: context.userId });
       if (error) {
         console.error("stem split: could not record job owner", error);
         const { cancelStemSplit } = await import("@/lib/stem-split.server");
@@ -44,10 +58,21 @@ export const startStemSplitFn = createServerFn({ method: "POST" })
 
 export const checkStemSplitFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().min(1).max(100).regex(/^[a-z0-9]+$/i) }).parse(d))
+  .validator((d) =>
+    z
+      .object({
+        id: z
+          .string()
+          .min(1)
+          .max(100)
+          .regex(/^[a-z0-9]+$/i),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { checkStemSplit } = await import("@/lib/stem-split.server");
-    if (!(await ownsJob(context.supabase, data.id))) return { ok: false as const, error: NOT_YOURS };
+    if (!(await ownsJob(context.supabase, data.id)))
+      return { ok: false as const, error: NOT_YOURS };
     try {
       return { ok: true as const, status: await checkStemSplit(data.id) };
     } catch (e) {
@@ -57,7 +82,7 @@ export const checkStemSplitFn = createServerFn({ method: "POST" })
 
 export const fetchStemFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ url: z.string().url().max(2000) }).parse(d))
+  .validator((d) => z.object({ url: z.string().url().max(2000) }).parse(d))
   .handler(async ({ data }) => {
     const { fetchStem } = await import("@/lib/stem-split.server");
     try {
@@ -70,12 +95,27 @@ export const fetchStemFn = createServerFn({ method: "POST" })
 /** Stops a running separation on the AI service so it doesn't keep working after you press Stop. */
 export const cancelStemSplitFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().min(1).max(100).regex(/^[a-z0-9]+$/i) }).parse(d))
+  .validator((d) =>
+    z
+      .object({
+        id: z
+          .string()
+          .min(1)
+          .max(100)
+          .regex(/^[a-z0-9]+$/i),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { cancelStemSplit } = await import("@/lib/stem-split.server");
-    if (!(await ownsJob(context.supabase, data.id))) return { ok: false as const, error: NOT_YOURS };
-    try { await cancelStemSplit(data.id); return { ok: true as const }; }
-    catch (e) { return { ok: false as const, error: errOf(e) }; }
+    if (!(await ownsJob(context.supabase, data.id)))
+      return { ok: false as const, error: NOT_YOURS };
+    try {
+      await cancelStemSplit(data.id);
+      return { ok: true as const };
+    } catch (e) {
+      return { ok: false as const, error: errOf(e) };
+    }
   });
 
 /** How many AI uses the signed-in person has left today. */
@@ -83,6 +123,12 @@ export const aiUsesLeftFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { AI_DAILY_LIMIT } = await import("@/lib/ai-quota");
-    const { data, error } = await (context.supabase as unknown as { rpc: (f: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }> }).rpc("ai_uses_left", { _daily_limit: AI_DAILY_LIMIT });
-    return error ? { ok: false as const } : { ok: true as const, left: Number(data), limit: AI_DAILY_LIMIT };
+    const { data, error } = await (
+      context.supabase as unknown as {
+        rpc: (f: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+      }
+    ).rpc("ai_uses_left", { _daily_limit: AI_DAILY_LIMIT });
+    return error
+      ? { ok: false as const }
+      : { ok: true as const, left: Number(data), limit: AI_DAILY_LIMIT };
   });

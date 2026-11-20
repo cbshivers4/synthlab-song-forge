@@ -9,7 +9,12 @@ export function PitchWheels({ trackId }: { trackId: string }) {
   const rangeRef = useRef(range);
   rangeRef.current = range;
 
-  useEffect(() => () => { getEngine().setPitchBend(trackId, 0); }, [trackId]);
+  useEffect(
+    () => () => {
+      getEngine().setPitchBend(trackId, 0);
+    },
+    [trackId],
+  );
 
   const applyBend = (v: number) => {
     setBend(v);
@@ -17,7 +22,10 @@ export function PitchWheels({ trackId }: { trackId: string }) {
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-4 rounded-md border border-border bg-surface/70 p-2" aria-label="Pitch bend and mod wheel">
+    <div
+      className="flex flex-wrap items-end gap-4 rounded-md border border-border bg-surface/70 p-2"
+      aria-label="Pitch bend and mod wheel"
+    >
       <label className="flex flex-col items-center gap-1">
         <span className="label-xs">PITCH BEND</span>
         <input
@@ -33,7 +41,9 @@ export function PitchWheels({ trackId }: { trackId: string }) {
           onBlur={() => applyBend(0)}
           className="h-24 w-6 accent-primary [writing-mode:vertical-lr] [direction:rtl]"
         />
-        <span className="font-mono text-[10px] text-foreground/70">{(bend * range).toFixed(1)} st</span>
+        <span className="font-mono text-[10px] text-foreground/70">
+          {(bend * range).toFixed(1)} st
+        </span>
       </label>
       <label className="flex flex-col items-center gap-1">
         <span className="label-xs">MOD</span>
@@ -68,7 +78,9 @@ export function PitchWheels({ trackId }: { trackId: string }) {
             </button>
           ))}
         </div>
-        <span className="text-[9px] text-muted-foreground">Bend springs back to center when released.</span>
+        <span className="text-[9px] text-muted-foreground">
+          Bend springs back to center when released.
+        </span>
       </div>
     </div>
   );

@@ -1,14 +1,23 @@
 import type { AutomationLane, AutomationParam, AutomationPoint, Track } from "./types";
 
-
 /** Channel controls (fader, pan, sends) that automation lanes can record from live moves. */
-export const LIVE_PARAMS = ["volume", "pan", "sendReverb", "sendDelay"] as const satisfies readonly AutomationParam[];
+export const LIVE_PARAMS = [
+  "volume",
+  "pan",
+  "sendReverb",
+  "sendDelay",
+] as const satisfies readonly AutomationParam[];
 type LiveParam = (typeof LIVE_PARAMS)[number];
-export const isLiveParam = (param: AutomationParam): param is LiveParam => (LIVE_PARAMS as readonly string[]).includes(param);
+export const isLiveParam = (param: AutomationParam): param is LiveParam =>
+  (LIVE_PARAMS as readonly string[]).includes(param);
 
 /** The control's current value in lane units: volume 0..2 (+6 dB), sends 0..1.2, pan -1..1. */
-export function liveValue(track: Pick<Track, "volume" | "pan" | "sends">, param: LiveParam): number {
-  const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(v) ? v : 0));
+export function liveValue(
+  track: Pick<Track, "volume" | "pan" | "sends">,
+  param: LiveParam,
+): number {
+  const clamp = (v: number, lo: number, hi: number) =>
+    Math.min(hi, Math.max(lo, Number.isFinite(v) ? v : 0));
   if (param === "volume") return clamp(track.volume, 0, 2);
   if (param === "pan") return clamp(track.pan, -1, 1);
   if (param === "sendReverb") return clamp(track.sends?.reverb ?? 0, 0, 1.2);
@@ -26,21 +35,39 @@ export function movedLiveParams(prev: Track, patch: Partial<Track>): LiveParam[]
 }
 
 /** Write records continuously; Latch from the first touch until Stop; Touch only while the control moves. */
-export function laneWrites(lane: Pick<AutomationLane, "mode" | "locked">, touching: boolean, latched: boolean): boolean {
+export function laneWrites(
+  lane: Pick<AutomationLane, "mode" | "locked">,
+  touching: boolean,
+  latched: boolean,
+): boolean {
   if (lane.locked) return false;
-  return lane.mode === "write" || (lane.mode === "latch" && latched) || (lane.mode === "touch" && touching);
+  return (
+    lane.mode === "write" ||
+    (lane.mode === "latch" && latched) ||
+    (lane.mode === "touch" && touching)
+  );
 }
 
 /** Read plays the curve; Touch and Latch play it whenever they aren't recording. */
-export function laneReads(lane: Pick<AutomationLane, "mode" | "locked">, touching: boolean, latched: boolean): boolean {
+export function laneReads(
+  lane: Pick<AutomationLane, "mode" | "locked">,
+  touching: boolean,
+  latched: boolean,
+): boolean {
   if (lane.mode === "read") return true;
   if (lane.mode === "touch") return !touching;
   if (lane.mode === "latch") return !latched && !touching;
   return false;
 }
 
-export function writePoint(points: AutomationPoint[], step: number, value: number): AutomationPoint[] {
-  return [...points.filter((p) => p.step !== step), { step, value }].sort((a, b) => a.step - b.step);
+export function writePoint(
+  points: AutomationPoint[],
+  step: number,
+  value: number,
+): AutomationPoint[] {
+  return [...points.filter((p) => p.step !== step), { step, value }].sort(
+    (a, b) => a.step - b.step,
+  );
 }
 
 /** Shaped value of an automation curve at a step, held flat outside the drawn range. Shared by live playback and export. */
@@ -56,7 +83,8 @@ export function valueAt(points: AutomationPoint[], step: number): number {
       const span = b.step - a.step || 1;
       const linear = (step - a.step) / span;
       const curve = Math.max(-1, Math.min(1, a.curve ?? 0));
-      const shaped = curve >= 0 ? Math.pow(linear, 1 + curve * 3) : 1 - Math.pow(1 - linear, 1 - curve * 3);
+      const shaped =
+        curve >= 0 ? Math.pow(linear, 1 + curve * 3) : 1 - Math.pow(1 - linear, 1 - curve * 3);
       return a.value + shaped * (b.value - a.value);
     }
   }

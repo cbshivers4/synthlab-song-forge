@@ -5,7 +5,6 @@ export function snapDropStep(fraction: number, totalSteps: number, grid: number)
   return Math.max(0, Math.min(Math.max(0, totalSteps - (grid > 0 ? grid : 0)), snapped));
 }
 
-
 /** Arrangement zoom after one Ctrl/Cmd-wheel notch (or pinch step): 1×–8×, in 0.25 steps. */
 export function zoomAround(zoom: number, deltaY: number): number {
   const factor = deltaY < 0 ? 1.15 : 1 / 1.15;

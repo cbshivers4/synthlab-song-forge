@@ -1,8 +1,8 @@
-import type { AudioClip, MidiNote, Track } from './types';
-import { clipRate, clipSeconds } from './types';
-import { uid } from './presets';
-import { unrollNotes } from './note-cuts';
-import { STEPS_PER_BEAT, stepsPerBar } from './timebase';
+import type { AudioClip, MidiNote, Track } from "./types";
+import { clipRate, clipSeconds } from "./types";
+import { uid } from "./presets";
+import { unrollNotes } from "./note-cuts";
+import { STEPS_PER_BEAT, stepsPerBar } from "./timebase";
 
 /** A clicked destination is independent of the moving transport playhead. */
 export function timelinePasteStep(playhead: number, destination?: number): number {
@@ -13,7 +13,12 @@ export function timelinePasteStep(playhead: number, destination?: number): numbe
  * Where a paste lands. A clicked destination wins; while the song plays the moving playhead is
  * rounded to the nearest bar line, so material pasted on the fly stays in time with the song.
  */
-export function livePasteStep(playhead: number, playing: boolean, destination?: number, barSteps = stepsPerBar()): number {
+export function livePasteStep(
+  playhead: number,
+  playing: boolean,
+  destination?: number,
+  barSteps = stepsPerBar(),
+): number {
   if (destination != null) return Math.max(0, destination);
   if (!playing) return Math.max(0, playhead);
   return Math.max(0, Math.round(playhead / Math.max(1, barSteps)) * Math.max(1, barSteps));
@@ -23,22 +28,30 @@ export function livePasteStep(playhead: number, playing: boolean, destination?: 
 export function clipboardOrigin(source: Track, span?: [number, number] | null): number {
   if (span) return span[0];
   if (hasHits(source)) return drumSpan(source)[0];
-  const first = Math.min(...(source.clips ?? []).map(c => c.start ?? 0), ...(source.notes ?? []).map(n => n.step));
+  const first = Math.min(
+    ...(source.clips ?? []).map((c) => c.start ?? 0),
+    ...(source.notes ?? []).map((n) => n.step),
+  );
   return Number.isFinite(first) ? first : 0;
 }
 
 /** Several copied tracks paste together: each keeps its distance from the earliest copied part. */
 export function multiPasteSteps(origins: number[], at: number): number[] {
   const common = origins.length ? Math.min(...origins) : 0;
-  return origins.map(o => Math.max(0, at + o - common));
+  return origins.map((o) => Math.max(0, at + o - common));
 }
 
-const hasHits = (t: Track) => !!t.pads?.some(p => p.steps.some(v => v > 0));
+const hasHits = (t: Track) => !!t.pads?.some((p) => p.steps.some((v) => v > 0));
 
 /** The part of a drum pattern that actually plays: its pattern region, else the whole pattern. */
 function drumSpan(t: Track): [number, number] {
   const len = Math.max(1, t.pads?.[0]?.steps.length ?? t.steps);
-  return t.patternRegion ? tidyDrumSpan(t, [Math.max(0, t.patternRegion[0]), Math.max(t.patternRegion[0], t.patternRegion[1])]) : [0, len];
+  return t.patternRegion
+    ? tidyDrumSpan(t, [
+        Math.max(0, t.patternRegion[0]),
+        Math.max(t.patternRegion[0], t.patternRegion[1]),
+      ])
+    : [0, len];
 }
 
 /**
@@ -46,7 +59,11 @@ function drumSpan(t: Track): [number, number] {
  * as if it ended on that bar line, so the copy lands on the beat and stays in time with the other
  * channels instead of drifting a step later every repeat. Hits in the overhang keep it as is.
  */
-export function tidyDrumSpan(track: Track, span: [number, number], barSteps = stepsPerBar()): [number, number] {
+export function tidyDrumSpan(
+  track: Track,
+  span: [number, number],
+  barSteps = stepsPerBar(),
+): [number, number] {
   const [a, b] = span;
   if (!hasHits(track) || b - a <= barSteps) return span;
   const line = Math.floor((b + 0.001) / barSteps) * barSteps;
@@ -71,22 +88,45 @@ export interface PasteOptions {
 }
 
 /** Paste material, not channel settings; even the source channel is a valid target. */
-export function pasteTrackContent(target: Track, source: Track, at: number, stepDuration: number, opts: PasteOptions = {}): Track {
+export function pasteTrackContent(
+  target: Track,
+  source: Track,
+  at: number,
+  stepDuration: number,
+  opts: PasteOptions = {},
+): Track {
   const drumSource = hasHits(source);
   const [srcA, srcB] = drumSpan(source);
-  const first = Math.min(...(source.clips ?? []).map(c => c.start ?? 0), ...(source.notes ?? []).map(n => n.step), ...(drumSource ? [srcA] : []));
+  const first = Math.min(
+    ...(source.clips ?? []).map((c) => c.start ?? 0),
+    ...(source.notes ?? []).map((n) => n.step),
+    ...(drumSource ? [srcA] : []),
+  );
   const origin = opts.origin ?? (Number.isFinite(first) ? first : 0);
   const shift = Math.max(0, at) - origin;
-  const clips = (source.clips ?? []).map(c => ({ ...structuredClone(c), id: uid(), start: (c.start ?? 0) + shift }));
+  const clips = (source.clips ?? []).map((c) => ({
+    ...structuredClone(c),
+    id: uid(),
+    start: (c.start ?? 0) + shift,
+  }));
   const sourceLength = opts.length ?? (drumSource ? srcB - srcA : source.steps);
-  const end = Math.max(at + sourceLength, ...clips.map(c => (c.start ?? 0) + clipSeconds(c) / stepDuration), ...(source.notes ?? []).map(n => n.step + shift + n.length));
-  const notes = (source.notes ?? []).map(n => ({ ...n, id: uid(), step: n.step + shift, recordedEnd: n.recordedEnd !== undefined ? n.recordedEnd + shift : end }));
+  const end = Math.max(
+    at + sourceLength,
+    ...clips.map((c) => (c.start ?? 0) + clipSeconds(c) / stepDuration),
+    ...(source.notes ?? []).map((n) => n.step + shift + n.length),
+  );
+  const notes = (source.notes ?? []).map((n) => ({
+    ...n,
+    id: uid(),
+    step: n.step + shift,
+    recordedEnd: n.recordedEnd !== undefined ? n.recordedEnd + shift : end,
+  }));
   let steps = Math.max(target.steps, Math.ceil(end));
   // A repeating synth pattern loops every `steps`. Growing that length would make it repeat at a new,
   // off-bar spot (bars 2-4 go quiet, bar 6 replays bar 1), so it is first written out as it was
   // shown, and the loop length stays a whole number of bars.
   let kept = target.notes ?? [];
-  if (notes.length && kept.some(n => n.recordedEnd == null)) {
+  if (notes.length && kept.some((n) => n.recordedEnd == null)) {
     const shown = Math.max(target.steps, opts.shownEnd ?? target.steps);
     const spb = stepsPerBar();
     steps = Math.ceil(Math.max(steps, shown) / spb) * spb;
@@ -100,31 +140,63 @@ export function pasteTrackContent(target: Track, source: Track, at: number, step
   const shownDrums = region ? undefined : opts.shownEnd;
   const pads = target.pads?.map((pad, i) => {
     const values = Array.from({ length: steps }, (_, s) =>
-      (region && (s < region[0] || s >= region[1])) || (shownDrums != null && s >= Math.max(shownDrums, pad.steps.length))
-        ? 0 : pad.steps[s % Math.max(1, pad.steps.length)] ?? 0);
+      (region && (s < region[0] || s >= region[1])) ||
+      (shownDrums != null && s >= Math.max(shownDrums, pad.steps.length))
+        ? 0
+        : (pad.steps[s % Math.max(1, pad.steps.length)] ?? 0),
+    );
     const src = source.pads?.[i]?.steps ?? [];
     // The timeline tiles a short pattern across its part, so copy the tiled hits: the copy is as long as the part you see.
-    for (let s = srcA; s < srcB; s++) { const v = src[s % Math.max(1, src.length)] ?? 0; if (v > 0) values[start + s - srcA] = v; }
+    for (let s = srcA; s < srcB; s++) {
+      const v = src[s % Math.max(1, src.length)] ?? 0;
+      if (v > 0) values[start + s - srcA] = v;
+    }
     return { ...pad, steps: values };
   });
   const pastedDrums = !!pads && drumSource;
   const patternRegion: [number, number] | undefined = pastedDrums
-    ? [region ? Math.min(region[0], start) : 0, Math.max(region?.[1] ?? shownDrums ?? 0, start + sourceLength)]
+    ? [
+        region ? Math.min(region[0], start) : 0,
+        Math.max(region?.[1] ?? shownDrums ?? 0, start + sourceLength),
+      ]
     : target.patternRegion;
   // Like a pasted synth take, a pasted beat is its own part: cut marks at both edges separate it.
   // Cut marks inside the copied span come along too, so 1-, 2- or 4-bar blocks paste as the same
   // separate blocks instead of merging into one long part.
-  const innerCuts = (from: number, to: number) => (source.cuts ?? []).filter(c => c > from + 0.001 && c < from + sourceLength - 0.001).map(c => c - from + to);
-  const noteBlocks = !pastedDrums && notes.length > 0 && opts.length != null ? innerCuts(origin, at) : [];
+  const innerCuts = (from: number, to: number) =>
+    (source.cuts ?? [])
+      .filter((c) => c > from + 0.001 && c < from + sourceLength - 0.001)
+      .map((c) => c - from + to);
+  const noteBlocks =
+    !pastedDrums && notes.length > 0 && opts.length != null ? innerCuts(origin, at) : [];
   const cuts = pastedDrums
-    // The pasted beat replaces the bars it covers, so the target's old cut marks inside it go too.
-    ? [...new Set([...(target.cuts ?? []).filter(c => c <= start || c >= start + sourceLength), start, start + sourceLength, ...innerCuts(srcA, start)])].sort((a, b) => a - b)
+    ? // The pasted beat replaces the bars it covers, so the target's old cut marks inside it go too.
+      [
+        ...new Set([
+          ...(target.cuts ?? []).filter((c) => c <= start || c >= start + sourceLength),
+          start,
+          start + sourceLength,
+          ...innerCuts(srcA, start),
+        ]),
+      ].sort((a, b) => a - b)
     : noteBlocks.length
-      ? [...new Set([...(target.cuts ?? []), at, at + sourceLength, ...noteBlocks])].filter(c => c > 0).sort((a, b) => a - b)
+      ? [...new Set([...(target.cuts ?? []), at, at + sourceLength, ...noteBlocks])]
+          .filter((c) => c > 0)
+          .sort((a, b) => a - b)
       : target.cuts;
-  return { ...target, steps, notes: [...kept, ...notes], clips: [...(target.clips ?? []), ...clips], pads, patternRegion, cuts,
+  return {
+    ...target,
+    steps,
+    notes: [...kept, ...notes],
+    clips: [...(target.clips ?? []), ...clips],
+    pads,
+    patternRegion,
+    cuts,
     activeClipId: clips[0]?.id ?? target.activeClipId,
-    ...(clips.length && ['instrument', 'midi', 'drum', 'sampler'].includes(target.kind) ? { printedAudio: true } : {}) };
+    ...(clips.length && ["instrument", "midi", "drum", "sampler"].includes(target.kind)
+      ? { printedAudio: true }
+      : {}),
+  };
 }
 
 /**
@@ -133,13 +205,20 @@ export function pasteTrackContent(target: Track, source: Track, at: number, step
  * draws and keeps each note's place in the bar. Returns null when every note is already a recorded
  * (absolute) take, which copies as-is.
  */
-export function noteCopy(track: Track, shown: [number, number]): { notes: MidiNote[]; span: [number, number] } | null {
+export function noteCopy(
+  track: Track,
+  shown: [number, number],
+): { notes: MidiNote[]; span: [number, number] } | null {
   const notes = track.notes ?? [];
-  if (!notes.some(n => n.recordedEnd == null)) return null;
+  if (!notes.some((n) => n.recordedEnd == null)) return null;
   const span = drumCopySpan(track, shown);
   const inside = unrollNotes(notes, track.steps || span[1], span[1])
-    .filter(n => n.step >= span[0] - 0.001 && n.step < span[1] - 0.001)
-    .map(n => ({ ...n, length: Math.min(n.length, span[1] - n.step), recordedEnd: n.recordedEnd ?? span[1] }));
+    .filter((n) => n.step >= span[0] - 0.001 && n.step < span[1] - 0.001)
+    .map((n) => ({
+      ...n,
+      length: Math.min(n.length, span[1] - n.step),
+      recordedEnd: n.recordedEnd ?? span[1],
+    }));
   return { notes: inside, span };
 }
 
@@ -148,23 +227,41 @@ export function noteCopy(track: Track, shown: [number, number]): { notes: MidiNo
  * Beats narrow to the span (their cut marks stay, so each block pastes as its own block), note
  * patterns are written out inside it, and audio blocks outside it are left behind.
  */
-export function copyPartSpan(track: Track, span: [number, number], stepDuration: number): { track: Track; span: [number, number] } {
+export function copyPartSpan(
+  track: Track,
+  span: [number, number],
+  stepDuration: number,
+): { track: Track; span: [number, number] } {
   const lo = track.patternRegion ? Math.max(span[0], track.patternRegion[0]) : span[0];
   const hi = track.patternRegion ? Math.min(span[1], track.patternRegion[1]) : span[1];
-  const part: [number, number] = hasHits(track) ? tidyDrumSpan(track, [lo, Math.max(lo, hi)]) : [lo, Math.max(lo, hi)];
+  const part: [number, number] = hasHits(track)
+    ? tidyDrumSpan(track, [lo, Math.max(lo, hi)])
+    : [lo, Math.max(lo, hi)];
   const notes = track.notes?.length
     ? unrollNotes(track.notes, track.steps || part[1], part[1])
-      .filter(n => n.step >= part[0] - 0.001 && n.step < part[1] - 0.001)
-      .map(n => ({ ...n, length: Math.min(n.length, part[1] - n.step), recordedEnd: Math.min(n.recordedEnd ?? part[1], part[1]) }))
+        .filter((n) => n.step >= part[0] - 0.001 && n.step < part[1] - 0.001)
+        .map((n) => ({
+          ...n,
+          length: Math.min(n.length, part[1] - n.step),
+          recordedEnd: Math.min(n.recordedEnd ?? part[1], part[1]),
+        }))
     : track.notes;
-  const clips = track.clips?.filter(c => {
-    const a = c.start ?? 0, b = a + clipSeconds(c) / stepDuration;
+  const clips = track.clips?.filter((c) => {
+    const a = c.start ?? 0,
+      b = a + clipSeconds(c) / stepDuration;
     return a < part[1] - 0.001 && b > part[0] + 0.001;
   });
   return {
-    track: { ...track, notes, clips, activeClipId: clips?.some(c => c.id === track.activeClipId) ? track.activeClipId : clips?.[0]?.id,
-      cuts: track.cuts?.filter(c => c > part[0] && c < part[1]),
-      ...(hasHits(track) ? { patternRegion: part } : {}) },
+    track: {
+      ...track,
+      notes,
+      clips,
+      activeClipId: clips?.some((c) => c.id === track.activeClipId)
+        ? track.activeClipId
+        : clips?.[0]?.id,
+      cuts: track.cuts?.filter((c) => c > part[0] && c < part[1]),
+      ...(hasHits(track) ? { patternRegion: part } : {}),
+    },
     span: part,
   };
 }
@@ -176,9 +273,17 @@ export function copyPartSpan(track: Track, span: [number, number], stepDuration:
 export function materialEnd(track: Track, stepDuration: number, shownEnd?: number): number {
   // A printed drum track shows and plays its audio clips, so its end is the last clip, not the looping pattern.
   const printed = !!track.printedAudio && !!track.clips?.length;
-  const drums = track.kind === 'drum' && hasHits(track) && !printed;
-  const base = drums ? (track.patternRegion?.[1] ?? shownEnd ?? track.steps) : printed ? 0 : track.steps;
-  return Math.max(base, ...(track.notes ?? []).map(n => n.step + n.length), ...(track.clips ?? []).map(c => (c.start ?? 0) + clipSeconds(c) / stepDuration));
+  const drums = track.kind === "drum" && hasHits(track) && !printed;
+  const base = drums
+    ? (track.patternRegion?.[1] ?? shownEnd ?? track.steps)
+    : printed
+      ? 0
+      : track.steps;
+  return Math.max(
+    base,
+    ...(track.notes ?? []).map((n) => n.step + n.length),
+    ...(track.clips ?? []).map((c) => (c.start ?? 0) + clipSeconds(c) / stepDuration),
+  );
 }
 
 /**
@@ -190,27 +295,36 @@ export function materialEnd(track: Track, stepDuration: number, shownEnd?: numbe
 export function pasteEndStep(track: Track, stepDuration: number, shownEnd?: number): number {
   const printed = !!track.printedAudio && !!track.clips?.length;
   let end = 0;
-  if (track.kind === 'drum' && hasHits(track) && !printed) {
+  if (track.kind === "drum" && hasHits(track) && !printed) {
     const region = track.patternRegion;
     if (!region) end = shownEnd ?? track.steps;
     else {
       let last = -1;
       for (const pad of track.pads ?? []) {
         const len = Math.max(1, pad.steps.length);
-        for (let s = Math.ceil(region[1]) - 1; s >= region[0] && s > last; s--) if ((pad.steps[s % len] ?? 0) > 0) { last = s; break; }
+        for (let s = Math.ceil(region[1]) - 1; s >= region[0] && s > last; s--)
+          if ((pad.steps[s % len] ?? 0) > 0) {
+            last = s;
+            break;
+          }
       }
       // The part holding the last hit ends at the next cut mark (or the beat's end).
-      const partEnd = last < 0 ? region[0] : Math.min(region[1], ...(track.cuts ?? []).filter(c => c > last + 0.001));
-      const partStart = Math.max(region[0], ...(track.cuts ?? []).filter(c => c <= last + 0.001));
+      const partEnd =
+        last < 0
+          ? region[0]
+          : Math.min(region[1], ...(track.cuts ?? []).filter((c) => c > last + 0.001));
+      const partStart = Math.max(region[0], ...(track.cuts ?? []).filter((c) => c <= last + 0.001));
       end = last < 0 ? partEnd : tidyDrumSpan(track, [partStart, partEnd])[1];
     }
-  } else if (!printed && track.notes?.some(n => n.recordedEnd == null)) {
+  } else if (!printed && track.notes?.some((n) => n.recordedEnd == null)) {
     // A repeating pattern ends at its loop length; once cut into parts its notes sit where they play.
     end = track.cuts?.length ? 0 : track.steps;
   }
-  end = Math.max(end,
-    ...(track.notes ?? []).map(n => n.step + n.length),
-    ...(track.clips ?? []).map(c => (c.start ?? 0) + clipSeconds(c) / stepDuration));
+  end = Math.max(
+    end,
+    ...(track.notes ?? []).map((n) => n.step + n.length),
+    ...(track.clips ?? []).map((c) => (c.start ?? 0) + clipSeconds(c) / stepDuration),
+  );
   return Math.max(0, Math.ceil(end - 0.02));
 }
 
@@ -226,14 +340,32 @@ export function pasteEndSteps(origins: number[], ends: number[]): number[] {
 }
 
 /** Reveal source audio when available; beyond the source end, stretch the selected audio. */
-export function rightEdgeEdit(clip: AudioClip, deltaSeconds: number, barSeconds: number, fine: boolean, alwaysStretch = false) {
+export function rightEdgeEdit(
+  clip: AudioClip,
+  deltaSeconds: number,
+  barSeconds: number,
+  fine: boolean,
+  alwaysStretch = false,
+) {
   const current = clipSeconds(clip);
   const raw = current + deltaSeconds;
-  const seconds = Math.max(0.05, fine ? raw : Math.max(barSeconds, Math.round(raw / barSeconds) * barSeconds));
+  const seconds = Math.max(
+    0.05,
+    fine ? raw : Math.max(barSeconds, Math.round(raw / barSeconds) * barSeconds),
+  );
   const available = (clip.duration - (clip.offset ?? 0)) / clipRate(clip);
   // Drum blocks stretch their audio to whatever length the block is dragged to.
-  if (alwaysStretch) return { seconds, length: clip.length ?? clip.duration, stretch: Math.abs(seconds - current) > 0.001 ? seconds / current : null };
-  return { seconds, length: Math.min(clip.duration - (clip.offset ?? 0), seconds * clipRate(clip)), stretch: seconds > available + 0.001 ? seconds / current : null };
+  if (alwaysStretch)
+    return {
+      seconds,
+      length: clip.length ?? clip.duration,
+      stretch: Math.abs(seconds - current) > 0.001 ? seconds / current : null,
+    };
+  return {
+    seconds,
+    length: Math.min(clip.duration - (clip.offset ?? 0), seconds * clipRate(clip)),
+    stretch: seconds > available + 0.001 ? seconds / current : null,
+  };
 }
 /**
  * Move one drum part [a, b) so it starts at `to`, like dragging a synth take.
@@ -246,27 +378,42 @@ export function moveDrumPart(track: Track, a: number, b: number, to: number): Pa
   const region = track.patternRegion;
   const padLen = Math.max(1, track.pads?.[0]?.steps.length ?? track.steps);
   const steps = Math.max(track.steps, padLen, dest + len);
-  const pads = track.pads?.map(pad => {
+  const pads = track.pads?.map((pad) => {
     const plen = Math.max(1, pad.steps.length);
-    const values = Array.from({ length: steps }, (_, s) => region && (s < region[0] || s >= region[1]) ? 0 : pad.steps[s % plen] ?? 0);
+    const values = Array.from({ length: steps }, (_, s) =>
+      region && (s < region[0] || s >= region[1]) ? 0 : (pad.steps[s % plen] ?? 0),
+    );
     const part = values.slice(from, from + len);
     for (let s = from; s < from + len; s++) values[s] = 0;
     for (let i = 0; i < len; i++) values[dest + i] = part[i] ?? 0;
     return { ...pad, steps: values };
   });
-  const lo = Math.min(region?.[0] ?? 0, dest), hi = Math.max(region?.[1] ?? padLen, dest + len);
-  const cuts = [...new Set([...(track.cuts ?? []).filter(c => c <= dest || c >= dest + len), from, from + len, dest, dest + len])].sort((x, y) => x - y);
+  const lo = Math.min(region?.[0] ?? 0, dest),
+    hi = Math.max(region?.[1] ?? padLen, dest + len);
+  const cuts = [
+    ...new Set([
+      ...(track.cuts ?? []).filter((c) => c <= dest || c >= dest + len),
+      from,
+      from + len,
+      dest,
+      dest + len,
+    ]),
+  ].sort((x, y) => x - y);
   return { pads, steps, cuts, patternRegion: [lo, hi], activeRegion: dest };
 }
 
 /** The part of a drum track a copy should take: the selected part between cut marks, else what the timeline shows. */
 export function drumCopySpan(track: Track, shown: [number, number]): [number, number] {
   const bounds = track.patternRegion ?? shown;
-  const cuts = (track.cuts ?? []).filter(c => c > bounds[0] && c < bounds[1]).sort((a, b) => a - b);
+  const cuts = (track.cuts ?? [])
+    .filter((c) => c > bounds[0] && c < bounds[1])
+    .sort((a, b) => a - b);
   const edges = [bounds[0], ...cuts, bounds[1]];
   const at = track.activeRegion;
   if (at != null && cuts.length) {
-    for (let i = 0; i < edges.length - 1; i++) if (at >= edges[i]! - 0.001 && at < edges[i + 1]! - 0.001) return tidyDrumSpan(track, [edges[i]!, edges[i + 1]!]);
+    for (let i = 0; i < edges.length - 1; i++)
+      if (at >= edges[i]! - 0.001 && at < edges[i + 1]! - 0.001)
+        return tidyDrumSpan(track, [edges[i]!, edges[i + 1]!]);
   }
   return tidyDrumSpan(track, bounds);
 }
@@ -275,7 +422,12 @@ export function drumCopySpan(track: Track, shown: [number, number]): [number, nu
  * Stretch one drum part [a, b) to `newLength` steps, like stretching audio: every hit keeps its
  * relative position in the part. Hits outside the part stay where they are.
  */
-export function stretchDrumPart(track: Track, a: number, b: number, newLength: number): Partial<Track> {
+export function stretchDrumPart(
+  track: Track,
+  a: number,
+  b: number,
+  newLength: number,
+): Partial<Track> {
   const from = Math.round(a);
   const len = Math.max(1, Math.round(b - a));
   const next = Math.max(1, Math.round(newLength));
@@ -283,9 +435,11 @@ export function stretchDrumPart(track: Track, a: number, b: number, newLength: n
   const padLen = Math.max(1, track.pads?.[0]?.steps.length ?? track.steps);
   const steps = Math.max(track.steps, padLen, from + next, from + len);
   const factor = next / len;
-  const pads = track.pads?.map(pad => {
+  const pads = track.pads?.map((pad) => {
     const plen = Math.max(1, pad.steps.length);
-    const values = Array.from({ length: steps }, (_, s) => region && (s < region[0] || s >= region[1]) ? 0 : pad.steps[s % plen] ?? 0);
+    const values = Array.from({ length: steps }, (_, s) =>
+      region && (s < region[0] || s >= region[1]) ? 0 : (pad.steps[s % plen] ?? 0),
+    );
     const part = values.slice(from, from + len);
     for (let s = from; s < from + Math.max(len, next); s++) values[s] = 0;
     part.forEach((v, i) => {
@@ -295,8 +449,15 @@ export function stretchDrumPart(track: Track, a: number, b: number, newLength: n
     });
     return { ...pad, steps: values };
   });
-  const lo = Math.min(region?.[0] ?? 0, from), hi = Math.max(region?.[1] ?? padLen, from + next);
-  const cuts = [...new Set([...(track.cuts ?? []).filter(c => c <= from || c >= from + Math.max(len, next)), from, from + next])].sort((x, y) => x - y);
+  const lo = Math.min(region?.[0] ?? 0, from),
+    hi = Math.max(region?.[1] ?? padLen, from + next);
+  const cuts = [
+    ...new Set([
+      ...(track.cuts ?? []).filter((c) => c <= from || c >= from + Math.max(len, next)),
+      from,
+      from + next,
+    ]),
+  ].sort((x, y) => x - y);
   return { pads, steps, cuts, patternRegion: [lo, hi], activeRegion: from };
 }
 
@@ -304,31 +465,51 @@ export function stretchDrumPart(track: Track, a: number, b: number, newLength: n
  * Trim or extend one drum part [a, b) to [newA, newB): hits inside the new edges stay where they
  * are, hits trimmed off are removed (Undo brings them back). It never grows into a neighbouring part.
  */
-export function trimDrumPart(track: Track, a: number, b: number, newA: number, newB: number): Partial<Track> {
+export function trimDrumPart(
+  track: Track,
+  a: number,
+  b: number,
+  newA: number,
+  newB: number,
+): Partial<Track> {
   const from = Math.max(0, Math.round(Math.min(newA, b - 1)));
   const to = Math.max(from + 1, Math.round(newB));
-  const lo0 = Math.round(a), hi0 = Math.round(b);
+  const lo0 = Math.round(a),
+    hi0 = Math.round(b);
   const region = track.patternRegion;
   const padLen = Math.max(1, track.pads?.[0]?.steps.length ?? track.steps);
   const steps = Math.max(track.steps, padLen, to, hi0);
-  const pads = track.pads?.map(pad => {
+  const pads = track.pads?.map((pad) => {
     const plen = Math.max(1, pad.steps.length);
-    const values = Array.from({ length: steps }, (_, s) => region && (s < region[0] || s >= region[1]) ? 0 : pad.steps[s % plen] ?? 0);
+    const values = Array.from({ length: steps }, (_, s) =>
+      region && (s < region[0] || s >= region[1]) ? 0 : (pad.steps[s % plen] ?? 0),
+    );
     for (let s = lo0; s < hi0; s++) if (s < from || s >= to) values[s] = 0;
     return { ...pad, steps: values };
   });
-  const lo = Math.min(region?.[0] ?? 0, from), hi = Math.max(region?.[1] ?? padLen, to);
-  const keep = [lo0, hi0].filter(c => c < from || c > to);
-  const cuts = [...new Set([...(track.cuts ?? []).filter(c => c <= from || c >= to), ...keep, from, to])].sort((x, y) => x - y);
+  const lo = Math.min(region?.[0] ?? 0, from),
+    hi = Math.max(region?.[1] ?? padLen, to);
+  const keep = [lo0, hi0].filter((c) => c < from || c > to);
+  const cuts = [
+    ...new Set([...(track.cuts ?? []).filter((c) => c <= from || c >= to), ...keep, from, to]),
+  ].sort((x, y) => x - y);
   return { pads, steps, cuts, patternRegion: [lo, hi], activeRegion: from };
 }
 
 /** Free steps around drum part [a, b): from the nearest part with hits on the left to the nearest on the right. */
-export function drumPartRoom(track: Track, parts: [number, number][], a: number, b: number, total: number): [number, number] {
-  let lo = 0, hi = total;
+export function drumPartRoom(
+  track: Track,
+  parts: [number, number][],
+  a: number,
+  b: number,
+  total: number,
+): [number, number] {
+  let lo = 0,
+    hi = total;
   for (const [x, y] of parts) {
     if (x === a && y === b) continue;
-    if (!track.pads?.some(p => p.steps.slice(Math.floor(x), Math.ceil(y)).some(v => v > 0))) continue;
+    if (!track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)))
+      continue;
     if (y <= a) lo = Math.max(lo, y);
     if (x >= b) hi = Math.min(hi, x);
   }

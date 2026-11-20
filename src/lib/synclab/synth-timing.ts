@@ -17,7 +17,8 @@ export function lfoHz(lfo: { rate: number; sync?: boolean | undefined }, bpm: nu
   const beatHz = Math.max(20, bpm || 120) / 60;
   const wanted = rate / beatHz;
   let best: number = LFO_SYNC_DIVISIONS[0];
-  for (const d of LFO_SYNC_DIVISIONS) if (Math.abs(Math.log(d / wanted)) < Math.abs(Math.log(best / wanted))) best = d;
+  for (const d of LFO_SYNC_DIVISIONS)
+    if (Math.abs(Math.log(d / wanted)) < Math.abs(Math.log(best / wanted))) best = d;
   return best * beatHz;
 }
 
@@ -25,7 +26,10 @@ export function lfoHz(lfo: { rate: number; sync?: boolean | undefined }, bpm: nu
 export const FREE_ARP_STEP_SECONDS = 60 / 120 / 4;
 
 /** Time between arp notes: follows the song with TEMPO SYNC on, a fixed 120 BPM clock when off. */
-export function arpStepSeconds(arp: { rate: number; sync?: boolean | undefined }, songStepSeconds: number): number {
+export function arpStepSeconds(
+  arp: { rate: number; sync?: boolean | undefined },
+  songStepSeconds: number,
+): number {
   const rate = Math.max(0.25, arp.rate || 1);
   return ((arp.sync ?? true) ? songStepSeconds : FREE_ARP_STEP_SECONDS) / rate;
 }

@@ -19,12 +19,22 @@ function peak(data: Float32Array) {
 }
 
 /** Returns which side was copied ("left" means the left side now fills both), or null. */
-export function centerOneSided(buffer: { numberOfChannels: number; getChannelData(c: number): Float32Array }): "left" | "right" | null {
+export function centerOneSided(buffer: {
+  numberOfChannels: number;
+  getChannelData(c: number): Float32Array;
+}): "left" | "right" | null {
   if (buffer.numberOfChannels !== 2) return null;
   const l = buffer.getChannelData(0);
   const r = buffer.getChannelData(1);
-  const pl = peak(l), pr = peak(r);
-  if (pl >= SOUNDING && pr < SILENT) { r.set(l); return "left"; }
-  if (pr >= SOUNDING && pl < SILENT) { l.set(r); return "right"; }
+  const pl = peak(l),
+    pr = peak(r);
+  if (pl >= SOUNDING && pr < SILENT) {
+    r.set(l);
+    return "left";
+  }
+  if (pr >= SOUNDING && pl < SILENT) {
+    l.set(r);
+    return "right";
+  }
   return null;
 }

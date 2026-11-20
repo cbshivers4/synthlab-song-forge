@@ -14,17 +14,23 @@ export function useTrackEq(t: Track) {
   const { updateTrack, setPluginParam, installedPlugins } = useStudio();
   const pendingEq = useRef<PluginInstance | null>(null);
   const eq = (t.plugins ?? []).find((p) => p.kind === "eq") ?? pendingEq.current;
-  useEffect(() => { pendingEq.current = null; }, [t.plugins]);
+  useEffect(() => {
+    pendingEq.current = null;
+  }, [t.plugins]);
   const setBand = (id: string, value: number) => {
     const current = eq ?? pendingEq.current;
     if (current) {
       setPluginParam(t.id, current.id, id, value);
       return;
     }
-    const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+    const def =
+      installedPlugins.find((d) => d.kind === "eq") ??
+      BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
     if (!def) return;
     const instance = instantiate(def);
-    instance.params = instance.params.map((param) => param.id === id ? { ...param, value } : param);
+    instance.params = instance.params.map((param) =>
+      param.id === id ? { ...param, value } : param,
+    );
     pendingEq.current = instance;
     updateTrack(t.id, { plugins: [...(t.plugins ?? []), instance] });
   };
@@ -35,23 +41,51 @@ export function useTrackEq(t: Track) {
 /** Always-visible 3-band channel EQ. Creates a real Channel EQ insert on first use. */
 export function ChannelEq({ t }: { t: Track }) {
   const { eq, setBand } = useTrackEq(t);
-  const bands = [["high", "High"], ["mid", "Mid"], ["low", "Low"]] as const;
+  const bands = [
+    ["high", "High"],
+    ["mid", "Mid"],
+    ["low", "Low"],
+  ] as const;
   return (
     <div
-      className={cn(ROW.eq, "mx-channel-eq flex flex-col gap-1 border-b border-border/60 px-1.5 py-1")}
+      className={cn(
+        ROW.eq,
+        "mx-channel-eq flex flex-col gap-1 border-b border-border/60 px-1.5 py-1",
+      )}
       style={{ "--primary": t.color } as CSSProperties}
       onClick={(e) => e.stopPropagation()}
     >
       <div className="mx-eq-knobs grid w-full grid-cols-3 gap-1">
-        {bands.map(([id, label]) => <Knob key={id} label={label} value={eq?.params.find((param) => param.id === id)?.value ?? 0} min={-18} max={18} step={0.5} unit=" dB" size={32} onChange={(value) => setBand(id, value)} />)}
+        {bands.map(([id, label]) => (
+          <Knob
+            key={id}
+            label={label}
+            value={eq?.params.find((param) => param.id === id)?.value ?? 0}
+            min={-18}
+            max={18}
+            step={0.5}
+            unit=" dB"
+            size={32}
+            onChange={(value) => setBand(id, value)}
+          />
+        ))}
       </div>
       <div className="mx-eq-curve h-10 w-full shrink-0">
         <EqCurve
           scopeId={`ch:${t.id}`}
-          bands={["low", "mid", "high"].map((id) => eq?.params.find((p) => p.id === id)?.value ?? 0) as [number, number, number]}
+          bands={
+            ["low", "mid", "high"].map((id) => eq?.params.find((p) => p.id === id)?.value ?? 0) as [
+              number,
+              number,
+              number,
+            ]
+          }
           color={t.color}
           bypass={!!eq?.bypass}
-          onBand={(i, value) => { const id = ["low", "mid", "high"][i]; if (id) setBand(id, value); }}
+          onBand={(i, value) => {
+            const id = ["low", "mid", "high"][i];
+            if (id) setBand(id, value);
+          }}
         />
       </div>
     </div>
@@ -136,7 +170,11 @@ export function EqCurve({
     } catch {
       /* synthetic pointers */
     }
-    dragRef.current = { band, startY: canvasPoint(e.clientX, e.clientY).y, startGain: (bandGain[band] ?? 0) };
+    dragRef.current = {
+      band,
+      startY: canvasPoint(e.clientX, e.clientY).y,
+      startGain: bandGain[band] ?? 0,
+    };
     setActiveBand(band);
   };
   const onPointerMove = (e: React.PointerEvent) => {
@@ -144,7 +182,14 @@ export function EqCurve({
     if (!d || !svgRef.current) return;
     const pxPerDb = (canvasRect(svgRef.current).height - PAD * 2 * 2) / 36;
     const fine = e.shiftKey ? 0.2 : 1;
-    const next = Math.max(-18, Math.min(18, d.startGain - ((canvasPoint(e.clientX, e.clientY).y - d.startY) / Math.max(2, pxPerDb)) * fine));
+    const next = Math.max(
+      -18,
+      Math.min(
+        18,
+        d.startGain -
+          ((canvasPoint(e.clientX, e.clientY).y - d.startY) / Math.max(2, pxPerDb)) * fine,
+      ),
+    );
     onBand(d.band, Math.round(next * 2) / 2);
   };
   const endDrag = () => {
@@ -157,17 +202,49 @@ export function EqCurve({
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        className={cn("w-full flex-1 rounded-sm border border-border/60 signal-screen", bypass && "opacity-40")}
+        className={cn(
+          "w-full flex-1 rounded-sm border border-border/60 signal-screen",
+          bypass && "opacity-40",
+        )}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
         {/* grid: 0 dB line + ±12 dB hints */}
-        <line x1="0" y1={yOf(0)} x2={W} y2={yOf(0)} stroke="rgba(255,255,255,0.25)" strokeWidth="0.4" />
-        <line x1="0" y1={yOf(12)} x2={W} y2={yOf(12)} stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
-        <line x1="0" y1={yOf(-12)} x2={W} y2={yOf(-12)} stroke="rgba(255,255,255,0.08)" strokeWidth="0.3" />
+        <line
+          x1="0"
+          y1={yOf(0)}
+          x2={W}
+          y2={yOf(0)}
+          stroke="rgba(255,255,255,0.25)"
+          strokeWidth="0.4"
+        />
+        <line
+          x1="0"
+          y1={yOf(12)}
+          x2={W}
+          y2={yOf(12)}
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth="0.3"
+        />
+        <line
+          x1="0"
+          y1={yOf(-12)}
+          x2={W}
+          y2={yOf(-12)}
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth="0.3"
+        />
         {[25, 50, 75].map((x) => (
-          <line key={x} x1={x} y1={PAD} x2={x} y2={H - PAD} stroke="rgba(255,255,255,0.06)" strokeWidth="0.3" />
+          <line
+            key={x}
+            x1={x}
+            y1={PAD}
+            x2={x}
+            y2={H - PAD}
+            stroke="rgba(255,255,255,0.06)"
+            strokeWidth="0.3"
+          />
         ))}
         <path
           ref={waveRef}
@@ -180,12 +257,19 @@ export function EqCurve({
           style={{ color }}
         />
         <path d={areaPath} fill={color} opacity={0.16} />
-        <path d={path} fill="none" stroke={color} strokeWidth={1.1} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        <path
+          d={path}
+          fill="none"
+          stroke={color}
+          strokeWidth={1.1}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
         {bandX.map((bx, i) => (
           <circle
             key={i}
             cx={bx}
-            cy={xOf((bandGain[i] ?? 0))}
+            cy={xOf(bandGain[i] ?? 0)}
             r={activeBand === i ? 3.4 : 2.6}
             fill="var(--display-point)"
             stroke="var(--display-black)"
@@ -198,8 +282,14 @@ export function EqCurve({
       </svg>
       <div className="flex items-center justify-between font-mono text-[7px]">
         {bandGain.map((g, i) => (
-          <span key={i} className={cn(activeBand === i ? "text-foreground" : "text-muted-foreground")}>
-            {bandLabel[i]} <span style={{ color: g !== 0 ? color : undefined }}>{g > 0 ? `+${g.toFixed(0)}` : g.toFixed(0)}</span>
+          <span
+            key={i}
+            className={cn(activeBand === i ? "text-foreground" : "text-muted-foreground")}
+          >
+            {bandLabel[i]}{" "}
+            <span style={{ color: g !== 0 ? color : undefined }}>
+              {g > 0 ? `+${g.toFixed(0)}` : g.toFixed(0)}
+            </span>
           </span>
         ))}
       </div>

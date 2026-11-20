@@ -39,7 +39,9 @@ export type Article = {
 export const KNOWLEDGE_BASE: Article[] = [
   // ───────────── Getting started ─────────────
   {
-    id: "workspace", category: "Getting started", title: "The start screen and workspace",
+    id: "workspace",
+    category: "Getting started",
+    title: "The start screen and workspace",
     tags: "start welcome workspace templates recent cloud open new project",
     body: [
       "The start screen lists your cloud projects, projects opened on this device, starter templates and your own saved templates.",
@@ -58,7 +60,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "projects", category: "Getting started", title: "Saving projects and undo",
+    id: "projects",
+    category: "Getting started",
+    title: "Saving projects and undo",
     tags: "save manual save recovery cloud recent rename undo redo close",
     body: [
       "Save with File → Save or Ctrl/Cmd+S. Saved projects appear in your cloud projects and in Recent.",
@@ -76,16 +80,15 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "shortcuts", category: "Getting started", title: "Keyboard shortcuts and computer keys",
+    id: "shortcuts",
+    category: "Getting started",
+    title: "Keyboard shortcuts and computer keys",
     tags: "shortcuts keyboard space play stop qwerty computer keys typing",
     body: [
       "Space plays and stops. Help → Keyboard shortcuts lists and changes the rest.",
       "Your computer's letter keys play the armed or selected instrument like a piano, and they record when you record.",
     ],
-    can: [
-      "Play and record notes from your computer keyboard.",
-      "Change shortcuts in Settings.",
-    ],
+    can: ["Play and record notes from your computer keyboard.", "Change shortcuts in Settings."],
     cant: [
       "Shortcuts pause while you type in a text box, so typing a name never triggers them.",
       "Computer keys are not velocity-sensitive — every note plays at the same level.",
@@ -94,7 +97,9 @@ export const KNOWLEDGE_BASE: Article[] = [
 
   // ───────────── Recording ─────────────
   {
-    id: "recording", category: "Recording", title: "Recording audio and vocals",
+    id: "recording",
+    category: "Recording",
+    title: "Recording audio and vocals",
     tags: "recording microphone vocals input monitor arm punch take count-in overdub replace",
     body: [
       "Add an audio track and press ARM. SYNCLAB opens your microphone so you can see the input level before you record. New tracks you add are armed for you.",
@@ -119,7 +124,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "mic", category: "Recording", title: "My microphone or audio interface is not detected",
+    id: "mic",
+    category: "Recording",
+    title: "My microphone or audio interface is not detected",
     tags: "mic microphone volt interface permission device audio input blocked",
     body: [
       "Open Settings → Audio and pick your input device. Interfaces appear once they are plugged in and the browser has permission.",
@@ -136,7 +143,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "interface-ipad", category: "Recording", title: "Audio interfaces on iPad and iPhone",
+    id: "interface-ipad",
+    category: "Recording",
+    title: "Audio interfaces on iPad and iPhone",
     tags: "ipad iphone ios ipados interface volt scarlett usb-c control centre input output routing powered hub webkit safari sample rate",
     body: [
       "iPadOS 17 and later recognise most USB-C audio interfaces without drivers. Open Settings → Audio, press Detect devices and allow the microphone.",
@@ -154,7 +163,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "reel", category: "Recording", title: "Reel-to-Reel Recorder",
+    id: "reel",
+    category: "Recording",
+    title: "Reel-to-Reel Recorder",
     tags: "reel tape recorder quicktime record capture export",
     body: [
       "Open Reel-to-Reel Recorder from PERFORM. Press record to capture your input or the studio, watch the reels and meters move, then export the tape as a file.",
@@ -171,7 +182,9 @@ export const KNOWLEDGE_BASE: Article[] = [
 
   // ───────────── Timeline & editing ─────────────
   {
-    id: "timeline", category: "Timeline & editing", title: "Timeline, tracks and loop markers",
+    id: "timeline",
+    category: "Timeline & editing",
+    title: "Timeline, tracks and loop markers",
     tags: "timeline loop markers tracks tap double tap menu zoom follow snap playhead",
     body: [
       "Tap a track once to open its menu. Double-tap a drum track to open the drum roll, or a synth track to open the piano roll.",
@@ -188,7 +201,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "clips", category: "Timeline & editing", title: "Cutting, moving and pasting clips",
+    id: "clips",
+    category: "Timeline & editing",
+    title: "Cutting, moving and pasting clips",
     tags: "clip cut razor split paste copy duplicate move fade quantize mono stereo trim extend",
     body: [
       "Use the cut tool to split a clip exactly where the guide line shows. Drag clips to move them to another time or track.",
@@ -213,7 +228,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "pianoroll", category: "Timeline & editing", title: "Piano roll and notes",
+    id: "pianoroll",
+    category: "Timeline & editing",
+    title: "Piano roll and notes",
     tags: "piano roll notes quantize grid snap draw select erase velocity humanize",
     body: [
       "Draw, Select and Erase modes sit above the grid. Drag notes to move them, drag the edge to resize, and use the lane below for velocity.",
@@ -229,7 +246,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "automation", category: "Timeline & editing", title: "Automation",
+    id: "automation",
+    category: "Timeline & editing",
+    title: "Automation",
     tags: "automation auto lanes write touch latch read volume pan send",
     body: [
       "Press AUTO on a track to show automation lanes for volume, pan, sends and device knobs.",
@@ -239,21 +258,25 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Automate faders, pan, sends, mutes and effect settings.",
       "Record mute/solo presses during a take and hear them played back.",
     ],
-    cant: [
-      "Live View performance effects are not recorded as automation and are not in exports.",
-    ],
+    cant: ["Live View performance effects are not recorded as automation and are not in exports."],
   },
   {
-    id: "notes", category: "Timeline & editing", title: "Project notes",
+    id: "notes",
+    category: "Timeline & editing",
+    title: "Project notes",
     tags: "notes notepad lyrics save",
-    body: ["Press NOTES at the top of any panel to write lyrics or reminders, then press Save on the note."],
+    body: [
+      "Press NOTES at the top of any panel to write lyrics or reminders, then press Save on the note.",
+    ],
     can: ["Keep written notes with your project."],
     cant: ["Notes are saved with the project, so they need a project save too."],
   },
 
   // ───────────── Synths & keys ─────────────
   {
-    id: "synths", category: "Synths & keys", title: "The five synths",
+    id: "synths",
+    category: "Synths & keys",
+    title: "The five synths",
     tags: "synth spec 4 acid bass poly modular granular presets preset browser categories sound type style favorites arpeggiator arp rhythm note pattern sequence chord piano grand rhodes wurlitzer electric piano xy tabs",
     body: [
       "Spec 4, Acid Bass (TD-3), Poly Synth, Modular Tech Synth and Granular Synth each have their own look and sound. Controls are grouped into tabs.",
@@ -284,7 +307,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "touch-synth", category: "Synths & keys", title: "Touch Synth",
+    id: "touch-synth",
+    category: "Synths & keys",
+    title: "Touch Synth",
     tags: "touch synth kaossilator ikaossilator loop sets genre pad gate arp hold scale range parts create my sets",
     body: [
       "Touch Synth works like a pocket loop synth: slide on the pad to play — left to right is pitch (always in your key and scale), bottom to top is tone. It has five parts, A Drums, B Bass, C Poly, D Melody and E Stabs/Arp, each with its own sound.",
@@ -303,7 +328,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "bass-generator", category: "Synths & keys", title: "Bass Generator",
+    id: "bass-generator",
+    category: "Synths & keys",
+    title: "Bass Generator",
     tags: "bass generator bassline player on-beat off-beat diamond variator minorness note range shuffle shift patterns patch send to",
     body: [
       "The Bassline Generator mixes two built-in phrase banks: ON-BEAT lines (green, notes on the 8th-note grid) and OFF-BEAT lines (blue, the 16ths in between). Drag the dot in the diamond, or the two PATTERN sliders, from sparse root notes up to busy melodic lines. Each lane has bank A or B, VELOCITY (all the way down turns it off), LENGTH, and a VARIATOR that swaps in other phrases during the cycle by AMOUNT.",
@@ -323,7 +350,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "live-keys", category: "Synths & keys", title: "Live Keys (virtual keyboard player)",
+    id: "live-keys",
+    category: "Synths & keys",
+    title: "Live Keys (virtual keyboard player)",
     tags: "live keys keyboardist piano jazz styles print chords",
     body: [
       "Choose one of 52 styles in seven groups (including Jazz), set the key and CHORDS, and press play. Preview it alone or with your song, then print it to the timeline.",
@@ -341,7 +370,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "vocoder", category: "Synths & keys", title: "Vocoder, voice synth and Convert Voice",
+    id: "vocoder",
+    category: "Synths & keys",
+    title: "Vocoder, voice synth and Convert Voice",
     tags: "vocoder robot carrier modulator formant voice convert pitch deeper chipmunk male female",
     body: [
       "Vocoder: choose a carrier (usually a synth) and a modulator (your voice); the synth takes the shape of your voice.",
@@ -358,7 +389,9 @@ export const KNOWLEDGE_BASE: Article[] = [
 
   // ───────────── Drums & beats ─────────────
   {
-    id: "drum-machine", category: "Drums & beats", title: "Drum Machine",
+    id: "drum-machine",
+    category: "Drums & beats",
+    title: "Drum Machine",
     tags: "drum machine drum roll pads banks patterns chain kit note repeat swing",
     body: [
       "Drum roll: tap a step to cycle ghost → normal → accent, drag to paint, right-click to clear. Tap a drum's name for its tools.",
@@ -376,7 +409,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "flam-roll-mutate", category: "Drums & beats", title: "Flam, Roll and Mutate",
+    id: "flam-roll-mutate",
+    category: "Drums & beats",
+    title: "Flam, Roll and Mutate",
     tags: "flam roll mutate drum fill double stroke retrig variation",
     body: [
       "Pick a drum in the drum roll, then use FLAM, ROLL or MUTATE in its tools row (or at the bottom of the Sound page).",
@@ -392,7 +427,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "live-drummer", category: "Drums & beats", title: "Live Drummer",
+    id: "live-drummer",
+    category: "Drums & beats",
+    title: "Live Drummer",
     tags: "live drummer genres rock jazz latin hip-hop electronic band kit print",
     body: [
       "Pick a genre — World & Latin, Band, Hip-hop & R&B, Electronic, Rock or Jazz — and a style. The drum set changes with the genre and each piece lights up as it plays.",
@@ -410,7 +447,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "hum-to-beat", category: "Drums & beats", title: "Hum to Beat",
+    id: "hum-to-beat",
+    category: "Drums & beats",
+    title: "Hum to Beat",
     tags: "hum beatbox melody voice to notes",
     body: [
       "Beatbox and SYNCLAB turns deep “boom” sounds into kicks, “pff/ka” into snares and “ts” into hi-hats. Or hum a melody to get notes.",
@@ -422,7 +461,9 @@ export const KNOWLEDGE_BASE: Article[] = [
 
   // ───────────── Samplers & video ─────────────
   {
-    id: "sampler", category: "Samplers & video", title: "Sampler: loading, trimming and time stretch",
+    id: "sampler",
+    category: "Samplers & video",
+    title: "Sampler: loading, trimming and time stretch",
     tags: "sampler sample trim stretch pitch loop adsr reverse normalize zoom",
     body: [
       "Drop an audio file on the Sampler or record into it. Drag the start and end handles to trim; zoom in on the waveform for detail.",
@@ -438,7 +479,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "sample-sources", category: "Samplers & video", title: "Recording into the samplers (mic, computer audio, SYNCLAB)",
+    id: "sample-sources",
+    category: "Samplers & video",
+    title: "Recording into the samplers (mic, computer audio, SYNCLAB)",
     tags: "system audio computer audio record sampler koala screen share loopback synclab mix",
     body: [
       "In Sampler or Pad Sampler, pick the source: Microphone, Computer audio, or SYNCLAB mix (what SYNCLAB is playing). Then record.",
@@ -454,7 +497,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "chopper", category: "Samplers & video", title: "Pad Sampler and chopping",
+    id: "chopper",
+    category: "Samplers & video",
+    title: "Pad Sampler and chopping",
     tags: "chop slice transient pads bars divisions mpc pad sampler",
     body: [
       "Chop by transient, beat, bar or equal parts, or place slices by hand. Pick 4, 8, 16 or 32 slices; each lands on its own pad.",
@@ -466,7 +511,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     cant: ["On phone, Pad Sampler opens from the SAMPLERS switch next to Sampler."],
   },
   {
-    id: "video-sampler", category: "Samplers & video", title: "Video Sampler",
+    id: "video-sampler",
+    category: "Samplers & video",
+    title: "Video Sampler",
     tags: "video sampler mp4 mov cuts youtube",
     body: ["Load a video file, cut it on the grid and play the cuts from pads or MIDI."],
     can: [
@@ -482,7 +529,9 @@ export const KNOWLEDGE_BASE: Article[] = [
 
   // ───────────── Mixing & effects ─────────────
   {
-    id: "mixer", category: "Mixing & effects", title: "Mixer, buses, VCAs and returns",
+    id: "mixer",
+    category: "Mixing & effects",
+    title: "Mixer, buses, VCAs and returns",
     tags: "mixer bus send return fader pan mute solo eq routing vca aux gain meters dock studio pro f3 full view",
     body: [
       "Each channel has a GAIN knob, EQ, sends, pan, mute, solo and a fader. Buses group channels, VCAs move several faders at once, and returns hold shared effects.",
@@ -501,7 +550,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "studio-effects", category: "Mixing & effects", title: "Studio effects pack (Auto Filter to Open Air)",
+    id: "studio-effects",
+    category: "Mixing & effects",
+    title: "Studio effects pack (Auto Filter to Open Air)",
     tags: "auto filter analog delay channel strip chorus de-esser deesser expander flanger multiband dynamics mustang native amp phaser splitter vocal tune autotune voice fx vu meter tuner tone generator open air reverb",
     body: [
       "Add any of these from an effect menu (FX Rack, mixer insert, timeline track menu or Browser): Auto Filter, Analog Delay, Channel Strip, Chorus, De-Esser, Expander, Flanger, Multiband Dynamics, Mustang Native, Phaser, Splitter, Vocal Tune, Voice FX, VU Meter, Tuner, Tone Generator and Open Air.",
@@ -522,7 +573,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "vocal-tune", category: "Mixing & effects", title: "Vocal Tune pitch correction",
+    id: "vocal-tune",
+    category: "Mixing & effects",
+    title: "Vocal Tune pitch correction",
     tags: "vocal tune autotune auto-tune pitch correction key scale retune speed humanize hard tune",
     body: [
       "Put Vocal Tune on a vocal (or any single-note) track. Set Key and Scale to your song, then sing or play the recording.",
@@ -542,7 +595,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "effects", category: "Mixing & effects", title: "Effects and the FX Rack",
+    id: "effects",
+    category: "Mixing & effects",
+    title: "Effects and the FX Rack",
     tags: "effects fx rack plugin presets bypass reverb delay compressor eq distortion chorus maximizer imager drag",
     body: [
       "Add effects from the FX Rack, the mixer or a track menu, or drag one onto a track in the timeline. Effects are sorted by category.",
@@ -562,7 +617,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "scope-window", category: "Mixing & effects", title: "Expanding a scope (Spectrum Analyzer)",
+    id: "scope-window",
+    category: "Mixing & effects",
+    title: "Expanding a scope (Spectrum Analyzer)",
     tags: "scope spectrum analyzer analyser oscilloscope expand big window frequency follow selection peak hold",
     body: [
       "Every scope has a small expand button in its corner — on effects, every mixer channel, bus, aux return, VCA and the master (desktop and phone, docked or full mixer), the transport bar, the Pro EQ and the Modular Tech modules. A VCA's scope shows the combined sound of the channels assigned to it. Press it to open the big Spectrum Analyzer window on the same signal.",
@@ -581,44 +638,65 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "amps", category: "Mixing & effects", title: "Amps & Pedals",
+    id: "amps",
+    category: "Mixing & effects",
+    title: "Amps & Pedals",
     tags: "guitar bass amp pedals stompbox amp room",
-    body: ["Open Amps & Pedals to put guitar or bass amps and stomp pedals on a track. Step on a pedal's footswitch to bypass it."],
+    body: [
+      "Open Amps & Pedals to put guitar or bass amps and stomp pedals on a track. Step on a pedal's footswitch to bypass it.",
+    ],
     can: ["Play guitar or bass through your interface with amp and pedal sounds."],
-    cant: ["Expect a short delay when playing live through a browser; the desktop app does not remove it yet."],
+    cant: [
+      "Expect a short delay when playing live through a browser; the desktop app does not remove it yet.",
+    ],
   },
   {
-    id: "mastering", category: "Mixing & effects", title: "Mastering",
+    id: "mastering",
+    category: "Mixing & effects",
+    title: "Mastering",
     tags: "master mastering loudness lufs limiter club streaming multiband imager exciter maximizer car walkman theater sound check",
     body: [
       "Mastering measures loudness and peaks, then applies EQ, width, glue, drive and limiting. Presets cover streaming, club and vocal-forward targets.",
       "Mastering devices add a 4-band Master EQ, 3-band Multiband dynamics (replaces Glue while on), a Stereo Imager with width per band, an Exciter for top-end harmonics and Maximizer timing with a gain-reduction readout. Switch each device On, then turn its knobs; the master re-renders when you let go.",
       "Sound Check plays the original or mastered song as it would sound on studio monitors, a car stereo, club PA, Walkman, home stereo, movie theater, phone, earbuds, laptop, TV, FM radio or Bluetooth speaker. Switch places while it plays, loop it, tap the bar to jump, and turn background noise on or off.",
     ],
-    can: ["Master your song and export the mastered file.", "Check how the master holds up on other systems before you release it."],
+    can: [
+      "Master your song and export the mastered file.",
+      "Check how the master holds up on other systems before you release it.",
+    ],
     cant: [
       "Saving the mastered file needs the trial or a plan.",
       "Sound Check places are modelled from typical speakers and rooms, not measured from a real car or club, and they are never saved into your file.",
     ],
   },
   {
-    id: "studio-view", category: "Mixing & effects", title: "Studio View",
+    id: "studio-view",
+    category: "Mixing & effects",
+    title: "Studio View",
     tags: "studio view room instruments stands monitors",
-    body: ["Studio View shows your project's instruments, mixer and effects racks in a room. Tap one to open it."],
+    body: [
+      "Studio View shows your project's instruments, mixer and effects racks in a room. Tap one to open it.",
+    ],
     can: ["Open any editor from the room and see real levels move."],
     cant: ["It shows your project — it isn't a separate set of instruments."],
   },
   {
-    id: "wallpaper", category: "Mixing & effects", title: "Panel wallpaper and skins",
+    id: "wallpaper",
+    category: "Mixing & effects",
+    title: "Panel wallpaper and skins",
     tags: "wallpaper skin background theme colour",
-    body: ["Use Wallpaper, Background and Save theme at the top of a panel, or drop a picture onto it. Settings → Appearance applies one picture to many panels."],
+    body: [
+      "Use Wallpaper, Background and Save theme at the top of a panel, or drop a picture onto it. Settings → Appearance applies one picture to many panels.",
+    ],
     can: ["Give each panel its own picture or colour and save themes."],
     cant: ["Wallpaper only covers the area around controls, so knobs and keys stay readable."],
   },
 
   // ───────────── Performance & DJ ─────────────
   {
-    id: "dj-decks", category: "Performance & DJ", title: "DJ Decks",
+    id: "dj-decks",
+    category: "Performance & DJ",
+    title: "DJ Decks",
     tags: "dj decks turntables serato mixer crossfader sync cue loop scratch playlist record mix headphones",
     body: [
       "Load music on Deck A and Deck B, beat-match with SYNC, mix with gain, EQ, filter, faders and the crossfader, and press Record mix to record your set.",
@@ -638,7 +716,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "dj-hardware", category: "Performance & DJ", title: "Connecting a DJ controller",
+    id: "dj-hardware",
+    category: "Performance & DJ",
+    title: "Connecting a DJ controller",
     tags: "dj controller hardware pioneer ddj 400 flx4 midi learn jog lights",
     body: [
       "Plug in by USB (or pair Bluetooth MIDI), open the Controller section in DJ Decks (Controller button on phone) and press Connect controller.",
@@ -657,27 +737,39 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "live-looper", category: "Performance & DJ", title: "Live Looper",
+    id: "live-looper",
+    category: "Performance & DJ",
+    title: "Live Looper",
     tags: "live looper loops overdub start on sound pre-count",
     body: [
       "Name and record loops that start on the song's bar lines. Start on sound waits until your input is loud enough before recording.",
     ],
     can: ["Keep loops playing while you switch panels; send them to the timeline."],
-    cant: ["Looper playback isn't recorded by the master recorder again, so loops are never doubled."],
+    cant: [
+      "Looper playback isn't recorded by the master recorder again, so loops are never doubled.",
+    ],
   },
   {
-    id: "live-view", category: "Performance & DJ", title: "Live View performance effects",
+    id: "live-view",
+    category: "Performance & DJ",
+    title: "Live View performance effects",
     tags: "live view performance effect pads hold",
-    body: ["Touch and drag a pad to play an effect over the whole song. Let go to return to the dry sound, or tap HOLD to keep it on."],
+    body: [
+      "Touch and drag a pad to play an effect over the whole song. Let go to return to the dry sound, or tap HOLD to keep it on.",
+    ],
     can: ["Play filter, delay and other effects live while performing."],
     cant: ["These live effects are not part of exports or saved automation."],
   },
 
   // ───────────── AI & smart tools ─────────────
   {
-    id: "coproducer", category: "AI & smart tools", title: "AI Co-Producer",
+    id: "coproducer",
+    category: "AI & smart tools",
+    title: "AI Co-Producer",
     tags: "ai co-producer ideas chords basslines drums",
-    body: ["Ask for ideas, chords, basslines or drum patterns. Ideas play as a preview before you add them."],
+    body: [
+      "Ask for ideas, chords, basslines or drum patterns. Ideas play as a preview before you add them.",
+    ],
     can: ["Read your tempo, notes, track list, effects and mixer settings to suggest parts."],
     cant: [
       "It can't hear your audio — only your notes and settings.",
@@ -685,9 +777,13 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "generate-stem", category: "AI & smart tools", title: "Generate Stem",
+    id: "generate-stem",
+    category: "AI & smart tools",
+    title: "Generate Stem",
     tags: "generate stem ai music prompt style mood",
-    body: ["Type a style or mood (for example “warm 90s R&B”), press Generate, then preview and add it to a new track."],
+    body: [
+      "Type a style or mood (for example “warm 90s R&B”), press Generate, then preview and add it to a new track.",
+    ],
     can: ["Create a new music part from a description in about a minute."],
     cant: [
       "Needs sign-in and internet; counts toward your 25 AI uses a day.",
@@ -695,9 +791,13 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "stems", category: "AI & smart tools", title: "Separate Stems",
+    id: "stems",
+    category: "AI & smart tools",
+    title: "Separate Stems",
     tags: "stem separation split vocals drums bass on-device ai demucs",
-    body: ["Load a song, choose On-device (free) or AI separation, then play each part and add the ones you want to the timeline."],
+    body: [
+      "Load a song, choose On-device (free) or AI separation, then play each part and add the ones you want to the timeline.",
+    ],
     can: ["Split a song into parts such as vocals, drums and bass."],
     cant: [
       "On-device separation finds vocals by their centre position, so mono files keep vocals mixed in.",
@@ -705,16 +805,22 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "ai-limits", category: "AI & smart tools", title: "Daily AI limit",
+    id: "ai-limits",
+    category: "AI & smart tools",
+    title: "Daily AI limit",
     tags: "ai limit daily uses quota reset",
-    body: ["Each account gets 25 AI uses per day. They reset at midnight UTC (7 PM Detroit time in winter, 8 PM in summer)."],
+    body: [
+      "Each account gets 25 AI uses per day. They reset at midnight UTC (7 PM Detroit time in winter, 8 PM in summer).",
+    ],
     can: ["If an AI request fails on the provider's side, the use is given back."],
     cant: ["The limit can't be raised from inside the app."],
   },
 
   // ───────────── MIDI & hardware ─────────────
   {
-    id: "midi", category: "MIDI & hardware", title: "MIDI keyboards and controllers",
+    id: "midi",
+    category: "MIDI & hardware",
+    title: "MIDI keyboards and controllers",
     tags: "midi controller keyboard cc learn clock sync device bluetooth thru",
     body: [
       "Open Settings → MIDI, or the MIDI IN button above the timeline, and turn on your controller. SYNCLAB reconnects to it after you unplug and replug it.",
@@ -730,9 +836,13 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "midi-ios", category: "MIDI & hardware", title: "MIDI on iPhone and iPad",
+    id: "midi-ios",
+    category: "MIDI & hardware",
+    title: "MIDI on iPhone and iPad",
     tags: "iphone ipad ios midi safari midiweb",
-    body: ["Install the free MIDIWeb Browser from the App Store, open synclabsapp.com inside it, and connect your keyboard by USB cable."],
+    body: [
+      "Install the free MIDIWeb Browser from the App Store, open synclabsapp.com inside it, and connect your keyboard by USB cable.",
+    ],
     can: ["Play SYNCLAB from a USB MIDI keyboard through MIDIWeb Browser."],
     cant: [
       "No browser on iPhone or iPad can see MIDI hardware on its own, at any iOS version — an update won't change that.",
@@ -742,7 +852,9 @@ export const KNOWLEDGE_BASE: Article[] = [
 
   // ───────────── Files & export ─────────────
   {
-    id: "export", category: "Files & export", title: "Exporting your song, stems and tracks",
+    id: "export",
+    category: "Files & export",
+    title: "Exporting your song, stems and tracks",
     tags: "export wav mp3 flac aiff m4a ogg stems bounce render share",
     body: [
       "File → Export lets you export the full mix, stems (each track) or one track. Choose a region with the export flags, or the whole song.",
@@ -758,7 +870,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "files", category: "Files & export", title: "MY COMPUTER, media library and Audio Converter",
+    id: "files",
+    category: "Files & export",
+    title: "MY COMPUTER, media library and Audio Converter",
     tags: "files my computer browser media library mp3 mp4 import audio converter formats",
     body: [
       "MY COMPUTER in the left menu opens your music files; drag them onto the timeline or an instrument.",
@@ -777,7 +891,9 @@ export const KNOWLEDGE_BASE: Article[] = [
 
   // ───────────── Phone & tablet ─────────────
   {
-    id: "mobile", category: "Phone & tablet", title: "Using SYNCLAB on a phone",
+    id: "mobile",
+    category: "Phone & tablet",
+    title: "Using SYNCLAB on a phone",
     tags: "mobile phone android iphone sideways landscape touch rail menus scroll",
     body: [
       "SYNCLAB opens sideways on a phone. The left rail has Edit, Mix, Sounds, Tools and Files; the same menus as the computer sit at the top.",
@@ -795,16 +911,22 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "tablet", category: "Phone & tablet", title: "Tablets",
+    id: "tablet",
+    category: "Phone & tablet",
+    title: "Tablets",
     tags: "tablet ipad android touch",
     body: ["Tablets get the full workflow with larger touch targets."],
-    can: ["Use a USB-C audio interface on a recent iPad (see “Audio interfaces on iPad and iPhone”)."],
+    can: [
+      "Use a USB-C audio interface on a recent iPad (see “Audio interfaces on iPad and iPhone”).",
+    ],
     cant: ["Safari may ignore an interface's input because of an Apple bug."],
   },
 
   // ───────────── Desktop app & plugins ─────────────
   {
-    id: "desktop", category: "Desktop app & plugins", title: "SYNCLAB Desktop (Mac and Windows)",
+    id: "desktop",
+    category: "Desktop app & plugins",
+    title: "SYNCLAB Desktop (Mac and Windows)",
     tags: "desktop mac windows download install native offline electron",
     body: [
       "SYNCLAB Desktop runs the studio in its own window with a native menu, real Save/Open dialogs on your own drive, and a window that remembers its place.",
@@ -819,7 +941,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "plugins", category: "Desktop app & plugins", title: "VST, AU and CLAP plugins",
+    id: "plugins",
+    category: "Desktop app & plugins",
+    title: "VST, AU and CLAP plugins",
     tags: "vst au vst3 clap plugin scan bridge native desktop",
     body: [
       "SYNCLAB's own instruments and effects work everywhere. The desktop app can scan your plugin folders and list what it finds.",
@@ -833,7 +957,9 @@ export const KNOWLEDGE_BASE: Article[] = [
 
   // ───────────── Account & billing ─────────────
   {
-    id: "plans", category: "Account & billing", title: "Free version, trial and plans",
+    id: "plans",
+    category: "Account & billing",
+    title: "Free version, trial and plans",
     tags: "account billing trial plan price subscription paddle cancel monthly yearly",
     body: [
       "The free version lets you use the studio, but projects can't be saved.",
@@ -844,14 +970,16 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Save, export and save mastered files with the trial or a plan.",
       "Cancel any time from Manage billing (website) or your store subscriptions (apps).",
     ],
-    cant: [
-      "Store prices and trials in the phone apps are set by Apple and Google and may differ.",
-    ],
+    cant: ["Store prices and trials in the phone apps are set by Apple and Google and may differ."],
   },
   {
-    id: "delete-account", category: "Account & billing", title: "Deleting your account",
+    id: "delete-account",
+    category: "Account & billing",
+    title: "Deleting your account",
     tags: "delete account remove data privacy",
-    body: ["Open Settings and press “Delete my account”, then type DELETE to confirm. Your account, cloud projects, library files and subscription record are removed and you are signed out."],
+    body: [
+      "Open Settings and press “Delete my account”, then type DELETE to confirm. Your account, cloud projects, library files and subscription record are removed and you are signed out.",
+    ],
     can: ["Permanently remove your account and personal data."],
     cant: [
       "It can't be undone.",
@@ -859,7 +987,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
-    id: "support", category: "Account & billing", title: "Getting help",
+    id: "support",
+    category: "Account & billing",
+    title: "Getting help",
     tags: "support contact email problem bug report",
     body: [`Use Contact Support or Report a Problem in this window, or email ${SUPPORT_EMAIL}.`],
     can: ["Attach device details to a report (you can read them before sending)."],
@@ -880,7 +1010,10 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Understand shorthand like verb, comp, keys, vox, dist and echo, and forgive a missing letter or two.",
       "Open tools and panels, select a track or jump to a Help article.",
     ],
-    cant: ["Search inside your own audio files' contents or other apps on your computer.", "Load a synth sound when no synth track is selected — select one first."],
+    cant: [
+      "Search inside your own audio files' contents or other apps on your computer.",
+      "Load a synth sound when no synth track is selected — select one first.",
+    ],
   },
   {
     id: "connected-gear",
@@ -892,7 +1025,10 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Tap What's plugged in? to tell the studio what's on each interface input — guitar, bass, mic, keyboard, synth or drum machine — and give it a name.",
       "Flip to Back · Cables to see how everything is connected: USB cables to the computer, dotted lines for Bluetooth and network MIDI, and instrument/XLR cables into the interface inputs.",
     ],
-    can: ["Recognise many keyboards, pad controllers, hardware synths and DJ controllers by name.", "Remember what you plugged in on this device."],
+    can: [
+      "Recognise many keyboards, pad controllers, hardware synths and DJ controllers by name.",
+      "Remember what you plugged in on this device.",
+    ],
     cant: [
       "See a guitar, bass or mic on the end of a cable — a browser only knows the interface, so you add those yourself.",
       "Always tell USB from Bluetooth: it goes by the name the device reports.",
@@ -908,8 +1044,13 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Open Appearance. Under Look packs, name your look and tap SAVE LOOK TO FILE.",
       "Send the file to anyone. They tap LOAD LOOK PACK and pick it to get your colours, panel pictures, key colours and mixer desk finish.",
     ],
-    can: ["Change the colour theme, every panel's wallpaper and key colours, and the mixer desk finish in one go."],
-    cant: ["Add new devices, panels or code — look packs only change how things look, so a downloaded file can't do anything harmful.", "Use pictures from web addresses: only pictures stored inside the file load."],
+    can: [
+      "Change the colour theme, every panel's wallpaper and key colours, and the mixer desk finish in one go.",
+    ],
+    cant: [
+      "Add new devices, panels or code — look packs only change how things look, so a downloaded file can't do anything harmful.",
+      "Use pictures from web addresses: only pictures stored inside the file load.",
+    ],
   },
   {
     id: "synth-hold",
@@ -923,8 +1064,15 @@ export const KNOWLEDGE_BASE: Article[] = [
       "With ARP on, HOLD keeps the arpeggio running after you let go of the keys.",
       "While recording, a held note is recorded as long as it really sounded: until you turn HOLD off, play that key again, or stop recording.",
     ],
-    can: ["Hold notes on Spec 4, Poly Synth, Acid Bass, pianos, Touch Synth keys, Granular Synth and Modular Tech.", "Hold a different set of notes on each synth."],
-    cant: ["Remember HOLD in your saved song; it switches off when you reload.", "Hold notes on samplers or drum machines.", "Hold a note longer than 10 minutes."],
+    can: [
+      "Hold notes on Spec 4, Poly Synth, Acid Bass, pianos, Touch Synth keys, Granular Synth and Modular Tech.",
+      "Hold a different set of notes on each synth.",
+    ],
+    cant: [
+      "Remember HOLD in your saved song; it switches off when you reload.",
+      "Hold notes on samplers or drum machines.",
+      "Hold a note longer than 10 minutes.",
+    ],
   },
   {
     id: "menu-track-colours",
@@ -937,7 +1085,10 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Leave 'Track menus use the track's colour' ticked so a track's menus take that track's colour.",
       "Under SYNCLAB logo in the timeline, choose MY COLOUR, pick a colour and set how bright the logo behind your tracks is.",
     ],
-    can: ["Keep these colours on this device without changing your songs.", "Go back to the original look any time with RESET COLOURS."],
+    can: [
+      "Keep these colours on this device without changing your songs.",
+      "Go back to the original look any time with RESET COLOURS.",
+    ],
     cant: ["Save menu and logo colours inside look pack files yet."],
   },
   {
@@ -950,8 +1101,13 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Every machine has the same buttons, meters, knobs and tape. Only the face, frame, reel metal, head cover and counter colour change.",
       "Your choice stays on this device and is saved inside look packs, so you can share it.",
     ],
-    can: ["Switch machines at any time, even while the tape is playing or recording — the sound and the tape don't change."],
-    cant: ["Change how the tape sounds by changing the machine — use Tone, Saturation and Tape speed for that.", "Load your own machine artwork yet; panel wallpaper still works on any machine."],
+    can: [
+      "Switch machines at any time, even while the tape is playing or recording — the sound and the tape don't change.",
+    ],
+    cant: [
+      "Change how the tape sounds by changing the machine — use Tone, Saturation and Tape speed for that.",
+      "Load your own machine artwork yet; panel wallpaper still works on any machine.",
+    ],
   },
   {
     id: "ai-assistants",
@@ -962,7 +1118,10 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Two ways in. In an AI browser that supports page tools, the assistant can run the open studio: read your tracks, play and stop, change tempo, loop and metronome, add tracks, move faders, pan, mute, solo and arm, open screens, search the library and load sounds, kits and effects.",
       "In assistants that connect to apps (like Claude), add SYNCLAB as a connector using the address synclabsapp.com/mcp. You'll sign in and tap Allow. The assistant can then list and describe your saved projects, rename them, list your media library and plan, and search this Help Center.",
     ],
-    can: ["Have an assistant set up a session for you: \"add a drum track with an 808 kit and put a dub delay on it\".", "Ask an assistant about your saved projects from anywhere, without opening the studio."],
+    can: [
+      'Have an assistant set up a session for you: "add a drum track with an 808 kit and put a dub delay on it".',
+      "Ask an assistant about your saved projects from anywhere, without opening the studio.",
+    ],
     cant: [
       "Delete tracks or projects, buy anything or share your work — those actions stay with you.",
       "Play or record sound through the connector: sound only happens in the open studio.",
@@ -981,7 +1140,9 @@ export const KNOWLEDGE_BASE: Article[] = [
       "MACRO: one knob with an OUT and an opposite INV output, so one turn can move several cables at once.",
       "COMB RESONATOR: a tuned feedback filter that rings at the note you play — plucks, metal and bowed tones from noise.",
     ],
-    can: ["Load 40 new racks built on these devices (Seq, Chaos, Comb, Follower, Macro, Ring and Gate names) from the PRESET window at the top of the synth (sorted by sound type and by rack device) or the library search."],
+    can: [
+      "Load 40 new racks built on these devices (Seq, Chaos, Comb, Follower, Macro, Ring and Gate names) from the PRESET window at the top of the synth (sorted by sound type and by rack device) or the library search.",
+    ],
     cant: [
       "Run the sequencer from the song clock — it starts with each note.",
       "Ring the comb above about 340 Hz in a browser: higher notes ring an octave or two lower, still in tune.",

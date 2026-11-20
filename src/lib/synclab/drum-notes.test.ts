@@ -4,13 +4,29 @@ import type { DrumPad } from "./types";
 
 describe("drum display order", () => {
   it("starts with kick and preserves pad identity, original indices and MIDI notes", () => {
-    const pads = [...DRUM_KIND_ORDER].reverse().map((kind, index) => ({
-      id: `pad-${index}`, kind, name: kind, steps: [0, 1],
-    } as DrumPad));
+    const pads = [...DRUM_KIND_ORDER].reverse().map(
+      (kind, index) =>
+        ({
+          id: `pad-${index}`,
+          kind,
+          name: kind,
+          steps: [0, 1],
+        }) as DrumPad,
+    );
     const original = pads.map((pad) => pad.id);
     const rows = drumRows(pads);
     expect(rows.map(({ pad }) => pad.kind)).toEqual([
-      "kick", "snare", "hat", "openhat", "clap", "rim", "tom", "perc", "ride", "crash", "fx",
+      "kick",
+      "snare",
+      "hat",
+      "openhat",
+      "clap",
+      "rim",
+      "tom",
+      "perc",
+      "ride",
+      "crash",
+      "fx",
     ]);
     expect(pads.map((pad) => pad.id)).toEqual(original);
     for (const row of rows) {

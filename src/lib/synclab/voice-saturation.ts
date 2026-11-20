@@ -15,8 +15,13 @@ export const VOICE_MAKEUP = 1.6;
 const POINTS = 4097;
 
 /** Combined drive amount (0..1.5) from the patch's grit knobs; clean voices skip the base warmth. */
-export function voiceDriveAmount(patch: Pick<SynthPatch, "drive" | "clean"> & { fx: Pick<SynthPatch["fx"], "distortion"> & { saturation?: number } }): number {
-  const amount = (patch.fx.distortion ?? 0) + (patch.fx.saturation ?? 0) * 0.6 + (patch.drive ?? 0) * 0.8;
+export function voiceDriveAmount(
+  patch: Pick<SynthPatch, "drive" | "clean"> & {
+    fx: Pick<SynthPatch["fx"], "distortion"> & { saturation?: number };
+  },
+): number {
+  const amount =
+    (patch.fx.distortion ?? 0) + (patch.fx.saturation ?? 0) * 0.6 + (patch.drive ?? 0) * 0.8;
   return Math.min(1.5, Math.max(0, patch.clean ? amount : 0.05 + amount));
 }
 
@@ -47,7 +52,10 @@ export function voiceSaturationCurve(amount: number): Float32Array<ArrayBuffer> 
  * harmonics, so they get make-up that grows with resonance instead of relying on heavy saturation.
  */
 export function voiceInputGain(patch: Pick<SynthPatch, "filterType" | "resonance">): number {
-  const bp = patch.filterType === "bandpass" ? Math.min(4, Math.max(1, Math.sqrt(Math.max(1, patch.resonance)))) : 1;
+  const bp =
+    patch.filterType === "bandpass"
+      ? Math.min(4, Math.max(1, Math.sqrt(Math.max(1, patch.resonance))))
+      : 1;
   return VOICE_SHAPER_IN * bp;
 }
 

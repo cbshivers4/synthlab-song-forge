@@ -3,8 +3,9 @@ import { arpLiveNote, arpSequence, stopLiveArps } from "./live-arp";
 import { triggerNote } from "./schedule-step";
 import { applyPreset } from "./presets";
 
-const arp = (o: Partial<{ direction: "up" | "down" | "updown" | "alternate" | "random"; octaves: number }>) =>
-  ({ on: true, rate: 1, gate: 0.5, direction: "up" as const, octaves: 1, ...o });
+const arp = (
+  o: Partial<{ direction: "up" | "down" | "updown" | "alternate" | "random"; octaves: number }>,
+) => ({ on: true, rate: 1, gate: 0.5, direction: "up" as const, octaves: 1, ...o });
 
 describe("live arpeggiator", () => {
   it("walks held notes in each direction", () => {
@@ -18,11 +19,21 @@ describe("live arpeggiator", () => {
     vi.useFakeTimers();
     const ctx = { currentTime: 0 } as AudioContext;
     const played: number[] = [];
-    const engine = { ctx, tempo: 120, init: () => ctx, playNote: (_t: string, _p: unknown, m: number) => { played.push(m); } };
+    const engine = {
+      ctx,
+      tempo: 120,
+      init: () => ctx,
+      playNote: (_t: string, _p: unknown, m: number) => {
+        played.push(m);
+      },
+    };
     const patch = { ...applyPreset("Night Arp"), arp: arp({ octaves: 2 }) };
     triggerNote(engine as never, { id: "s", kind: "instrument", patch } as never, 60, 1, 0.9);
     expect(played.length).toBeGreaterThan(0);
-    for (let i = 0; i < 8; i++) { (ctx as { currentTime: number }).currentTime += 0.1; vi.advanceTimersByTime(25); }
+    for (let i = 0; i < 8; i++) {
+      (ctx as { currentTime: number }).currentTime += 0.1;
+      vi.advanceTimersByTime(25);
+    }
     expect(played).toContain(72);
     expect(played.length).toBeGreaterThanOrEqual(4);
     stopLiveArps();

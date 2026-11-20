@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { SUPPORT_EMAIL } from "@/lib/synclab/contact";
 
 export const Route = createFileRoute("/refunds")({
   head: () => ({
@@ -7,7 +8,8 @@ export const Route = createFileRoute("/refunds")({
       { title: "Refund Policy — SYNCLAB" },
       {
         name: "description",
-        content: "SYNCLAB's 30-day money-back guarantee and how to request a refund through Paddle.",
+        content:
+          "SYNCLAB's 30-day money-back guarantee and how to request a refund through Paddle.",
       },
       { property: "og:title", content: "Refund Policy — SYNCLAB" },
       { property: "og:description", content: "30-day money-back guarantee on SYNCLAB Pro." },
@@ -22,9 +24,8 @@ function RefundsRoute() {
   return (
     <LegalPage title="Refund Policy" updated="21 September 2026">
       <p>
-        Every SYNCLAB plan starts with a 14-day
-        free trial. A card is required to start it, but nothing is charged during the trial — cancel
-        before day 14 and you won't be charged at all.
+        Every SYNCLAB plan starts with a 14-day free trial. A card is required to start it, but
+        nothing is charged during the trial — cancel before day 14 and you won't be charged at all.
       </p>
 
       <h2>30-day money-back guarantee</h2>
@@ -39,9 +40,8 @@ function RefundsRoute() {
         <a className="underline" href="https://paddle.net" target="_blank" rel="noreferrer">
           paddle.net
         </a>{" "}
-        with the email address you used at checkout, or email us at{" "}
-        <strong>christopherbshivers@gmail.com</strong> and we will arrange it with Paddle for
-        you.
+        with the email address you used at checkout, or email us at <strong>{SUPPORT_EMAIL}</strong>{" "}
+        and we will arrange it with Paddle for you.
       </p>
 
       <h2>After a refund</h2>

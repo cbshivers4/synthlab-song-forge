@@ -23,11 +23,16 @@ export function canvasPoint(clientX: number, clientY: number) {
 }
 
 /** Pure mapping: an element's screen-space bounding box -> its rect in the rotated layout space. */
-export function rotateSidewaysRect(r: { left: number; top: number; right: number; bottom: number }, screenWidth: number) {
+export function rotateSidewaysRect(
+  r: { left: number; top: number; right: number; bottom: number },
+  screenWidth: number,
+) {
   const a = rotateSidewaysPoint(r.left, r.top, screenWidth);
   const b = rotateSidewaysPoint(r.right, r.bottom, screenWidth);
-  const left = Math.min(a.x, b.x), right = Math.max(a.x, b.x);
-  const top = Math.min(a.y, b.y), bottom = Math.max(a.y, b.y);
+  const left = Math.min(a.x, b.x),
+    right = Math.max(a.x, b.x);
+  const top = Math.min(a.y, b.y),
+    bottom = Math.max(a.y, b.y);
   return { left, top, right, bottom, width: right - left, height: bottom - top };
 }
 
@@ -38,7 +43,14 @@ export function rotateSidewaysRect(r: { left: number; top: number; right: number
 export function canvasRect(el: Element) {
   const r = el.getBoundingClientRect();
   if (!sidewaysCanvas()) {
-    return { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
+    return {
+      left: r.left,
+      top: r.top,
+      right: r.right,
+      bottom: r.bottom,
+      width: r.width,
+      height: r.height,
+    };
   }
   return rotateSidewaysRect(r, window.innerWidth);
 }

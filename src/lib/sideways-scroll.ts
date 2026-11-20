@@ -31,7 +31,11 @@ const LAYER = "[role='menu']";
 function scrollerFor(el: HTMLElement, layer: Element) {
   for (let n: HTMLElement | null = el; n; n = n.parentElement) {
     const cs = getComputedStyle(n);
-    if ((cs.overflowY === "auto" || cs.overflowY === "scroll") && n.scrollHeight - n.clientHeight > 1) return n;
+    if (
+      (cs.overflowY === "auto" || cs.overflowY === "scroll") &&
+      n.scrollHeight - n.clientHeight > 1
+    )
+      return n;
     if (n === layer) break;
   }
   return null;
@@ -42,35 +46,66 @@ let installed = false;
 export function installSidewaysModalScroll() {
   if (installed || typeof window === "undefined") return;
   installed = true;
-  type Drag = { id: number; box: HTMLElement; sx: number; sy: number; lx: number; ly: number; lt: number; v: number; dragging: boolean };
+  type Drag = {
+    id: number;
+    box: HTMLElement;
+    sx: number;
+    sy: number;
+    lx: number;
+    ly: number;
+    lt: number;
+    v: number;
+    dragging: boolean;
+  };
   let drag: Drag | null = null;
   let blockClickUntil = 0;
   let glide = 0;
 
-  window.addEventListener("pointerdown", (e) => {
-    cancelAnimationFrame(glide);
-    drag = null;
-    if (e.pointerType === "mouse" || !sidewaysCanvas()) return;
-    const target = e.target as HTMLElement | null;
-    const layer = target?.closest?.(LAYER);
-    if (!target || !layer || target.closest("input,textarea,select,canvas,[role='slider']")) return;
-    const box = scrollerFor(target, layer);
-    if (!box) return;
-    drag = { id: e.pointerId, box, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, lt: performance.now(), v: 0, dragging: false };
-  }, true);
+  window.addEventListener(
+    "pointerdown",
+    (e) => {
+      cancelAnimationFrame(glide);
+      drag = null;
+      if (e.pointerType === "mouse" || !sidewaysCanvas()) return;
+      const target = e.target as HTMLElement | null;
+      const layer = target?.closest?.(LAYER);
+      if (!target || !layer || target.closest("input,textarea,select,canvas,[role='slider']"))
+        return;
+      const box = scrollerFor(target, layer);
+      if (!box) return;
+      drag = {
+        id: e.pointerId,
+        box,
+        sx: e.clientX,
+        sy: e.clientY,
+        lx: e.clientX,
+        ly: e.clientY,
+        lt: performance.now(),
+        v: 0,
+        dragging: false,
+      };
+    },
+    true,
+  );
 
-  window.addEventListener("pointermove", (e) => {
-    if (!drag || e.pointerId !== drag.id) return;
-    const total = sidewaysTouchDelta(e.clientX - drag.sx, e.clientY - drag.sy);
-    if (!drag.dragging && Math.abs(total.dy) < DRAG_SCROLL_SLOP) return;
-    drag.dragging = true;
-    const { dy } = sidewaysTouchDelta(e.clientX - drag.lx, e.clientY - drag.ly);
-    const now = performance.now();
-    const box = drag.box;
-    box.scrollTop = followFinger(box.scrollTop, dy, box.scrollHeight - box.clientHeight);
-    drag.v = dy / Math.max(1, now - drag.lt);
-    drag.lx = e.clientX; drag.ly = e.clientY; drag.lt = now;
-  }, true);
+  window.addEventListener(
+    "pointermove",
+    (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const total = sidewaysTouchDelta(e.clientX - drag.sx, e.clientY - drag.sy);
+      if (!drag.dragging && Math.abs(total.dy) < DRAG_SCROLL_SLOP) return;
+      drag.dragging = true;
+      const { dy } = sidewaysTouchDelta(e.clientX - drag.lx, e.clientY - drag.ly);
+      const now = performance.now();
+      const box = drag.box;
+      box.scrollTop = followFinger(box.scrollTop, dy, box.scrollHeight - box.clientHeight);
+      drag.v = dy / Math.max(1, now - drag.lt);
+      drag.lx = e.clientX;
+      drag.ly = e.clientY;
+      drag.lt = now;
+    },
+    true,
+  );
 
   const finish = (e: PointerEvent) => {
     if (!drag || e.pointerId !== drag.id) return;
@@ -82,7 +117,8 @@ export function installSidewaysModalScroll() {
     blockClickUntil = performance.now() + 400;
     let last = performance.now();
     const step = (t: number) => {
-      const dt = t - last; last = t;
+      const dt = t - last;
+      last = t;
       v *= Math.pow(0.95, dt / 16);
       if (Math.abs(v) < 0.02) return;
       box.scrollTop = followFinger(box.scrollTop, v * dt, box.scrollHeight - box.clientHeight);
@@ -93,11 +129,15 @@ export function installSidewaysModalScroll() {
   window.addEventListener("pointerup", finish, true);
   window.addEventListener("pointercancel", finish, true);
 
-  window.addEventListener("click", (e) => {
-    if (performance.now() > blockClickUntil) return;
-    if (!(e.target as HTMLElement | null)?.closest?.(LAYER)) return;
-    blockClickUntil = 0;
-    e.preventDefault();
-    e.stopPropagation();
-  }, true);
+  window.addEventListener(
+    "click",
+    (e) => {
+      if (performance.now() > blockClickUntil) return;
+      if (!(e.target as HTMLElement | null)?.closest?.(LAYER)) return;
+      blockClickUntil = 0;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+    true,
+  );
 }

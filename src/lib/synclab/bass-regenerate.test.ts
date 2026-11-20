@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { BASS_STYLES, generateBass, varyBass } from "./bass-gen";
 
-const shape = (notes: { step: number; length: number; pitch: number }[]) => notes.map((n) => `${n.step}:${n.length}:${n.pitch}`).join(",");
+const shape = (notes: { step: number; length: number; pitch: number }[]) =>
+  notes.map((n) => `${n.step}:${n.length}:${n.pitch}`).join(",");
 const roots = [9, 5, 0, 7];
 
 describe("Bass Generator: Regenerate always makes a new pattern", () => {

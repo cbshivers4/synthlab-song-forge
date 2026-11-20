@@ -1,9 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
 import { midiSupported, midiUnsupportedMessage } from "@/lib/synclab/midi";
-import { openMic, openInOwnTab, listAudioDevices, getPreferredInput, setPreferredInput, onDeviceChange } from "@/lib/synclab/mic";
+import {
+  openMic,
+  openInOwnTab,
+  listAudioDevices,
+  getPreferredInput,
+  setPreferredInput,
+  onDeviceChange,
+} from "@/lib/synclab/mic";
 
 const KEY = "synclab.devicesetup.done";
 
@@ -19,8 +32,12 @@ export function DeviceSetup() {
 
   const listDevices = useCallback(async () => {
     const all = await listAudioDevices();
-    const ins = all.filter((d) => d.kind === "audioinput").map((d) => ({ id: d.id, label: d.label }));
-    const outs = all.filter((d) => d.kind === "audiooutput").map((d) => ({ id: d.id, label: d.label }));
+    const ins = all
+      .filter((d) => d.kind === "audioinput")
+      .map((d) => ({ id: d.id, label: d.label }));
+    const outs = all
+      .filter((d) => d.kind === "audiooutput")
+      .map((d) => ({ id: d.id, label: d.label }));
     setInputs(ins);
     setOutputs(outs);
     setChosen(getPreferredInput());
@@ -99,9 +116,10 @@ export function DeviceSetup() {
         <DialogHeader>
           <DialogTitle>Connect your gear</DialogTitle>
           <DialogDescription>
-            SYNCLAB needs permission to use your audio interface and MIDI controllers. Your browser will ask
-            once — choose Allow so devices like a Volt 1 and your keyboards show up by name. Once everything is
-            connected you will not be asked again; you can check your gear any time in Settings.
+            SYNCLAB needs permission to use your audio interface and MIDI controllers. Your browser
+            will ask once — choose Allow so devices like a Volt 1 and your keyboards show up by
+            name. Once everything is connected you will not be asked again; you can check your gear
+            any time in Settings.
           </DialogDescription>
         </DialogHeader>
 
@@ -146,14 +164,19 @@ export function DeviceSetup() {
                 </div>
               ) : (
                 <div className="text-muted-foreground">
-                  None found. Allow microphone access, plug in the interface, then press Connect again.
+                  None found. Allow microphone access, plug in the interface, then press Connect
+                  again.
                 </div>
               )}
             </div>
             <div>
               <div className="label-xs mb-1">Audio outputs</div>
               {outputs.length ? (
-                outputs.map((d) => <div key={d.id} className="text-primary">{d.label}</div>)
+                outputs.map((d) => (
+                  <div key={d.id} className="text-primary">
+                    {d.label}
+                  </div>
+                ))
               ) : (
                 <div className="text-muted-foreground">None found.</div>
               )}
@@ -161,7 +184,11 @@ export function DeviceSetup() {
             <div>
               <div className="label-xs mb-1">MIDI controllers</div>
               {midiInputs.length ? (
-                midiInputs.map((m) => <div key={m.id} className="text-primary">{m.name}</div>)
+                midiInputs.map((m) => (
+                  <div key={m.id} className="text-primary">
+                    {m.name}
+                  </div>
+                ))
               ) : (
                 <div className="text-muted-foreground">
                   {midiSupported()
@@ -174,7 +201,8 @@ export function DeviceSetup() {
         )}
 
         <p className="text-xs text-muted-foreground">
-          Playback always uses the output your computer is set to. You can re-run this any time from Settings.
+          Playback always uses the output your computer is set to. You can re-run this any time from
+          Settings.
         </p>
 
         <div className="flex justify-end gap-2">

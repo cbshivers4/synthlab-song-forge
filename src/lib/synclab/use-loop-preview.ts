@@ -15,7 +15,12 @@ const SWAP_FADE = 0.015;
  * the song is playing, otherwise at the same point of the loop, so the groove never jumps.
  */
 export function useLoopPreview() {
-  const sourceRef = useRef<{ src: AudioBufferSourceNode; gain: GainNode; startedAt: number; loopSec: number } | null>(null);
+  const sourceRef = useRef<{
+    src: AudioBufferSourceNode;
+    gain: GainNode;
+    startedAt: number;
+    loopSec: number;
+  } | null>(null);
   const token = useRef(0);
   const [playing, setPlaying] = useState(false);
 
@@ -29,8 +34,17 @@ export function useLoopPreview() {
       cur.gain.gain.setValueAtTime(1, when);
       cur.gain.gain.linearRampToValueAtTime(0, when + SWAP_FADE);
       cur.src.stop(when + SWAP_FADE + 0.01);
-    } catch { /* already stopped */ }
-    cur.src.onended = () => { try { cur.src.disconnect(); cur.gain.disconnect(); } catch { /* already disconnected */ } };
+    } catch {
+      /* already stopped */
+    }
+    cur.src.onended = () => {
+      try {
+        cur.src.disconnect();
+        cur.gain.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+    };
   };
 
   const stop = useCallback(() => {
@@ -51,14 +65,18 @@ export function useLoopPreview() {
       const stepSec = 60 / Math.max(1, bpm) / 4;
       const loopSec = pattern.steps * stepSec;
       const frames = Math.round(loopSec * rendered.sampleRate);
-      const channels = Array.from({ length: rendered.numberOfChannels }, (_, c) => rendered.getChannelData(c));
+      const channels = Array.from({ length: rendered.numberOfChannels }, (_, c) =>
+        rendered.getChannelData(c),
+      );
       const folded = foldLoopTail(channels, frames);
       const buffer = ctx.createBuffer(folded.length, frames, rendered.sampleRate);
       folded.forEach((data, c) => buffer.copyToChannel(data as Float32Array<ArrayBuffer>, c));
       const when = ctx.currentTime + 0.03;
       const prev = sourceRef.current;
       const offset = loopPreviewOffset({
-        when, loopSec, loopSteps: pattern.steps,
+        when,
+        loopSec,
+        loopSteps: pattern.steps,
         song: activeSongClock(ctx.currentTime),
         previous: prev ? { startedAt: prev.startedAt, loopSec: prev.loopSec } : null,
       });
@@ -79,7 +97,13 @@ export function useLoopPreview() {
     }
   }, []);
 
-  useEffect(() => () => { token.current++; release(); }, []);
+  useEffect(
+    () => () => {
+      token.current++;
+      release();
+    },
+    [],
+  );
 
   /** Where the looping preview is right now, 0–1 through the loop (null when silent). For step lights. */
   const phase = useCallback((): number | null => {

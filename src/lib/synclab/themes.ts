@@ -48,9 +48,11 @@ const t = (
   },
 });
 
-
 export const THEMES: Theme[] = [
-  t("SYNCLAB Dark", "synclab-dark", { background: "oklch(0.145 0.008 255)", primary: "oklch(0.8 0.15 195)" }),
+  t("SYNCLAB Dark", "synclab-dark", {
+    background: "oklch(0.145 0.008 255)",
+    primary: "oklch(0.8 0.15 195)",
+  }),
   t("Detroit Night", "detroit-night", {
     background: "oklch(0.13 0.015 285)",
     surface: "oklch(0.175 0.02 285)",
@@ -212,4 +214,3 @@ export function applyThemeVars(v: ThemeVars) {
   set("--meter", v.meter ?? "oklch(0.78 0.18 145)");
   set("--selection", v.selection ?? v.primary);
 }
-

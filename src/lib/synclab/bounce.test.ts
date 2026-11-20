@@ -3,7 +3,11 @@ vi.mock("./media-library", () => ({ retainMediaInBackground: vi.fn() }));
 import { encodeWav } from "./bounce";
 
 describe("timeline WAV channel format", () => {
-  const cap = { left: new Float32Array([1, 0.5]), right: new Float32Array([-1, 0.5]), sampleRate: 44100 };
+  const cap = {
+    left: new Float32Array([1, 0.5]),
+    right: new Float32Array([-1, 0.5]),
+    sampleRate: 44100,
+  };
   it("makes a one-channel mono file by averaging both channels without mutating them", async () => {
     const view = new DataView(await encodeWav(cap, 1).arrayBuffer());
     expect(view.getUint16(22, true)).toBe(1);

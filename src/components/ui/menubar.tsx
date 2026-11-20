@@ -101,20 +101,20 @@ const MenubarContent = React.forwardRef<
   const placed = useSidewaysPopper(forwardedRef, { side: props.side, align, sideOffset });
   const { ref, handlers } = useGhostTapGuard(placed, props);
   return (
-  <MenubarPrimitive.Portal>
-    <MenubarPrimitive.Content
-      ref={ref}
-      align={align}
-      alignOffset={alignOffset}
-      sideOffset={sideOffset}
-      className={cn(
-        "app-menu z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-menubar-content-transform-origin)",
-        className,
-      )}
-      {...props}
-      {...handlers}
-    />
-  </MenubarPrimitive.Portal>
+    <MenubarPrimitive.Portal>
+      <MenubarPrimitive.Content
+        ref={ref}
+        align={align}
+        alignOffset={alignOffset}
+        sideOffset={sideOffset}
+        className={cn(
+          "app-menu z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-menubar-content-transform-origin)",
+          className,
+        )}
+        {...props}
+        {...handlers}
+      />
+    </MenubarPrimitive.Portal>
   );
 });
 MenubarContent.displayName = MenubarPrimitive.Content.displayName;

@@ -21,7 +21,10 @@ export function MidiClockFollow() {
         const bpm = tempo.pulse(ms);
         if (bpm && ms - lastSet > 500) {
           const rounded = Math.max(20, Math.min(300, Math.round(bpm)));
-          if (rounded !== tp.bpm) { set({ bpm: rounded }); lastSet = ms; }
+          if (rounded !== tp.bpm) {
+            set({ bpm: rounded });
+            lastSet = ms;
+          }
         }
         return;
       }

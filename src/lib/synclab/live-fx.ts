@@ -5,14 +5,7 @@ import { getEngine } from "./audio-engine";
  * Each effect is silent (fully dry) until it is engaged from its X-Y pad.
  */
 export type LiveFxId =
-  | "tapestop"
-  | "filter"
-  | "compressor"
-  | "beatrepeat"
-  | "isolator"
-  | "grain"
-  | "vinyl"
-  | "crusher";
+  "tapestop" | "filter" | "compressor" | "beatrepeat" | "isolator" | "grain" | "vinyl" | "crusher";
 
 export interface LiveFxInfo {
   id: LiveFxId;
@@ -35,7 +28,8 @@ export const LIVE_FX: LiveFxInfo[] = [
 ];
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
-const expMap = (lo: number, hi: number, t: number) => Math.exp(Math.log(lo) + (Math.log(hi) - Math.log(lo)) * clamp01(t));
+const expMap = (lo: number, hi: number, t: number) =>
+  Math.exp(Math.log(lo) + (Math.log(hi) - Math.log(lo)) * clamp01(t));
 
 interface Fx {
   input: GainNode;
@@ -77,7 +71,16 @@ export class LiveFxRack {
     const ctx = this.ctx;
     this.input = ctx.createGain();
     this.output = ctx.createGain();
-    const order: LiveFxId[] = ["beatrepeat", "tapestop", "grain", "vinyl", "crusher", "isolator", "filter", "compressor"];
+    const order: LiveFxId[] = [
+      "beatrepeat",
+      "tapestop",
+      "grain",
+      "vinyl",
+      "crusher",
+      "isolator",
+      "filter",
+      "compressor",
+    ];
     const builders: Record<LiveFxId, () => Fx> = {
       tapestop: () => this.tapeStop(),
       filter: () => this.filter(),
@@ -389,7 +392,8 @@ export class LiveFxRack {
     const len = ctx.sampleRate * 2;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = Math.random() < 0.0006 ? (Math.random() * 2 - 1) : (Math.random() * 2 - 1) * 0.01;
+    for (let i = 0; i < len; i++)
+      data[i] = Math.random() < 0.0006 ? Math.random() * 2 - 1 : (Math.random() * 2 - 1) * 0.01;
     const noise = ctx.createBufferSource();
     noise.buffer = buf;
     noise.loop = true;

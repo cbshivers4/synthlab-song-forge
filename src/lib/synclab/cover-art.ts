@@ -4,7 +4,10 @@
  * Returns a copy of the image bytes (the source buffer may be handed to the decoder after).
  * Front covers (picture type 3) win over other pictures.
  */
-export interface CoverArt { mime: string; data: Uint8Array }
+export interface CoverArt {
+  mime: string;
+  data: Uint8Array;
+}
 
 export function findCoverArt(bytes: Uint8Array): CoverArt | null {
   try {
@@ -12,18 +15,24 @@ export function findCoverArt(bytes: Uint8Array): CoverArt | null {
     if (ascii(bytes, 0, 3) === "ID3") return id3(bytes);
     if (ascii(bytes, 0, 4) === "fLaC") return flac(bytes);
     if (ascii(bytes, 4, 8) === "ftyp") return mp4(bytes);
-  } catch { /* damaged tag: no picture */ }
+  } catch {
+    /* damaged tag: no picture */
+  }
   return null;
 }
 
-const ascii = (b: Uint8Array, from: number, to: number) => String.fromCharCode(...b.subarray(from, Math.min(to, b.length)));
-const u32 = (b: Uint8Array, i: number) => ((b[i]! << 24) >>> 0) + (b[i + 1]! << 16) + (b[i + 2]! << 8) + b[i + 3]!;
-const syncsafe = (b: Uint8Array, i: number) => (b[i]! << 21) | (b[i + 1]! << 14) | (b[i + 2]! << 7) | b[i + 3]!;
+const ascii = (b: Uint8Array, from: number, to: number) =>
+  String.fromCharCode(...b.subarray(from, Math.min(to, b.length)));
+const u32 = (b: Uint8Array, i: number) =>
+  ((b[i]! << 24) >>> 0) + (b[i + 1]! << 16) + (b[i + 2]! << 8) + b[i + 3]!;
+const syncsafe = (b: Uint8Array, i: number) =>
+  (b[i]! << 21) | (b[i + 1]! << 14) | (b[i + 2]! << 7) | b[i + 3]!;
 
 /** Recognise the image from its first bytes when the tag's MIME type is missing or vague. */
 export function sniffImage(data: Uint8Array, hint = ""): string | null {
   if (data[0] === 0xff && data[1] === 0xd8) return "image/jpeg";
-  if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) return "image/png";
+  if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47)
+    return "image/png";
   if (ascii(data, 0, 4) === "GIF8") return "image/gif";
   if (ascii(data, 0, 4) === "RIFF" && ascii(data, 8, 12) === "WEBP") return "image/webp";
   const h = hint.toLowerCase();
@@ -52,7 +61,10 @@ function id3(b: Uint8Array): CoverArt | null {
   // Whole-tag unsynchronisation (v2.2/v2.3): FF 00 → FF
   if (flags & 0x80 && ver < 4) {
     const out: number[] = [];
-    for (let i = 0; i < body.length; i++) { out.push(body[i]!); if (body[i] === 0xff && body[i + 1] === 0) i++; }
+    for (let i = 0; i < body.length; i++) {
+      out.push(body[i]!);
+      if (body[i] === 0xff && body[i + 1] === 0) i++;
+    }
     body = Uint8Array.from(out);
   }
   let i = 0;
@@ -62,19 +74,36 @@ function id3(b: Uint8Array): CoverArt | null {
   while (i + head <= body.length) {
     const id = ascii(body, i, i + (ver === 2 ? 3 : 4));
     if (!/^[A-Z0-9]{3,4}$/.test(id)) break;
-    const len = ver === 2 ? (body[i + 3]! << 16) | (body[i + 4]! << 8) | body[i + 5]! : ver === 4 ? syncsafe(body, i + 4) : u32(body, i + 4);
+    const len =
+      ver === 2
+        ? (body[i + 3]! << 16) | (body[i + 4]! << 8) | body[i + 5]!
+        : ver === 4
+          ? syncsafe(body, i + 4)
+          : u32(body, i + 4);
     const start = i + head;
     const frame = body.subarray(start, Math.min(body.length, start + len));
     if (id === "APIC" || id === "PIC") {
       const enc = frame[0]!;
       let j = 1;
       let hint: string;
-      if (id === "PIC") { hint = ascii(frame, 1, 4); j = 4; }
-      else { const end = frame.indexOf(0, 1); hint = ascii(frame, 1, end); j = end + 1; }
-      const type = frame[j]!; j++;
+      if (id === "PIC") {
+        hint = ascii(frame, 1, 4);
+        j = 4;
+      } else {
+        const end = frame.indexOf(0, 1);
+        hint = ascii(frame, 1, end);
+        j = end + 1;
+      }
+      const type = frame[j]!;
+      j++;
       // description: terminated by 00 (Latin-1/UTF-8) or 00 00 on an even boundary (UTF-16)
-      if (enc === 1 || enc === 2) { while (j + 1 < frame.length && !(frame[j] === 0 && frame[j + 1] === 0)) j += 2; j += 2; }
-      else { while (j < frame.length && frame[j] !== 0) j++; j++; }
+      if (enc === 1 || enc === 2) {
+        while (j + 1 < frame.length && !(frame[j] === 0 && frame[j + 1] === 0)) j += 2;
+        j += 2;
+      } else {
+        while (j < frame.length && frame[j] !== 0) j++;
+        j++;
+      }
       const a = art(frame.subarray(j), hint);
       if (a) found.push({ type, art: a });
     }
@@ -111,7 +140,8 @@ function flac(b: Uint8Array): CoverArt | null {
 function mp4(b: Uint8Array): CoverArt | null {
   // moov > udta > meta (full box) > ilst > covr > data
   const path = ["moov", "udta", "meta", "ilst", "covr", "data"];
-  let from = 0, to = b.length;
+  let from = 0,
+    to = b.length;
   for (const name of path) {
     const box = findBox(b, from, to, name);
     if (!box) return null;
@@ -123,13 +153,20 @@ function mp4(b: Uint8Array): CoverArt | null {
   return art(b.subarray(from + 8, to), kind === 14 ? "png" : kind === 13 ? "jpg" : "");
 }
 
-function findBox(b: Uint8Array, from: number, to: number, name: string): { start: number; end: number } | null {
+function findBox(
+  b: Uint8Array,
+  from: number,
+  to: number,
+  name: string,
+): { start: number; end: number } | null {
   let i = from;
   while (i + 8 <= to) {
     let size = u32(b, i);
     let head = 8;
-    if (size === 1) { size = u32(b, i + 8) * 2 ** 32 + u32(b, i + 12); head = 16; }
-    else if (size === 0) size = to - i;
+    if (size === 1) {
+      size = u32(b, i + 8) * 2 ** 32 + u32(b, i + 12);
+      head = 16;
+    } else if (size === 0) size = to - i;
     if (size < head) return null;
     if (ascii(b, i + 4, i + 8) === name) return { start: i + head, end: Math.min(to, i + size) };
     i += size;

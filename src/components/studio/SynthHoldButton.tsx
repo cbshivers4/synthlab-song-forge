@@ -16,11 +16,19 @@ export function SynthHoldButton({ track }: { track: Track }) {
       disabled={!usable}
       aria-label={`Hold notes on ${track.name}`}
       aria-pressed={on}
-      title={on ? "HOLD is on: notes keep sounding after you let go. Click to let them go." : "HOLD: keep notes sounding after you let go of the keys"}
-      onClick={(event) => { event.stopPropagation(); toggleHold(track.id); }}
+      title={
+        on
+          ? "HOLD is on: notes keep sounding after you let go. Click to let them go."
+          : "HOLD: keep notes sounding after you let go of the keys"
+      }
+      onClick={(event) => {
+        event.stopPropagation();
+        toggleHold(track.id);
+      }}
     >
       <span className="synth-hold-led" aria-hidden="true" />
-      <Hand className="size-3.5" aria-hidden="true" />HOLD
+      <Hand className="size-3.5" aria-hidden="true" />
+      HOLD
     </Button>
   );
 }

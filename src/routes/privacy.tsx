@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { SUPPORT_EMAIL } from "@/lib/synclab/contact";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -7,8 +8,7 @@ export const Route = createFileRoute("/privacy")({
       { title: "Privacy Notice — SYNCLAB" },
       {
         name: "description",
-        content:
-          "How SYNCLAB collects, uses, shares and protects your personal data.",
+        content: "How SYNCLAB collects, uses, shares and protects your personal data.",
       },
       { property: "og:title", content: "Privacy Notice — SYNCLAB" },
       { property: "og:description", content: "How SYNCLAB handles your personal data." },
@@ -23,9 +23,9 @@ function PrivacyRoute() {
   return (
     <LegalPage title="Privacy Notice" updated="21 September 2026">
       <p>
-        SYNCLAB is based in Detroit, Michigan, USA. We are the <strong>data controller</strong> for the personal data described
-        here, which means we decide why and how it is used. Contact:{" "}
-        <strong>christopherbshivers@gmail.com</strong>.
+        SYNCLAB is based in Detroit, Michigan, USA. We are the <strong>data controller</strong> for
+        the personal data described here, which means we decide why and how it is used. Contact:{" "}
+        <strong>{SUPPORT_EMAIL}</strong>.
       </p>
 
       <h2>What we collect and why</h2>
@@ -93,25 +93,24 @@ function PrivacyRoute() {
       <p>
         Account and project data is kept while your account is active and for up to 12 months after
         you close it, so you can recover work; billing records are kept as long as tax law requires
-        (typically 7 years). Technical logs are kept for up to 12 months. After that, data is deleted
-        or anonymised.
+        (typically 7 years). Technical logs are kept for up to 12 months. After that, data is
+        deleted or anonymised.
       </p>
 
       <h2>Your rights</h2>
       <p>
         Depending on where you live, you may request access to your data, correction, deletion,
-        restriction, portability, or object to processing based on legitimate interests, and withdraw
-        consent at any time. Email <strong>christopherbshivers@gmail.com</strong> and we will
-        respond within one month. UK/EEA users also have the right to complain to their local data
-        protection
-        authority.
+        restriction, portability, or object to processing based on legitimate interests, and
+        withdraw consent at any time. Email <strong>{SUPPORT_EMAIL}</strong> and we will respond
+        within one month. UK/EEA users also have the right to complain to their local data
+        protection authority.
       </p>
 
       <h2>Security</h2>
       <p>
         We use appropriate technical and organisational measures, including encryption in transit,
-        access controls and row-level database security, so each account can only reach its own data.
-        No system is perfectly secure, so please use a strong, unique password.
+        access controls and row-level database security, so each account can only reach its own
+        data. No system is perfectly secure, so please use a strong, unique password.
       </p>
 
       <h2>Cookies</h2>
@@ -123,7 +122,9 @@ function PrivacyRoute() {
       </p>
 
       <h2>Children</h2>
-      <p>SYNCLAB is not intended for children under 13, and we do not knowingly collect their data.</p>
+      <p>
+        SYNCLAB is not intended for children under 13, and we do not knowingly collect their data.
+      </p>
 
       <h2>Changes</h2>
       <p>We may update this notice; material changes will be announced in the app.</p>

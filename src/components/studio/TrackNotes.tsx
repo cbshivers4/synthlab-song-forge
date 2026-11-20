@@ -12,7 +12,15 @@ import { toast } from "sonner";
  * Per-track notes — write anything about a channel (mic used, tuning, ideas)
  * and it is saved with the project, so it comes back when the song is opened.
  */
-export function TrackNotes({ track, children, className }: { track: Track; children?: React.ReactNode; className?: string }) {
+export function TrackNotes({
+  track,
+  children,
+  className,
+}: {
+  track: Track;
+  children?: React.ReactNode;
+  className?: string;
+}) {
   const { updateTrack } = useStudio();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(track.memo ?? "");
@@ -34,7 +42,9 @@ export function TrackNotes({ track, children, className }: { track: Track; child
           <button
             type="button"
             onClick={(e) => e.stopPropagation()}
-            title={track.memo ? `Note: ${track.memo.slice(0, 80)}` : `Write a note about ${track.name}`}
+            title={
+              track.memo ? `Note: ${track.memo.slice(0, 80)}` : `Write a note about ${track.name}`
+            }
             aria-label={`Notes for ${track.name}`}
             className={cn(
               "flex size-6 shrink-0 items-center justify-center rounded-[3px] border border-border text-muted-foreground hover:text-foreground",
@@ -92,7 +102,8 @@ export function NotesPanel() {
   return (
     <div className="space-y-3">
       <p className="text-[11px] text-muted-foreground">
-        Every channel can hold its own note. Notes are saved with the project and come back when you open it again.
+        Every channel can hold its own note. Notes are saved with the project and come back when you
+        open it again.
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
         {tracks.map((t) => (
@@ -115,7 +126,11 @@ export function NotesPanel() {
             </p>
           </div>
         ))}
-        {tracks.length === 0 && <p className="text-[11px] text-muted-foreground">Add a track first, then you can write notes on it.</p>}
+        {tracks.length === 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            Add a track first, then you can write notes on it.
+          </p>
+        )}
       </div>
       {tracks.length > 0 && (
         <p className="label-xs">

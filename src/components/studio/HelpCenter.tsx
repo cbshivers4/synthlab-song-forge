@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useMaybeApp } from "@/lib/synclab/app-state";
 import { SUPPORT_EMAIL } from "@/lib/synclab/contact";
+import { isFounderEmail } from "@/lib/synclab/plan-tier";
 import {
   EMPTY_SETTINGS,
   HELP_CATEGORIES,
@@ -40,7 +41,9 @@ export const openHelp = (tab: HelpTab = "help") =>
   window.dispatchEvent(new CustomEvent(HELP_EVENT, { detail: tab }));
 /** Opens Help with one article expanded (used by the library search). */
 export const openHelpArticle = (articleId: string) =>
-  window.dispatchEvent(new CustomEvent(HELP_EVENT, { detail: { tab: "help", article: articleId } }));
+  window.dispatchEvent(
+    new CustomEvent(HELP_EVENT, { detail: { tab: "help", article: articleId } }),
+  );
 
 const SUPPORT_CATEGORIES = [
   "Account",
@@ -133,7 +136,10 @@ export function HelpCenter() {
     const onOpen = (e: Event) => {
       const detail = (e as CustomEvent<HelpTab | { tab: HelpTab; article: string }>).detail;
       if (detail && typeof detail === "object") {
-        setTab(detail.tab); setQuery(""); setHelpCat("All"); setOpenArticle(detail.article);
+        setTab(detail.tab);
+        setQuery("");
+        setHelpCat("All");
+        setOpenArticle(detail.article);
       } else setTab(detail ?? "help");
       setOpen(true);
     };
@@ -148,8 +154,8 @@ export function HelpCenter() {
       setUserId(u?.id ?? null);
       // The founder signs in with Gmail but handles support from the SYNCLAB address.
       const account = (u?.email ?? "").toLowerCase();
-      const replyEmail = account === "cbshivers@gmail.com" ? SUPPORT_EMAIL : (u?.email ?? "");
-      setEmail((prev) => (prev && prev.toLowerCase() !== "cbshivers@gmail.com" ? prev : replyEmail));
+      const replyEmail = isFounderEmail(account) ? SUPPORT_EMAIL : (u?.email ?? "");
+      setEmail((prev) => (prev && !isFounderEmail(prev) ? prev : replyEmail));
       void isSupportAdmin(u?.id).then(setAdmin);
     });
     void loadSupportSettings().then(setSettings);
@@ -165,7 +171,10 @@ export function HelpCenter() {
     [query, helpCat],
   );
   const grouped = useMemo(
-    () => HELP_CATEGORIES.map((c) => ({ c, list: articles.filter((a) => a.category === c) })).filter((g) => g.list.length),
+    () =>
+      HELP_CATEGORIES.map((c) => ({ c, list: articles.filter((a) => a.category === c) })).filter(
+        (g) => g.list.length,
+      ),
     [articles],
   );
 
@@ -230,7 +239,13 @@ export function HelpCenter() {
     { id: "problem", label: "Report a Problem", icon: <Bug className="size-3.5" /> },
     { id: "about", label: "About", icon: <Info className="size-3.5" /> },
     ...(admin
-      ? [{ id: "admin" as HelpTab, label: "Support Settings", icon: <Settings2 className="size-3.5" /> }]
+      ? [
+          {
+            id: "admin" as HelpTab,
+            label: "Support Settings",
+            icon: <Settings2 className="size-3.5" />,
+          },
+        ]
       : []),
   ];
 
@@ -270,7 +285,10 @@ export function HelpCenter() {
                 <Search className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
                 <Input
                   value={query}
-                  onChange={(e) => { setQuery(e.target.value); setHelpCat("All"); }}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setHelpCat("All");
+                  }}
                   placeholder="Search help — recording, DJ, flam, MIDI, export, phone…"
                   className="pl-8"
                   aria-label="Search the knowledge base"
@@ -278,7 +296,14 @@ export function HelpCenter() {
               </div>
               <div className="flex flex-wrap gap-1.5" role="group" aria-label="Help categories">
                 {(["All", ...HELP_CATEGORIES] as const).map((c) => (
-                  <Chip key={c} active={helpCat === c} onClick={() => { setHelpCat(helpCat === c ? "All" : c); setOpenArticle(null); }}>
+                  <Chip
+                    key={c}
+                    active={helpCat === c}
+                    onClick={() => {
+                      setHelpCat(helpCat === c ? "All" : c);
+                      setOpenArticle(null);
+                    }}
+                  >
                     {c === "All" ? `All (${KNOWLEDGE_BASE.length})` : c}
                   </Chip>
                 ))}
@@ -332,15 +357,25 @@ export function HelpCenter() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label className="text-xs">Name</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Optional" />
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Optional"
+                  />
                 </div>
                 <div>
                   <Label className="text-xs">Email for the reply</Label>
-                  <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+                  <Input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
                 </div>
               </div>
               <div>
-                <Label className="text-xs">{tab === "support" ? "Subject" : "What happened?"}</Label>
+                <Label className="text-xs">
+                  {tab === "support" ? "Subject" : "What happened?"}
+                </Label>
                 <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
               </div>
               <div>
@@ -357,7 +392,11 @@ export function HelpCenter() {
                 <>
                   <div>
                     <Label className="text-xs">What did you expect to happen?</Label>
-                    <Textarea rows={2} value={expected} onChange={(e) => setExpected(e.target.value)} />
+                    <Textarea
+                      rows={2}
+                      value={expected}
+                      onChange={(e) => setExpected(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label className="text-xs">How can we reproduce it?</Label>
@@ -412,27 +451,55 @@ export function HelpCenter() {
                 VST3/AU/CLAP plugins but can't run them yet.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
-                <a className="underline" href={settings.terms_url || "/terms"}>Terms</a>
-                <a className="underline" href={settings.privacy_url || "/privacy"}>Privacy</a>
-                <a className="underline" href="/refunds">Refunds</a>
-                <a className="underline" href="/pricing">Pricing</a>
+                <a className="underline" href={settings.terms_url || "/terms"}>
+                  Terms
+                </a>
+                <a className="underline" href={settings.privacy_url || "/privacy"}>
+                  Privacy
+                </a>
+                <a className="underline" href="/refunds">
+                  Refunds
+                </a>
+                <a className="underline" href="/pricing">
+                  Pricing
+                </a>
                 {settings.support_website && (
-                  <a className="underline" href={settings.support_website} target="_blank" rel="noreferrer">
+                  <a
+                    className="underline"
+                    href={settings.support_website}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Website
                   </a>
                 )}
                 {settings.status_url && (
-                  <a className="underline" href={settings.status_url} target="_blank" rel="noreferrer">
+                  <a
+                    className="underline"
+                    href={settings.status_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Status
                   </a>
                 )}
                 {settings.community_url && (
-                  <a className="underline" href={settings.community_url} target="_blank" rel="noreferrer">
+                  <a
+                    className="underline"
+                    href={settings.community_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Community
                   </a>
                 )}
                 {settings.tutorials_url && (
-                  <a className="underline" href={settings.tutorials_url} target="_blank" rel="noreferrer">
+                  <a
+                    className="underline"
+                    href={settings.tutorials_url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Tutorials
                   </a>
                 )}
@@ -444,9 +511,7 @@ export function HelpCenter() {
             </div>
           )}
 
-          {tab === "admin" && (
-            <AdminSettings settings={settings} onSaved={setSettings} />
-          )}
+          {tab === "admin" && <AdminSettings settings={settings} onSaved={setSettings} />}
         </div>
       </DialogContent>
     </Dialog>
@@ -468,23 +533,37 @@ function HelpArticle({ a, open, onToggle }: { a: Article; open: boolean; onToggl
       {open && (
         <div className="space-y-3 border-t border-border px-3 py-3 text-sm">
           <div className="space-y-1.5 text-muted-foreground">
-            <h4 className="text-[11px] font-bold tracking-[0.15em] text-foreground uppercase">How to use it</h4>
-            {a.body.map((p, i) => <p key={i}>{p}</p>)}
+            <h4 className="text-[11px] font-bold tracking-[0.15em] text-foreground uppercase">
+              How to use it
+            </h4>
+            {a.body.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-md border border-border bg-primary/5 p-2.5">
-              <h4 className="mb-1.5 text-[11px] font-bold tracking-[0.15em] text-primary uppercase">What you can do</h4>
+              <h4 className="mb-1.5 text-[11px] font-bold tracking-[0.15em] text-primary uppercase">
+                What you can do
+              </h4>
               <ul className="space-y-1">
                 {a.can.map((p, i) => (
-                  <li key={i} className="flex gap-1.5 text-muted-foreground"><Check className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />{p}</li>
+                  <li key={i} className="flex gap-1.5 text-muted-foreground">
+                    <Check className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
+                    {p}
+                  </li>
                 ))}
               </ul>
             </div>
             <div className="rounded-md border border-border bg-destructive/5 p-2.5">
-              <h4 className="mb-1.5 text-[11px] font-bold tracking-[0.15em] text-destructive uppercase">What you can't do</h4>
+              <h4 className="mb-1.5 text-[11px] font-bold tracking-[0.15em] text-destructive uppercase">
+                What you can't do
+              </h4>
               <ul className="space-y-1">
                 {a.cant.map((p, i) => (
-                  <li key={i} className="flex gap-1.5 text-muted-foreground"><X className="mt-0.5 size-3.5 shrink-0 text-destructive" aria-hidden />{p}</li>
+                  <li key={i} className="flex gap-1.5 text-muted-foreground">
+                    <X className="mt-0.5 size-3.5 shrink-0 text-destructive" aria-hidden />
+                    {p}
+                  </li>
                 ))}
               </ul>
             </div>

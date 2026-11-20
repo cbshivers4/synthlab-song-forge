@@ -36,13 +36,14 @@ export interface SongRenderInput {
   sampleRate: number;
 }
 
-
 /** Track state at a step: recorded mute/solo presses applied. */
 export function tracksAtStep(tracks: Track[], step: number): Track[] {
   return tracks.map((t) => {
     const muted = switchStateAt(t.muteEvents, step);
     const solo = switchStateAt(t.soloEvents, step);
-    return muted === undefined && solo === undefined ? t : { ...t, muted: muted ?? t.muted, solo: solo ?? t.solo };
+    return muted === undefined && solo === undefined
+      ? t
+      : { ...t, muted: muted ?? t.muted, solo: solo ?? t.solo };
   });
 }
 
@@ -52,7 +53,8 @@ export function songAudioUrls(tracks: Track[]): string[] {
   for (const t of tracks) {
     for (const c of t.clips ?? []) if (c.url) urls.add(c.url);
     if (t.sampler?.url) urls.add(t.sampler.url);
-    if (t.patch?.granular?.source === "sample" && t.patch.granular.sampleUrl) urls.add(t.patch.granular.sampleUrl);
+    if (t.patch?.granular?.source === "sample" && t.patch.granular.sampleUrl)
+      urls.add(t.patch.granular.sampleUrl);
     for (const p of t.pads ?? []) if (p.sampleUrl) urls.add(p.sampleUrl);
   }
   return [...urls];
@@ -75,20 +77,30 @@ export async function renderSong(input: SongRenderInput): Promise<Capture | null
   const engine = new SongEngine(ctx, live);
   engine.tempo = input.transport.bpm;
 
-  for (const [id, b] of Object.entries(input.buses)) engine.setBus(id, b.volume, b.muted, b.gain ?? 1);
+  for (const [id, b] of Object.entries(input.buses))
+    engine.setBus(id, b.volume, b.muted, b.gain ?? 1);
   engine.setVcaStates(input.vcas, input.tracks);
-  for (const [id, a] of Object.entries(input.auxReturns)) engine.setAuxReturn(id, a.volume, a.muted);
+  for (const [id, a] of Object.entries(input.auxReturns))
+    engine.setAuxReturn(id, a.volume, a.muted);
   // Channels with recorded mute/solo presses stay open in the mixer; the scheduler skips their
   // notes and clips while they're muted, so the presses land at their step.
   const anyRecordedSolo = input.tracks.some((t) => t.soloEvents?.length);
-  engine.syncMix(input.tracks.map((t) => ({
-    ...t,
-    ...(t.muteEvents?.length ? { muted: false } : {}),
-    ...(anyRecordedSolo ? { solo: false } : {}),
-  })));
+  engine.syncMix(
+    input.tracks.map((t) => ({
+      ...t,
+      ...(t.muteEvents?.length ? { muted: false } : {}),
+      ...(anyRecordedSolo ? { solo: false } : {}),
+    })),
+  );
   // Vocal Tune runs in an audio worklet; load it on this context first so exports are corrected too.
-  const usesTune = [...input.tracks.flatMap((t) => t.plugins ?? []), ...Object.values(input.fxChains).flat()].some((pl) => pl.kind === "vocaltune" && !pl.bypass);
-  if (usesTune) await ensureVocalTune(ctx).catch(() => { /* no worklet support: the export carries the dry voice */ });
+  const usesTune = [
+    ...input.tracks.flatMap((t) => t.plugins ?? []),
+    ...Object.values(input.fxChains).flat(),
+  ].some((pl) => pl.kind === "vocaltune" && !pl.bypass);
+  if (usesTune)
+    await ensureVocalTune(ctx).catch(() => {
+      /* no worklet support: the export carries the dry voice */
+    });
   for (const t of input.tracks) engine.setInserts(t.id, t.plugins ?? []);
   for (const [target, list] of Object.entries(input.fxChains)) engine.setFxInserts(target, list);
 
@@ -98,13 +110,18 @@ export async function renderSong(input: SongRenderInput): Promise<Capture | null
     const n = input.startStep + i;
     const when = i * stepDur;
     const list = tracksAtStep(input.tracks, n);
-    scheduleStep(engine, list, tp, n, when, { ...OFFLINE_LIVE, lastScheduled: i === 0 ? null : n - 1 });
+    scheduleStep(engine, list, tp, n, when, {
+      ...OFFLINE_LIVE,
+      lastScheduled: i === 0 ? null : n - 1,
+    });
     const anySolo = list.some((t) => t.solo);
     for (const t of list) {
-      if (t.muted || t.deviceBypassed || t.frozen || (anySolo && !t.solo) || !t.automation?.length) continue;
+      if (t.muted || t.deviceBypassed || t.frozen || (anySolo && !t.solo) || !t.automation?.length)
+        continue;
       const ride: Record<string, number> = {};
       for (const lane of t.automation) {
-        if (lane.points.length && laneReads(lane, false, false)) ride[lane.param] = valueAt(lane.points, n);
+        if (lane.points.length && laneReads(lane, false, false))
+          ride[lane.param] = valueAt(lane.points, n);
       }
       if (Object.keys(ride).length) engine.automate(t.id, ride, when);
     }
@@ -112,6 +129,8 @@ export async function renderSong(input: SongRenderInput): Promise<Capture | null
 
   const rendered = await ctx.startRendering();
   const left = new Float32Array(rendered.getChannelData(0));
-  const right = new Float32Array(rendered.numberOfChannels > 1 ? rendered.getChannelData(1) : rendered.getChannelData(0));
+  const right = new Float32Array(
+    rendered.numberOfChannels > 1 ? rendered.getChannelData(1) : rendered.getChannelData(0),
+  );
   return { left, right, sampleRate: rendered.sampleRate };
 }

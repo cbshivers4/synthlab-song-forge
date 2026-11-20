@@ -20,7 +20,12 @@ export function readMobileAccessibility(): MobileAccessibilityPrefs {
   if (typeof window === "undefined") return DEFAULT_MOBILE_ACCESSIBILITY;
   try {
     const raw = window.localStorage.getItem(KEY);
-    return raw ? { ...DEFAULT_MOBILE_ACCESSIBILITY, ...(JSON.parse(raw) as Partial<MobileAccessibilityPrefs>) } : DEFAULT_MOBILE_ACCESSIBILITY;
+    return raw
+      ? {
+          ...DEFAULT_MOBILE_ACCESSIBILITY,
+          ...(JSON.parse(raw) as Partial<MobileAccessibilityPrefs>),
+        }
+      : DEFAULT_MOBILE_ACCESSIBILITY;
   } catch {
     return DEFAULT_MOBILE_ACCESSIBILITY;
   }
@@ -39,7 +44,8 @@ export function useMobileAccessibility() {
   const [prefs, setPrefs] = useState<MobileAccessibilityPrefs>(DEFAULT_MOBILE_ACCESSIBILITY);
   useEffect(() => {
     setPrefs(readMobileAccessibility());
-    const onChange = (event: Event) => setPrefs((event as CustomEvent<MobileAccessibilityPrefs>).detail);
+    const onChange = (event: Event) =>
+      setPrefs((event as CustomEvent<MobileAccessibilityPrefs>).detail);
     window.addEventListener(MOBILE_PREFS_EVENT, onChange);
     return () => window.removeEventListener(MOBILE_PREFS_EVENT, onChange);
   }, []);

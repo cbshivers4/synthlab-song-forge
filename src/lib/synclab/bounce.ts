@@ -42,7 +42,13 @@ export function normalize(cap: Capture, target = 0.98): Capture {
 /** 16-bit WAV; mono averages left/right without changing the original capture. */
 export function encodeWav(cap: Capture, channels: 1 | 2 = 2): Blob {
   const frames = Math.min(cap.left.length, cap.right.length);
-  const mono = channels === 1 ? Float32Array.from({ length: frames }, (_, i) => ((cap.left[i] ?? 0) + (cap.right[i] ?? 0)) / 2) : cap.left;
+  const mono =
+    channels === 1
+      ? Float32Array.from(
+          { length: frames },
+          (_, i) => ((cap.left[i] ?? 0) + (cap.right[i] ?? 0)) / 2,
+        )
+      : cap.left;
   const l = toPcm16(mono);
   const r = toPcm16(cap.right);
   const blockAlign = channels * 2;
@@ -105,7 +111,11 @@ export function downloadBlob(blob: Blob, filename: string) {
 /** True when the browser can share an audio file (mostly phones/tablets). */
 export function canShareFile(file: File) {
   const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-  return typeof nav.share === "function" && typeof nav.canShare === "function" && nav.canShare({ files: [file] });
+  return (
+    typeof nav.share === "function" &&
+    typeof nav.canShare === "function" &&
+    nav.canShare({ files: [file] })
+  );
 }
 
 export async function shareFile(file: File, title: string) {

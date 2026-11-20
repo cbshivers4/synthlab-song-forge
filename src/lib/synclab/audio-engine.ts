@@ -1,4 +1,9 @@
-import { unisonCopyScale, voiceDriveAmount, voiceInputGain, voiceSaturationCurve } from "./voice-saturation";
+import {
+  unisonCopyScale,
+  voiceDriveAmount,
+  voiceInputGain,
+  voiceSaturationCurve,
+} from "./voice-saturation";
 import { meterWindowSize } from "./meter-window";
 import { nativeInsertMode } from "./native-insert";
 import { lfoHz } from "./synth-timing";
@@ -12,8 +17,15 @@ import { renderVintageDrum } from "./vintage-drums";
 import { playModularVoice } from "./modular";
 import { HELD_NOTE_SECONDS } from "./synth-hold";
 import { pianoBuffer, warmPiano } from "./piano-voice";
-import { GRANULAR_ROOT, builtInSource, playGranularVoice, warmBuiltInSource, type GranularPatch, type GranularVoice } from "./granular";
-import { MODULAR_SCOPE_TYPES, attachModularScope, modularScopeId } from './modular-scopes';
+import {
+  GRANULAR_ROOT,
+  builtInSource,
+  playGranularVoice,
+  warmBuiltInSource,
+  type GranularPatch,
+  type GranularVoice,
+} from "./granular";
+import { MODULAR_SCOPE_TYPES, attachModularScope, modularScopeId } from "./modular-scopes";
 import { playbackPreferences } from "./preferences";
 import { encodeWav } from "./bounce";
 import { isExternal, sendExternalNote, stopExternalNotes } from "./external-midi";
@@ -21,116 +33,34 @@ import { clampTrim } from "./trim-gain";
 import { drumMakeup, drumVelocityGain } from "./drum-levels";
 import { keysSnapshot, subscribeKeys } from "./active-keys";
 import type { DrumKitId, DrumPad, PluginInstance, SynthPatch, Track } from "./types";
-import { getInputChannel, getInputGainDb, getOutputDevice, isAppleMobile, openMicOrThrow, outputRoutingHint, preferredRecordingMime, releaseMic } from "./mic";
+import {
+  getInputChannel,
+  getInputGainDb,
+  getOutputDevice,
+  isAppleMobile,
+  openMicOrThrow,
+  outputRoutingHint,
+  preferredRecordingMime,
+  releaseMic,
+} from "./mic";
 import { decodeAudioFile } from "./aiff-decode";
 
-type KitVoice = {
-  kick: [number, number, number, OscillatorType];
-  snare: [number, number, number];
-  clap: number;
-  hatF: number;
-  hatD: number;
-  tom: [number, number];
-  perc: number;
-  crash: number;
-  ride: number;
-  click: number;
-  body: number;
-};
+import { DRUM_KIT_VOICES } from "./drum-kit-voices";
+import {
+  makeBitcrushCurve,
+  makeDistortionCurve,
+  makeImpulse,
+  midiToFreq,
+  peakInWindow,
+  resonatorGain,
+  resonatorQ,
+  sampleWindow,
+} from "./engine-dsp";
 
-/** Voice shaping per classic drum machine (synthesised, not sampled). */
-export const DRUM_KIT_VOICES: Record<DrumKitId, KitVoice> = {
-  "909": { kick: [120, 45, 0.38, "sine"], snare: [190, 1800, 1], clap: 1500, hatF: 8200, hatD: 0.9, tom: [180, 85], perc: 620, crash: 5600, ride: 9200, click: 1, body: 1 },
-  "808": { kick: [90, 30, 1.1, "sine"], snare: [200, 1200, 0.8], clap: 1100, hatF: 9500, hatD: 0.55, tom: [140, 60], perc: 520, crash: 4800, ride: 8200, click: 0.4, body: 0.8 },
-  "727": { kick: [230, 180, 0.24, "sine"], snare: [620, 2600, 0.5], clap: 5200, hatF: 11000, hatD: 0.5, tom: [290, 200], perc: 540, crash: 880, ride: 380, click: 0.5, body: 0.8 },
-  r8: { kick: [125, 55, 0.38, "sine"], snare: [205, 2200, 1.1], clap: 1700, hatF: 9000, hatD: 0.8, tom: [190, 90], perc: 640, crash: 5300, ride: 9100, click: 1.2, body: 1.2 },
-  "707": { kick: [110, 50, 0.3, "triangle"], snare: [230, 2000, 0.7], clap: 1600, hatF: 7800, hatD: 0.7, tom: [190, 95], perc: 700, crash: 5400, ride: 9000, click: 1.2, body: 1 },
-  "606": { kick: [105, 48, 0.28, "triangle"], snare: [240, 2600, 0.6], clap: 1800, hatF: 10000, hatD: 0.5, tom: [210, 110], perc: 760, crash: 6200, ride: 9600, click: 1.4, body: 0.9 },
-  linn: { kick: [95, 52, 0.42, "sine"], snare: [180, 1500, 1.1], clap: 1300, hatF: 7000, hatD: 0.8, tom: [160, 80], perc: 560, crash: 5000, ride: 8600, click: 0.9, body: 1.15 },
-  acoustic: { kick: [80, 55, 0.5, "sine"], snare: [170, 1200, 1.3], clap: 1200, hatF: 6400, hatD: 0.85, tom: [150, 75], perc: 480, crash: 4600, ride: 8000, click: 0.7, body: 1.3 },
-  detroit: { kick: [140, 40, 0.34, "sine"], snare: [210, 2200, 0.9], clap: 1700, hatF: 8800, hatD: 0.6, tom: [200, 90], perc: 660, crash: 5800, ride: 9400, click: 1.3, body: 1 },
-  lofi: { kick: [85, 38, 0.45, "triangle"], snare: [160, 1000, 1], clap: 900, hatF: 5600, hatD: 0.7, tom: [130, 65], perc: 440, crash: 4000, ride: 7200, click: 0.5, body: 1.2 },
-  trap: { kick: [70, 28, 1.4, "sine"], snare: [220, 2400, 0.75], clap: 1400, hatF: 11000, hatD: 0.35, tom: [170, 70], perc: 600, crash: 5200, ride: 8800, click: 0.6, body: 0.85 },
-  cr78: { kick: [100, 60, 0.26, "sine"], snare: [250, 2800, 0.6], clap: 1900, hatF: 9000, hatD: 0.45, tom: [200, 105], perc: 820, crash: 6000, ride: 9400, click: 1.1, body: 0.8 },
-  simmons: { kick: [130, 35, 0.5, "sine"], snare: [300, 900, 1.1], clap: 1200, hatF: 7400, hatD: 0.6, tom: [220, 60], perc: 700, crash: 5200, ride: 8600, click: 1.5, body: 1.4 },
-  dmx: { kick: [98, 46, 0.4, "sine"], snare: [195, 1700, 1.05], clap: 1450, hatF: 7600, hatD: 0.75, tom: [170, 85], perc: 580, crash: 5200, ride: 8800, click: 1, body: 1.1 },
-  mpc60: { kick: [92, 44, 0.44, "sine"], snare: [185, 1450, 1.15], clap: 1250, hatF: 6800, hatD: 0.7, tom: [155, 78], perc: 520, crash: 4800, ride: 8200, click: 0.8, body: 1.2 },
-  jazz: { kick: [75, 52, 0.42, "sine"], snare: [165, 1100, 1.25], clap: 1150, hatF: 6000, hatD: 0.9, tom: [145, 72], perc: 460, crash: 4400, ride: 7800, click: 0.6, body: 1.25 },
-  rock: { kick: [82, 50, 0.52, "sine"], snare: [175, 1350, 1.45], clap: 1300, hatF: 6600, hatD: 0.95, tom: [150, 70], perc: 500, crash: 4200, ride: 7600, click: 0.9, body: 1.45 },
-  latin: { kick: [88, 58, 0.36, "sine"], snare: [230, 1600, 0.95], clap: 1500, hatF: 7200, hatD: 0.7, tom: [210, 120], perc: 900, crash: 5000, ride: 8400, click: 1, body: 1.1 },
-  afrobeat: { kick: [86, 54, 0.4, "sine"], snare: [205, 1400, 1.1], clap: 1350, hatF: 6900, hatD: 0.8, tom: [190, 100], perc: 840, crash: 4700, ride: 8000, click: 0.8, body: 1.2 },
-  drill: { kick: [68, 26, 1.5, "sine"], snare: [215, 2600, 0.8], clap: 1600, hatF: 11500, hatD: 0.3, tom: [165, 68], perc: 620, crash: 5400, ride: 9000, click: 0.6, body: 0.8 },
-  ghettotech: { kick: [135, 42, 0.3, "sine"], snare: [225, 2400, 0.85], clap: 1800, hatF: 9800, hatD: 0.5, tom: [205, 95], perc: 720, crash: 6000, ride: 9600, click: 1.35, body: 0.95 },
-  jungle: { kick: [78, 40, 0.6, "sine"], snare: [190, 1900, 1.3], clap: 1400, hatF: 8000, hatD: 0.65, tom: [160, 80], perc: 640, crash: 5000, ride: 8600, click: 0.9, body: 1.15 },
-  boombap: { kick: [84, 42, 0.48, "triangle"], snare: [178, 1300, 1.35], clap: 1150, hatF: 6200, hatD: 0.7, tom: [150, 74], perc: 500, crash: 4400, ride: 7600, click: 0.7, body: 1.3 },
-  house: { kick: [105, 48, 0.36, "sine"], snare: [215, 1800, 0.85], clap: 1550, hatF: 8400, hatD: 0.65, tom: [185, 90], perc: 680, crash: 5400, ride: 9000, click: 1.05, body: 1.05 },
-  techno: { kick: [128, 38, 0.32, "sine"], snare: [205, 2300, 0.8], clap: 1700, hatF: 9200, hatD: 0.55, tom: [195, 88], perc: 700, crash: 5900, ride: 9400, click: 1.4, body: 0.95 },
-  industrial: { kick: [150, 34, 0.42, "square"], snare: [240, 3000, 1.2], clap: 2000, hatF: 12000, hatD: 0.5, tom: [230, 90], perc: 980, crash: 6600, ride: 10200, click: 1.8, body: 1.35 },
-};
+export { DRUM_KIT_VOICES } from "./drum-kit-voices";
+export { midiToFreq, peakInWindow, resonatorGain, resonatorQ, sampleWindow } from "./engine-dsp";
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
-
-export const midiToFreq = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
-
-/** Loudest absolute value inside a 0..1 window of some channels. */
-/** Band Q that makes a resonator band ring for about `decay` seconds (60 dB) at `hz`. */
-export const resonatorQ = (hz: number, decay: number) => clamp((Math.PI * hz * Math.max(0.1, decay)) / 6.9, 8, 420);
-/** Narrower bands catch less energy, so louder rings get matching make-up; higher bands are damped. */
-export const resonatorGain = (q: number, damping: number, i: number, count: number) => ((1 - damping * (i / count)) / count) * Math.sqrt(q / 8) * 2;
-
-export function peakInWindow(channels: Float32Array[], start: number, end: number): number {
-  let peak = 0;
-  for (const data of channels) {
-    const from = Math.max(0, Math.floor(clamp(start, 0, 1) * data.length));
-    const to = Math.min(data.length, Math.ceil(clamp(end, 0, 1) * data.length));
-    for (let i = from; i < to; i++) { const v = Math.abs(data[i]!); if (v > peak) peak = v; }
-  }
-  return peak;
-}
-
-/** Trim window (0..1) to read from the (possibly reversed) buffer so reverse plays the selected part backwards. */
-export function sampleWindow(start: number, end: number, reverse: boolean): [number, number] {
-  const a0 = clamp(start, 0, 0.999);
-  const b0 = clamp(end, a0 + 0.001, 1);
-  if (!reverse) return [a0, b0];
-  return [clamp(1 - b0, 0, 0.999), clamp(1 - a0, 1 - b0 + 0.001, 1)];
-}
-
-function makeImpulse(ctx: AudioContext, decay: number) {
-  const rate = ctx.sampleRate;
-  const len = Math.max(1, Math.floor(rate * decay));
-  const buf = ctx.createBuffer(2, len, rate);
-  for (let ch = 0; ch < 2; ch++) {
-    const d = buf.getChannelData(ch);
-    for (let i = 0; i < len; i++) {
-      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
-    }
-  }
-  return buf;
-}
-
-function makeBitcrushCurve(bits: number) {
-  const steps = Math.pow(2, bits);
-  const n = 8192;
-  const curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = (i / (n - 1)) * 2 - 1;
-    curve[i] = Math.round(x * steps) / steps;
-  }
-  return curve;
-}
-
-
-function makeDistortionCurve(amount: number) {
-  const k = amount * 100;
-  const n = 1025; // Odd size maps silence to exactly zero, avoiding a DC floor.
-  const curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = (i * 2) / (n - 1) - 1;
-    curve[i] = ((1 + k) * x) / (1 + k * Math.abs(x));
-  }
-  return curve;
-}
 
 interface ChannelStrip {
   input: GainNode;
@@ -156,7 +86,15 @@ type AutomatableAudioParam = { param: AudioParam; min: number; max: number; loga
 const vocoderCleanups = new Map<string, () => void>();
 
 /* holds the current value so live envelope edits don't jump */
-const holdAt = (pr: AudioParam, tm: number) => { const x = pr as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam }; if (x.cancelAndHoldAtTime) x.cancelAndHoldAtTime(tm); else { const v = pr.value; pr.cancelScheduledValues(tm); pr.setValueAtTime(v, tm); } };
+const holdAt = (pr: AudioParam, tm: number) => {
+  const x = pr as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam };
+  if (x.cancelAndHoldAtTime) x.cancelAndHoldAtTime(tm);
+  else {
+    const v = pr.value;
+    pr.cancelScheduledValues(tm);
+    pr.setValueAtTime(v, tm);
+  }
+};
 
 export class SyncLabEngine {
   ctx: AudioContext | null = null;
@@ -196,7 +134,13 @@ export class SyncLabEngine {
   private masterR: AnalyserNode | null = null;
   private masterBufs = new Map<string, Float32Array>();
   /** One high-resolution branch analyser for the expanded scope window; never feeds back into the mix. */
-  private detail: { id: string; source: AnalyserNode; node: AnalyserNode; wave: Float32Array; spec: Float32Array } | null = null;
+  private detail: {
+    id: string;
+    source: AnalyserNode;
+    node: AnalyserNode;
+    wave: Float32Array;
+    spec: Float32Array;
+  } | null = null;
   private resumeListenersInstalled = false;
   private unlockMedia: HTMLAudioElement | null = null;
   private mediaUnlocked = false;
@@ -213,15 +157,27 @@ export class SyncLabEngine {
     }
     if (this.mediaUnlocked) return;
     const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
-    try { if (session) session.type = "playback"; } catch { /* unsupported */ }
+    try {
+      if (session) session.type = "playback";
+    } catch {
+      /* unsupported */
+    }
     try {
       // A valid, non-empty silent WAV is required by older iOS media playback.
-      const el = this.unlockMedia ?? new Audio("data:audio/wav;base64,UklGRnQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==");
+      const el =
+        this.unlockMedia ??
+        new Audio(
+          "data:audio/wav;base64,UklGRnQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==",
+        );
       el.setAttribute("playsinline", "");
       this.unlockMedia = el;
       this.mediaUnlocked = true;
-      void el.play().catch(() => { this.mediaUnlocked = false; });
-    } catch { this.mediaUnlocked = false; }
+      void el.play().catch(() => {
+        this.mediaUnlocked = false;
+      });
+    } catch {
+      this.mediaUnlocked = false;
+    }
   }
 
   init() {
@@ -256,7 +212,9 @@ export class SyncLabEngine {
   /** Master, send returns and buses. Shared by the live context and offline song renders. */
   protected buildGraph(ctx: BaseAudioContext) {
     const master = ctx.createGain();
-    master.gain.value = this.busStates["master"]?.muted ? 0 : (this.busStates["master"]?.volume ?? 1) * clampTrim(this.busStates["master"]?.gain);
+    master.gain.value = this.busStates["master"]?.muted
+      ? 0
+      : (this.busStates["master"]?.volume ?? 1) * clampTrim(this.busStates["master"]?.gain);
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 1024;
     master.connect(analyser);
@@ -270,7 +228,10 @@ export class SyncLabEngine {
     analyser.connect(split);
     const anL = ctx.createAnalyser();
     const anR = ctx.createAnalyser();
-    for (const a of [anL, anR]) { a.fftSize = 2048; a.smoothingTimeConstant = 0.6; }
+    for (const a of [anL, anR]) {
+      a.fftSize = 2048;
+      a.smoothingTimeConstant = 0.6;
+    }
     split.connect(anL, 0);
     split.connect(anR, 1);
     this.masterL = anL;
@@ -296,7 +257,9 @@ export class SyncLabEngine {
     reverbMeter.connect(master);
     this.auxMeters.set("reverb", reverbMeter);
     this.pluginScopes.set("aux:reverb", reverbMeter);
-    reverbReturn.gain.value = this.auxStates["reverb"]?.muted ? 0 : this.auxStates["reverb"]?.volume ?? 1;
+    reverbReturn.gain.value = this.auxStates["reverb"]?.muted
+      ? 0
+      : (this.auxStates["reverb"]?.volume ?? 1);
     this.auxReturns.set("reverb", reverbReturn);
     this.reverb = conv;
     this.reverbSend = send;
@@ -319,7 +282,9 @@ export class SyncLabEngine {
     delayMeter.connect(master);
     this.auxMeters.set("delay", delayMeter);
     this.pluginScopes.set("aux:delay", delayMeter);
-    delayReturn.gain.value = this.auxStates["delay"]?.muted ? 0 : this.auxStates["delay"]?.volume ?? 1;
+    delayReturn.gain.value = this.auxStates["delay"]?.muted
+      ? 0
+      : (this.auxStates["delay"]?.volume ?? 1);
     this.auxReturns.set("delay", delayReturn);
     this.delaySend = dSend;
     this.sendOut.set("delay", delay);
@@ -346,16 +311,18 @@ export class SyncLabEngine {
     chorusMeter.connect(master);
     this.auxMeters.set("chorus", chorusMeter);
     this.pluginScopes.set("aux:chorus", chorusMeter);
-    chorusReturn.gain.value = this.auxStates["chorus"]?.muted ? 0 : this.auxStates["chorus"]?.volume ?? 1;
+    chorusReturn.gain.value = this.auxStates["chorus"]?.muted
+      ? 0
+      : (this.auxStates["chorus"]?.volume ?? 1);
     this.auxReturns.set("chorus", chorusReturn);
     this.chorusSend = cSend;
     this.sendOut.set("chorus", cDelay);
     this.sendOut.set("reverb", conv);
 
-
     for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
       const g = ctx.createGain();
-      g.gain.value = id === "master" ? 1 : this.busStates[id]?.muted ? 0 : this.busStates[id]?.volume ?? 1;
+      g.gain.value =
+        id === "master" ? 1 : this.busStates[id]?.muted ? 0 : (this.busStates[id]?.volume ?? 1);
       const busScope = ctx.createAnalyser();
       busScope.fftSize = 1024;
       busScope.smoothingTimeConstant = 0.6;
@@ -389,7 +356,10 @@ export class SyncLabEngine {
   private voiceCurve(patch: SynthPatch) {
     const key = voiceDriveAmount(patch).toFixed(2);
     let curve = this.voiceCurves.get(key);
-    if (!curve) { curve = voiceSaturationCurve(Number(key)); this.voiceCurves.set(key, curve); }
+    if (!curve) {
+      curve = voiceSaturationCurve(Number(key));
+      this.voiceCurves.set(key, curve);
+    }
     return curve;
   }
   private voiceCurves = new Map<string, Float32Array<ArrayBuffer>>();
@@ -410,10 +380,22 @@ export class SyncLabEngine {
   setMasterInsert(chain: { input: AudioNode; output: AudioNode } | null) {
     this.init();
     if (!this.master || !this.analyser) return;
-    try { this.master.disconnect(this.analyser); } catch { /* not connected */ }
+    try {
+      this.master.disconnect(this.analyser);
+    } catch {
+      /* not connected */
+    }
     if (this.masterInsert) {
-      try { this.master.disconnect(this.masterInsert.input); } catch { /* */ }
-      try { this.masterInsert.output.disconnect(this.analyser); } catch { /* */ }
+      try {
+        this.master.disconnect(this.masterInsert.input);
+      } catch {
+        /* */
+      }
+      try {
+        this.masterInsert.output.disconnect(this.analyser);
+      } catch {
+        /* */
+      }
     }
     this.masterInsert = chain;
     if (chain) {
@@ -513,10 +495,18 @@ export class SyncLabEngine {
     // The master fader controls the complete mix, including every bus and FX return.
     // The "master" routing bus stays at unity so direct tracks are not attenuated twice.
     if (id === "master") {
-      this.master?.gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 2) * clampTrim(gain), this.ctx.currentTime, 0.02);
+      this.master?.gain.setTargetAtTime(
+        muted ? 0 : clamp(volume, 0, 2) * clampTrim(gain),
+        this.ctx.currentTime,
+        0.02,
+      );
       return;
     }
-    this.busNode(id).gain.setTargetAtTime(muted ? 0 : clamp(volume, 0, 2), this.ctx.currentTime, 0.02);
+    this.busNode(id).gain.setTargetAtTime(
+      muted ? 0 : clamp(volume, 0, 2),
+      this.ctx.currentTime,
+      0.02,
+    );
     // Sends leave the track before the subgroup, so follow its fader/mute too.
     for (const track of this.mixTracks) {
       if ((track.bus ?? "master") !== id) continue;
@@ -574,19 +564,29 @@ export class SyncLabEngine {
       tap.connect(this.peakSink);
       this.peakTaps.set(node, tap);
     }
-    if (!this.peakBuf || this.peakBuf.length !== tap.fftSize) this.peakBuf = new Float32Array(tap.fftSize);
+    if (!this.peakBuf || this.peakBuf.length !== tap.fftSize)
+      this.peakBuf = new Float32Array(tap.fftSize);
     const data = this.peakBuf;
     tap.getFloatTimeDomainData(data);
     let peak = 0;
-    for (let i = 0; i < data.length; i++) { const a = Math.abs(data[i]!); if (a > peak) peak = a; }
+    for (let i = 0; i < data.length; i++) {
+      const a = Math.abs(data[i]!);
+      if (a > peak) peak = a;
+    }
     return peak;
   }
 
-  getBusLevel(id: string) { return this.peakOf(this.busMeters.get(id)); }
+  getBusLevel(id: string) {
+    return this.peakOf(this.busMeters.get(id));
+  }
 
-  getAuxLevel(id: string) { return this.peakOf(this.auxMeters.get(id)); }
+  getAuxLevel(id: string) {
+    return this.peakOf(this.auxMeters.get(id));
+  }
 
-  getVcaLevel(id: string) { return this.peakOf(this.vcaMeters.get(id)); }
+  getVcaLevel(id: string) {
+    return this.peakOf(this.vcaMeters.get(id));
+  }
 
   /** Real post-master audio for one channel (0 = left, 1 = right); buffers are reused, so copy if you keep them. */
   getMasterChannel(ch: 0 | 1, kind: "wave" | "spectrum"): Float32Array | null {
@@ -595,7 +595,10 @@ export class SyncLabEngine {
     const key = `${ch}${kind}`;
     const len = kind === "wave" ? an.fftSize : an.frequencyBinCount;
     let buf = this.masterBufs.get(key);
-    if (!buf || buf.length !== len) { buf = new Float32Array(len); this.masterBufs.set(key, buf); }
+    if (!buf || buf.length !== len) {
+      buf = new Float32Array(len);
+      this.masterBufs.set(key, buf);
+    }
     if (kind === "wave") an.getFloatTimeDomainData(buf as Float32Array<ArrayBuffer>);
     else an.getFloatFrequencyData(buf as Float32Array<ArrayBuffer>);
     return buf;
@@ -627,17 +630,29 @@ export class SyncLabEngine {
   getDetailScope(scopeId: string, kind: "wave" | "spectrum"): Float32Array | null {
     const source = this.pluginScopes.get(scopeId);
     const ctx = this.ctx;
-    if (!source || !ctx) { if (this.detail && this.detail.id !== scopeId) this.releaseDetailScope(); return null; }
+    if (!source || !ctx) {
+      if (this.detail && this.detail.id !== scopeId) this.releaseDetailScope();
+      return null;
+    }
     if (!this.detail || this.detail.id !== scopeId || this.detail.source !== source) {
       this.releaseDetailScope();
       const node = ctx.createAnalyser();
       node.fftSize = 8192;
       node.smoothingTimeConstant = 0.72;
       source.connect(node);
-      this.detail = { id: scopeId, source, node, wave: new Float32Array(node.fftSize), spec: new Float32Array(node.frequencyBinCount) };
+      this.detail = {
+        id: scopeId,
+        source,
+        node,
+        wave: new Float32Array(node.fftSize),
+        spec: new Float32Array(node.frequencyBinCount),
+      };
     }
     const d = this.detail;
-    if (kind === "wave") { d.node.getFloatTimeDomainData(d.wave as Float32Array<ArrayBuffer>); return d.wave; }
+    if (kind === "wave") {
+      d.node.getFloatTimeDomainData(d.wave as Float32Array<ArrayBuffer>);
+      return d.wave;
+    }
     d.node.getFloatFrequencyData(d.spec as Float32Array<ArrayBuffer>);
     return d.spec;
   }
@@ -647,7 +662,11 @@ export class SyncLabEngine {
     const d = this.detail;
     this.detail = null;
     if (!d) return;
-    try { d.source.disconnect(d.node); } catch { /* source already rebuilt */ }
+    try {
+      d.source.disconnect(d.node);
+    } catch {
+      /* source already rebuilt */
+    }
   }
 
   /** Output waveform of one effect insert, or null when that effect is not running. */
@@ -677,7 +696,7 @@ export class SyncLabEngine {
   private playbackChannel(id: string): ChannelStrip {
     if (!this.channels.has(id)) {
       this.syncMix(this.mixTracks);
-      const track = this.mixTracks.find(track => track.id === id);
+      const track = this.mixTracks.find((track) => track.id === id);
       if (track) this.setInserts(id, track.plugins ?? []);
     }
     return this.channel(id);
@@ -722,7 +741,22 @@ export class SyncLabEngine {
       synthChorusScale.gain.value = 1;
       if (this.reverbSend) synthReverbScale.connect(this.reverbSend);
       if (this.chorusSend) synthChorusScale.connect(this.chorusSend);
-      ch = { input, trim, gain, pan, meter, sendReverb, sendDelay, sendChorus, synthReverbScale, synthChorusScale, bus: "master", insertNodes: [], insertKey: "", insertOut };
+      ch = {
+        input,
+        trim,
+        gain,
+        pan,
+        meter,
+        sendReverb,
+        sendDelay,
+        sendChorus,
+        synthReverbScale,
+        synthChorusScale,
+        bus: "master",
+        insertNodes: [],
+        insertKey: "",
+        insertOut,
+      };
       this.channels.set(id, ch);
     }
     return ch;
@@ -735,7 +769,11 @@ export class SyncLabEngine {
     const ctx = this.ctx;
     if (!ctx || !prevKey) return false;
     let prev: [string, string, number[]][];
-    try { prev = JSON.parse(this.insertParamMap.get(targetId) ?? "null"); } catch { return false; }
+    try {
+      prev = JSON.parse(this.insertParamMap.get(targetId) ?? "null");
+    } catch {
+      return false;
+    }
     if (!prev || prev.length !== active.length) return false;
     const changes: (() => void)[] = [];
     const t = ctx.currentTime;
@@ -756,7 +794,10 @@ export class SyncLabEngine {
   }
 
   private rememberParams(targetId: string, active: PluginInstance[]) {
-    this.insertParamMap.set(targetId, JSON.stringify(active.map((pl) => [pl.id, pl.kind, pl.params.map((x) => x.value)])));
+    this.insertParamMap.set(
+      targetId,
+      JSON.stringify(active.map((pl) => [pl.id, pl.kind, pl.params.map((x) => x.value)])),
+    );
   }
 
   setInserts(trackId: string, plugins: PluginInstance[]) {
@@ -779,7 +820,8 @@ export class SyncLabEngine {
 
     const oldOut = ch.insertOut;
     const oldNodes = ch.insertNodes;
-    for (const key of [...this.automatedPluginParams.keys()]) if (key.startsWith(`${trackId}:`)) this.automatedPluginParams.delete(key);
+    for (const key of [...this.automatedPluginParams.keys()])
+      if (key.startsWith(`${trackId}:`)) this.automatedPluginParams.delete(key);
     const nodes = this.buildInsertNodes(ctx, active, trackId);
     ch.insertNodes = nodes;
     const nextOut = ctx.createGain();
@@ -791,8 +833,20 @@ export class SyncLabEngine {
     oldOut.gain.setValueAtTime(oldOut.gain.value, ctx.currentTime);
     oldOut.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.015);
     window.setTimeout(() => {
-      try { ch.gain.disconnect(oldOut); oldOut.disconnect(); } catch { /* already disconnected */ }
-      for (const n of oldNodes) { disposeFx(n); try { n.disconnect(); } catch { /* already disconnected */ } }
+      try {
+        ch.gain.disconnect(oldOut);
+        oldOut.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+      for (const n of oldNodes) {
+        disposeFx(n);
+        try {
+          n.disconnect();
+        } catch {
+          /* already disconnected */
+        }
+      }
     }, 40);
   }
 
@@ -808,8 +862,8 @@ export class SyncLabEngine {
         : name === "reverb"
           ? this.reverb
           : name === "delay"
-            ? this.sendOut.get("delay") ?? null
-            : this.sendOut.get("chorus") ?? null;
+            ? (this.sendOut.get("delay") ?? null)
+            : (this.sendOut.get("chorus") ?? null);
     if (!source) return;
     this.insertLists.set(targetId, plugins);
 
@@ -833,12 +887,20 @@ export class SyncLabEngine {
         if (fb) source.connect(fb);
       }
     }
-    for (const key of [...this.automatedPluginParams.keys()]) if (key.startsWith(`${targetId}:`)) this.automatedPluginParams.delete(key);
+    for (const key of [...this.automatedPluginParams.keys()])
+      if (key.startsWith(`${targetId}:`)) this.automatedPluginParams.delete(key);
     const nodes = this.buildInsertNodes(ctx, active, targetId);
     const input = ctx.createGain();
     input.gain.setValueAtTime(0, ctx.currentTime);
     source.connect(input);
-    this.linkInsertChain(input, nodes, active, kind === "send" ? this.auxReturns.get(name) ?? master : this.busMeters.get(name) ?? master);
+    this.linkInsertChain(
+      input,
+      nodes,
+      active,
+      kind === "send"
+        ? (this.auxReturns.get(name) ?? master)
+        : (this.busMeters.get(name) ?? master),
+    );
     this.fxInserts.set(targetId, { key, nodes, input });
     input.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.02);
     if (prev) {
@@ -846,8 +908,20 @@ export class SyncLabEngine {
       prev.input.gain.setValueAtTime(prev.input.gain.value, ctx.currentTime);
       prev.input.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.02);
       window.setTimeout(() => {
-        try { source.disconnect(prev.input); prev.input.disconnect(); } catch { /* already detached */ }
-        for (const node of prev.nodes) { disposeFx(node); try { node.disconnect(); } catch { /* already detached */ } }
+        try {
+          source.disconnect(prev.input);
+          prev.input.disconnect();
+        } catch {
+          /* already detached */
+        }
+        for (const node of prev.nodes) {
+          disposeFx(node);
+          try {
+            node.disconnect();
+          } catch {
+            /* already detached */
+          }
+        }
       }, 45);
     }
   }
@@ -857,7 +931,11 @@ export class SyncLabEngine {
     const list = this.insertLists.get(targetId);
     if (!list) return;
     const fx = this.fxInserts.get(targetId);
-    if (fx) { fx.key = ""; this.setFxInserts(targetId, list); return; }
+    if (fx) {
+      fx.key = "";
+      this.setFxInserts(targetId, list);
+      return;
+    }
     const ch = this.channels.get(targetId);
     if (!ch) return;
     ch.insertKey = "";
@@ -865,34 +943,40 @@ export class SyncLabEngine {
     this.setInserts(targetId, list);
   }
 
-  private linkInsertChain(from: AudioNode, nodes: AudioNode[], active: PluginInstance[], to: AudioNode) {
+  private linkInsertChain(
+    from: AudioNode,
+    nodes: AudioNode[],
+    active: PluginInstance[],
+    to: AudioNode,
+  ) {
     let cursor: AudioNode = from;
     let idx = 0;
     for (const pl of active) {
-      const size = {
-        eq: 4,
-        paraeq: 10,
-        filter: 5,
-        drive: 7,
-        compressor: 3,
-        delay: 7,
-        width: 3,
-        gain: 3,
-        reverb: 7,
-        chorus: 5,
-        flanger: 5,
-        phaser: 3,
-        tremolo: 2,
-        autopan: 1,
-        limiter: 3,
-        bitcrusher: 6,
-        vocoder: 2,
-        gate: 3,
-        stepfilter: 5,
-        resonator: 12,
-        scalechord: 1,
-        transient: 5,
-      }[pl.kind as string] ?? (isCreativeKind(pl.kind) ? 2 : 0);
+      const size =
+        {
+          eq: 4,
+          paraeq: 10,
+          filter: 5,
+          drive: 7,
+          compressor: 3,
+          delay: 7,
+          width: 3,
+          gain: 3,
+          reverb: 7,
+          chorus: 5,
+          flanger: 5,
+          phaser: 3,
+          tremolo: 2,
+          autopan: 1,
+          limiter: 3,
+          bitcrusher: 6,
+          vocoder: 2,
+          gate: 3,
+          stepfilter: 5,
+          resonator: 12,
+          scalechord: 1,
+          transient: 5,
+        }[pl.kind as string] ?? (isCreativeKind(pl.kind) ? 2 : 0);
       const head = nodes[idx];
       const tail = nodes[idx + size - 1];
       if (head && tail) {
@@ -918,8 +1002,20 @@ export class SyncLabEngine {
     const val = (pl: PluginInstance, id: string, fallback: number) =>
       pl.params.find((x) => x.id === id)?.value ?? fallback;
     const dbToGain = (db: number) => Math.pow(10, db / 20);
-    const bind = (pl: PluginInstance, id: string, param: AudioParam, min: number, max: number, logarithmic = false) =>
-      this.automatedPluginParams.set(`${targetId}:${pl.id}:${id}`, { param, min, max, logarithmic });
+    const bind = (
+      pl: PluginInstance,
+      id: string,
+      param: AudioParam,
+      min: number,
+      max: number,
+      logarithmic = false,
+    ) =>
+      this.automatedPluginParams.set(`${targetId}:${pl.id}:${id}`, {
+        param,
+        min,
+        max,
+        logarithmic,
+      });
     const live = (pl: PluginInstance, id: string, fn: (v: number, t: number) => void) =>
       this.liveParams.set(`${targetId}:${pl.id}:${id}`, fn);
     const glide = (param: AudioParam, v: number, t: number) => param.setTargetAtTime(v, t, 0.015);
@@ -931,23 +1027,46 @@ export class SyncLabEngine {
     };
     const mixLive = (pl: PluginInstance, wet: GainNode, dry: GainNode, fallback = 1) => {
       const m = clamp(val(pl, "mix", fallback), 0, 1);
-      wet.gain.value = m; dry.gain.value = 1 - m;
-      live(pl, "mix", (v, t) => { const x = clamp(v, 0, 1); glide(wet.gain, x, t); glide(dry.gain, 1 - x, t); });
+      wet.gain.value = m;
+      dry.gain.value = 1 - m;
+      live(pl, "mix", (v, t) => {
+        const x = clamp(v, 0, 1);
+        glide(wet.gain, x, t);
+        glide(dry.gain, 1 - x, t);
+      });
     };
-    for (const k of [...this.liveParams.keys()]) if (k.startsWith(`${targetId}:`)) this.liveParams.delete(k);
+    for (const k of [...this.liveParams.keys()])
+      if (k.startsWith(`${targetId}:`)) this.liveParams.delete(k);
     /** Heavy live changes (new reverb impulse) run at most every `ms` while a knob is dragged, plus once at the end. */
     const throttled = (fn: (v: number) => void, ms = 140) => {
       let timer: ReturnType<typeof setTimeout> | null = null;
       let pending: number | null = null;
       const run = (v: number) => {
-        if (timer) { pending = v; return; }
+        if (timer) {
+          pending = v;
+          return;
+        }
         fn(v);
-        timer = setTimeout(() => { timer = null; if (pending !== null) { const next = pending; pending = null; run(next); } }, ms);
+        timer = setTimeout(() => {
+          timer = null;
+          if (pending !== null) {
+            const next = pending;
+            pending = null;
+            run(next);
+          }
+        }, ms);
       };
       return run;
     };
     /** Swap a convolver's impulse while playing: the old one stops taking input but rings out its tail. */
-    const swapConvolver = (from: AudioNode, to: AudioNode, first: ConvolverNode, make: (v: number) => AudioBuffer, ringSec: (v: number) => number, initial: number) => {
+    const swapConvolver = (
+      from: AudioNode,
+      to: AudioNode,
+      first: ConvolverNode,
+      make: (v: number) => AudioBuffer,
+      ringSec: (v: number) => number,
+      initial: number,
+    ) => {
       let current = first;
       let ring = ringSec(initial);
       return throttled((v: number) => {
@@ -957,12 +1076,24 @@ export class SyncLabEngine {
         from.connect(next);
         const old = current;
         current = next;
-        try { from.disconnect(old); } catch { /* already gone */ }
-        setTimeout(() => { try { old.disconnect(); } catch { /* already gone */ } }, ring * 1000 + 250);
+        try {
+          from.disconnect(old);
+        } catch {
+          /* already gone */
+        }
+        setTimeout(
+          () => {
+            try {
+              old.disconnect();
+            } catch {
+              /* already gone */
+            }
+          },
+          ring * 1000 + 250,
+        );
         ring = ringSec(v);
       });
     };
-
 
     for (const pl of active) {
       // Real desktop plugins run in the native host; until it's attached they pass audio through
@@ -997,7 +1128,14 @@ export class SyncLabEngine {
           break;
         }
         case "paraeq": {
-          const types: BiquadFilterType[] = ["lowshelf", "highpass", "peaking", "notch", "highshelf", "lowpass"];
+          const types: BiquadFilterType[] = [
+            "lowshelf",
+            "highpass",
+            "peaking",
+            "notch",
+            "highshelf",
+            "lowpass",
+          ];
           const bands: BiquadFilterNode[] = [];
           for (let i = 1; i <= 8; i++) {
             const f = ctx.createBiquadFilter();
@@ -1009,7 +1147,11 @@ export class SyncLabEngine {
             f.gain.value = on ? clamp(val(pl, `b${i}gain`, 0), -30, 30) : 0;
             bands.push(f);
             // Every band control updates the running filter, so sweeping an EQ never rebuilds it.
-            const band = { on: val(pl, `b${i}on`, 0), type: val(pl, `b${i}type`, 2), gain: val(pl, `b${i}gain`, 0) };
+            const band = {
+              on: val(pl, `b${i}on`, 0),
+              type: val(pl, `b${i}type`, 2),
+              gain: val(pl, `b${i}gain`, 0),
+            };
             const applyBand = (t: number) => {
               const isOn = band.on >= 0.5;
               const kind = types[clamp(Math.round(band.type), 0, 5)] ?? "peaking";
@@ -1017,9 +1159,18 @@ export class SyncLabEngine {
               if (f.type !== nextType) f.type = nextType;
               glide(f.gain, isOn ? clamp(band.gain, -30, 30) : 0, t);
             };
-            live(pl, `b${i}on`, (v, t) => { band.on = v; applyBand(t); });
-            live(pl, `b${i}type`, (v, t) => { band.type = v; applyBand(t); });
-            live(pl, `b${i}gain`, (v, t) => { band.gain = v; applyBand(t); });
+            live(pl, `b${i}on`, (v, t) => {
+              band.on = v;
+              applyBand(t);
+            });
+            live(pl, `b${i}type`, (v, t) => {
+              band.type = v;
+              applyBand(t);
+            });
+            live(pl, `b${i}gain`, (v, t) => {
+              band.gain = v;
+              applyBand(t);
+            });
             live(pl, `b${i}freq`, (v, t) => glide(f.frequency, clamp(v, 20, 20000), t));
             live(pl, `b${i}q`, (v, t) => glide(f.Q, clamp(v, 0.1, 18), t));
           }
@@ -1045,25 +1196,47 @@ export class SyncLabEngine {
           bind(pl, "resonance", f.Q, 0.1, 20);
           live(pl, "cutoff", (v, t) => glide(f.frequency, v, t));
           live(pl, "resonance", (v, t) => glide(f.Q, v, t));
-          live(pl, "type", (v) => { const m = Math.round(v); f.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass"; });
-          const fIn = ctx.createGain(), fWet = ctx.createGain(), fDry = ctx.createGain(), fOut = ctx.createGain();
-          dbLive(pl, "input", fIn); dbLive(pl, "output", fOut); mixLive(pl, fWet, fDry);
+          live(pl, "type", (v) => {
+            const m = Math.round(v);
+            f.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass";
+          });
+          const fIn = ctx.createGain(),
+            fWet = ctx.createGain(),
+            fDry = ctx.createGain(),
+            fOut = ctx.createGain();
+          dbLive(pl, "input", fIn);
+          dbLive(pl, "output", fOut);
+          mixLive(pl, fWet, fDry);
           // Analog drive: the signal is pushed into a soft-clipping stage before the filter, like a
           // hardware filter's input transistor, so it thickens and the resonance growls when pushed.
-          const fClean = ctx.createGain(), fPush = ctx.createGain(), fShaper = ctx.createWaveShaper(), fShaped = ctx.createGain();
+          const fClean = ctx.createGain(),
+            fPush = ctx.createGain(),
+            fShaper = ctx.createWaveShaper(),
+            fShaped = ctx.createGain();
           const softCurve = new Float32Array(1025);
           for (let i = 0; i < softCurve.length; i++) softCurve[i] = Math.tanh((i / 512 - 1) * 4);
           fShaper.curve = softCurve;
           const setDrive = (v: number, t?: number) => {
-            const d = clamp(v, 0, 1), g = 1 + d * 9;
-            const set = (prm: AudioParam, x: number) => (t === undefined ? (prm.value = x) : glide(prm, x, t));
-            set(fClean.gain, 1 - d); set(fPush.gain, g); set(fShaped.gain, d / Math.sqrt(g));
+            const d = clamp(v, 0, 1),
+              g = 1 + d * 9;
+            const set = (prm: AudioParam, x: number) =>
+              t === undefined ? (prm.value = x) : glide(prm, x, t);
+            set(fClean.gain, 1 - d);
+            set(fPush.gain, g);
+            set(fShaped.gain, d / Math.sqrt(g));
           };
           setDrive(val(pl, "drive", 0.3));
           live(pl, "drive", (v, t) => setDrive(v, t));
-          fIn.connect(fClean); fClean.connect(f);
-          fIn.connect(fPush); fPush.connect(fShaper); fShaper.connect(fShaped); fShaped.connect(f);
-          f.connect(fWet); fWet.connect(fOut); fIn.connect(fDry); fDry.connect(fOut);
+          fIn.connect(fClean);
+          fClean.connect(f);
+          fIn.connect(fPush);
+          fPush.connect(fShaper);
+          fShaper.connect(fShaped);
+          fShaped.connect(f);
+          f.connect(fWet);
+          fWet.connect(fOut);
+          fIn.connect(fDry);
+          fDry.connect(fOut);
           nodes.push(fIn, f, fWet, fDry, fOut);
           break;
         }
@@ -1076,13 +1249,24 @@ export class SyncLabEngine {
           tone.frequency.value = val(pl, "tone", 6000);
           const out = ctx.createGain();
           out.gain.value = dbToGain(val(pl, "output", 0));
-          const dIn = ctx.createGain(), hp = ctx.createBiquadFilter(), dWet = ctx.createGain(), dDry = ctx.createGain();
-          hp.type = "highpass"; hp.frequency.value = clamp(val(pl, "lowcut", 20), 20, 1000);
-          dbLive(pl, "input", dIn); mixLive(pl, dWet, dDry);
-          dIn.connect(hp); hp.connect(ws);
+          const dIn = ctx.createGain(),
+            hp = ctx.createBiquadFilter(),
+            dWet = ctx.createGain(),
+            dDry = ctx.createGain();
+          hp.type = "highpass";
+          hp.frequency.value = clamp(val(pl, "lowcut", 20), 20, 1000);
+          dbLive(pl, "input", dIn);
+          mixLive(pl, dWet, dDry);
+          dIn.connect(hp);
+          hp.connect(ws);
           ws.connect(tone);
-          tone.connect(dWet); dWet.connect(out); dIn.connect(dDry); dDry.connect(out);
-          live(pl, "drive", (v) => { ws.curve = makeDistortionCurve(clamp(v, 0, 1)); });
+          tone.connect(dWet);
+          dWet.connect(out);
+          dIn.connect(dDry);
+          dDry.connect(out);
+          live(pl, "drive", (v) => {
+            ws.curve = makeDistortionCurve(clamp(v, 0, 1));
+          });
           live(pl, "tone", (v, t) => glide(tone.frequency, v, t));
           live(pl, "lowcut", (v, t) => glide(hp.frequency, clamp(v, 20, 1000), t));
           live(pl, "output", (v, t) => glide(out.gain, dbToGain(v), t));
@@ -1105,116 +1289,234 @@ export class SyncLabEngine {
           live(pl, "makeup", (v, t) => glide(out.gain, dbToGain(v), t));
           c.knee.value = clamp(val(pl, "knee", 6), 0, 40);
           live(pl, "knee", (v, t) => glide(c.knee, clamp(v, 0, 40), t));
-          const cIn = ctx.createGain(); dbLive(pl, "input", cIn); cIn.connect(c);
+          const cIn = ctx.createGain();
+          dbLive(pl, "input", cIn);
+          cIn.connect(c);
           nodes.push(cIn, c, out);
           break;
         }
         case "delay": {
           // Stereo Delay bounces repeats left/right (ping-pong); Tape Echo adds extra playback heads,
           // wow & flutter and tape saturation in the loop. Other delays keep a plain stereo echo.
-          const knob = (id: string, fallback: number) => val(pl, id, deviceDefault(pl, id, fallback));
+          const knob = (id: string, fallback: number) =>
+            val(pl, id, deviceDefault(pl, id, fallback));
           const inNode = ctx.createGain();
-          inNode.channelCount = 2; inNode.channelCountMode = "explicit"; inNode.channelInterpretation = "speakers";
+          inNode.channelCount = 2;
+          inNode.channelCountMode = "explicit";
+          inNode.channelInterpretation = "speakers";
           const out = ctx.createGain();
           inNode.connect(out);
           const split = ctx.createChannelSplitter(2);
           const merge = ctx.createChannelMerger(2);
           inNode.connect(split);
           const time = () => clamp(knob("time", 320) / 1000, 0.01, 1.2);
-          const dl = { fb: clamp(knob("feedback", 0.35), 0, 0.92), ping: clamp(knob("pingpong", 0), 0, 1), heads: Math.round(clamp(knob("heads", 1), 1, 3)), wow: clamp(knob("wow", 0), 0, 1), sat: clamp(knob("saturation", 0), 0, 1) };
+          const dl = {
+            fb: clamp(knob("feedback", 0.35), 0, 0.92),
+            ping: clamp(knob("pingpong", 0), 0, 1),
+            heads: Math.round(clamp(knob("heads", 1), 1, 3)),
+            wow: clamp(knob("wow", 0), 0, 1),
+            sat: clamp(knob("saturation", 0), 0, 1),
+          };
           const wet = ctx.createGain();
           wet.gain.value = clamp(knob("mix", 0.25), 0, 1);
           const satCurve = new Float32Array(1025);
-          for (let i = 0; i < satCurve.length; i++) { const x = (i / 512 - 1) * 4; satCurve[i] = Math.tanh(x); }
-          const wowLfo = ctx.createOscillator(); wowLfo.frequency.value = 0.55;
-          const flutterLfo = ctx.createOscillator(); flutterLfo.frequency.value = 6.8;
-          const wowDepth = ctx.createGain(), flutterDepth = ctx.createGain();
-          wowLfo.connect(wowDepth); flutterLfo.connect(flutterDepth);
+          for (let i = 0; i < satCurve.length; i++) {
+            const x = (i / 512 - 1) * 4;
+            satCurve[i] = Math.tanh(x);
+          }
+          const wowLfo = ctx.createOscillator();
+          wowLfo.frequency.value = 0.55;
+          const flutterLfo = ctx.createOscillator();
+          flutterLfo.frequency.value = 6.8;
+          const wowDepth = ctx.createGain(),
+            flutterDepth = ctx.createGain();
+          wowLfo.connect(wowDepth);
+          flutterLfo.connect(flutterDepth);
           const sides = [0, 1].map((ch) => {
-            const feed = ctx.createGain(), cross = ctx.createGain();
-            const d = ctx.createDelay(4); d.delayTime.value = time();
-            const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = clamp(knob("tone", 12000), 800, 18000);
-            const hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = clamp(knob("lowcut", 40), 20, 2000);
-            const clean = ctx.createGain(), drive = ctx.createGain(), shaper = ctx.createWaveShaper(), shaped = ctx.createGain(), post = ctx.createGain();
+            const feed = ctx.createGain(),
+              cross = ctx.createGain();
+            const d = ctx.createDelay(4);
+            d.delayTime.value = time();
+            const lp = ctx.createBiquadFilter();
+            lp.type = "lowpass";
+            lp.frequency.value = clamp(knob("tone", 12000), 800, 18000);
+            const hp = ctx.createBiquadFilter();
+            hp.type = "highpass";
+            hp.frequency.value = clamp(knob("lowcut", 40), 20, 2000);
+            const clean = ctx.createGain(),
+              drive = ctx.createGain(),
+              shaper = ctx.createWaveShaper(),
+              shaped = ctx.createGain(),
+              post = ctx.createGain();
             shaper.curve = satCurve;
-            d.connect(lp); lp.connect(hp);
-            hp.connect(clean); clean.connect(post);
-            hp.connect(drive); drive.connect(shaper); shaper.connect(shaped); shaped.connect(post);
-            const self = ctx.createGain(), other = ctx.createGain();
+            d.connect(lp);
+            lp.connect(hp);
+            hp.connect(clean);
+            clean.connect(post);
+            hp.connect(drive);
+            drive.connect(shaper);
+            shaper.connect(shaped);
+            shaped.connect(post);
+            const self = ctx.createGain(),
+              other = ctx.createGain();
             post.connect(self);
             // Extra tape heads read the same echo one and two delay-times later.
-            const h2 = ctx.createDelay(4), h3 = ctx.createDelay(4), g2 = ctx.createGain(), g3 = ctx.createGain();
-            h2.delayTime.value = time(); h3.delayTime.value = time();
-            post.connect(h2); h2.connect(h3); h2.connect(g2); h3.connect(g3);
+            const h2 = ctx.createDelay(4),
+              h3 = ctx.createDelay(4),
+              g2 = ctx.createGain(),
+              g3 = ctx.createGain();
+            h2.delayTime.value = time();
+            h3.delayTime.value = time();
+            post.connect(h2);
+            h2.connect(h3);
+            h2.connect(g2);
+            h3.connect(g3);
             const sum = ctx.createGain();
-            post.connect(sum); g2.connect(sum); g3.connect(sum);
+            post.connect(sum);
+            g2.connect(sum);
+            g3.connect(sum);
             sum.connect(merge, 0, ch);
-            wowDepth.connect(d.delayTime); flutterDepth.connect(d.delayTime);
+            wowDepth.connect(d.delayTime);
+            flutterDepth.connect(d.delayTime);
             split.connect(feed, ch);
-            feed.connect(d); cross.connect(d);
-            return { feed, cross, d, lp, hp, clean, drive, shaped, self, other, post, h2, h3, g2, g3 };
+            feed.connect(d);
+            cross.connect(d);
+            return {
+              feed,
+              cross,
+              d,
+              lp,
+              hp,
+              clean,
+              drive,
+              shaped,
+              self,
+              other,
+              post,
+              h2,
+              h3,
+              g2,
+              g3,
+            };
           });
-          const [L, Rt] = sides as [typeof sides[0], typeof sides[0]];
+          const [L, Rt] = sides as [(typeof sides)[0], (typeof sides)[0]];
           // Feedback matrix: each side feeds itself (1 - ping) and the other side (ping).
-          L.post.connect(L.other); L.other.connect(Rt.d); Rt.post.connect(Rt.other); Rt.other.connect(L.d);
-          L.self.connect(L.d); Rt.self.connect(Rt.d);
+          L.post.connect(L.other);
+          L.other.connect(Rt.d);
+          Rt.post.connect(Rt.other);
+          Rt.other.connect(L.d);
+          L.self.connect(L.d);
+          Rt.self.connect(Rt.d);
           // Ping-pong starts every echo on the left from the mono sum, so repeats alternate sides.
           split.connect(L.cross, 1);
-          merge.connect(wet); wet.connect(out);
+          merge.connect(wet);
+          wet.connect(out);
           const apply = (t?: number) => {
-            const p = dl.ping, fb = dl.fb, s = dl.sat, g = 1 + s * 5;
-            const set = (prm: AudioParam, v: number) => (t === undefined ? (prm.value = v) : glide(prm, v, t));
-            set(L.feed.gain, 1 - p * 0.5); set(L.cross.gain, p * 0.5); set(Rt.feed.gain, 1 - p); set(Rt.cross.gain, 0);
+            const p = dl.ping,
+              fb = dl.fb,
+              s = dl.sat,
+              g = 1 + s * 5;
+            const set = (prm: AudioParam, v: number) =>
+              t === undefined ? (prm.value = v) : glide(prm, v, t);
+            set(L.feed.gain, 1 - p * 0.5);
+            set(L.cross.gain, p * 0.5);
+            set(Rt.feed.gain, 1 - p);
+            set(Rt.cross.gain, 0);
             for (const sd of sides) {
-              set(sd.self.gain, fb * (1 - p)); set(sd.other.gain, fb * p);
-              set(sd.clean.gain, 1 - s); set(sd.drive.gain, g); set(sd.shaped.gain, s / g);
-              set(sd.g2.gain, dl.heads >= 2 ? 0.7 : 0); set(sd.g3.gain, dl.heads >= 3 ? 0.5 : 0);
+              set(sd.self.gain, fb * (1 - p));
+              set(sd.other.gain, fb * p);
+              set(sd.clean.gain, 1 - s);
+              set(sd.drive.gain, g);
+              set(sd.shaped.gain, s / g);
+              set(sd.g2.gain, dl.heads >= 2 ? 0.7 : 0);
+              set(sd.g3.gain, dl.heads >= 3 ? 0.5 : 0);
             }
-            set(wowDepth.gain, dl.wow * 0.0035); set(flutterDepth.gain, dl.wow * 0.0004);
+            set(wowDepth.gain, dl.wow * 0.0035);
+            set(flutterDepth.gain, dl.wow * 0.0004);
           };
           apply();
-          wowLfo.start(); flutterLfo.start();
+          wowLfo.start();
+          flutterLfo.start();
           (out as unknown as { _keep?: AudioNode[] })._keep = [wowLfo, flutterLfo];
           dbLive(pl, "output", out);
-          live(pl, "time", (v, t) => { const sec = clamp(v / 1000, 0.01, 1.2); for (const sd of sides) for (const d of [sd.d, sd.h2, sd.h3]) d.delayTime.setTargetAtTime(sec, t, 0.05); });
-          live(pl, "feedback", (v, t) => { dl.fb = clamp(v, 0, 0.92); apply(t); });
-          live(pl, "pingpong", (v, t) => { dl.ping = clamp(v, 0, 1); apply(t); });
-          live(pl, "heads", (v, t) => { dl.heads = Math.round(clamp(v, 1, 3)); apply(t); });
-          live(pl, "wow", (v, t) => { dl.wow = clamp(v, 0, 1); apply(t); });
-          live(pl, "saturation", (v, t) => { dl.sat = clamp(v, 0, 1); apply(t); });
+          live(pl, "time", (v, t) => {
+            const sec = clamp(v / 1000, 0.01, 1.2);
+            for (const sd of sides)
+              for (const d of [sd.d, sd.h2, sd.h3]) d.delayTime.setTargetAtTime(sec, t, 0.05);
+          });
+          live(pl, "feedback", (v, t) => {
+            dl.fb = clamp(v, 0, 0.92);
+            apply(t);
+          });
+          live(pl, "pingpong", (v, t) => {
+            dl.ping = clamp(v, 0, 1);
+            apply(t);
+          });
+          live(pl, "heads", (v, t) => {
+            dl.heads = Math.round(clamp(v, 1, 3));
+            apply(t);
+          });
+          live(pl, "wow", (v, t) => {
+            dl.wow = clamp(v, 0, 1);
+            apply(t);
+          });
+          live(pl, "saturation", (v, t) => {
+            dl.sat = clamp(v, 0, 1);
+            apply(t);
+          });
           live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
-          live(pl, "tone", (v, t) => { for (const sd of sides) glide(sd.lp.frequency, clamp(v, 800, 18000), t); });
-          live(pl, "lowcut", (v, t) => { for (const sd of sides) glide(sd.hp.frequency, clamp(v, 20, 2000), t); });
+          live(pl, "tone", (v, t) => {
+            for (const sd of sides) glide(sd.lp.frequency, clamp(v, 800, 18000), t);
+          });
+          live(pl, "lowcut", (v, t) => {
+            for (const sd of sides) glide(sd.hp.frequency, clamp(v, 20, 2000), t);
+          });
           nodes.push(inNode, L.d, L.lp, L.hp, Rt.d, wet, out);
           break;
         }
         case "width": {
           // Mid/side width: L' = M + S*w, R' = M - S*w.
           const input = ctx.createGain();
-          input.channelCount = 2; input.channelCountMode = "explicit";
+          input.channelCount = 2;
+          input.channelCountMode = "explicit";
           const split = ctx.createChannelSplitter(2);
           const merge = ctx.createChannelMerger(2);
-          const mid = ctx.createGain(); mid.gain.value = 0.5;
-          const sideL = ctx.createGain(); sideL.gain.value = 0.5;
-          const sideR = ctx.createGain(); sideR.gain.value = -0.5;
+          const mid = ctx.createGain();
+          mid.gain.value = 0.5;
+          const sideL = ctx.createGain();
+          sideL.gain.value = 0.5;
+          const sideR = ctx.createGain();
+          sideR.gain.value = -0.5;
           const side = ctx.createGain();
           const sideOutL = ctx.createGain();
-          const sideOutR = ctx.createGain(); sideOutR.gain.value = -1;
+          const sideOutR = ctx.createGain();
+          sideOutR.gain.value = -1;
           const w = ctx.createGain();
-          const setW = (v: number, t?: number) => { const g = clamp(v, 0, 2); if (t === undefined) side.gain.value = g; else glide(side.gain, g, t); };
+          const setW = (v: number, t?: number) => {
+            const g = clamp(v, 0, 2);
+            if (t === undefined) side.gain.value = g;
+            else glide(side.gain, g, t);
+          };
           setW(val(pl, "width", 1));
           input.connect(split);
-          split.connect(mid, 0); split.connect(mid, 1);
-          split.connect(sideL, 0); split.connect(sideR, 1);
-          sideL.connect(side); sideR.connect(side);
-          side.connect(sideOutL); side.connect(sideOutR);
-          mid.connect(merge, 0, 0); mid.connect(merge, 0, 1);
-          sideOutL.connect(merge, 0, 0); sideOutR.connect(merge, 0, 1);
+          split.connect(mid, 0);
+          split.connect(mid, 1);
+          split.connect(sideL, 0);
+          split.connect(sideR, 1);
+          sideL.connect(side);
+          sideR.connect(side);
+          side.connect(sideOutL);
+          side.connect(sideOutR);
+          mid.connect(merge, 0, 0);
+          mid.connect(merge, 0, 1);
+          sideOutL.connect(merge, 0, 0);
+          sideOutR.connect(merge, 0, 1);
           merge.connect(w);
           w.gain.value = dbToGain(val(pl, "output", 0));
           live(pl, "width", (v, t) => setW(v, t));
           live(pl, "output", (v, t) => glide(w.gain, dbToGain(v), t));
-          const wPan = ctx.createStereoPanner(); wPan.pan.value = clamp(val(pl, "pan", 0), -1, 1);
+          const wPan = ctx.createStereoPanner();
+          wPan.pan.value = clamp(val(pl, "pan", 0), -1, 1);
           live(pl, "pan", (v, t) => glide(wPan.pan, clamp(v, -1, 1), t));
           w.connect(wPan);
           nodes.push(input, w, wPan);
@@ -1224,11 +1526,14 @@ export class SyncLabEngine {
           const g2 = ctx.createGain();
           g2.gain.value = dbToGain(val(pl, "gain", 0));
           live(pl, "gain", (v, t) => glide(g2.gain, dbToGain(v), t));
-          const pol = ctx.createGain(); pol.gain.value = val(pl, "phase", 0) >= 0.5 ? -1 : 1;
+          const pol = ctx.createGain();
+          pol.gain.value = val(pl, "phase", 0) >= 0.5 ? -1 : 1;
           live(pl, "phase", (v, t) => glide(pol.gain, v >= 0.5 ? -1 : 1, t));
-          const gPan = ctx.createStereoPanner(); gPan.pan.value = clamp(val(pl, "pan", 0), -1, 1);
+          const gPan = ctx.createStereoPanner();
+          gPan.pan.value = clamp(val(pl, "pan", 0), -1, 1);
           live(pl, "pan", (v, t) => glide(gPan.pan, clamp(v, -1, 1), t));
-          g2.connect(pol); pol.connect(gPan);
+          g2.connect(pol);
+          pol.connect(gPan);
           nodes.push(g2, pol, gPan);
           break;
         }
@@ -1244,9 +1549,15 @@ export class SyncLabEngine {
           inNode.connect(out);
           inNode.connect(pre);
           pre.connect(conv);
-          const rHp = ctx.createBiquadFilter(); rHp.type = "highpass"; rHp.frequency.value = clamp(val(pl, "lowcut", 120), 20, 1000);
-          const rLp = ctx.createBiquadFilter(); rLp.type = "lowpass"; rLp.frequency.value = clamp(val(pl, "tone", 9000), 800, 18000);
-          conv.connect(rHp); rHp.connect(rLp); rLp.connect(wet);
+          const rHp = ctx.createBiquadFilter();
+          rHp.type = "highpass";
+          rHp.frequency.value = clamp(val(pl, "lowcut", 120), 20, 1000);
+          const rLp = ctx.createBiquadFilter();
+          rLp.type = "lowpass";
+          rLp.frequency.value = clamp(val(pl, "tone", 9000), 800, 18000);
+          conv.connect(rHp);
+          rHp.connect(rLp);
+          rLp.connect(wet);
           wet.connect(out);
           dbLive(pl, "output", out);
           live(pl, "predelay", (v, t) => glide(pre.delayTime, clamp(v / 1000, 0, 0.5), t));
@@ -1254,7 +1565,18 @@ export class SyncLabEngine {
           live(pl, "lowcut", (v, t) => glide(rHp.frequency, clamp(v, 20, 1000), t));
           live(pl, "tone", (v, t) => glide(rLp.frequency, clamp(v, 800, 18000), t));
           const decay = (v: number) => clamp(v, 0.2, 8);
-          live(pl, "decay", swapConvolver(pre, rHp, conv, (v) => makeImpulse(ctx, decay(v)), decay, val(pl, "decay", 1.8)));
+          live(
+            pl,
+            "decay",
+            swapConvolver(
+              pre,
+              rHp,
+              conv,
+              (v) => makeImpulse(ctx, decay(v)),
+              decay,
+              val(pl, "decay", 1.8),
+            ),
+          );
           nodes.push(inNode, pre, conv, rHp, rLp, wet, out);
           break;
         }
@@ -1262,8 +1584,10 @@ export class SyncLabEngine {
           const inNode = ctx.createGain();
           const d = ctx.createDelay(0.1);
           d.delayTime.value = clamp(val(pl, "delay", 20), 5, 40) / 1000;
-          const cFb = ctx.createGain(); cFb.gain.value = clamp(val(pl, "feedback", 0), 0, 0.8);
-          d.connect(cFb); cFb.connect(d);
+          const cFb = ctx.createGain();
+          cFb.gain.value = clamp(val(pl, "feedback", 0), 0, 0.8);
+          d.connect(cFb);
+          cFb.connect(d);
           live(pl, "delay", (v, t) => glide(d.delayTime, clamp(v, 5, 40) / 1000, t));
           live(pl, "feedback", (v, t) => glide(cFb.gain, clamp(v, 0, 0.8), t));
           const lfo = ctx.createOscillator();
@@ -1329,7 +1653,8 @@ export class SyncLabEngine {
           lfoGain.gain.value = center * 0.7 * depth;
           lfo.connect(lfoGain);
           const stages: BiquadFilterNode[] = [];
-          let liveCenter = center, liveDepth = depth;
+          let liveCenter = center,
+            liveDepth = depth;
           let cur: AudioNode = inNode;
           const stageCount = Math.round(clamp(val(pl, "stages", 4), 2, 8));
           const q = clamp(val(pl, "resonance", 0.8), 0.2, 8);
@@ -1348,8 +1673,15 @@ export class SyncLabEngine {
           inNode.connect(out);
           wet.connect(out);
           live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.05, 8), t));
-          live(pl, "depth", (v, t) => { liveDepth = clamp(v, 0, 1); glide(lfoGain.gain, liveCenter * 0.7 * liveDepth, t); });
-          live(pl, "center", (v, t) => { liveCenter = clamp(v, 200, 4000); stages.forEach((ap, i) => glide(ap.frequency, liveCenter * (1 + i * 0.5), t)); glide(lfoGain.gain, liveCenter * 0.7 * liveDepth, t); });
+          live(pl, "depth", (v, t) => {
+            liveDepth = clamp(v, 0, 1);
+            glide(lfoGain.gain, liveCenter * 0.7 * liveDepth, t);
+          });
+          live(pl, "center", (v, t) => {
+            liveCenter = clamp(v, 200, 4000);
+            stages.forEach((ap, i) => glide(ap.frequency, liveCenter * (1 + i * 0.5), t));
+            glide(lfoGain.gain, liveCenter * 0.7 * liveDepth, t);
+          });
           live(pl, "mix", (v, t) => glide(wet.gain, clamp(v, 0, 1), t));
           live(pl, "resonance", (v, t) => stages.forEach((ap) => glide(ap.Q, clamp(v, 0.2, 8), t)));
           nodes.push(inNode, wet, out);
@@ -1362,15 +1694,23 @@ export class SyncLabEngine {
           const lfo = ctx.createOscillator();
           lfo.frequency.value = clamp(val(pl, "rate", 5), 0.1, 20);
           lfo.type = lfoShape(val(pl, "shape", 0));
-          live(pl, "shape", (v) => { lfo.type = lfoShape(v); });
+          live(pl, "shape", (v) => {
+            lfo.type = lfoShape(v);
+          });
           const lfoGain = ctx.createGain();
           lfoGain.gain.value = depth / 2;
           lfo.connect(lfoGain);
           lfoGain.connect(g.gain);
           lfo.start();
           live(pl, "rate", (v, t) => glide(lfo.frequency, clamp(v, 0.1, 20), t));
-          live(pl, "depth", (v, t) => { const d = clamp(v, 0, 1); glide(g.gain, 1 - d / 2, t); glide(lfoGain.gain, d / 2, t); });
-          const tOut = ctx.createGain(); dbLive(pl, "output", tOut); g.connect(tOut);
+          live(pl, "depth", (v, t) => {
+            const d = clamp(v, 0, 1);
+            glide(g.gain, 1 - d / 2, t);
+            glide(lfoGain.gain, d / 2, t);
+          });
+          const tOut = ctx.createGain();
+          dbLive(pl, "output", tOut);
+          g.connect(tOut);
           nodes.push(g, tOut);
           break;
         }
@@ -1379,7 +1719,9 @@ export class SyncLabEngine {
           const lfo = ctx.createOscillator();
           lfo.frequency.value = clamp(val(pl, "rate", 1), 0.05, 10);
           lfo.type = lfoShape(val(pl, "shape", 0));
-          live(pl, "shape", (v) => { lfo.type = lfoShape(v); });
+          live(pl, "shape", (v) => {
+            lfo.type = lfoShape(v);
+          });
           pan.pan.value = clamp(val(pl, "center", 0), -1, 1);
           live(pl, "center", (v, t) => glide(pan.pan, clamp(v, -1, 1), t));
           const lfoGain = ctx.createGain();
@@ -1401,9 +1743,12 @@ export class SyncLabEngine {
           c.release.value = clamp(val(pl, "release", 60), 5, 500) / 1000;
           live(pl, "ceiling", (v, t) => glide(c.threshold, clamp(v, -12, 0), t));
           live(pl, "release", (v, t) => glide(c.release, clamp(v, 5, 500) / 1000, t));
-          const lIn = ctx.createGain(), lOut = ctx.createGain();
-          dbLive(pl, "input", lIn); dbLive(pl, "output", lOut);
-          lIn.connect(c); c.connect(lOut);
+          const lIn = ctx.createGain(),
+            lOut = ctx.createGain();
+          dbLive(pl, "input", lIn);
+          dbLive(pl, "output", lOut);
+          lIn.connect(c);
+          c.connect(lOut);
           nodes.push(lIn, c, lOut);
           break;
         }
@@ -1421,13 +1766,23 @@ export class SyncLabEngine {
           inNode.connect(dry);
           dry.connect(out);
           inNode.connect(ws);
-          const bLp = ctx.createBiquadFilter(); bLp.type = "lowpass"; bLp.frequency.value = clamp(val(pl, "tone", 18000), 800, 18000);
-          ws.connect(bLp); bLp.connect(wet);
+          const bLp = ctx.createBiquadFilter();
+          bLp.type = "lowpass";
+          bLp.frequency.value = clamp(val(pl, "tone", 18000), 800, 18000);
+          ws.connect(bLp);
+          bLp.connect(wet);
           wet.connect(out);
-          dbLive(pl, "input", inNode); dbLive(pl, "output", out);
+          dbLive(pl, "input", inNode);
+          dbLive(pl, "output", out);
           live(pl, "tone", (v, t) => glide(bLp.frequency, clamp(v, 800, 18000), t));
-          live(pl, "bits", v => { ws.curve = makeBitcrushCurve(Math.round(clamp(v, 2, 16))); });
-          live(pl, "mix", (v, t) => { const m = clamp(v, 0, 1); glide(wet.gain, m, t); glide(dry.gain, 1 - m, t); });
+          live(pl, "bits", (v) => {
+            ws.curve = makeBitcrushCurve(Math.round(clamp(v, 2, 16)));
+          });
+          live(pl, "mix", (v, t) => {
+            const m = clamp(v, 0, 1);
+            glide(wet.gain, m, t);
+            glide(dry.gain, 1 - m, t);
+          });
           nodes.push(inNode, ws, bLp, wet, dry, out);
           break;
         }
@@ -1522,7 +1877,9 @@ export class SyncLabEngine {
                     return;
                   }
                   const hz = 440 * Math.pow(2, (n - 69) / 12) * octMul;
-                  vc.oscs.forEach((o) => o.frequency.setTargetAtTime(hz, t, Math.max(0.002, glide / 3)));
+                  vc.oscs.forEach((o) =>
+                    o.frequency.setTargetAtTime(hz, t, Math.max(0.002, glide / 3)),
+                  );
                   vc.amp.gain.setTargetAtTime(1, t, 0.008);
                 });
               };
@@ -1562,7 +1919,8 @@ export class SyncLabEngine {
             // Odd length puts an exact 0 at silence; an even curve interpolated to a small DC
             // offset that held every band slightly open and left a constant carrier hum.
             const curve = new Float32Array(1025);
-            for (let i = 0; i < 1025; i++) curve[i] = Math.max(0, Math.abs((i / 1024) * 2 - 1) - 0.003);
+            for (let i = 0; i < 1025; i++)
+              curve[i] = Math.max(0, Math.abs((i / 1024) * 2 - 1) - 0.003);
             rect.curve = curve;
             const smooth = ctx.createBiquadFilter();
             smooth.type = "lowpass";
@@ -1622,32 +1980,55 @@ export class SyncLabEngine {
           // Envelope-follower gate: rectify -> attack/release smoothing -> threshold curve -> VCA.
           const thr = Math.pow(10, clamp(val(pl, "threshold", -45), -80, 0) / 20);
           const input = ctx.createGain();
-          const vca = ctx.createGain(); vca.gain.value = 0;
+          const vca = ctx.createGain();
+          vca.gain.value = 0;
           const rect = ctx.createWaveShaper();
           const rc = new Float32Array(1025);
-          for (let i = 0; i < rc.length; i++) rc[i] = Math.abs((i / 512) - 1);
+          for (let i = 0; i < rc.length; i++) rc[i] = Math.abs(i / 512 - 1);
           rect.curve = rc;
-          const smooth = ctx.createBiquadFilter(); smooth.type = "lowpass"; smooth.Q.value = 0.5;
+          const smooth = ctx.createBiquadFilter();
+          smooth.type = "lowpass";
+          smooth.Q.value = 0.5;
           const setSmooth = (t?: number) => {
             const ms = (val(pl, "attack", 2) + val(pl, "release", 80)) / 2;
             const f = clamp(1000 / (2 * Math.PI * Math.max(0.1, ms)), 1, 2000);
-            if (t === undefined) smooth.frequency.value = f; else glide(smooth.frequency, f, t);
+            if (t === undefined) smooth.frequency.value = f;
+            else glide(smooth.frequency, f, t);
           };
           setSmooth();
           // The threshold scales the envelope into a fixed opening curve, so it can move while playing.
-          const sense = ctx.createGain(); sense.gain.value = 1.6 / thr;
+          const sense = ctx.createGain();
+          sense.gain.value = 1.6 / thr;
           const open = ctx.createWaveShaper();
           const oc = new Float32Array(2049);
-          for (let i = 0; i < oc.length; i++) oc[i] = Math.pow(Math.abs((i / 1024) - 1), 4);
+          for (let i = 0; i < oc.length; i++) oc[i] = Math.pow(Math.abs(i / 1024 - 1), 4);
           open.curve = oc;
-          live(pl, "threshold", (v, t) => glide(sense.gain, 1.6 / Math.pow(10, clamp(v, -80, 0) / 20), t));
+          live(pl, "threshold", (v, t) =>
+            glide(sense.gain, 1.6 / Math.pow(10, clamp(v, -80, 0) / 20), t),
+          );
           input.connect(vca);
           const floor = (db: number) => (db <= -79.5 ? 0 : dbToGain(clamp(db, -80, 0)));
           const span = ctx.createGain();
-          const setRange = (db: number, t?: number) => { const f = floor(db); if (t === undefined) { vca.gain.value = f; span.gain.value = 1 - f; } else { glide(vca.gain, f, t); glide(span.gain, 1 - f, t); } };
+          const setRange = (db: number, t?: number) => {
+            const f = floor(db);
+            if (t === undefined) {
+              vca.gain.value = f;
+              span.gain.value = 1 - f;
+            } else {
+              glide(vca.gain, f, t);
+              glide(span.gain, 1 - f, t);
+            }
+          };
           setRange(val(pl, "range", -80));
-          input.connect(rect); rect.connect(smooth); smooth.connect(sense); sense.connect(open); open.connect(span); span.connect(vca.gain);
-          const gOut = ctx.createGain(); dbLive(pl, "output", gOut); vca.connect(gOut);
+          input.connect(rect);
+          rect.connect(smooth);
+          smooth.connect(sense);
+          sense.connect(open);
+          open.connect(span);
+          span.connect(vca.gain);
+          const gOut = ctx.createGain();
+          dbLive(pl, "output", gOut);
+          vca.connect(gOut);
           live(pl, "attack", (_v, t) => setSmooth(t));
           live(pl, "release", (_v, t) => setSmooth(t));
           live(pl, "range", (v, t) => setRange(v, t));
@@ -1674,7 +2055,14 @@ export class SyncLabEngine {
           input.connect(dry);
           dry.connect(out);
           // Live state: every control (steps included) updates the running sequencer, never rebuilding it.
-          const sf = { steps: val(pl, "steps", 16), swing: val(pl, "swing", 0), rate: val(pl, "rate", 8), cutoff, depth: val(pl, "depth", 0.85), smooth: val(pl, "smooth", 0.03) };
+          const sf = {
+            steps: val(pl, "steps", 16),
+            swing: val(pl, "swing", 0),
+            rate: val(pl, "rate", 8),
+            cutoff,
+            depth: val(pl, "depth", 0.85),
+            smooth: val(pl, "smooth", 0.03),
+          };
           const sv = Array.from({ length: 32 }, (_, i) => val(pl, `s${i + 1}`, 0.5));
           const stepWave = () => {
             const count = Math.max(1, Math.round(sf.steps));
@@ -1694,7 +2082,10 @@ export class SyncLabEngine {
             return ctx.createPeriodicWave(real, imag, { disableNormalization: true });
           };
           const seqRate = () => clamp(sf.rate, 0.5, 32) / Math.max(1, Math.round(sf.steps));
-          const smoothHz = () => { const sec = clamp(sf.smooth, 0, 0.24); return sec <= 0.001 ? 20000 : clamp(1 / (2 * Math.PI * sec), 0.5, 20000); };
+          const smoothHz = () => {
+            const sec = clamp(sf.smooth, 0, 0.24);
+            return sec <= 0.001 ? 20000 : clamp(1 / (2 * Math.PI * sec), 0.5, 20000);
+          };
           const sequencer = ctx.createOscillator();
           sequencer.setPeriodicWave(stepWave());
           sequencer.frequency.value = seqRate();
@@ -1703,27 +2094,75 @@ export class SyncLabEngine {
           const GRID_CENTS = 6000;
           const depth = ctx.createGain();
           const floor = ctx.createConstantSource();
-          const stepMean = () => { const count = Math.max(1, Math.round(sf.steps)); let sum = 0; for (let i = 0; i < count; i++) sum += sv[i] ?? 0.5; return sum / count; };
+          const stepMean = () => {
+            const count = Math.max(1, Math.round(sf.steps));
+            let sum = 0;
+            for (let i = 0; i < count; i++) sum += sv[i] ?? 0.5;
+            return sum / count;
+          };
           const setDepth = (t?: number) => {
             const cents = GRID_CENTS * clamp(sf.depth, 0, 1);
             const offset = cents * (stepMean() - 1);
-            if (t === undefined) { depth.gain.value = cents; floor.offset.value = offset; } else { glide(depth.gain, cents, t); glide(floor.offset, offset, t); }
+            if (t === undefined) {
+              depth.gain.value = cents;
+              floor.offset.value = offset;
+            } else {
+              glide(depth.gain, cents, t);
+              glide(floor.offset, offset, t);
+            }
           };
           setDepth();
-          const smoothing = ctx.createBiquadFilter(); smoothing.type = "lowpass";
+          const smoothing = ctx.createBiquadFilter();
+          smoothing.type = "lowpass";
           smoothing.frequency.value = smoothHz();
-          const setCutoff = (t: number) => { glide(filter.frequency, clamp(sf.cutoff, 80, 18000), t); setDepth(t); };
-          live(pl, "cutoff", (v, t) => { sf.cutoff = v; setCutoff(t); });
-          live(pl, "depth", (v, t) => { sf.depth = v; setCutoff(t); });
+          const setCutoff = (t: number) => {
+            glide(filter.frequency, clamp(sf.cutoff, 80, 18000), t);
+            setDepth(t);
+          };
+          live(pl, "cutoff", (v, t) => {
+            sf.cutoff = v;
+            setCutoff(t);
+          });
+          live(pl, "depth", (v, t) => {
+            sf.depth = v;
+            setCutoff(t);
+          });
           live(pl, "resonance", (v, t) => glide(filter.Q, clamp(v, 0.1, 20), t));
-          live(pl, "mix", (v, t) => { const m = clamp(v, 0, 1); glide(wet.gain, m, t); glide(dry.gain, 1 - m, t); });
-          live(pl, "mode", (v) => { const m = Math.round(v); filter.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass"; });
-          live(pl, "rate", (v, t) => { sf.rate = v; glide(sequencer.frequency, seqRate(), t); });
-          live(pl, "smooth", (v, t) => { sf.smooth = v; glide(smoothing.frequency, smoothHz(), t); });
-          const reshape = (t: number) => { sequencer.setPeriodicWave(stepWave()); glide(sequencer.frequency, seqRate(), t); setDepth(t); };
-          live(pl, "steps", (v, t) => { sf.steps = v; reshape(t); });
-          live(pl, "swing", (v, t) => { sf.swing = v; reshape(t); });
-          for (let i = 0; i < 32; i++) live(pl, `s${i + 1}`, (v, t) => { sv[i] = v; reshape(t); });
+          live(pl, "mix", (v, t) => {
+            const m = clamp(v, 0, 1);
+            glide(wet.gain, m, t);
+            glide(dry.gain, 1 - m, t);
+          });
+          live(pl, "mode", (v) => {
+            const m = Math.round(v);
+            filter.type = m === 1 ? "highpass" : m === 2 ? "bandpass" : "lowpass";
+          });
+          live(pl, "rate", (v, t) => {
+            sf.rate = v;
+            glide(sequencer.frequency, seqRate(), t);
+          });
+          live(pl, "smooth", (v, t) => {
+            sf.smooth = v;
+            glide(smoothing.frequency, smoothHz(), t);
+          });
+          const reshape = (t: number) => {
+            sequencer.setPeriodicWave(stepWave());
+            glide(sequencer.frequency, seqRate(), t);
+            setDepth(t);
+          };
+          live(pl, "steps", (v, t) => {
+            sf.steps = v;
+            reshape(t);
+          });
+          live(pl, "swing", (v, t) => {
+            sf.swing = v;
+            reshape(t);
+          });
+          for (let i = 0; i < 32; i++)
+            live(pl, `s${i + 1}`, (v, t) => {
+              sv[i] = v;
+              reshape(t);
+            });
           sequencer.connect(smoothing);
           smoothing.connect(depth);
           depth.connect(filter.detune);
@@ -1750,16 +2189,30 @@ export class SyncLabEngine {
           const root = 440 * Math.pow(2, (val(pl, "root", 48) - 69) / 12);
           const spread = val(pl, "spread", 0.35);
           const ratios = [1, Math.pow(2, 7 / 12), 2, Math.pow(2, 16 / 12)];
-          const rz = { root: val(pl, "root", 48), spread, decay: val(pl, "decay", 1.8), damping: val(pl, "damping", 0.45) };
+          const rz = {
+            root: val(pl, "root", 48),
+            spread,
+            decay: val(pl, "decay", 1.8),
+            damping: val(pl, "damping", 0.45),
+          };
           const filters: BiquadFilterNode[] = [];
           const gains: GainNode[] = [];
           for (let i = 0; i < ratios.length; i++) {
             const filter = ctx.createBiquadFilter();
             filter.type = "bandpass";
-            filter.frequency.value = clamp(root * (ratios[i] ?? 1) * (1 + (i - 1.5) * spread * 0.025), 30, 16000);
+            filter.frequency.value = clamp(
+              root * (ratios[i] ?? 1) * (1 + (i - 1.5) * spread * 0.025),
+              30,
+              16000,
+            );
             filter.Q.value = resonatorQ(filter.frequency.value, val(pl, "decay", 1.8));
             const gain = ctx.createGain();
-            gain.gain.value = resonatorGain(filter.Q.value, val(pl, "damping", 0.45), i, ratios.length);
+            gain.gain.value = resonatorGain(
+              filter.Q.value,
+              val(pl, "damping", 0.45),
+              i,
+              ratios.length,
+            );
             input.connect(filter);
             filter.connect(gain);
             gain.connect(wet);
@@ -1771,14 +2224,28 @@ export class SyncLabEngine {
           const retune = (t: number) => {
             const r = 440 * Math.pow(2, (rz.root - 69) / 12);
             filters.forEach((f, i) => {
-              const hz = clamp(r * (ratios[i] ?? 1) * (1 + (i - 1.5) * rz.spread * 0.025), 30, 16000);
+              const hz = clamp(
+                r * (ratios[i] ?? 1) * (1 + (i - 1.5) * rz.spread * 0.025),
+                30,
+                16000,
+              );
               const q = resonatorQ(hz, rz.decay);
-              glide(f.frequency, hz, t); glide(f.Q, q, t);
-              const g = gains[i]; if (g) glide(g.gain, resonatorGain(q, rz.damping, i, ratios.length), t);
+              glide(f.frequency, hz, t);
+              glide(f.Q, q, t);
+              const g = gains[i];
+              if (g) glide(g.gain, resonatorGain(q, rz.damping, i, ratios.length), t);
             });
           };
-          for (const key of ["root", "spread", "decay", "damping"] as const) live(pl, key, (v, t) => { rz[key] = v; retune(t); });
-          live(pl, "mix", (v, t) => { const m = clamp(v, 0, 1); glide(dry.gain, 1 - m, t); glide(wet.gain, m * 0.65, t); });
+          for (const key of ["root", "spread", "decay", "damping"] as const)
+            live(pl, key, (v, t) => {
+              rz[key] = v;
+              retune(t);
+            });
+          live(pl, "mix", (v, t) => {
+            const m = clamp(v, 0, 1);
+            glide(dry.gain, 1 - m, t);
+            glide(wet.gain, m * 0.65, t);
+          });
           nodes.push(input, dry, wet, ...filters, ...gains, out);
           break;
         }
@@ -1802,7 +2269,8 @@ export class SyncLabEngine {
           compressor.ratio.value = attack >= 0 ? 1 + attack * 10 : 1 + Math.abs(attack) * 18;
           compressor.attack.value = attack >= 0 ? 0.03 : 0.001;
           compressor.release.value = clamp(0.08 + (sustain + 1) * 0.3, 0.05, 0.7);
-          wet.gain.value = dbToGain(val(pl, "output", 0) + Math.max(0, attack) * 5 + sustain * 3) * mix;
+          wet.gain.value =
+            dbToGain(val(pl, "output", 0) + Math.max(0, attack) * 5 + sustain * 3) * mix;
           input.connect(dry);
           dry.connect(out);
           input.connect(compressor);
@@ -1810,16 +2278,26 @@ export class SyncLabEngine {
           if (val(pl, "protect", 1) >= 0.5) {
             const clip = ctx.createWaveShaper();
             const cc = new Float32Array(2049);
-            for (let i = 0; i < cc.length; i++) cc[i] = Math.tanh(((i / 1024) - 1) * 1.2) / Math.tanh(1.2);
+            for (let i = 0; i < cc.length; i++)
+              cc[i] = Math.tanh((i / 1024 - 1) * 1.2) / Math.tanh(1.2);
             clip.curve = cc;
-            wet.connect(clip); clip.connect(out);
+            wet.connect(clip);
+            clip.connect(out);
           } else wet.connect(out);
           bind(pl, "attack", compressor.ratio, 1, 20);
           bind(pl, "sustain", compressor.release, 0.05, 0.7);
           bind(pl, "mix", wet.gain, 0, 1.5);
-          const tr = { attack, sustain, mix, sensitivity: val(pl, "sensitivity", 0.55), output: val(pl, "output", 0) };
+          const tr = {
+            attack,
+            sustain,
+            mix,
+            sensitivity: val(pl, "sensitivity", 0.55),
+            output: val(pl, "output", 0),
+          };
           const reshape = (t: number) => {
-            const a = tr.attack, su = tr.sustain, m = clamp(tr.mix, 0, 1);
+            const a = tr.attack,
+              su = tr.sustain,
+              m = clamp(tr.mix, 0, 1);
             glide(dry.gain, 1 - m, t);
             glide(compressor.threshold, -10 - tr.sensitivity * 36, t);
             glide(compressor.ratio, a >= 0 ? 1 + a * 10 : 1 + Math.abs(a) * 18, t);
@@ -1827,20 +2305,27 @@ export class SyncLabEngine {
             glide(compressor.release, clamp(0.08 + (su + 1) * 0.3, 0.05, 0.7), t);
             glide(wet.gain, dbToGain(tr.output + Math.max(0, a) * 5 + su * 3) * m, t);
           };
-          for (const key of ["attack", "sustain", "mix", "sensitivity", "output"] as const) live(pl, key, (v, t) => { tr[key] = v; reshape(t); });
+          for (const key of ["attack", "sustain", "mix", "sensitivity", "output"] as const)
+            live(pl, key, (v, t) => {
+              tr[key] = v;
+              reshape(t);
+            });
           nodes.push(input, dry, compressor, wet, out);
           break;
         }
         default: {
           if (!isCreativeKind(pl.kind)) break;
-          const fx = buildCreativeFx(ctx, pl, { val: (id, fb) => val(pl, id, fb), live: (id, fn) => live(pl, id, fn), rebuild: () => this.rebuildInserts(targetId) });
+          const fx = buildCreativeFx(ctx, pl, {
+            val: (id, fb) => val(pl, id, fb),
+            live: (id, fn) => live(pl, id, fn),
+            rebuild: () => this.rebuildInserts(targetId),
+          });
           nodes.push(fx.input, fx.output);
         }
       }
     }
     return nodes;
   }
-
 
   /** Rides a channel from an automation curve without touching stored track values. */
   automate(trackId: string, v: Record<string, number>, when?: number) {
@@ -1850,18 +2335,30 @@ export class SyncLabEngine {
     if (v["volume"] !== undefined) {
       const group = this.trackVcas.get(trackId);
       const vca = group ? this.vcaStates[group] : undefined;
-      ch.gain.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
-        ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 2) : 0, t, 0.02);
+      ch.gain.gain.setTargetAtTime(
+        this.trackAudible.get(trackId) !== false && !vca?.muted
+          ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 2)
+          : 0,
+        t,
+        0.02,
+      );
       for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
-        send.gain.setTargetAtTime(this.trackAudible.get(trackId) !== false && !vca?.muted
-          ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 2) : 0, t, 0.02);
+        send.gain.setTargetAtTime(
+          this.trackAudible.get(trackId) !== false && !vca?.muted
+            ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 2)
+            : 0,
+          t,
+          0.02,
+        );
       }
     }
     if (v["pan"] !== undefined) ch.pan.pan.setTargetAtTime(clamp(v["pan"], -1, 1), t, 0.02);
     const bus = this.busStates[ch.bus];
     const sendScale = ch.bus === "master" || !bus ? 1 : bus.muted ? 0 : clamp(bus.volume, 0, 2);
-    if (v["sendReverb"] !== undefined) ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"] * sendScale, 0, 1.5), t, 0.02);
-    if (v["sendDelay"] !== undefined) ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"] * sendScale, 0, 1.5), t, 0.02);
+    if (v["sendReverb"] !== undefined)
+      ch.sendReverb.gain.setTargetAtTime(clamp(v["sendReverb"] * sendScale, 0, 1.5), t, 0.02);
+    if (v["sendDelay"] !== undefined)
+      ch.sendDelay.gain.setTargetAtTime(clamp(v["sendDelay"] * sendScale, 0, 1.5), t, 0.02);
     for (const [key, normalized] of Object.entries(v)) {
       if (!key.startsWith("plugin:")) continue;
       const [, instanceId = "", paramId = ""] = key.split(":");
@@ -1891,7 +2388,21 @@ export class SyncLabEngine {
       const audible = !t.muted && !t.deviceBypassed && (!anySolo || t.solo);
       const vca = t.vca ? this.vcaStates[t.vca] : undefined;
       const busState = this.busStates[t.bus ?? "master"];
-      const inputs = JSON.stringify([t.gain ?? 1, t.volume, t.pan, audible, t.vca, vca?.volume, vca?.muted, t.bus ?? "master", busState?.volume, busState?.muted, t.sends?.reverb ?? 0, t.sends?.delay ?? 0, t.sends?.chorus ?? 0]);
+      const inputs = JSON.stringify([
+        t.gain ?? 1,
+        t.volume,
+        t.pan,
+        audible,
+        t.vca,
+        vca?.volume,
+        vca?.muted,
+        t.bus ?? "master",
+        busState?.volume,
+        busState?.muted,
+        t.sends?.reverb ?? 0,
+        t.sends?.delay ?? 0,
+        t.sends?.chorus ?? 0,
+      ]);
       if (this.mixerInputs.get(ch) === inputs) continue;
       this.mixerInputs.set(ch, inputs);
       this.trackAudible.set(t.id, audible);
@@ -1899,7 +2410,12 @@ export class SyncLabEngine {
       if (previousVca !== t.vca) {
         if (previousVca) {
           const previousMeter = this.vcaMeters.get(previousVca);
-          if (previousMeter) try { ch.pan.disconnect(previousMeter); } catch { /* already detached */ }
+          if (previousMeter)
+            try {
+              ch.pan.disconnect(previousMeter);
+            } catch {
+              /* already detached */
+            }
         }
         const nextMeter = t.vca ? this.vcaMeters.get(t.vca) : undefined;
         if (nextMeter) ch.pan.connect(nextMeter);
@@ -1907,9 +2423,17 @@ export class SyncLabEngine {
       if (t.vca) this.trackVcas.set(t.id, t.vca);
       else this.trackVcas.delete(t.id);
       ch.trim.gain.setTargetAtTime(clampTrim(t.gain), this.ctx.currentTime, 0.02);
-      ch.gain.gain.setTargetAtTime(audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0, this.ctx.currentTime, 0.02);
+      ch.gain.gain.setTargetAtTime(
+        audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0,
+        this.ctx.currentTime,
+        0.02,
+      );
       for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
-        send.gain.setTargetAtTime(audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 2) : 0, this.ctx.currentTime, 0.02);
+        send.gain.setTargetAtTime(
+          audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 2) : 0,
+          this.ctx.currentTime,
+          0.02,
+        );
       }
       ch.pan.pan.setTargetAtTime(clamp(t.pan, -1, 1), this.ctx.currentTime, 0.02);
       const bus = t.bus ?? "master";
@@ -1926,8 +2450,6 @@ export class SyncLabEngine {
     }
   }
 
-
-
   removeChannel(id: string) {
     const ch = this.channels.get(id);
     if (ch) {
@@ -1940,19 +2462,39 @@ export class SyncLabEngine {
         ch.gain.gain.cancelScheduledValues(now);
         ch.gain.gain.setTargetAtTime(0, now, 0.006);
         window.setTimeout(() => {
-          try { ch.pan.disconnect(); } catch { /* already disconnected */ }
+          try {
+            ch.pan.disconnect();
+          } catch {
+            /* already disconnected */
+          }
           for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
-            try { send.disconnect(); } catch { /* already disconnected */ }
+            try {
+              send.disconnect();
+            } catch {
+              /* already disconnected */
+            }
           }
           for (const node of ch.insertNodes) {
             disposeFx(node);
-            try { node.disconnect(); } catch { /* already disconnected */ }
+            try {
+              node.disconnect();
+            } catch {
+              /* already disconnected */
+            }
           }
         }, 35);
       } catch {
-        try { ch.pan.disconnect(); } catch { /* already disconnected */ }
+        try {
+          ch.pan.disconnect();
+        } catch {
+          /* already disconnected */
+        }
         for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
-          try { send.disconnect(); } catch { /* already disconnected */ }
+          try {
+            send.disconnect();
+          } catch {
+            /* already disconnected */
+          }
         }
       }
     }
@@ -1978,7 +2520,19 @@ export class SyncLabEngine {
       this.monoVoice.delete(id);
       this.lastMidi.delete(id);
       for (const gate of this.modularGates.get(id) ?? []) {
-        try { gate.gain.cancelScheduledValues(now); gate.gain.setTargetAtTime(0, now, 0.01); setTimeout(() => { try { gate.disconnect(); } catch { /* gone */ } }, 120); } catch { /* gone */ }
+        try {
+          gate.gain.cancelScheduledValues(now);
+          gate.gain.setTargetAtTime(0, now, 0.01);
+          setTimeout(() => {
+            try {
+              gate.disconnect();
+            } catch {
+              /* gone */
+            }
+          }, 120);
+        } catch {
+          /* gone */
+        }
       }
       this.modularGates.delete(id);
       this.removeChannel(id);
@@ -1990,17 +2544,35 @@ export class SyncLabEngine {
   /** Newest knob values per track, read by held grain clouds every few milliseconds. */
   private granularLive = new Map<string, GranularPatch>();
   /** Grains really scheduled on the live context, for the synth's display. */
-  private granularActivity = new Map<string, { position: number; at: number; length: number; reverse: boolean }[]>();
+  private granularActivity = new Map<
+    string,
+    { position: number; at: number; length: number; reverse: boolean }[]
+  >();
 
   /** Grains sounding right now on a track (read position 0..1 and how far through each grain is). */
   granularGrains(trackId: string): { position: number; progress: number; reverse: boolean }[] {
     const now = this.ctx?.currentTime ?? 0;
     const log = this.granularActivity.get(trackId);
     if (!log) return [];
-    return log.filter((g) => g.at <= now && g.at + g.length >= now).map((g) => ({ position: g.position, progress: (now - g.at) / g.length, reverse: g.reverse }));
+    return log
+      .filter((g) => g.at <= now && g.at + g.length >= now)
+      .map((g) => ({
+        position: g.position,
+        progress: (now - g.at) / g.length,
+        reverse: g.reverse,
+      }));
   }
 
-  private playGranular(trackId: string, dest: AudioNode, g: GranularPatch, midi: number, duration: number, velocity: number, t0: number, held = false) {
+  private playGranular(
+    trackId: string,
+    dest: AudioNode,
+    g: GranularPatch,
+    midi: number,
+    duration: number,
+    velocity: number,
+    t0: number,
+    held = false,
+  ) {
     const ctx = this.ctx as BaseAudioContext | null;
     if (!ctx) return;
     this.granularLive.set(trackId, g);
@@ -2010,18 +2582,49 @@ export class SyncLabEngine {
       if (!g.sampleUrl) return;
       buffer = this.sampleBuffers.get(g.sampleUrl);
       root = g.sampleRoot ?? 60;
-      if (!buffer) { void this.ensureBuffer(g.sampleUrl); return; } // first press loads it
+      if (!buffer) {
+        void this.ensureBuffer(g.sampleUrl);
+        return;
+      } // first press loads it
     } else buffer = builtInSource(ctx, g.source);
-    const live = !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext);
+    const live = !(
+      typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext
+    );
     const log = live ? (this.granularActivity.get(trackId) ?? []) : null;
     if (log) this.granularActivity.set(trackId, log);
-    const voice = playGranularVoice(ctx, dest, buffer, root, g, () => this.granularLive.get(trackId) ?? g, midi, duration, velocity, t0,
-      log ? (position, at, length, reverse) => { log.push({ position, at, length, reverse }); if (log.length > 160) log.splice(0, log.length - 160); } : undefined);
+    const voice = playGranularVoice(
+      ctx,
+      dest,
+      buffer,
+      root,
+      g,
+      () => this.granularLive.get(trackId) ?? g,
+      midi,
+      duration,
+      velocity,
+      t0,
+      log
+        ? (position, at, length, reverse) => {
+            log.push({ position, at, length, reverse });
+            if (log.length > 160) log.splice(0, log.length - 160);
+          }
+        : undefined,
+    );
     const set = this.granularVoices.get(trackId) ?? new Set<GranularVoice>();
     set.add(voice);
     this.granularVoices.set(trackId, set);
-    const timer = setTimeout(() => { set.delete(voice); }, Math.max(0, voice.end - ctx.currentTime) * 1000 + 300);
-    if (held) this.registerHeld(trackId, midi, (t) => { voice.stop(t); clearTimeout(timer); set.delete(voice); });
+    const timer = setTimeout(
+      () => {
+        set.delete(voice);
+      },
+      Math.max(0, voice.end - ctx.currentTime) * 1000 + 300,
+    );
+    if (held)
+      this.registerHeld(trackId, midi, (t) => {
+        voice.stop(t);
+        clearTimeout(timer);
+        set.delete(voice);
+      });
   }
 
   /* ---------------- pulse wave cache ---------------- */
@@ -2050,7 +2653,13 @@ export class SyncLabEngine {
   private recAnalyser: AnalyserNode | null = null;
   private inputGainNode: GainNode | null = null;
   private recDest: MediaStreamAudioDestinationNode | null = null;
-  private trackRecorder: { recorder: MediaRecorder; destination: MediaStreamAudioDestinationNode; source: AudioNode; trackId: string; chunks: Blob[] } | null = null;
+  private trackRecorder: {
+    recorder: MediaRecorder;
+    destination: MediaStreamAudioDestinationNode;
+    source: AudioNode;
+    trackId: string;
+    chunks: Blob[];
+  } | null = null;
 
   private monitorTrackId: string | null = null;
 
@@ -2076,7 +2685,9 @@ export class SyncLabEngine {
     try {
       const recorder = new MediaRecorder(destination.stream, mime ? { mimeType: mime } : undefined);
       const chunks: Blob[] = [];
-      recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) chunks.push(event.data);
+      };
       recorder.start(40);
       this.trackRecStartedAt = ctx.currentTime;
       this.trackRecorder = { recorder, destination, source, trackId, chunks };
@@ -2087,27 +2698,36 @@ export class SyncLabEngine {
     }
   }
 
-  async stopTrackRecording(): Promise<{ peaks: number[]; duration: number; url: string; trackId: string } | null> {
+  async stopTrackRecording(): Promise<{
+    peaks: number[];
+    duration: number;
+    url: string;
+    trackId: string;
+  } | null> {
     const session = this.trackRecorder;
     if (!session) return null;
     this.trackRecorder = null;
     const { recorder, destination, source, trackId, chunks } = session;
     try {
       const blob = await new Promise<Blob>((resolve) => {
-        recorder.onstop = () => resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
+        recorder.onstop = () =>
+          resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
         if (recorder.state !== "inactive") recorder.stop();
         else resolve(new Blob(chunks, { type: recorder.mimeType || "audio/webm" }));
       });
       if (!blob.size) return null;
       const ctx = this.init();
       let buffer: AudioBuffer;
-      try { buffer = await ctx.decodeAudioData(await blob.arrayBuffer()); }
-      catch { throw new Error("This browser cannot play back its recorded audio. Try Chrome or Safari."); }
+      try {
+        buffer = await ctx.decodeAudioData(await blob.arrayBuffer());
+      } catch {
+        throw new Error("This browser cannot play back its recorded audio. Try Chrome or Safari.");
+      }
       const data = buffer.getChannelData(0);
       const buckets = Math.min(1600, Math.max(160, Math.ceil(buffer.duration * 80)));
       const peaks = Array.from({ length: buckets }, (_, bucket) => {
-        const from = Math.floor(bucket * data.length / buckets);
-        const to = Math.floor((bucket + 1) * data.length / buckets);
+        const from = Math.floor((bucket * data.length) / buckets);
+        const to = Math.floor(((bucket + 1) * data.length) / buckets);
         let peak = 0;
         for (let i = from; i < to; i++) peak = Math.max(peak, Math.abs(data[i] ?? 0));
         return peak;
@@ -2137,7 +2757,11 @@ export class SyncLabEngine {
     }
     const p = this.openInputMonitoring(trackId, monitor);
     this.monitorPending = { trackId, p };
-    try { await p; } finally { if (this.monitorPending?.p === p) this.monitorPending = null; }
+    try {
+      await p;
+    } finally {
+      if (this.monitorPending?.p === p) this.monitorPending = null;
+    }
   }
 
   private async openInputMonitoring(trackId: string, monitor: boolean) {
@@ -2149,12 +2773,15 @@ export class SyncLabEngine {
     this.stopInputMonitoring();
     const generation = ++this.monitorGeneration;
     const ctx = this.init();
-    const stream = await openMicOrThrow({
-      echoCancellation: false,
-      noiseSuppression: false,
-      autoGainControl: false,
-      channelCount: { ideal: 2 },
-    }, "timeline");
+    const stream = await openMicOrThrow(
+      {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        channelCount: { ideal: 2 },
+      },
+      "timeline",
+    );
     // The target may have changed while the browser permission prompt was open.
     if (generation !== this.monitorGeneration) {
       releaseMic(stream);
@@ -2238,7 +2865,11 @@ export class SyncLabEngine {
     if (!rec) return;
     this.recorder = null;
     rec.ondataavailable = null;
-    try { if (rec.state !== "inactive") rec.stop(); } catch { /* already stopped */ }
+    try {
+      if (rec.state !== "inactive") rec.stop();
+    } catch {
+      /* already stopped */
+    }
     this.recChunks = [];
     if (!this.monitorTrackId) this.stopInputMonitoring();
   }
@@ -2255,7 +2886,9 @@ export class SyncLabEngine {
    * isAppleMobile() as "no picker here" — see Settings and setOutputDevice.
    */
   get canPickOutput() {
-    return typeof (AudioContext.prototype as unknown as { setSinkId?: unknown }).setSinkId === "function";
+    return (
+      typeof (AudioContext.prototype as unknown as { setSinkId?: unknown }).setSinkId === "function"
+    );
   }
 
   /** Route all app playback to an output device (null = system default). */
@@ -2276,7 +2909,8 @@ export class SyncLabEngine {
     const data = new Uint8Array(this.recAnalyser.fftSize);
     this.recAnalyser.getByteTimeDomainData(data);
     let peak = 0;
-    for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
+    for (let i = 0; i < data.length; i++)
+      peak = Math.max(peak, Math.abs((data[i] ?? 128) - 128) / 128);
     return peak;
   }
 
@@ -2298,31 +2932,44 @@ export class SyncLabEngine {
 
     const ctx = this.init();
     const arr = await blob.arrayBuffer();
-    let peaks: number[] = [];
+    const peaks: number[] = [];
     let duration = 0;
     let buf: AudioBuffer;
     try {
       buf = await ctx.decodeAudioData(arr.slice(0));
     } catch {
-      throw new Error("This browser recorded the take in a format it can't play back. Try Chrome or Safari.");
+      throw new Error(
+        "This browser recorded the take in a format it can't play back. Try Chrome or Safari.",
+      );
     }
     duration = buf.duration;
     // Microphone takes often arrive very quiet (browser input, no preamp gain).
     // Auto-level each take so its loudest peak sits at -1 dBFS (max +30 dB boost).
     let loud = 0;
-    for (let c = 0; c < buf.numberOfChannels; c++) { const ch = buf.getChannelData(c); for (let i = 0; i < ch.length; i++) loud = Math.max(loud, Math.abs(ch[i] ?? 0)); }
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      const ch = buf.getChannelData(c);
+      for (let i = 0; i < ch.length; i++) loud = Math.max(loud, Math.abs(ch[i] ?? 0));
+    }
     let outBlob = blob;
     if (loud > 0.0005 && loud < 0.89) {
       const g = Math.min(31.6, 0.89 / loud);
-      for (let c = 0; c < buf.numberOfChannels; c++) { const ch = buf.getChannelData(c); for (let i = 0; i < ch.length; i++) ch[i] = (ch[i] ?? 0) * g; }
-      outBlob = encodeWav({ left: buf.getChannelData(0), right: buf.getChannelData(Math.min(1, buf.numberOfChannels - 1)), sampleRate: buf.sampleRate });
+      for (let c = 0; c < buf.numberOfChannels; c++) {
+        const ch = buf.getChannelData(c);
+        for (let i = 0; i < ch.length; i++) ch[i] = (ch[i] ?? 0) * g;
+      }
+      outBlob = encodeWav({
+        left: buf.getChannelData(0),
+        right: buf.getChannelData(Math.min(1, buf.numberOfChannels - 1)),
+        sampleRate: buf.sampleRate,
+      });
     }
     const data = buf.getChannelData(0);
     const buckets = Math.min(1600, Math.max(160, Math.ceil(duration * 80)));
     const size = Math.max(1, Math.ceil(data.length / buckets));
     for (let b = 0; b < buckets; b++) {
       let peak = 0;
-      for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++) peak = Math.max(peak, Math.abs(data[i] ?? 0));
+      for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++)
+        peak = Math.max(peak, Math.abs(data[i] ?? 0));
       peaks.push(peak);
     }
     const url = URL.createObjectURL(outBlob);
@@ -2353,7 +3000,10 @@ export class SyncLabEngine {
     return this.sampleBuffers;
   }
   /** Interface takes recorded on one side only play from both speakers. */
-  private centered(buf: AudioBuffer) { centerOneSided(buf); return buf; }
+  private centered(buf: AudioBuffer) {
+    centerOneSided(buf);
+    return buf;
+  }
   protected reversedBuffers = new Map<string, AudioBuffer>();
   private liveSamples = new Map<string, AudioBufferSourceNode[]>();
   /** voices grouped by an arbitrary key so pads can choke each other */
@@ -2364,7 +3014,11 @@ export class SyncLabEngine {
   samplePeak(url: string, start = 0, end = 1): number {
     const buf = this.sampleBuffers.get(url);
     if (!buf) return 0;
-    return peakInWindow(Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c)), start, end);
+    return peakInWindow(
+      Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c)),
+      start,
+      end,
+    );
   }
 
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
@@ -2374,7 +3028,9 @@ export class SyncLabEngine {
     const buf = await decodeAudioFile(ctx, raw.slice(0));
     // Only files that really decode are kept in the account library.
     if (file instanceof File && /\.(mp3|mp4)$/i.test(file.name)) {
-      void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(file, file.name));
+      void import("./media-library").then(({ retainMediaInBackground }) =>
+        retainMediaInBackground(file, file.name),
+      );
     }
     const url = URL.createObjectURL(file);
     this.sampleBuffers.set(url, this.centered(buf));
@@ -2412,7 +3068,9 @@ export class SyncLabEngine {
   }
 
   /** Renders the sampler's processed sound (trim, reverse, tune, sync, filter, fades) offline. Original stays untouched. */
-  async renderSample(s: Parameters<SyncLabEngine["playSample"]>[1]): Promise<{ left: Float32Array; right: Float32Array; sampleRate: number } | null> {
+  async renderSample(
+    s: Parameters<SyncLabEngine["playSample"]>[1],
+  ): Promise<{ left: Float32Array; right: Float32Array; sampleRate: number } | null> {
     this.init();
     // Saved samples may not have been played (and decoded) in this session yet.
     if (!this.sampleBuffers.has(s.url)) await this.ensureBuffer(s.url);
@@ -2451,7 +3109,11 @@ export class SyncLabEngine {
     g.connect(off.destination);
     src.start(0, base.duration * a, win);
     const out = await off.startRendering();
-    return { left: out.getChannelData(0).slice(), right: out.getChannelData(Math.min(1, out.numberOfChannels - 1)).slice(), sampleRate: sr };
+    return {
+      left: out.getChannelData(0).slice(),
+      right: out.getChannelData(Math.min(1, out.numberOfChannels - 1)).slice(),
+      sampleRate: sr,
+    };
   }
 
   /** project tempo, used by sampler beat sync */
@@ -2500,7 +3162,13 @@ export class SyncLabEngine {
         const gen = this.transportGen;
         void this.ensureBuffer(s.url).then((b) => {
           // A transport stop while the decode was pending cancels the queued trigger.
-          if (b && gen === this.transportGen && version === (this.sampleTriggerVersions.get(triggerKey) ?? 0) && trackVersion === (this.sampleTriggerVersions.get(trackId) ?? 0)) this.playSample(trackId, s, midi, duration, velocity, undefined, voiceKey);
+          if (
+            b &&
+            gen === this.transportGen &&
+            version === (this.sampleTriggerVersions.get(triggerKey) ?? 0) &&
+            trackVersion === (this.sampleTriggerVersions.get(trackId) ?? 0)
+          )
+            this.playSample(trackId, s, midi, duration, velocity, undefined, voiceKey);
         });
       }
       return;
@@ -2519,7 +3187,11 @@ export class SyncLabEngine {
     const offset = base.duration * a;
     const window = base.duration * (b - a);
     const playable = window / src.playbackRate.value;
-    const len = s.loop ? (duration ?? playable) : s.oneShot ? playable : Math.min(playable, duration ?? playable);
+    const len = s.loop
+      ? (duration ?? playable)
+      : s.oneShot
+        ? playable
+        : Math.min(playable, duration ?? playable);
 
     if (s.loop) {
       src.loop = true;
@@ -2574,8 +3246,15 @@ export class SyncLabEngine {
       } catch {
         /* already gone */
       }
-      this.liveSamples.set(trackId, (this.liveSamples.get(trackId) ?? []).filter((x) => x !== src));
-      if (kk) this.keyedSamples.set(kk, (this.keyedSamples.get(kk) ?? []).filter((x) => x !== src));
+      this.liveSamples.set(
+        trackId,
+        (this.liveSamples.get(trackId) ?? []).filter((x) => x !== src),
+      );
+      if (kk)
+        this.keyedSamples.set(
+          kk,
+          (this.keyedSamples.get(kk) ?? []).filter((x) => x !== src),
+        );
     };
   }
 
@@ -2593,7 +3272,6 @@ export class SyncLabEngine {
       return null;
     }
   }
-
 
   /** Returns (and caches) a reversed copy of a decoded buffer. Original is untouched. */
   private reversedBuffer(url: string, buf: AudioBuffer): AudioBuffer {
@@ -2623,8 +3301,8 @@ export class SyncLabEngine {
       rate?: number;
       reverse?: boolean;
       loopClip?: boolean;
-       /** Equal-power overlap at an audition loop seam, in source seconds. */
-       loopCrossfade?: number;
+      /** Equal-power overlap at an audition loop seam, in source seconds. */
+      loopCrossfade?: number;
     },
     when?: number,
   ) {
@@ -2647,7 +3325,10 @@ export class SyncLabEngine {
 
     const src = ctx.createBufferSource();
     const crossfadeFrames = c.loopClip
-      ? Math.min(Math.floor(clamp(c.loopCrossfade ?? 0, 0, len / 2) * buf.sampleRate), Math.floor((len * buf.sampleRate) / 2))
+      ? Math.min(
+          Math.floor(clamp(c.loopCrossfade ?? 0, 0, len / 2) * buf.sampleRate),
+          Math.floor((len * buf.sampleRate) / 2),
+        )
       : 0;
     let playbackBuffer = buf;
     let playbackStart = startAt;
@@ -2665,7 +3346,8 @@ export class SyncLabEngine {
             const phase = i / Math.max(1, crossfadeFrames - 1);
             const tail = input[startFrame + outputFrames + i] ?? 0;
             const head = input[startFrame + i] ?? 0;
-            output[i] = tail * Math.cos(phase * Math.PI * 0.5) + head * Math.sin(phase * Math.PI * 0.5);
+            output[i] =
+              tail * Math.cos(phase * Math.PI * 0.5) + head * Math.sin(phase * Math.PI * 0.5);
           } else {
             output[i] = input[startFrame + i] ?? 0;
           }
@@ -2708,7 +3390,10 @@ export class SyncLabEngine {
       } catch {
         /* already gone */
       }
-      this.liveSamples.set(trackId, (this.liveSamples.get(trackId) ?? []).filter((x) => x !== src));
+      this.liveSamples.set(
+        trackId,
+        (this.liveSamples.get(trackId) ?? []).filter((x) => x !== src),
+      );
     };
     return true;
   }
@@ -2728,7 +3413,14 @@ export class SyncLabEngine {
   }
 
   stopSamples(trackId?: string) {
-    const ids = trackId ? [trackId] : [...new Set([...this.liveSamples.keys(), ...[...this.sampleTriggerVersions.keys()].map(key => key.split("|")[0] ?? key)])];
+    const ids = trackId
+      ? [trackId]
+      : [
+          ...new Set([
+            ...this.liveSamples.keys(),
+            ...[...this.sampleTriggerVersions.keys()].map((key) => key.split("|")[0] ?? key),
+          ]),
+        ];
     for (const id of ids) {
       this.sampleTriggerVersions.set(id, (this.sampleTriggerVersions.get(id) ?? 0) + 1);
       for (const src of this.liveSamples.get(id) ?? []) {
@@ -2739,10 +3431,10 @@ export class SyncLabEngine {
         }
       }
       this.liveSamples.set(id, []);
-      for (const key of [...this.keyedSamples.keys()]) if (key.startsWith(`${id}|`)) this.keyedSamples.set(key, []);
+      for (const key of [...this.keyedSamples.keys()])
+        if (key.startsWith(`${id}|`)) this.keyedSamples.set(key, []);
     }
   }
-
 
   /* ---------------- wavetable cache ---------------- */
   private tableCache = new Map<string, PeriodicWave>();
@@ -2759,7 +3451,8 @@ export class SyncLabEngine {
       const soft = Math.exp(-i * 0.9);
       const saw = 1 / i;
       const hollow = (i % 2 === 1 ? 1 / i : 0) * (1 + Math.cos(i * 0.6));
-      const a = pos < 0.5 ? soft + (saw - soft) * (pos * 2) : saw + (hollow - saw) * ((pos - 0.5) * 2);
+      const a =
+        pos < 0.5 ? soft + (saw - soft) * (pos * 2) : saw + (hollow - saw) * ((pos - 0.5) * 2);
       imag[i] = a;
     }
     const wave = ctx.createPeriodicWave(real, imag, { disableNormalization: false });
@@ -2767,7 +3460,10 @@ export class SyncLabEngine {
     return wave;
   }
 
-  private liveVoices = new Map<string, Set<{ end: number; patch: SynthPatch; update: (patch: SynthPatch, time: number) => void }>>();
+  private liveVoices = new Map<
+    string,
+    Set<{ end: number; patch: SynthPatch; update: (patch: SynthPatch, time: number) => void }>
+  >();
   /** Notes latched by a synth's HOLD switch, each with its own release. */
   private heldVoices = new Map<string, { midi: number; release: (t: number) => void }[]>();
   private registerHeld(trackId: string, midi: number, release: (t: number) => void) {
@@ -2782,25 +3478,41 @@ export class SyncLabEngine {
     const now = this.ctx.currentTime;
     const keep: typeof list = [];
     for (const v of list) {
-      if (midi === undefined || v.midi === midi) { try { v.release(now); } catch { /* already gone */ } }
-      else keep.push(v);
+      if (midi === undefined || v.midi === midi) {
+        try {
+          v.release(now);
+        } catch {
+          /* already gone */
+        }
+      } else keep.push(v);
     }
-    if (keep.length) this.heldVoices.set(trackId, keep); else this.heldVoices.delete(trackId);
+    if (keep.length) this.heldVoices.set(trackId, keep);
+    else this.heldVoices.delete(trackId);
   }
-  private liveDrums = new Map<string, Set<{ end: number; pad: DrumPad; update: (pad: DrumPad, time: number) => void }>>();
+  private liveDrums = new Map<
+    string,
+    Set<{ end: number; pad: DrumPad; update: (pad: DrumPad, time: number) => void }>
+  >();
 
   /** Update nodes already sounding, without triggering or capturing another note. */
   syncSoundControls(tracks: Track[]) {
     const ctx = this.ctx;
     if (!ctx) return;
-    for (const t of tracks) if (t.patch?.granular) { this.granularLive.set(t.id, t.patch.granular); warmBuiltInSource(ctx, t.patch.granular.source); }
+    for (const t of tracks)
+      if (t.patch?.granular) {
+        this.granularLive.set(t.id, t.patch.granular);
+        warmBuiltInSource(ctx, t.patch.granular.source);
+      }
     for (const t of tracks) if (t.patch?.piano) warmPiano(t.patch.piano.model);
     const now = ctx.currentTime;
-    const byId = new Map(tracks.map(track => [track.id, track]));
+    const byId = new Map(tracks.map((track) => [track.id, track]));
     for (const [id, voices] of this.liveVoices) {
       const patch = byId.get(id)?.patch;
       for (const voice of voices) {
-        if (voice.end <= now) { voices.delete(voice); continue; }
+        if (voice.end <= now) {
+          voices.delete(voice);
+          continue;
+        }
         if (!patch || patch === voice.patch || patch.modular) continue;
         voice.update(patch, now);
         voice.patch = patch;
@@ -2809,13 +3521,25 @@ export class SyncLabEngine {
     }
     for (const [key, voices] of this.liveDrums) {
       const [trackId, padId] = JSON.parse(key) as [string, string];
-      const pad = byId.get(trackId)?.pads?.find(item => item.id === padId);
+      const pad = byId.get(trackId)?.pads?.find((item) => item.id === padId);
       for (const voice of voices) {
-        if (voice.end <= now) { voices.delete(voice); continue; }
+        if (voice.end <= now) {
+          voices.delete(voice);
+          continue;
+        }
         if (!pad || pad === voice.pad) continue;
         // Sequencer edits must not rewrite sound controls or cancel filter envelopes.
         const previous = voice.pad;
-        if (pad.volume !== previous.volume || pad.pan !== previous.pan || pad.pitch !== previous.pitch || pad.tone !== previous.tone || pad.filterType !== previous.filterType || pad.cutoff !== previous.cutoff || pad.resonance !== previous.resonance) voice.update(pad, now);
+        if (
+          pad.volume !== previous.volume ||
+          pad.pan !== previous.pan ||
+          pad.pitch !== previous.pitch ||
+          pad.tone !== previous.tone ||
+          pad.filterType !== previous.filterType ||
+          pad.cutoff !== previous.cutoff ||
+          pad.resonance !== previous.resonance
+        )
+          voice.update(pad, now);
         voice.pad = pad;
       }
       if (!voices.size) this.liveDrums.delete(key);
@@ -2828,7 +3552,10 @@ export class SyncLabEngine {
 
   /* ---------------- synth voice ---------------- */
   /** Per-track pitch modulation bus (cents) feeding every synth oscillator's detune: pitch bend + mod-wheel vibrato. */
-  private pitchMods = new Map<string, { bend: ConstantSourceNode; depth: GainNode; sum: GainNode }>();
+  private pitchMods = new Map<
+    string,
+    { bend: ConstantSourceNode; depth: GainNode; sum: GainNode }
+  >();
   private pitchMod(trackId: string) {
     let pm = this.pitchMods.get(trackId);
     if (pm) return pm;
@@ -2852,12 +3579,20 @@ export class SyncLabEngine {
   /** Pitch bend in cents (e.g. ±200 = ±2 semitones) for every voice on this track. */
   setPitchBend(trackId: string, cents: number, when?: number) {
     const ctx = this.init();
-    this.pitchMod(trackId).bend.offset.setTargetAtTime(clamp(cents, -2400, 2400), when ?? ctx.currentTime, 0.008);
+    this.pitchMod(trackId).bend.offset.setTargetAtTime(
+      clamp(cents, -2400, 2400),
+      when ?? ctx.currentTime,
+      0.008,
+    );
   }
   /** Mod wheel 0..1 → vibrato depth up to ±60 cents. */
   setModWheel(trackId: string, amount: number, when?: number) {
     const ctx = this.init();
-    this.pitchMod(trackId).depth.gain.setTargetAtTime(clamp(amount, 0, 1) * 60, when ?? ctx.currentTime, 0.02);
+    this.pitchMod(trackId).depth.gain.setTargetAtTime(
+      clamp(amount, 0, 1) * 60,
+      when ?? ctx.currentTime,
+      0.02,
+    );
   }
 
   /** One looping white-noise buffer per context, shared by every voice (no per-note buffer filling on the main thread). */
@@ -2878,18 +3613,31 @@ export class SyncLabEngine {
     return src;
   }
 
-  playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity = 1, when?: number) {
+  playNote(
+    trackId: string,
+    patch: SynthPatch,
+    midi: number,
+    duration: number,
+    velocity = 1,
+    when?: number,
+  ) {
     const ctx = this.init();
     const t0 = when ?? ctx.currentTime;
     // External MIDI instruments only play live: exports (offline renders) can't reach hardware,
     // and a muted/soloed-out channel sends nothing.
-    if (isExternal(trackId) && !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext)) {
-      if (this.trackAudible.get(trackId) !== false) sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime);
+    if (
+      isExternal(trackId) &&
+      !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext)
+    ) {
+      if (this.trackAudible.get(trackId) !== false)
+        sendExternalNote(trackId, midi, duration, velocity, t0 - ctx.currentTime);
       return;
     }
     const ch = this.playbackChannel(trackId);
     // HOLD-latched notes are only ever played live; offline renders use real note lengths.
-    const held = duration >= HELD_NOTE_SECONDS && !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext);
+    const held =
+      duration >= HELD_NOTE_SECONDS &&
+      !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext);
     if (patch.granular) {
       this.playGranular(trackId, ch.input, patch.granular, midi, duration, velocity, t0, held);
       return;
@@ -2899,20 +3647,44 @@ export class SyncLabEngine {
       const gate = ctx.createGain();
       gate.connect(ch.input);
       const gates = this.modularGates.get(trackId) ?? new Set<GainNode>();
-      gates.add(gate); this.modularGates.set(trackId, gates);
+      gates.add(gate);
+      this.modularGates.set(trackId, gates);
       let stopSources: ((at: number) => void) | null = null;
-      const life = playModularVoice(ctx, gate, patch.modular, midi, duration, velocity, t0, this.pitchMod(trackId).sum, (mod, output) =>
-        !(typeof OfflineAudioContext !== 'undefined' && ctx instanceof OfflineAudioContext) && MODULAR_SCOPE_TYPES.includes(mod.type) ? attachModularScope(ctx, modularScopeId(trackId, mod.id), output) : undefined,
-        (stop) => { stopSources = stop; });
-      const retire = () => { gates.delete(gate); try { gate.disconnect(); } catch { /* gone */ } };
+      const life = playModularVoice(
+        ctx,
+        gate,
+        patch.modular,
+        midi,
+        duration,
+        velocity,
+        t0,
+        this.pitchMod(trackId).sum,
+        (mod, output) =>
+          !(typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext) &&
+          MODULAR_SCOPE_TYPES.includes(mod.type)
+            ? attachModularScope(ctx, modularScopeId(trackId, mod.id), output)
+            : undefined,
+        (stop) => {
+          stopSources = stop;
+        },
+      );
+      const retire = () => {
+        gates.delete(gate);
+        try {
+          gate.disconnect();
+        } catch {
+          /* gone */
+        }
+      };
       const timer = setTimeout(retire, (t0 - ctx.currentTime + life + 0.2) * 1000);
-      if (held) this.registerHeld(trackId, midi, (t) => {
-        holdAt(gate.gain, t);
-        gate.gain.setTargetAtTime(0, t, 0.06);
-        stopSources?.(t + 0.4);
-        clearTimeout(timer);
-        setTimeout(retire, 600);
-      });
+      if (held)
+        this.registerHeld(trackId, midi, (t) => {
+          holdAt(gate.gain, t);
+          gate.gain.setTargetAtTime(0, t, 0.06);
+          stopSources?.(t + 0.4);
+          clearTimeout(timer);
+          setTimeout(retire, 600);
+        });
       return;
     }
     const life = duration + patch.amp.release + 0.25;
@@ -2933,10 +3705,14 @@ export class SyncLabEngine {
     /** Sum of the fixed (non-moving) modulation reaching a destination, in -1..1 units. */
     const fixedMod = (dest: string) =>
       routes.reduce(
-        (sum, r) => (r.dest === dest && r.source in staticSources ? sum + r.amount * (staticSources[r.source] ?? 0) : sum),
+        (sum, r) =>
+          r.dest === dest && r.source in staticSources
+            ? sum + r.amount * (staticSources[r.source] ?? 0)
+            : sum,
         0,
       );
-    const audioRoutes = (dest: string) => routes.filter((r) => r.dest === dest && !(r.source in staticSources));
+    const audioRoutes = (dest: string) =>
+      routes.filter((r) => r.dest === dest && !(r.source in staticSources));
 
     const analog = patch.analog ?? 0;
     const drift = (Math.random() * 2 - 1) * analog;
@@ -2959,7 +3735,11 @@ export class SyncLabEngine {
     /* ---- filters ---- */
     const kt = patch.keyTracking ?? 0;
     const cutoffMod = Math.pow(2, fixedMod("cutoff") * 4 + drift * 0.15);
-    const cutoffBase = clamp(patch.cutoff * Math.pow(2, (kt * (midi - 60)) / 12) * cutoffMod, 40, 18000);
+    const cutoffBase = clamp(
+      patch.cutoff * Math.pow(2, (kt * (midi - 60)) / 12) * cutoffMod,
+      40,
+      18000,
+    );
 
     const filterIn = ctx.createGain();
     const filter = ctx.createBiquadFilter();
@@ -3011,7 +3791,9 @@ export class SyncLabEngine {
       }
       const crusher = ctx.createWaveShaper();
       crusher.curve = crushAmt > 0.01 ? curve : null;
-      voiceFx.set("bitcrush", v => { crusher.curve = v > 0.01 ? makeBitcrushCurve(Math.round(12 - clamp(v, 0, 1) * 10)) : null; });
+      voiceFx.set("bitcrush", (v) => {
+        crusher.curve = v > 0.01 ? makeBitcrushCurve(Math.round(12 - clamp(v, 0, 1) * 10)) : null;
+      });
       shaper.connect(crusher);
       tail = crusher;
     }
@@ -3030,10 +3812,19 @@ export class SyncLabEngine {
       lg.connect(d.delayTime);
       lfo.start(t0);
       lfo.stop(t0 + life);
-      fxStops.push((t) => { try { lfo.stop(t); } catch { /* done */ } });
+      fxStops.push((t) => {
+        try {
+          lfo.stop(t);
+        } catch {
+          /* done */
+        }
+      });
       const wet = ctx.createGain();
       wet.gain.value = flanger * 0.7;
-      voiceFx.set("flanger", (v, time) => { wet.gain.setTargetAtTime(v * 0.7, time, 0.015); lg.gain.setTargetAtTime(v * 0.003, time, 0.015); });
+      voiceFx.set("flanger", (v, time) => {
+        wet.gain.setTargetAtTime(v * 0.7, time, 0.015);
+        lg.gain.setTargetAtTime(v * 0.003, time, 0.015);
+      });
       tail.connect(d);
       d.connect(wet);
       wet.connect(voiceOut);
@@ -3067,7 +3858,9 @@ export class SyncLabEngine {
       const wet = ctx.createGain();
       wet.gain.value = patch.fx.delay * 0.6;
       voiceFx.set("delay", (v, time) => wet.gain.setTargetAtTime(v * 0.6, time, 0.015));
-      voiceFx.set("delayFeedback", (v, time) => fb.gain.setTargetAtTime(clamp(v, 0, 0.8), time, 0.015));
+      voiceFx.set("delayFeedback", (v, time) =>
+        fb.gain.setTargetAtTime(clamp(v, 0, 0.8), time, 0.015),
+      );
       voicePan.connect(wet);
       wet.connect(delay);
       delay.connect(fb);
@@ -3095,12 +3888,19 @@ export class SyncLabEngine {
     const unisonDetune = clamp(patch.unison.detune * (1 + fixedMod("unisonDetune")), 0, 100);
     const levelMod = clamp(1 + fixedMod("level"), 0, 2);
     const nodes: (OscillatorNode | AudioBufferSourceNode)[] = [];
-    const oscControls: { index: number; spread: number; source: OscillatorNode | AudioBufferSourceNode; gain: GainNode; pan: StereoPannerNode }[] = [];
+    const oscControls: {
+      index: number;
+      spread: number;
+      source: OscillatorNode | AudioBufferSourceNode;
+      gain: GainNode;
+      pan: StereoPannerNode;
+    }[] = [];
     const oscNodes: (OscillatorNode | null)[][] = patch.oscillators.map(() => []);
     const rootFreq = midiToFreq(midi);
     const prevMidi = this.lastMidi.get(trackId);
     const glide = patch.glide ?? 0;
-    const doGlide = glide > 0 && prevMidi !== undefined && (patch.glideMode !== "legato" || mode !== "poly");
+    const doGlide =
+      glide > 0 && prevMidi !== undefined && (patch.glideMode !== "legato" || mode !== "poly");
 
     const light = patch.lightVoices === true;
     const fmAny = fixedMod("fmAmount") > 0;
@@ -3151,19 +3951,29 @@ export class SyncLabEngine {
           o.frequency.setValueAtTime(freq, t0);
         }
         o.detune.setValueAtTime(
-          osc.detune + (osc.fine ?? 0) + spread * unisonDetune + fixedMod("pitch") * 1200 + drift * 12,
+          osc.detune +
+            (osc.fine ?? 0) +
+            spread * unisonDetune +
+            fixedMod("pitch") * 1200 +
+            drift * 12,
           t0,
         );
         {
           const pmSum = this.pitchMod(trackId).sum;
           pmSum.connect(o.detune);
-          o.addEventListener("ended", () => { try { pmSum.disconnect(o.detune); } catch { /* already gone */ } });
+          o.addEventListener("ended", () => {
+            try {
+              pmSum.disconnect(o.detune);
+            } catch {
+              /* already gone */
+            }
+          });
         }
         // hard-sync flavour: snap the partial back toward the root pitch
         if (osc.sync) o.frequency.setValueAtTime(rootFreq * Math.round(freq / rootFreq || 1), t0);
 
         // ring modulation against oscillator 1
-        const carrier = oi > 0 && osc.ring ? oscNodes[0]?.[u] ?? null : null;
+        const carrier = oi > 0 && osc.ring ? (oscNodes[0]?.[u] ?? null) : null;
         if (carrier) {
           const ring = ctx.createGain();
           ring.gain.value = 0;
@@ -3210,7 +4020,13 @@ export class SyncLabEngine {
       src.detune.setValueAtTime(fixedMod("pitch") * 1200 + drift * 4, t0);
       const pmSum = this.pitchMod(trackId).sum;
       pmSum.connect(src.detune);
-      src.addEventListener("ended", () => { try { pmSum.disconnect(src.detune); } catch { /* already gone */ } });
+      src.addEventListener("ended", () => {
+        try {
+          pmSum.disconnect(src.detune);
+        } catch {
+          /* already gone */
+        }
+      });
       const g = ctx.createGain();
       // ×2: piano level 1 is as loud as oscillators summing to level 1
       g.gain.value = clamp(pz.level, 0, 1.5) * 2 * levelMod * velocity;
@@ -3237,7 +4053,12 @@ export class SyncLabEngine {
     }
 
     /* ---- legacy LFO destinations ---- */
-    const lfoControls: { index: number; source: OscillatorNode; depth: GainNode; destination: string }[] = [];
+    const lfoControls: {
+      index: number;
+      source: OscillatorNode;
+      depth: GainNode;
+      destination: string;
+    }[] = [];
     const runningMods: { stop: (t: number) => void }[] = [];
     patch.lfos.forEach((lfo, index) => {
       if (light && !lfo.on) return;
@@ -3265,7 +4086,15 @@ export class SyncLabEngine {
       lfoControls.push({ index, source: o, depth: g, destination: lfo.destination });
       o.start(t0);
       o.stop(t0 + life);
-      runningMods.push({ stop: (t) => { try { o.stop(t); } catch { /* done */ } } });
+      runningMods.push({
+        stop: (t) => {
+          try {
+            o.stop(t);
+          } catch {
+            /* done */
+          }
+        },
+      });
     });
 
     /* ---- mod matrix: moving sources ---- */
@@ -3285,19 +4114,41 @@ export class SyncLabEngine {
         cs.start(t0);
         cs.stop(t0 + life);
         modOutputs.set(src, cs);
-        runningMods.push({ stop: (t) => { try { cs.stop(t); } catch { /* done */ } } });
+        runningMods.push({
+          stop: (t) => {
+            try {
+              cs.stop(t);
+            } catch {
+              /* done */
+            }
+          },
+        });
         return cs;
       }
       const idx = src === "lfo1" ? 0 : src === "lfo2" ? 1 : src === "lfo3" ? 2 : -1;
       if (idx < 0) return null;
-      const cfg = patch.lfos[idx] ?? { rate: 1, wave: "sine" as const, amount: 1, on: true, destination: "filter" as const };
+      const cfg = patch.lfos[idx] ?? {
+        rate: 1,
+        wave: "sine" as const,
+        amount: 1,
+        on: true,
+        destination: "filter" as const,
+      };
       const o = ctx.createOscillator();
       o.type = cfg.wave;
       o.frequency.value = clamp(lfoHz(cfg, this.tempo), 0.01, 40);
       o.start(t0);
       o.stop(t0 + life);
       modOutputs.set(src, o);
-      runningMods.push({ stop: (t) => { try { o.stop(t); } catch { /* done */ } } });
+      runningMods.push({
+        stop: (t) => {
+          try {
+            o.stop(t);
+          } catch {
+            /* done */
+          }
+        },
+      });
       return o;
     };
 
@@ -3344,7 +4195,10 @@ export class SyncLabEngine {
     const base = cutoffBase;
     filter.frequency.cancelScheduledValues(t0);
     filter.frequency.setValueAtTime(base, t0);
-    filter.frequency.linearRampToValueAtTime(clamp(base + fe.amount, 40, 18000), t0 + Math.max(0.001, fe.attack));
+    filter.frequency.linearRampToValueAtTime(
+      clamp(base + fe.amount, 40, 18000),
+      t0 + Math.max(0.001, fe.attack),
+    );
     filter.frequency.linearRampToValueAtTime(
       clamp(base + fe.amount * fe.sustain, 40, 18000),
       t0 + fe.attack + fe.decay,
@@ -3352,83 +4206,155 @@ export class SyncLabEngine {
     filter.frequency.setTargetAtTime(base, relStart, Math.max(0.02, fe.release));
 
     const active = this.liveVoices.get(trackId) ?? new Set();
-    const voice = { end: t0 + life, patch, update: (next: SynthPatch, time: number) => {
-      const old = voice.patch;
-      const glideParam = (param: AudioParam, value: number) => param.setTargetAtTime(value, Math.max(t0, time), 0.015);
-      if (next.cutoff !== old.cutoff || next.keyTracking !== old.keyTracking || next.filterEnv !== old.filterEnv) {
-        holdAt(filter.frequency, time);
-        const base = clamp(next.cutoff * Math.pow(2, ((next.keyTracking ?? 0) * (midi - 60)) / 12) * cutoffMod, 40, 18000);
-        for (const [age, level] of envelopePoints(next.filterEnv, duration, Math.max(0, time - t0))) {
-          filter.frequency.linearRampToValueAtTime(clamp(base + next.filterEnv.amount * level, 40, 18000), Math.max(time, t0 + age) + 0.015);
-        }
-      }
-      if (noiseGain) glideParam(noiseGain.gain, next.noise * 0.4 * velocity);
-      for (const [key, setter] of voiceFx) {
-        const value = next.fx[key as keyof SynthPatch["fx"]] ?? 0;
-        if (value !== old.fx[key as keyof SynthPatch["fx"]]) setter(value, time);
-      }
-      filter.type = next.filterType;
-      glideParam(filter.Q, clamp(next.resonance * (1 + fixedMod("resonance")), 0, 30));
-      if (next.filterType !== old.filterType || next.resonance !== old.resonance) glideParam(shaperIn.gain, voiceInputGain(next));
-      if (next.drive !== old.drive || next.fx.distortion !== old.fx.distortion || next.fx.saturation !== old.fx.saturation || next.clean !== old.clean)
-        shaper.curve = this.voiceCurve(next);
-      if (filter2 && next.filter2) {
-        filter2.type = next.filter2.type;
-        glideParam(filter2.frequency, clamp(next.filter2.cutoff, 40, 18000));
-        glideParam(filter2.Q, clamp(next.filter2.resonance, 0, 30));
-      }
-      for (const control of oscControls) {
-        const osc = next.oscillators[control.index];
-        if (!osc) continue;
-        glideParam(control.gain.gain, osc.on ? osc.level * levelMod * unisonCopyScale(voices) * velocity : 0);
-        glideParam(control.pan.pan, clamp(osc.pan + control.spread * next.unison.width, -1, 1));
-        if (control.source instanceof OscillatorNode) {
-          const source = control.source;
-          const prev = old.oscillators[control.index];
-          // Only replace the waveform when its shape actually changed; rewriting it on every knob move clicks.
-          const shapeChanged = !prev || prev.wave !== osc.wave || prev.pulseWidth !== osc.pulseWidth || prev.morph !== osc.morph || (prev.phase ?? 0) !== (osc.phase ?? 0);
-          if (!shapeChanged) { /* keep current waveform */ }
-          else if (osc.wave === "pulse") source.setPeriodicWave(this.pulseWave(ctx, clamp(osc.pulseWidth ?? 0.3, 0.02, 0.98)));
-          else if (osc.wave === "wavetable") source.setPeriodicWave(this.wavetableWave(ctx, clamp(osc.morph ?? 0.5, 0, 1)));
-          else if (osc.wave !== "noise") source.type = osc.wave;
-          if (shapeChanged && (osc.phase ?? 0) !== 0) {
-            const harmonics = phasedHarmonics(osc.wave, osc.phase ?? 0, osc.pulseWidth, osc.morph);
-            source.setPeriodicWave(ctx.createPeriodicWave(harmonics.real, harmonics.imag));
+    const voice = {
+      end: t0 + life,
+      patch,
+      update: (next: SynthPatch, time: number) => {
+        const old = voice.patch;
+        const glideParam = (param: AudioParam, value: number) =>
+          param.setTargetAtTime(value, Math.max(t0, time), 0.015);
+        if (
+          next.cutoff !== old.cutoff ||
+          next.keyTracking !== old.keyTracking ||
+          next.filterEnv !== old.filterEnv
+        ) {
+          holdAt(filter.frequency, time);
+          const base = clamp(
+            next.cutoff * Math.pow(2, ((next.keyTracking ?? 0) * (midi - 60)) / 12) * cutoffMod,
+            40,
+            18000,
+          );
+          for (const [age, level] of envelopePoints(
+            next.filterEnv,
+            duration,
+            Math.max(0, time - t0),
+          )) {
+            filter.frequency.linearRampToValueAtTime(
+              clamp(base + next.filterEnv.amount * level, 40, 18000),
+              Math.max(time, t0 + age) + 0.015,
+            );
           }
-          glideParam(source.frequency, midiToFreq(midi + osc.octave * 12 + osc.semitone));
-          glideParam(source.detune, osc.detune + (osc.fine ?? 0) + control.spread * next.unison.detune + fixedMod("pitch") * 1200 + drift * 12);
         }
-      }
-      for (const control of lfoControls) {
-        const lfo = next.lfos[control.index];
-        if (!lfo) continue;
-        control.source.type = lfo.wave; glideParam(control.source.frequency, lfoHz(lfo, this.tempo));
-        const scale = control.destination === "filter" ? 2000 : control.destination === "volume" ? 0.4 : control.destination === "pan" ? 1 : 50;
-        glideParam(control.depth.gain, lfo.on ? lfo.amount * scale : 0);
-      }
-      if (next.amp !== old.amp || next.velocitySens !== old.velocitySens) {
-        holdAt(voiceOut.gain, time);
-        const sens = next.velocitySens ?? 1;
-        const peak = 0.35 * (1 - sens + sens * clamp(velocity, 0, 1));
-        for (const [age, level] of envelopePoints(next.amp, duration, Math.max(0, time - t0)))
-          voiceOut.gain.linearRampToValueAtTime(Math.max(0.0001, peak * level), Math.max(time, t0 + age) + 0.015);
-      }
-    } };
-    active.add(voice); this.liveVoices.set(trackId, active);
-    if (held) this.registerHeld(trackId, midi, (t) => {
-      // Let go like a key release: the amp and filter envelopes run their release from here.
-      const rel = Math.max(0.02, voice.patch.amp.release);
-      active.delete(voice); // knob moves during the tail must not re-open the envelope
-      holdAt(voiceOut.gain, t);
-      voiceOut.gain.setTargetAtTime(0.0001, t, rel / 5);
-      holdAt(filter.frequency, t);
-      filter.frequency.setTargetAtTime(cutoffBase, t, Math.max(0.02, voice.patch.filterEnv.release));
-      const end = t + rel + 0.1;
-      for (const n of nodes) { try { n.stop(end); } catch { /* already stopped */ } }
-      for (const m of runningMods) m.stop(end);
-      for (const stop of fxStops) stop(end);
-      voice.end = end;
-    });
+        if (noiseGain) glideParam(noiseGain.gain, next.noise * 0.4 * velocity);
+        for (const [key, setter] of voiceFx) {
+          const value = next.fx[key as keyof SynthPatch["fx"]] ?? 0;
+          if (value !== old.fx[key as keyof SynthPatch["fx"]]) setter(value, time);
+        }
+        filter.type = next.filterType;
+        glideParam(filter.Q, clamp(next.resonance * (1 + fixedMod("resonance")), 0, 30));
+        if (next.filterType !== old.filterType || next.resonance !== old.resonance)
+          glideParam(shaperIn.gain, voiceInputGain(next));
+        if (
+          next.drive !== old.drive ||
+          next.fx.distortion !== old.fx.distortion ||
+          next.fx.saturation !== old.fx.saturation ||
+          next.clean !== old.clean
+        )
+          shaper.curve = this.voiceCurve(next);
+        if (filter2 && next.filter2) {
+          filter2.type = next.filter2.type;
+          glideParam(filter2.frequency, clamp(next.filter2.cutoff, 40, 18000));
+          glideParam(filter2.Q, clamp(next.filter2.resonance, 0, 30));
+        }
+        for (const control of oscControls) {
+          const osc = next.oscillators[control.index];
+          if (!osc) continue;
+          glideParam(
+            control.gain.gain,
+            osc.on ? osc.level * levelMod * unisonCopyScale(voices) * velocity : 0,
+          );
+          glideParam(control.pan.pan, clamp(osc.pan + control.spread * next.unison.width, -1, 1));
+          if (control.source instanceof OscillatorNode) {
+            const source = control.source;
+            const prev = old.oscillators[control.index];
+            // Only replace the waveform when its shape actually changed; rewriting it on every knob move clicks.
+            const shapeChanged =
+              !prev ||
+              prev.wave !== osc.wave ||
+              prev.pulseWidth !== osc.pulseWidth ||
+              prev.morph !== osc.morph ||
+              (prev.phase ?? 0) !== (osc.phase ?? 0);
+            if (!shapeChanged) {
+              /* keep current waveform */
+            } else if (osc.wave === "pulse")
+              source.setPeriodicWave(this.pulseWave(ctx, clamp(osc.pulseWidth ?? 0.3, 0.02, 0.98)));
+            else if (osc.wave === "wavetable")
+              source.setPeriodicWave(this.wavetableWave(ctx, clamp(osc.morph ?? 0.5, 0, 1)));
+            else if (osc.wave !== "noise") source.type = osc.wave;
+            if (shapeChanged && (osc.phase ?? 0) !== 0) {
+              const harmonics = phasedHarmonics(
+                osc.wave,
+                osc.phase ?? 0,
+                osc.pulseWidth,
+                osc.morph,
+              );
+              source.setPeriodicWave(ctx.createPeriodicWave(harmonics.real, harmonics.imag));
+            }
+            glideParam(source.frequency, midiToFreq(midi + osc.octave * 12 + osc.semitone));
+            glideParam(
+              source.detune,
+              osc.detune +
+                (osc.fine ?? 0) +
+                control.spread * next.unison.detune +
+                fixedMod("pitch") * 1200 +
+                drift * 12,
+            );
+          }
+        }
+        for (const control of lfoControls) {
+          const lfo = next.lfos[control.index];
+          if (!lfo) continue;
+          control.source.type = lfo.wave;
+          glideParam(control.source.frequency, lfoHz(lfo, this.tempo));
+          const scale =
+            control.destination === "filter"
+              ? 2000
+              : control.destination === "volume"
+                ? 0.4
+                : control.destination === "pan"
+                  ? 1
+                  : 50;
+          glideParam(control.depth.gain, lfo.on ? lfo.amount * scale : 0);
+        }
+        if (next.amp !== old.amp || next.velocitySens !== old.velocitySens) {
+          holdAt(voiceOut.gain, time);
+          const sens = next.velocitySens ?? 1;
+          const peak = 0.35 * (1 - sens + sens * clamp(velocity, 0, 1));
+          for (const [age, level] of envelopePoints(next.amp, duration, Math.max(0, time - t0)))
+            voiceOut.gain.linearRampToValueAtTime(
+              Math.max(0.0001, peak * level),
+              Math.max(time, t0 + age) + 0.015,
+            );
+        }
+      },
+    };
+    active.add(voice);
+    this.liveVoices.set(trackId, active);
+    if (held)
+      this.registerHeld(trackId, midi, (t) => {
+        // Let go like a key release: the amp and filter envelopes run their release from here.
+        const rel = Math.max(0.02, voice.patch.amp.release);
+        active.delete(voice); // knob moves during the tail must not re-open the envelope
+        holdAt(voiceOut.gain, t);
+        voiceOut.gain.setTargetAtTime(0.0001, t, rel / 5);
+        holdAt(filter.frequency, t);
+        filter.frequency.setTargetAtTime(
+          cutoffBase,
+          t,
+          Math.max(0.02, voice.patch.filterEnv.release),
+        );
+        const end = t + rel + 0.1;
+        for (const n of nodes) {
+          try {
+            n.stop(end);
+          } catch {
+            /* already stopped */
+          }
+        }
+        for (const m of runningMods) m.stop(end);
+        for (const stop of fxStops) stop(end);
+        voice.end = end;
+      });
     const cleanupSource = nodes[0];
     cleanupSource?.addEventListener("ended", () => {
       active.delete(voice);
@@ -3436,10 +4362,24 @@ export class SyncLabEngine {
       // Release the finished voice's graph so long sessions don't pile up silent nodes.
       // The echo keeps ringing for a few seconds first; offline renders keep everything until done.
       if (typeof OfflineAudioContext !== "undefined" && ctx instanceof OfflineAudioContext) return;
-      try { voiceOut.disconnect(); } catch { /* already detached */ }
+      try {
+        voiceOut.disconnect();
+      } catch {
+        /* already detached */
+      }
       setTimeout(() => {
-        try { voicePan.disconnect(); } catch { /* already detached */ }
-        for (const n of echoNodes) { try { n.disconnect(); } catch { /* already detached */ } }
+        try {
+          voicePan.disconnect();
+        } catch {
+          /* already detached */
+        }
+        for (const n of echoNodes) {
+          try {
+            n.disconnect();
+          } catch {
+            /* already detached */
+          }
+        }
       }, 8000);
     });
     this.lastMidi.set(trackId, midi);
@@ -3476,8 +4416,11 @@ export class SyncLabEngine {
     const t = Math.max(when ?? ctx.currentTime, ctx.currentTime + 0.002);
     const osc = ctx.createOscillator();
     const sounds: Record<string, [OscillatorType, number, number]> = {
-      "Detroit Rim": ["triangle", 1200, 0.035], Click: ["square", 1600, 0.018],
-      Cowbell: ["square", 540, 0.08], Sidestick: ["triangle", 850, 0.024], Beep: ["sine", 1000, 0.08],
+      "Detroit Rim": ["triangle", 1200, 0.035],
+      Click: ["square", 1600, 0.018],
+      Cowbell: ["square", 540, 0.08],
+      Sidestick: ["triangle", 850, 0.024],
+      Beep: ["sine", 1000, 0.08],
     };
     const [wave, frequency, duration] = sounds[prefs.clickSound] ?? ["square", 1174.7, 0.08];
     osc.type = wave;
@@ -3605,28 +4548,56 @@ export class SyncLabEngine {
     const retainDrum = (source: AudioBufferSourceNode, length: number) => {
       const key = JSON.stringify([trackId, pad.id]);
       const voices = this.liveDrums.get(key) ?? new Set();
-      const voice = { end: t + length, pad, update: (next: DrumPad, time: number) => {
-        const prev = voice.pad;
-        if (next.volume !== prev.volume) out.gain.setTargetAtTime(next.volume, time, 0.015);
-        if (next.pan !== prev.pan) p.pan.setTargetAtTime(clamp(next.pan, -1, 1), time, 0.015);
-        if (next.pitch !== prev.pitch) source.playbackRate.setTargetAtTime(Math.pow(2, next.pitch / 12), time, 0.015);
-        if (drumTone && next.tone !== prev.tone) {
-          const tone = clamp(next.tone ?? 0.5, 0, 1);
-          drumTone.type = tone < 0.5 ? "lowpass" : "highpass";
-          drumTone.frequency.setTargetAtTime(tone < 0.5 ? 300 * Math.pow(60, tone * 2) : 30 * Math.pow(120, (tone - 0.5) * 2), time, 0.015);
-        }
-        // Only touch the filter when a filter control moved, so volume/pan edits keep its envelope.
-        if (drumFilter && next.filterType && next.filterType !== "off" && (next.filterType !== prev.filterType || next.cutoff !== prev.cutoff || next.resonance !== prev.resonance)) {
-          drumFilter.type = next.filterType;
-          drumFilter.frequency.cancelScheduledValues(time);
-          drumFilter.frequency.setTargetAtTime(40 * Math.pow(450, clamp(next.cutoff ?? 1, 0, 1)), time, 0.015);
-          drumFilter.Q.setTargetAtTime(0.5 + clamp(next.resonance ?? 0, 0, 1) * 18, time, 0.015);
-        }
-      } };
-      voices.add(voice); this.liveDrums.set(key, voices);
-      source.addEventListener("ended", () => { voices.delete(voice); if (!voices.size) this.liveDrums.delete(key); });
+      const voice = {
+        end: t + length,
+        pad,
+        update: (next: DrumPad, time: number) => {
+          const prev = voice.pad;
+          if (next.volume !== prev.volume) out.gain.setTargetAtTime(next.volume, time, 0.015);
+          if (next.pan !== prev.pan) p.pan.setTargetAtTime(clamp(next.pan, -1, 1), time, 0.015);
+          if (next.pitch !== prev.pitch)
+            source.playbackRate.setTargetAtTime(Math.pow(2, next.pitch / 12), time, 0.015);
+          if (drumTone && next.tone !== prev.tone) {
+            const tone = clamp(next.tone ?? 0.5, 0, 1);
+            drumTone.type = tone < 0.5 ? "lowpass" : "highpass";
+            drumTone.frequency.setTargetAtTime(
+              tone < 0.5 ? 300 * Math.pow(60, tone * 2) : 30 * Math.pow(120, (tone - 0.5) * 2),
+              time,
+              0.015,
+            );
+          }
+          // Only touch the filter when a filter control moved, so volume/pan edits keep its envelope.
+          if (
+            drumFilter &&
+            next.filterType &&
+            next.filterType !== "off" &&
+            (next.filterType !== prev.filterType ||
+              next.cutoff !== prev.cutoff ||
+              next.resonance !== prev.resonance)
+          ) {
+            drumFilter.type = next.filterType;
+            drumFilter.frequency.cancelScheduledValues(time);
+            drumFilter.frequency.setTargetAtTime(
+              40 * Math.pow(450, clamp(next.cutoff ?? 1, 0, 1)),
+              time,
+              0.015,
+            );
+            drumFilter.Q.setTargetAtTime(0.5 + clamp(next.resonance ?? 0, 0, 1) * 18, time, 0.015);
+          }
+        },
+      };
+      voices.add(voice);
+      this.liveDrums.set(key, voices);
+      source.addEventListener("ended", () => {
+        voices.delete(voice);
+        if (!voices.size) this.liveDrums.delete(key);
+      });
     };
-    const sampleBuf = pad.sampleUrl ? (pad.reverse ? this.reversed(pad.sampleUrl) : this.sampleBuffers.get(pad.sampleUrl)) : undefined;
+    const sampleBuf = pad.sampleUrl
+      ? pad.reverse
+        ? this.reversed(pad.sampleUrl)
+        : this.sampleBuffers.get(pad.sampleUrl)
+      : undefined;
     if (sampleBuf) {
       // the user's own sample keeps its recorded level
       makeup.gain.value = 1;
@@ -3650,7 +4621,15 @@ export class SyncLabEngine {
       return;
     }
 
-    const noiseBurst = (dur: number, freq: number, type: BiquadFilterType, q = 1, level = 1, spread = 0, offset = 0) => {
+    const noiseBurst = (
+      dur: number,
+      freq: number,
+      type: BiquadFilterType,
+      q = 1,
+      level = 1,
+      spread = 0,
+      offset = 0,
+    ) => {
       const len = Math.ceil(ctx.sampleRate * dur);
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
       const d = buf.getChannelData(0);
@@ -3676,7 +4655,13 @@ export class SyncLabEngine {
       src.start(t + offset);
     };
 
-    const tone = (start: number, end: number, dur: number, type: OscillatorType = "sine", level = 1) => {
+    const tone = (
+      start: number,
+      end: number,
+      dur: number,
+      type: OscillatorType = "sine",
+      level = 1,
+    ) => {
       const o = ctx.createOscillator();
       o.type = type;
       o.frequency.setValueAtTime(start * tune, t);
@@ -3720,45 +4705,46 @@ export class SyncLabEngine {
       retainDrum(source, end);
       source.start(t);
     } else {
-    const K = DRUM_KIT_VOICES[pad.kit ?? "909"] ?? DRUM_KIT_VOICES["909"];
+      const K = DRUM_KIT_VOICES[pad.kit ?? "909"] ?? DRUM_KIT_VOICES["909"];
 
-    switch (pad.kind) {
-      case "kick":
-        tone(K.kick[0], K.kick[1], K.kick[2] * dec * 2, K.kick[3]);
-        noiseBurst(0.02 * K.click, 1800, "highpass");
-        break;
-      case "snare":
-        tone(K.snare[0], K.snare[0] * 0.6, 0.12 * dec * 2, "triangle", 0.6 * K.body);
-        noiseBurst(0.22 * dec * 2 * K.snare[2], K.snare[1], "highpass");
-        break;
-      case "clap":
-        [0, 0.012, 0.024].forEach((o) => noiseBurst(0.16 * K.snare[2], K.clap, "bandpass", 1.6, 1, 0, o));
-        break;
-      case "hat":
-        noiseBurst(0.06 * dec * 2 * K.hatD, K.hatF, "highpass");
-        break;
-      case "openhat":
-        noiseBurst(0.35 * dec * 2 * K.hatD, K.hatF * 0.9, "highpass");
-        break;
-      case "tom":
-        tone(K.tom[0], K.tom[1], 0.4 * dec * 2, "sine");
-        break;
-      case "perc":
-        tone(K.perc, K.perc / 2, 0.12 * dec * 2, "square", 0.5);
-        break;
-      case "rim":
-        tone(K.perc * 2.6, K.perc * 1.4, 0.05, "square", 0.5);
-        break;
-      case "crash":
-        noiseBurst(1.2 * dec, K.crash, "highpass");
-        break;
-      case "ride":
-        noiseBurst(0.6 * dec, K.ride, "bandpass", 0.8);
-        break;
-      default:
-        noiseBurst(0.4 * dec, 900, "bandpass", 3);
-    }
-
+      switch (pad.kind) {
+        case "kick":
+          tone(K.kick[0], K.kick[1], K.kick[2] * dec * 2, K.kick[3]);
+          noiseBurst(0.02 * K.click, 1800, "highpass");
+          break;
+        case "snare":
+          tone(K.snare[0], K.snare[0] * 0.6, 0.12 * dec * 2, "triangle", 0.6 * K.body);
+          noiseBurst(0.22 * dec * 2 * K.snare[2], K.snare[1], "highpass");
+          break;
+        case "clap":
+          [0, 0.012, 0.024].forEach((o) =>
+            noiseBurst(0.16 * K.snare[2], K.clap, "bandpass", 1.6, 1, 0, o),
+          );
+          break;
+        case "hat":
+          noiseBurst(0.06 * dec * 2 * K.hatD, K.hatF, "highpass");
+          break;
+        case "openhat":
+          noiseBurst(0.35 * dec * 2 * K.hatD, K.hatF * 0.9, "highpass");
+          break;
+        case "tom":
+          tone(K.tom[0], K.tom[1], 0.4 * dec * 2, "sine");
+          break;
+        case "perc":
+          tone(K.perc, K.perc / 2, 0.12 * dec * 2, "square", 0.5);
+          break;
+        case "rim":
+          tone(K.perc * 2.6, K.perc * 1.4, 0.05, "square", 0.5);
+          break;
+        case "crash":
+          noiseBurst(1.2 * dec, K.crash, "highpass");
+          break;
+        case "ride":
+          noiseBurst(0.6 * dec, K.ride, "bandpass", 0.8);
+          break;
+        default:
+          noiseBurst(0.4 * dec, 900, "bandpass", 3);
+      }
     }
 
     // extra transient click
@@ -3768,7 +4754,14 @@ export class SyncLabEngine {
     // extra noise layer, spread in stereo by WIDTH
     const noise = clamp(pad.noise ?? 0, 0, 1);
     if (noise > 0.001)
-      noiseBurst(0.03 + noise * dec * 1.6, 400 + noise * 4000, "bandpass", 0.7, noise * 0.8, clamp(pad.width ?? 0, 0, 1));
+      noiseBurst(
+        0.03 + noise * dec * 1.6,
+        400 + noise * 4000,
+        "bandpass",
+        0.7,
+        noise * 0.8,
+        clamp(pad.width ?? 0, 0, 1),
+      );
   }
 }
 
@@ -3797,4 +4790,3 @@ export const getEngine = () => {
   }
   return engineGlobal.__synclabEngine!;
 };
-

@@ -54,7 +54,13 @@ describe("advanced mastering devices", () => {
     const left = new Float32Array(n).fill(0.25);
     left[2400] = 2; // a +6 dB spike
     const stats = { minGain: 1 };
-    const out = brickwall({ left, right: new Float32Array(left), sampleRate: 48000 }, 0.9, 2, 60, stats);
+    const out = brickwall(
+      { left, right: new Float32Array(left), sampleRate: 48000 },
+      0.9,
+      2,
+      60,
+      stats,
+    );
     expect(Math.max(...out.left.map(Math.abs))).toBeLessThanOrEqual(0.9);
     expect(-20 * Math.log10(stats.minGain)).toBeCloseTo(20 * Math.log10(2 / 0.9), 1);
   });

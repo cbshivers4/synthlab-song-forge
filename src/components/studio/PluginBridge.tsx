@@ -79,7 +79,9 @@ function EditorView({ editor }: { editor: BridgeEditor }) {
         ) : (
           <div className="grid h-full place-items-center gap-2 text-center">
             <Loader2 className="size-5 animate-spin text-primary" />
-            <p className="text-[11px] text-muted-foreground">Waiting for the first picture of the plugin window…</p>
+            <p className="text-[11px] text-muted-foreground">
+              Waiting for the first picture of the plugin window…
+            </p>
           </div>
         )}
       </div>
@@ -90,7 +92,9 @@ function EditorView({ editor }: { editor: BridgeEditor }) {
         <div className="grid gap-1.5 sm:grid-cols-2">
           {editor.params.slice(0, 40).map((p) => (
             <div key={p.index} className="flex items-center gap-2">
-              <span className="w-24 shrink-0 truncate font-mono text-[10px] tracking-wider text-muted-foreground uppercase">{p.name}</span>
+              <span className="w-24 shrink-0 truncate font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
+                {p.name}
+              </span>
               <Slider
                 className="flex-1"
                 min={0}
@@ -99,7 +103,9 @@ function EditorView({ editor }: { editor: BridgeEditor }) {
                 value={[p.value]}
                 onValueChange={([v = p.value]) => bridge.setParam(editor.id, p.index, v)}
               />
-              <span className="w-16 shrink-0 text-right font-mono text-[10px] text-primary">{p.text ?? p.value.toFixed(2)}</span>
+              <span className="w-16 shrink-0 text-right font-mono text-[10px] text-primary">
+                {p.text ?? p.value.toFixed(2)}
+              </span>
             </div>
           ))}
         </div>
@@ -108,7 +114,24 @@ function EditorView({ editor }: { editor: BridgeEditor }) {
   );
 }
 
-const TABS = ["All", "Instruments", "Effects", "Synthesizers", "Samplers", "Drums", "EQ", "Compression", "Reverb", "Delay", "Modulation", "Distortion", "Mastering", "Utility", "Favorites", "Recently Used"] as const;
+const TABS = [
+  "All",
+  "Instruments",
+  "Effects",
+  "Synthesizers",
+  "Samplers",
+  "Drums",
+  "EQ",
+  "Compression",
+  "Reverb",
+  "Delay",
+  "Modulation",
+  "Distortion",
+  "Mastering",
+  "Utility",
+  "Favorites",
+  "Recently Used",
+] as const;
 const FAV_KEY = "synclab.plugins.favorites";
 const RECENT_KEY = "synclab.plugins.recent";
 const readList = (k: string): string[] => {
@@ -174,9 +197,17 @@ export function PluginBridge() {
   const failed = state.plugins.filter((p) => p.status === "failed");
   const list = state.plugins
     .filter((p) => p.status !== "unsupported")
-    .filter((p) => (filter ? `${p.name} ${p.vendor} ${p.category ?? ""}`.toLowerCase().includes(filter.toLowerCase()) : true))
+    .filter((p) =>
+      filter
+        ? `${p.name} ${p.vendor} ${p.category ?? ""}`.toLowerCase().includes(filter.toLowerCase())
+        : true,
+    )
     .filter((p) => matchesTab(p, tab, favs, recent))
-    .sort((a, b) => (tab === "Recently Used" ? recent.indexOf(a.uid) - recent.indexOf(b.uid) : a.name.localeCompare(b.name)));
+    .sort((a, b) =>
+      tab === "Recently Used"
+        ? recent.indexOf(a.uid) - recent.indexOf(b.uid)
+        : a.name.localeCompare(b.name),
+    );
 
   return (
     <div className="space-y-3">
@@ -187,24 +218,51 @@ export function PluginBridge() {
           />
           <p className="label-xs">DESKTOP AUDIO BRIDGE</p>
           <span className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-            {connected ? `${state.host ?? "connected"} · ${state.formats.join(" ") || "no formats reported"}` : state.status === "connecting" ? "connecting…" : "not connected"}
+            {connected
+              ? `${state.host ?? "connected"} · ${state.formats.join(" ") || "no formats reported"}`
+              : state.status === "connecting"
+                ? "connecting…"
+                : "not connected"}
           </span>
           <div className="ml-auto flex items-center gap-2">
-            <Input className="h-8 w-48 font-mono text-[10px]" value={url} onChange={(e) => setUrl(e.target.value)} aria-label="Bridge address" />
+            <Input
+              className="h-8 w-48 font-mono text-[10px]"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              aria-label="Bridge address"
+            />
             {connected ? (
               <>
-                <Button size="sm" variant="secondary" className="h-8 gap-1.5 font-mono text-[10px] tracking-widest" onClick={() => bridge.scan()}>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 gap-1.5 font-mono text-[10px] tracking-widest"
+                  onClick={() => bridge.scan()}
+                >
                   <RefreshCw className={`size-3.5 ${state.scanning ? "animate-spin" : ""}`} />
                   RESCAN
                 </Button>
-                <Button size="sm" variant="ghost" className="h-8 gap-1.5 font-mono text-[10px] tracking-widest" onClick={() => bridge.disconnect()}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 gap-1.5 font-mono text-[10px] tracking-widest"
+                  onClick={() => bridge.disconnect()}
+                >
                   <X className="size-3.5" />
                   DISCONNECT
                 </Button>
               </>
             ) : (
-              <Button size="sm" className="h-8 gap-1.5 font-mono text-[10px] tracking-widest" onClick={() => bridge.connect(url)}>
-                {state.status === "connecting" ? <Loader2 className="size-3.5 animate-spin" /> : <PlugZap className="size-3.5" />}
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 font-mono text-[10px] tracking-widest"
+                onClick={() => bridge.connect(url)}
+              >
+                {state.status === "connecting" ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <PlugZap className="size-3.5" />
+                )}
                 CONNECT
               </Button>
             )}
@@ -220,10 +278,12 @@ export function PluginBridge() {
               Desktop Audio Bridge required
             </p>
             <p className="text-[10px] text-muted-foreground">
-              No web browser can run a VST3, AU or CLAP plugin — that code only runs on your computer. To use your own plugins
-              with their real windows and controls, run the SYNCLAB bridge program on the same computer and press CONNECT. It
-              hosts the plugin, sends its window here picture by picture, and passes your clicks, typing and knob moves back to
-              it. Until it is running, nothing is loaded and this app will never pretend otherwise.
+              No web browser can run a VST3, AU or CLAP plugin — that code only runs on your
+              computer. To use your own plugins with their real windows and controls, run the
+              SYNCLAB bridge program on the same computer and press CONNECT. It hosts the plugin,
+              sends its window here picture by picture, and passes your clicks, typing and knob
+              moves back to it. Until it is running, nothing is loaded and this app will never
+              pretend otherwise.
             </p>
           </div>
         )}
@@ -233,7 +293,9 @@ export function PluginBridge() {
         <div className="panel space-y-2 p-2">
           <div className="flex items-center gap-2">
             <p className="label-xs">PLUGINS ON THIS COMPUTER</p>
-            <span className="font-mono text-[9px] text-muted-foreground">{state.scanning ? "scanning…" : `${list.length}`}</span>
+            <span className="font-mono text-[9px] text-muted-foreground">
+              {state.scanning ? "scanning…" : `${list.length}`}
+            </span>
             <Input
               className="ml-auto h-8 w-44 text-[11px]"
               placeholder="Search plugins"
@@ -242,7 +304,8 @@ export function PluginBridge() {
             />
           </div>
           <p className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-            {state.plugins.length} found · {state.plugins.length - failed.length} available · {failed.length} failed
+            {state.plugins.length} found · {state.plugins.length - failed.length} available ·{" "}
+            {failed.length} failed
           </p>
           <div className="flex flex-wrap gap-1">
             {TABS.map((t) => (
@@ -259,29 +322,48 @@ export function PluginBridge() {
           </div>
           {!state.scanning && list.length === 0 && (
             <p className="text-[11px] text-muted-foreground">
-              The bridge is connected but reported no plugins. Point it at your plugin folders and press RESCAN.
+              The bridge is connected but reported no plugins. Point it at your plugin folders and
+              press RESCAN.
             </p>
           )}
           <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((p) =>
               p.status === "failed" ? (
                 <div key={p.uid} className="panel space-y-1 border-destructive/60 px-2 py-1.5">
-                  <p className="text-[11px] font-medium text-destructive">Plugin Scan Failed — {p.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{p.error ?? "The plugin did not load during scanning."} SYNCLAB kept running.</p>
-                  <Button size="sm" variant="ghost" className="h-6 px-2 font-mono text-[9px]" onClick={() => bridge.scan()}>
+                  <p className="text-[11px] font-medium text-destructive">
+                    Plugin Scan Failed — {p.name}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {p.error ?? "The plugin did not load during scanning."} SYNCLAB kept running.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 font-mono text-[9px]"
+                    onClick={() => bridge.scan()}
+                  >
                     RESCAN
                   </Button>
                 </div>
               ) : (
-                <div key={p.uid} className="panel flex items-center gap-2 px-2 py-1.5 hover:border-primary">
+                <div
+                  key={p.uid}
+                  className="panel flex items-center gap-2 px-2 py-1.5 hover:border-primary"
+                >
                   <button
                     type="button"
                     draggable
-                    onDragStart={(e) => e.dataTransfer.setData("application/x-synclab-plugin", p.uid)}
+                    onDragStart={(e) =>
+                      e.dataTransfer.setData("application/x-synclab-plugin", p.uid)
+                    }
                     onClick={() => openPlugin(p.uid)}
                     disabled={!canHost}
                     className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                    title={canHost ? "Open the plugin window" : "Discovered only — native hosting is not included yet"}
+                    title={
+                      canHost
+                        ? "Open the plugin window"
+                        : "Discovered only — native hosting is not included yet"
+                    }
                   >
                     <Monitor className="size-3.5 shrink-0 text-primary" />
                     <span className="min-w-0 flex-1">
@@ -289,7 +371,11 @@ export function PluginBridge() {
                       <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
                         {p.vendor} · {p.format}
                         {p.version ? ` · v${p.version}` : ""}
-                        {p.category ? ` · ${p.category}` : p.isInstrument ? " · INSTRUMENT" : " · EFFECT"}
+                        {p.category
+                          ? ` · ${p.category}`
+                          : p.isInstrument
+                            ? " · INSTRUMENT"
+                            : " · EFFECT"}
                       </span>
                     </span>
                   </button>
@@ -300,7 +386,9 @@ export function PluginBridge() {
                     aria-label={favs.includes(p.uid) ? "Remove from favorites" : "Add to favorites"}
                     className="text-muted-foreground hover:text-primary"
                   >
-                    <Star className={`size-3.5 ${favs.includes(p.uid) ? "fill-primary text-primary" : ""}`} />
+                    <Star
+                      className={`size-3.5 ${favs.includes(p.uid) ? "fill-primary text-primary" : ""}`}
+                    />
                   </button>
                 </div>
               ),
@@ -318,13 +406,29 @@ export function PluginBridge() {
               {editor.width}×{editor.height}
             </span>
             <div className="ml-auto flex items-center gap-1">
-              <Button size="sm" variant="ghost" className="h-7 font-mono text-[10px]" onClick={() => bridge.preset(editor.id, "prev")}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 font-mono text-[10px]"
+                onClick={() => bridge.preset(editor.id, "prev")}
+              >
                 PREV
               </Button>
-              <Button size="sm" variant="ghost" className="h-7 font-mono text-[10px]" onClick={() => bridge.preset(editor.id, "next")}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 font-mono text-[10px]"
+                onClick={() => bridge.preset(editor.id, "next")}
+              >
                 NEXT
               </Button>
-              <Button size="icon" variant="ghost" className="size-7" onClick={() => bridge.close(editor.id)} aria-label="Close plugin window">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                onClick={() => bridge.close(editor.id)}
+                aria-label="Close plugin window"
+              >
                 <X className="size-3.5" />
               </Button>
             </div>
@@ -335,14 +439,16 @@ export function PluginBridge() {
 
       {connected && state.audio === false && (
         <p className="text-[10px] text-muted-foreground">
-          This bridge reports picture-and-control only: you see and drive the plugin, but its sound is produced on your computer,
-          not inside this tab. A bridge build that streams audio back will report it and the channel will use it automatically.
+          This bridge reports picture-and-control only: you see and drive the plugin, but its sound
+          is produced on your computer, not inside this tab. A bridge build that streams audio back
+          will report it and the channel will use it automatically.
         </p>
       )}
       {connected && !canHost && (
         <p className="text-[10px] text-muted-foreground">
-          Discovery is active. These are real plugin bundles found on this computer, but this build does not load or process
-          them. Native hosting remains unavailable until the signed bridge host is installed and hardware-tested.
+          Discovery is active. These are real plugin bundles found on this computer, but this build
+          does not load or process them. Native hosting remains unavailable until the signed bridge
+          host is installed and hardware-tested.
         </p>
       )}
     </div>

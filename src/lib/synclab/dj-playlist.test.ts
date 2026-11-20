@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { createPlaylistStore, memoryBackend } from "./dj-playlist-store";
-import { addToPlaylist, audioKey, moveInPlaylist, playlistChanged, playlistName, removeFromPlaylist, unusedAudio, type Playlist, type PlaylistTrack } from "./dj-playlist";
+import {
+  addToPlaylist,
+  audioKey,
+  moveInPlaylist,
+  playlistChanged,
+  playlistName,
+  removeFromPlaylist,
+  unusedAudio,
+  type Playlist,
+  type PlaylistTrack,
+} from "./dj-playlist";
 
 let n = 0;
 const id = () => `t${++n}`;
@@ -16,7 +26,10 @@ describe("DJ playlists", () => {
 
   it("removes only the chosen entry", () => {
     const { tracks } = addToPlaylist([], [file("a.mp3"), file("b.mp3"), file("c.mp3")], id);
-    expect(removeFromPlaylist(tracks, tracks[1]!.id).map((t) => t.name)).toEqual(["a.mp3", "c.mp3"]);
+    expect(removeFromPlaylist(tracks, tracks[1]!.id).map((t) => t.name)).toEqual([
+      "a.mp3",
+      "c.mp3",
+    ]);
   });
 
   it("moves an entry up and down, and the ends stay put", () => {
@@ -32,7 +45,13 @@ describe("DJ playlists", () => {
   });
 
   it("deleting a playlist frees only audio no other saved playlist uses", () => {
-    const t = (key: string): PlaylistTrack => ({ id: key, key, name: key, size: 1, duration: null });
+    const t = (key: string): PlaylistTrack => ({
+      id: key,
+      key,
+      name: key,
+      size: 1,
+      duration: null,
+    });
     const keep: Playlist = { id: "p2", name: "Keep", tracks: [t("shared")], savedAt: 1 };
     expect(unusedAudio(["shared", "only-deleted"], [keep])).toEqual(["only-deleted"]);
   });

@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { refreshPreferences, PREFS_EVENT } from "./preferences";
 import { applyThemeVars, THEMES, themeById, type Theme, type ThemeVars } from "./themes";
@@ -64,16 +72,19 @@ function read(): Persisted {
 export function AppProvider({ children }: { children: ReactNode }) {
   const isMobile = useIsMobile();
   const [stage, setStageState] = useState<Stage>("welcome");
-  const setStage = useCallback((next: Stage) => {
-    if (stage === "studio" && next !== "studio") {
-      const event = new CustomEvent("synclab:before-project-close", {
-        cancelable: true,
-        detail: { next, proceed: () => setStageState(next) },
-      });
-      if (!document.dispatchEvent(event)) return;
-    }
-    setStageState(next);
-  }, [stage]);
+  const setStage = useCallback(
+    (next: Stage) => {
+      if (stage === "studio" && next !== "studio") {
+        const event = new CustomEvent("synclab:before-project-close", {
+          cancelable: true,
+          detail: { next, proceed: () => setStageState(next) },
+        });
+        if (!document.dispatchEvent(event)) return;
+      }
+      setStageState(next);
+    },
+    [stage],
+  );
   const [mode, setMode] = useState<UiMode>("simple");
   const [themeId, setThemeId] = useState("synclab-dark");
   const [customThemes, setCustomThemes] = useState<Theme[]>([]);
@@ -103,7 +114,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const allThemes = useMemo(() => [...THEMES, ...customThemes], [customThemes]);
   const activeTheme = useMemo(
-    () => allThemes.find((x) => x.id === themeId) ?? themeById("synclab-dark") ?? (THEMES[0] as Theme),
+    () =>
+      allThemes.find((x) => x.id === themeId) ?? themeById("synclab-dark") ?? (THEMES[0] as Theme),
     [allThemes, themeId],
   );
 
@@ -133,8 +145,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const renameRecent = useCallback((p: ProjectMeta, name: string) => {
-    setRecents((r) => r.map((x) => (x.name === p.name && x.openedAt === p.openedAt ? { ...x, name } : x)));
-    setProjectState((cur) => (cur && cur.name === p.name && cur.openedAt === p.openedAt ? { ...cur, name } : cur));
+    setRecents((r) =>
+      r.map((x) => (x.name === p.name && x.openedAt === p.openedAt ? { ...x, name } : x)),
+    );
+    setProjectState((cur) =>
+      cur && cur.name === p.name && cur.openedAt === p.openedAt ? { ...cur, name } : cur,
+    );
   }, []);
 
   const api: AppApi = useMemo(
@@ -159,7 +175,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       signedIn,
       setSignedIn,
     }),
-    [stage, setStage, mode, themeId, customThemes, allThemes, activeTheme, project, setProject, removeRecent, renameRecent, recents, signedIn],
+    [
+      stage,
+      setStage,
+      mode,
+      themeId,
+      customThemes,
+      allThemes,
+      activeTheme,
+      project,
+      setProject,
+      removeRecent,
+      renameRecent,
+      recents,
+      signedIn,
+    ],
   );
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

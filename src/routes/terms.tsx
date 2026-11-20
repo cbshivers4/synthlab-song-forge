@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalPage } from "@/components/legal/LegalPage";
+import { SUPPORT_EMAIL } from "@/lib/synclab/contact";
 
 export const Route = createFileRoute("/terms")({
   head: () => ({
@@ -28,14 +29,14 @@ function TermsRoute() {
       <p>
         SYNCLAB ("SYNCLAB", "we", "us") is a sole proprietorship based in Detroit, Michigan, United
         States. These terms form an agreement between you and SYNCLAB. Questions:{" "}
-        <strong>christopherbshivers@gmail.com</strong>.
+        <strong>{SUPPORT_EMAIL}</strong>.
       </p>
 
       <h2>1. Acceptance</h2>
       <p>
         By creating an account, subscribing, or continuing to use SYNCLAB you agree to these terms.
-        If you use SYNCLAB on behalf of an organisation you confirm you have authority to bind it. If
-        you are an individual, you confirm you are of legal age in your country.
+        If you use SYNCLAB on behalf of an organisation you confirm you have authority to bind it.
+        If you are an individual, you confirm you are of legal age in your country.
       </p>
 
       <h2>2. The service</h2>
@@ -62,7 +63,10 @@ function TermsRoute() {
           No interference with security: malware, probing, load testing, scraping or unauthorised
           access attempts.
         </li>
-        <li>You are responsible for keeping your account credentials confidential and for all activity under your account, and for providing accurate account information.</li>
+        <li>
+          You are responsible for keeping your account credentials confidential and for all activity
+          under your account, and for providing accurate account information.
+        </li>
       </ul>
 
       <h2>5. Your content</h2>
@@ -73,17 +77,15 @@ function TermsRoute() {
         samples or recordings you bring into SYNCLAB.
       </p>
       <p>
-        Rights holders may report infringing material to{" "}
-        <strong>christopherbshivers@gmail.com</strong>; we
-        will review takedown requests and may remove content or suspend accounts for repeated
+        Rights holders may report infringing material to <strong>{SUPPORT_EMAIL}</strong>; we will
+        review takedown requests and may remove content or suspend accounts for repeated
         infringement.
       </p>
 
       <h2>6. Our intellectual property</h2>
       <p>
         SYNCLAB, including its software, audio engine, presets, documentation, name and branding,
-        remains the property of SYNCLAB. Nothing in these terms transfers ownership to
-        you.
+        remains the property of SYNCLAB. Nothing in these terms transfers ownership to you.
       </p>
 
       <h2>7. Audio processing disclosure</h2>
@@ -103,8 +105,8 @@ function TermsRoute() {
 
       <h2>9. Payment and subscription terms</h2>
       <p>
-        Plans and prices are shown on our <strong>Pricing</strong> page. Payment, billing,
-        currency, tax, cancellation and refund mechanics are handled by Paddle under the{" "}
+        Plans and prices are shown on our <strong>Pricing</strong> page. Payment, billing, currency,
+        tax, cancellation and refund mechanics are handled by Paddle under the{" "}
         <a
           className="underline"
           href="https://www.paddle.com/legal/checkout-buyer-terms"
@@ -113,9 +115,9 @@ function TermsRoute() {
         >
           Paddle Buyer Terms
         </a>
-        . Subscriptions renew automatically at the interval you chose until cancelled. If you cancel,
-        you keep access until the end of the period you have already paid for. Switching between
-        monthly and yearly is prorated automatically.
+        . Subscriptions renew automatically at the interval you chose until cancelled. If you
+        cancel, you keep access until the end of the period you have already paid for. Switching
+        between monthly and yearly is prorated automatically.
       </p>
 
       <h2>10. Merchant of Record</h2>

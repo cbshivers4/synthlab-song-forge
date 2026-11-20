@@ -4,11 +4,26 @@ type Sent = { data: number[]; ts?: number | undefined };
 
 function fakeMidi(names: string[]) {
   const sent: Record<string, Sent[]> = {};
-  const outputs = new Map<string, { id: string; name: string; state: string; send: (d: number[], ts?: number) => void; clear: () => void }>();
+  const outputs = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      state: string;
+      send: (d: number[], ts?: number) => void;
+      clear: () => void;
+    }
+  >();
   names.forEach((name, i) => {
     const id = `port-${i}`;
     sent[id] = [];
-    outputs.set(id, { id, name, state: "connected", send: (data, ts) => sent[id]!.push({ data, ts }), clear: () => sent[id]!.push({ data: [-1] }) });
+    outputs.set(id, {
+      id,
+      name,
+      state: "connected",
+      send: (data, ts) => sent[id]!.push({ data, ts }),
+      clear: () => sent[id]!.push({ data: [-1] }),
+    });
   });
   return { sent, outputs, access: { outputs, addEventListener: () => {} } };
 }
@@ -23,7 +38,9 @@ async function load(names: string[]) {
 }
 
 describe("external MIDI instruments", () => {
-  beforeEach(() => { vi.unstubAllGlobals(); });
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+  });
 
   it("sends a routed track's notes on its chosen channel and tells the synth to stay silent", async () => {
     const { mod, sent } = await load(["Minilogue"]);
@@ -48,7 +65,10 @@ describe("external MIDI instruments", () => {
     mod.externalNoteOn("t1", 64, 0.5);
     expect(sent["port-0"]!.map((m) => m.data)).toEqual([[0x90, 64, 64]]);
     mod.externalNoteOff("t1", 64);
-    expect(sent["port-0"]!.map((m) => m.data)).toEqual([[0x90, 64, 64], [0x80, 64, 0]]);
+    expect(sent["port-0"]!.map((m) => m.data)).toEqual([
+      [0x90, 64, 64],
+      [0x80, 64, 0],
+    ]);
   });
 
   it("Stop clears queued notes and releases everything on the track's channel", async () => {

@@ -36,7 +36,11 @@ export function midiClockPrefs(): MidiClockPrefs {
 }
 export function setMidiClockPrefs(patch: Partial<MidiClockPrefs>) {
   cached = { ...midiClockPrefs(), ...patch };
-  try { localStorage.setItem(KEY, JSON.stringify(cached)); } catch { /* storage blocked */ }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(cached));
+  } catch {
+    /* storage blocked */
+  }
   window.dispatchEvent(new CustomEvent(EVENT));
 }
 export function onMidiClockPrefs(cb: () => void) {
@@ -46,7 +50,10 @@ export function onMidiClockPrefs(cb: () => void) {
 
 /** Audio-clock times of the clock pulses inside one step. */
 export function pulseTimes(stepTime: number, stepDur: number): number[] {
-  return Array.from({ length: PULSES_PER_STEP }, (_, i) => stepTime + (i * stepDur) / PULSES_PER_STEP);
+  return Array.from(
+    { length: PULSES_PER_STEP },
+    (_, i) => stepTime + (i * stepDur) / PULSES_PER_STEP,
+  );
 }
 
 /** Song Position Pointer bytes for a position in 16th-note steps (MIDI beats are 16ths). */
@@ -65,14 +72,20 @@ export class ClockTempo {
     this.last = ms;
     if (prev === null) return null;
     const gap = ms - prev;
-    if (gap <= 0 || gap > 250) { this.gaps = []; return null; } // < 10 BPM or a stall: start over
+    if (gap <= 0 || gap > 250) {
+      this.gaps = [];
+      return null;
+    } // < 10 BPM or a stall: start over
     this.gaps.push(gap);
     if (this.gaps.length > PPQN * 2) this.gaps.shift();
     if (this.gaps.length < PPQN) return null;
     const avg = this.gaps.reduce((a, b) => a + b, 0) / this.gaps.length;
     return 60000 / (avg * PPQN);
   }
-  reset() { this.last = null; this.gaps = []; }
+  reset() {
+    this.last = null;
+    this.gaps = [];
+  }
 }
 
 type Out = { send: (data: number[], timestamp?: number) => void };
@@ -107,7 +120,13 @@ export function sendClockForStep(ctx: AudioContext, stepTime: number, stepDur: n
     if (!outs.length) return;
     for (const t of pulseTimes(stepTime, stepDur)) {
       const at = Math.max(performance.now(), perfTimeFor(ctx, t));
-      for (const o of outs) { try { o.send([0xf8], at); } catch { /* port went away */ } }
+      for (const o of outs) {
+        try {
+          o.send([0xf8], at);
+        } catch {
+          /* port went away */
+        }
+      }
     }
   });
 }
@@ -119,14 +138,27 @@ export function sendTransportStart(step: number) {
     for (const o of outs) {
       try {
         if (step <= 0) o.send([0xfa]);
-        else { o.send(songPositionBytes(step)); o.send([0xfb]); }
-      } catch { /* port went away */ }
+        else {
+          o.send(songPositionBytes(step));
+          o.send([0xfb]);
+        }
+      } catch {
+        /* port went away */
+      }
     }
   });
 }
 export function sendTransportStop() {
   if (!midiClockPrefs().send) return;
-  void outputs().then((outs) => { for (const o of outs) { try { o.send([0xfc]); } catch { /* port went away */ } } });
+  void outputs().then((outs) => {
+    for (const o of outs) {
+      try {
+        o.send([0xfc]);
+      } catch {
+        /* port went away */
+      }
+    }
+  });
 }
 
 /* ---- incoming realtime messages (from the shared MIDI subscription) ---- */
@@ -134,11 +166,22 @@ export type RealtimeKind = "clock" | "start" | "continue" | "stop";
 const realtime = new Set<(kind: RealtimeKind, ms: number) => void>();
 export function onMidiRealtime(cb: (kind: RealtimeKind, ms: number) => void) {
   realtime.add(cb);
-  return () => { realtime.delete(cb); };
+  return () => {
+    realtime.delete(cb);
+  };
 }
 /** Returns true when the byte was a clock/transport message (handled here, not as a note). */
 export function dispatchRealtime(status: number, ms: number): boolean {
-  const kind: RealtimeKind | null = status === 0xf8 ? "clock" : status === 0xfa ? "start" : status === 0xfb ? "continue" : status === 0xfc ? "stop" : null;
+  const kind: RealtimeKind | null =
+    status === 0xf8
+      ? "clock"
+      : status === 0xfa
+        ? "start"
+        : status === 0xfb
+          ? "continue"
+          : status === 0xfc
+            ? "stop"
+            : null;
   if (!kind) return false;
   if (midiClockPrefs().follow) for (const cb of realtime) cb(kind, ms);
   return true;

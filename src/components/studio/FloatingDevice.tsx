@@ -18,7 +18,13 @@ export function FloatingDevice({ title, faceplate, initial, onClose, children }:
     h: initial?.h ?? 520,
   }));
   const [collapsed, setCollapsed] = useState(false);
-  const drag = useRef<{ mode: "move" | "size"; sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const drag = useRef<{
+    mode: "move" | "size";
+    sx: number;
+    sy: number;
+    ox: number;
+    oy: number;
+  } | null>(null);
 
   const start = useCallback(
     (mode: "move" | "size") => (e: React.PointerEvent) => {
@@ -48,7 +54,11 @@ export function FloatingDevice({ title, faceplate, initial, onClose, children }:
       const layoutH = sidewaysCanvas() ? window.innerWidth : window.innerHeight;
       setPos((p) =>
         d.mode === "move"
-          ? { ...p, x: Math.max(-p.w + 160, Math.min(layoutW - 120, d.ox + dx)), y: Math.max(0, Math.min(layoutH - 48, d.oy + dy)) }
+          ? {
+              ...p,
+              x: Math.max(-p.w + 160, Math.min(layoutW - 120, d.ox + dx)),
+              y: Math.max(0, Math.min(layoutH - 48, d.oy + dy)),
+            }
           : { ...p, w: Math.max(420, d.ox + dx), h: Math.max(220, d.oy + dy) },
       );
     };
@@ -76,7 +86,10 @@ export function FloatingDevice({ title, faceplate, initial, onClose, children }:
       }}
     >
       {/* hardware faceplate header — drag handle */}
-      <div className="relative shrink-0 cursor-grab select-none active:cursor-grabbing" onPointerDown={start("move")}>
+      <div
+        className="relative shrink-0 cursor-grab select-none active:cursor-grabbing"
+        onPointerDown={start("move")}
+      >
         <img
           src={faceplate}
           alt={`${title} hardware panel`}
@@ -88,7 +101,9 @@ export function FloatingDevice({ title, faceplate, initial, onClose, children }:
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/25 to-background/90" />
         <div className="absolute inset-x-0 top-0 flex items-center gap-2 px-3 py-1.5">
-          <span className="font-display text-[11px] font-semibold tracking-[0.3em] text-white drop-shadow">{title}</span>
+          <span className="font-display text-[11px] font-semibold tracking-[0.3em] text-white drop-shadow">
+            {title}
+          </span>
           <div className="ml-auto flex items-center gap-1">
             <button
               className="grid size-6 place-items-center rounded-[3px] bg-black/50 text-white/80 hover:text-white"
@@ -116,7 +131,9 @@ export function FloatingDevice({ title, faceplate, initial, onClose, children }:
           <div
             className="absolute right-0 bottom-0 size-4 cursor-nwse-resize"
             onPointerDown={start("size")}
-            style={{ background: "linear-gradient(135deg, transparent 50%, oklch(0.5 0.01 255) 50%)" }}
+            style={{
+              background: "linear-gradient(135deg, transparent 50%, oklch(0.5 0.01 255) 50%)",
+            }}
           />
         </>
       )}

@@ -2,7 +2,11 @@
 import type { MidiNote } from "./types";
 
 /** One step: off (null) or a note `degree` scale steps above the bar's root (0 = root, 7 = octave). */
-export interface BassStep { degree: number; accent: boolean; tie: boolean }
+export interface BassStep {
+  degree: number;
+  accent: boolean;
+  tie: boolean;
+}
 export type BassPattern = (BassStep | null)[];
 
 export const DEGREE_ROWS = 15; // two octaves of scale notes plus the top root
@@ -17,7 +21,7 @@ export function degreeSemis(degree: number, minor: boolean): number {
 
 const P = (s: string): BassPattern =>
   s.split(" ").map((t) => {
-    if (t === "." ) return null;
+    if (t === ".") return null;
     const accent = t.includes("!");
     const tie = t.includes("~");
     return { degree: Number(t.replace(/[!~]/g, "")), accent, tie };
@@ -47,18 +51,39 @@ export function resizePattern(p: BassPattern, n: number): BassPattern {
 }
 
 /** Fills each bar with the pattern over that bar's chord root; ties merge into one longer note. */
-export function patternToNotes(p: BassPattern, roots: number[], barSteps: number, octave: number, minor: boolean): MidiNote[] {
+export function patternToNotes(
+  p: BassPattern,
+  roots: number[],
+  barSteps: number,
+  octave: number,
+  minor: boolean,
+): MidiNote[] {
   const base = 12 * (octave + 1);
   const out: MidiNote[] = [];
   const total = roots.length * barSteps;
   let k = 0;
-  for (let i = 0; i < total; ) {
+  for (let i = 0; i < total;) {
     const st = p[i % p.length];
-    if (!st) { i++; continue; }
+    if (!st) {
+      i++;
+      continue;
+    }
     let len = 1;
-    while (p[(i + len - 1) % p.length]?.tie && i + len < total && (i + len) % barSteps !== 0 && p[(i + len) % p.length]) len++;
+    while (
+      p[(i + len - 1) % p.length]?.tie &&
+      i + len < total &&
+      (i + len) % barSteps !== 0 &&
+      p[(i + len) % p.length]
+    )
+      len++;
     const root = roots[Math.floor(i / barSteps)] ?? 0;
-    out.push({ id: `bassp-${k++}`, step: i, length: len, pitch: base + root + degreeSemis(st.degree, minor), velocity: st.accent ? 1 : 0.72 });
+    out.push({
+      id: `bassp-${k++}`,
+      step: i,
+      length: len,
+      pitch: base + root + degreeSemis(st.degree, minor),
+      velocity: st.accent ? 1 : 0.72,
+    });
     i += len;
   }
   return out;
@@ -70,7 +95,11 @@ export function randomPattern(n: number, rand = Math.random): BassPattern {
     const strong = i % 4 === 0;
     if (rand() > (strong ? 0.8 : 0.5)) return null;
     const pool = strong ? [0, 0, 7] : [0, 2, 3, 4, 6, 7, 9];
-    return { degree: pool[Math.floor(rand() * pool.length)] as number, accent: strong || rand() > 0.75, tie: rand() > 0.85 };
+    return {
+      degree: pool[Math.floor(rand() * pool.length)] as number,
+      accent: strong || rand() > 0.75,
+      tie: rand() > 0.85,
+    };
   });
 }
 

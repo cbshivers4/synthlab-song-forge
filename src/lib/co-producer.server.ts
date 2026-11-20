@@ -8,12 +8,28 @@ export const coProducerSchema = z.object({
   kind: z.enum(["none", "chords", "melody", "bass", "drums"]),
   trackName: z.string(),
   lyrics: z.string(),
-  notes: z.array(z.object({ step: z.number(), length: z.number(), pitch: z.number(), velocity: z.number() })),
-  drumHits: z.array(z.object({
-    kind: z.enum(["kick", "snare", "hat", "openhat", "clap", "rim", "tom", "perc", "ride", "crash", "fx"]),
-    step: z.number(),
-    velocity: z.number(),
-  })),
+  notes: z.array(
+    z.object({ step: z.number(), length: z.number(), pitch: z.number(), velocity: z.number() }),
+  ),
+  drumHits: z.array(
+    z.object({
+      kind: z.enum([
+        "kick",
+        "snare",
+        "hat",
+        "openhat",
+        "clap",
+        "rim",
+        "tom",
+        "perc",
+        "ride",
+        "crash",
+        "fx",
+      ]),
+      step: z.number(),
+      velocity: z.number(),
+    }),
+  ),
 });
 export type CoProducerResult = z.infer<typeof coProducerSchema>;
 

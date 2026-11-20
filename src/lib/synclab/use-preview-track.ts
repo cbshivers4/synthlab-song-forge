@@ -24,37 +24,57 @@ export function usePreviewTrack() {
     setPreviewId(null);
   }, []);
 
-  const start = useCallback((build: (name: (n: string) => string) => string) => {
-    clear();
-    const id = build((n) => `${PREFIX}${n}`.slice(0, 40));
-    idRef.current = id;
-    setPreviewId(id);
-    if (!transport.playing) { togglePlay(); startedPlay.current = true; }
-  }, [clear, transport.playing, togglePlay]);
+  const start = useCallback(
+    (build: (name: (n: string) => string) => string) => {
+      clear();
+      const id = build((n) => `${PREFIX}${n}`.slice(0, 40));
+      idRef.current = id;
+      setPreviewId(id);
+      if (!transport.playing) {
+        togglePlay();
+        startedPlay.current = true;
+      }
+    },
+    [clear, transport.playing, togglePlay],
+  );
 
   const stop = useCallback(() => {
     clear();
-    if (startedPlay.current) { stopRef.current(); startedPlay.current = false; }
+    if (startedPlay.current) {
+      stopRef.current();
+      startedPlay.current = false;
+    }
   }, [clear]);
 
   /** Keep the previewed track in the project. Returns true if there was one. */
-  const keep = useCallback((name: string) => {
-    const id = idRef.current;
-    if (!id) return false;
-    updateTrack(id, { name: name.slice(0, 40) });
-    idRef.current = null;
-    startedPlay.current = false;
-    setPreviewId(null);
-    return true;
-  }, [updateTrack]);
+  const keep = useCallback(
+    (name: string) => {
+      const id = idRef.current;
+      if (!id) return false;
+      updateTrack(id, { name: name.slice(0, 40) });
+      idRef.current = null;
+      startedPlay.current = false;
+      setPreviewId(null);
+      return true;
+    },
+    [updateTrack],
+  );
 
   /** Change the track being auditioned (e.g. a regenerated pattern) without restarting playback. */
-  const update = useCallback((patch: Parameters<typeof updateTrack>[1]) => {
-    if (idRef.current) updateTrack(idRef.current, patch);
-  }, [updateTrack]);
+  const update = useCallback(
+    (patch: Parameters<typeof updateTrack>[1]) => {
+      if (idRef.current) updateTrack(idRef.current, patch);
+    },
+    [updateTrack],
+  );
 
   // Leaving the panel discards an un-kept preview.
-  useEffect(() => () => { if (idRef.current) removeRef.current(idRef.current); }, []);
+  useEffect(
+    () => () => {
+      if (idRef.current) removeRef.current(idRef.current);
+    },
+    [],
+  );
 
   return { previewing: previewId !== null, start, stop, keep, update };
 }

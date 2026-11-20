@@ -68,7 +68,7 @@ export function useClipped(id: string) {
   return useSyncExternalStore(
     subscribe,
     () => clipped.has(id),
-    () => false
+    () => false,
   );
 }
 
@@ -80,7 +80,7 @@ export function useClipCount() {
       void version;
       return clipped.size;
     },
-    () => 0
+    () => 0,
   );
 }
 

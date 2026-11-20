@@ -44,20 +44,36 @@ export function TimelineHScrollbar({
     sync();
     el.addEventListener("scroll", sync, { passive: true });
     const ro = new ResizeObserver(sync);
-    const observeKids = () => { for (const kid of Array.from(el.children)) ro.observe(kid); };
+    const observeKids = () => {
+      for (const kid of Array.from(el.children)) ro.observe(kid);
+    };
     ro.observe(el);
     ro.observe(bar);
     observeKids();
     // Channels appearing/disappearing change the scroll width without resizing the container.
-    const mo = new MutationObserver(() => { observeKids(); sync(); });
+    const mo = new MutationObserver(() => {
+      observeKids();
+      sync();
+    });
     mo.observe(el, { childList: true });
-    return () => { cancelAnimationFrame(frame); el.removeEventListener("scroll", sync); ro.disconnect(); mo.disconnect(); };
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener("scroll", sync);
+      ro.disconnect();
+      mo.disconnect();
+    };
   }, [scrollRef, zoom]);
 
   const scrollTo = (thumbOffset: number) => {
     const el = scrollRef.current;
     const bar = barRef.current;
-    if (el && bar) el.scrollLeft = scrollForThumbOnBar(thumbOffset, el.scrollWidth, el.clientWidth, bar.clientWidth);
+    if (el && bar)
+      el.scrollLeft = scrollForThumbOnBar(
+        thumbOffset,
+        el.scrollWidth,
+        el.clientWidth,
+        bar.clientWidth,
+      );
   };
   const step = (dir: -1 | 1) => {
     const el = scrollRef.current;
@@ -69,9 +85,25 @@ export function TimelineHScrollbar({
   return (
     <div className={className ? `timeline-hscroll-row ${className}` : "timeline-hscroll-row"}>
       {hasZoom ? (
-        <button type="button" className={zoomBtn} onClick={() => setZoom(Math.max(1, Math.round((zoom - 0.5) * 2) / 2))} aria-label="Zoom out the arrangement" title="Zoom out">−</button>
+        <button
+          type="button"
+          className={zoomBtn}
+          onClick={() => setZoom(Math.max(1, Math.round((zoom - 0.5) * 2) / 2))}
+          aria-label="Zoom out the arrangement"
+          title="Zoom out"
+        >
+          −
+        </button>
       ) : (
-        <button type="button" className={zoomBtn} onClick={() => step(-1)} aria-label="Scroll left" title="Scroll left">◀</button>
+        <button
+          type="button"
+          className={zoomBtn}
+          onClick={() => step(-1)}
+          aria-label="Scroll left"
+          title="Scroll left"
+        >
+          ◀
+        </button>
       )}
       <div
         ref={barRef}
@@ -95,24 +127,48 @@ export function TimelineHScrollbar({
           const g = thumbOnBar(el.scrollLeft, el.scrollWidth, el.clientWidth, bar.clientWidth);
           // Tap outside the thumb: centre the thumb under the finger, then keep dragging from there.
           if (local < g.offset || local > g.offset + g.size) scrollTo(local - g.size / 2);
-          drag.current = { x, offset: thumbOnBar(el.scrollLeft, el.scrollWidth, el.clientWidth, bar.clientWidth).offset };
+          drag.current = {
+            x,
+            offset: thumbOnBar(el.scrollLeft, el.scrollWidth, el.clientWidth, bar.clientWidth)
+              .offset,
+          };
         }}
         onPointerMove={(e) => {
           if (!drag.current) return;
           scrollTo(drag.current.offset + (canvasPoint(e.clientX, e.clientY).x - drag.current.x));
         }}
-        onPointerUp={() => { drag.current = null; }}
-        onPointerCancel={() => { drag.current = null; }}
+        onPointerUp={() => {
+          drag.current = null;
+        }}
+        onPointerCancel={() => {
+          drag.current = null;
+        }}
       >
         <div ref={thumbRef} className="timeline-hscroll-thumb" />
       </div>
       {hasZoom ? (
         <>
           <span className="timeline-hscroll-zoom-label">{zoom.toFixed(1)}×</span>
-          <button type="button" className={zoomBtn} onClick={() => setZoom(Math.min(8, Math.round((zoom + 0.5) * 2) / 2))} aria-label="Zoom in on the arrangement" title="Zoom in">+</button>
+          <button
+            type="button"
+            className={zoomBtn}
+            onClick={() => setZoom(Math.min(8, Math.round((zoom + 0.5) * 2) / 2))}
+            aria-label="Zoom in on the arrangement"
+            title="Zoom in"
+          >
+            +
+          </button>
         </>
       ) : (
-        <button type="button" className={zoomBtn} onClick={() => step(1)} aria-label="Scroll right" title="Scroll right">▶</button>
+        <button
+          type="button"
+          className={zoomBtn}
+          onClick={() => step(1)}
+          aria-label="Scroll right"
+          title="Scroll right"
+        >
+          ▶
+        </button>
       )}
     </div>
   );

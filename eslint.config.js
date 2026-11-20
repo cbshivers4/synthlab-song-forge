@@ -37,4 +37,28 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  {
+    // Generated, payment/webhook, account-deletion and Electron files are kept exactly as they are
+    // (see .prettierignore), so formatting is not enforced there.
+    files: [
+      "src/integrations/supabase/**",
+      "src/lib/paddle.ts",
+      "src/lib/paddle.server.ts",
+      "src/lib/paddle-webhook.server.ts",
+      "src/utils/payments.functions.ts",
+      "src/utils/account.functions.ts",
+      "src/routes/api/**",
+      "electron/**",
+    ],
+    rules: { "prettier/prettier": "off" },
+  },
+  {
+    // Loose payment-provider payload types are left untouched on purpose; flag them, don't block.
+    files: [
+      "src/lib/paddle.ts",
+      "src/lib/paddle-webhook.server.ts",
+      "src/utils/payments.functions.ts",
+    ],
+    rules: { "@typescript-eslint/no-explicit-any": "warn" },
+  },
 );

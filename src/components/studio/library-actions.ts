@@ -51,16 +51,52 @@ const SYNTH_KINDS: TrackKind[] = ["instrument", "midi"];
 /** Every searchable item: synth sounds, kits, effects, effect presets, tracks, panels and help. */
 export function buildLibraryCatalog(effects: PluginDef[], tracks: Track[]): LibraryEntry[] {
   const out: LibraryEntry[] = [];
-  for (const t of NEW_TRACKS) out.push({ id: `new:${t.kind}`, kind: "instrument", title: t.title, sub: KIND_LABEL[t.kind] ?? t.kind, tags: t.tags });
-  for (const p of SYNTH_PRESETS) out.push({ id: `preset:${p.name}`, kind: "preset", title: p.name, sub: p.category });
-  for (const k of DRUM_KITS) out.push({ id: `kit:${k.id}`, kind: "kit", title: k.name, sub: k.category, tags: k.desc });
-  for (const d of effects) out.push({ id: `fx:${d.id}`, kind: "effect", title: effectBrand(d), sub: d.name, tags: d.kind });
-  for (const d of effects) for (const p of effectPresets(d)) if (p.name !== "Default")
-    out.push({ id: `fxp:${d.id}:${p.id}`, kind: "effect-preset", title: p.name, sub: effectBrand(d), tags: `${d.name} ${d.kind}` });
-  for (const t of tracks) out.push({ id: `track:${t.id}`, kind: "track", title: t.name, sub: KIND_LABEL[t.kind] ?? t.kind });
+  for (const t of NEW_TRACKS)
+    out.push({
+      id: `new:${t.kind}`,
+      kind: "instrument",
+      title: t.title,
+      sub: KIND_LABEL[t.kind] ?? t.kind,
+      tags: t.tags,
+    });
+  for (const p of SYNTH_PRESETS)
+    out.push({ id: `preset:${p.name}`, kind: "preset", title: p.name, sub: p.category });
+  for (const k of DRUM_KITS)
+    out.push({ id: `kit:${k.id}`, kind: "kit", title: k.name, sub: k.category, tags: k.desc });
+  for (const d of effects)
+    out.push({
+      id: `fx:${d.id}`,
+      kind: "effect",
+      title: effectBrand(d),
+      sub: d.name,
+      tags: d.kind,
+    });
+  for (const d of effects)
+    for (const p of effectPresets(d))
+      if (p.name !== "Default")
+        out.push({
+          id: `fxp:${d.id}:${p.id}`,
+          kind: "effect-preset",
+          title: p.name,
+          sub: effectBrand(d),
+          tags: `${d.name} ${d.kind}`,
+        });
+  for (const t of tracks)
+    out.push({
+      id: `track:${t.id}`,
+      kind: "track",
+      title: t.name,
+      sub: KIND_LABEL[t.kind] ?? t.kind,
+    });
   for (const p of LIBRARY_PANELS) out.push({ id: `panel:${p.id}`, kind: "panel", title: p.label });
-  out.push({ id: "panel:export", kind: "panel", title: "Export / Share", tags: "wav mp3 bounce render" });
-  for (const a of KNOWLEDGE_BASE) out.push({ id: `help:${a.id}`, kind: "help", title: a.title, sub: a.category, tags: a.tags });
+  out.push({
+    id: "panel:export",
+    kind: "panel",
+    title: "Export / Share",
+    tags: "wav mp3 bounce render",
+  });
+  for (const a of KNOWLEDGE_BASE)
+    out.push({ id: `help:${a.id}`, kind: "help", title: a.title, sub: a.category, tags: a.tags });
   return out;
 }
 
@@ -69,8 +105,19 @@ export function buildLibraryCatalog(effects: PluginDef[], tracks: Track[]): Libr
  * `load` returns a short result sentence and throws when the item can't be loaded right now.
  */
 export function useLibraryActions() {
-  const { tracks, select, setPanel, changeInstrument, selected, addTrack, updateTrack, addPlugin, installedPlugins } = useStudio();
-  const synthTarget = selected && SYNTH_KINDS.includes(selected.kind) && selected.patch ? selected : null;
+  const {
+    tracks,
+    select,
+    setPanel,
+    changeInstrument,
+    selected,
+    addTrack,
+    updateTrack,
+    addPlugin,
+    installedPlugins,
+  } = useStudio();
+  const synthTarget =
+    selected && SYNTH_KINDS.includes(selected.kind) && selected.patch ? selected : null;
   const fxTarget = selected ?? tracks[0] ?? null;
   const effects = () => availableEffects(installedPlugins);
   const catalog = () => buildLibraryCatalog(effects(), tracks);
@@ -86,7 +133,10 @@ export function useLibraryActions() {
     }
     if (prefix === "preset") {
       if (!SYNTH_PRESETS.some((p) => p.name === value)) throw new Error("Unknown synth sound.");
-      if (!synthTarget) throw new Error("Select a synth track first — synth sounds load onto the selected synth channel.");
+      if (!synthTarget)
+        throw new Error(
+          "Select a synth track first — synth sounds load onto the selected synth channel.",
+        );
       changeInstrument(synthTarget.id, value);
       toast.success(`${value} loaded`, { description: synthTarget.name });
       setPanel("synth");
@@ -114,7 +164,9 @@ export function useLibraryActions() {
       const params = preset ? effectPresetParams(instantiate(def), presetId) : null;
       if (!preset || !params) throw new Error("Unknown effect preset.");
       addPlugin(fxTarget.id, { ...def, params }, { quiet: true });
-      toast.success(`${effectBrand(def)} · ${preset.name}`, { description: `Added to ${fxTarget.name}` });
+      toast.success(`${effectBrand(def)} · ${preset.name}`, {
+        description: `Added to ${fxTarget.name}`,
+      });
       return `Added ${effectBrand(def)} with the "${preset.name}" preset to ${fxTarget.name}.`;
     }
     if (prefix === "track") {
@@ -124,7 +176,10 @@ export function useLibraryActions() {
       return `Selected ${track.name}.`;
     }
     if (prefix === "panel") {
-      if (value === "export") { openExport(); return "Opened Export."; }
+      if (value === "export") {
+        openExport();
+        return "Opened Export.";
+      }
       const panel = LIBRARY_PANELS.find((p) => p.id === value);
       if (!panel) throw new Error("Unknown panel.");
       setPanel(panel.id);

@@ -15,16 +15,22 @@ export function useFoundRow(listRef: RefObject<HTMLElement | null>) {
     const find = (name: string) => {
       const list = listRef.current;
       if (!list) return;
-      const row = [...list.querySelectorAll<HTMLElement>("[data-track-name]")].find((r) => r.dataset["trackName"] === name || r.dataset["trackLabel"] === name);
+      const row = [...list.querySelectorAll<HTMLElement>("[data-track-name]")].find(
+        (r) => r.dataset["trackName"] === name || r.dataset["trackLabel"] === name,
+      );
       if (!row) return;
-      const lr = canvasRect(list), rr = canvasRect(row);
+      const lr = canvasRect(list),
+        rr = canvasRect(row);
       const delta = rr.top - lr.top - (list.clientHeight - row.offsetHeight) / 2;
       const smooth = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       list.scrollBy({ top: delta, behavior: smooth ? "smooth" : "auto" });
       row.removeAttribute("data-found");
       void row.offsetWidth; // restart the light if the same row is found again
       row.setAttribute("data-found", "1");
-      const t = setTimeout(() => { row.removeAttribute("data-found"); timers.delete(t); }, 1700);
+      const t = setTimeout(() => {
+        row.removeAttribute("data-found");
+        timers.delete(t);
+      }, 1700);
       timers.add(t);
     };
     const off = dj.subscribe(() => {
@@ -35,6 +41,9 @@ export function useFoundRow(listRef: RefObject<HTMLElement | null>) {
         if (s.loadSeq && s.name) find(s.name);
       }
     });
-    return () => { off(); timers.forEach(clearTimeout); };
+    return () => {
+      off();
+      timers.forEach(clearTimeout);
+    };
   }, [listRef]);
 }

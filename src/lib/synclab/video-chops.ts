@@ -5,9 +5,14 @@ export function snapVideoTime(time: number, bpm: number, division: number): numb
   return Math.round(time / interval) * interval;
 }
 /** Keep pad order stable and prevent empty or overlapping chop ranges. */
-export function moveVideoChop(chops: number[], index: number, time: number, duration: number): number[] {
+export function moveVideoChop(
+  chops: number[],
+  index: number,
+  time: number,
+  duration: number,
+): number[] {
   if (index < 0 || index >= chops.length) return chops;
   const low = index === 0 ? 0 : (chops[index - 1] ?? 0) + 0.01;
   const high = (chops[index + 1] ?? duration) - 0.01;
-  return chops.map((value, i) => i === index ? Math.max(low, Math.min(high, time)) : value);
+  return chops.map((value, i) => (i === index ? Math.max(low, Math.min(high, time)) : value));
 }

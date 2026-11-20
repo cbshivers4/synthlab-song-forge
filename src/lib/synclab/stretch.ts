@@ -3,7 +3,12 @@
  * speed > 1 makes audio shorter/faster, < 1 longer/slower.
  * Runs on the main thread offline; fine for sampler-length audio.
  */
-export function wsolaStretch(input: Float32Array, speed: number, frame = 2048, search = 384): Float32Array {
+export function wsolaStretch(
+  input: Float32Array,
+  speed: number,
+  frame = 2048,
+  search = 384,
+): Float32Array {
   const hopOut = frame / 4;
   const hopIn = hopOut * speed;
   const outLen = Math.max(frame, Math.floor(input.length / speed));

@@ -42,7 +42,8 @@ export function DesktopUpdateBanner() {
   if (!release || hidden) return null;
   const api = desktopApi();
   const arch = /arm|aarch/i.test(navigator.userAgent) ? "arm64" : "x64";
-  const url = release.downloads?.[`${api?.platform}-${arch}`] || release.downloads?.[`${api?.platform}-x64`];
+  const url =
+    release.downloads?.[`${api?.platform}-${arch}`] || release.downloads?.[`${api?.platform}-x64`];
 
   return (
     <div className="fixed left-1/2 top-3 z-[100] flex max-w-[92vw] -translate-x-1/2 items-center gap-3 rounded-md border border-primary bg-card px-4 py-2 text-sm text-card-foreground shadow-lg">

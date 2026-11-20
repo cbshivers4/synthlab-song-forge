@@ -15,7 +15,11 @@ describe("colour preferences", () => {
   });
 
   it("rejects broken colours and clamps logo brightness", () => {
-    const p = sanitizeColorPrefs({ menuBg: "red; display:none", logoColor: "#FF0000", logoStrength: 5 });
+    const p = sanitizeColorPrefs({
+      menuBg: "red; display:none",
+      logoColor: "#FF0000",
+      logoStrength: 5,
+    });
     expect(p.menuBg).toBe(COLOR_PREFS_DEFAULTS.menuBg);
     expect(p.logoColor).toBe("#ff0000");
     expect(p.logoStrength).toBe(0.6);

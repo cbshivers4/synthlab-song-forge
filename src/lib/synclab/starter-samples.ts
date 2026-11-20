@@ -39,7 +39,10 @@ const kick: Voice = (ctx, out) => {
   const hp = ctx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 2000;
-  click.connect(hp).connect(env(ctx, 0.4, 0.02)).connect(out);
+  click
+    .connect(hp)
+    .connect(env(ctx, 0.4, 0.02))
+    .connect(out);
   click.start(0);
 };
 
@@ -56,7 +59,10 @@ const snare: Voice = (ctx, out) => {
   bp.type = "bandpass";
   bp.frequency.value = 2800;
   bp.Q.value = 0.8;
-  noise.connect(bp).connect(env(ctx, 0.7, 0.2)).connect(out);
+  noise
+    .connect(bp)
+    .connect(env(ctx, 0.7, 0.2))
+    .connect(out);
   noise.start(0);
 };
 
@@ -68,7 +74,10 @@ const clap: Voice = (ctx, out) => {
     bp.type = "bandpass";
     bp.frequency.value = 1500;
     bp.Q.value = 1.5;
-    noise.connect(bp).connect(env(ctx, t === 0.05 ? 0.8 : 0.5, t === 0.05 ? 0.25 : 0.03, t)).connect(out);
+    noise
+      .connect(bp)
+      .connect(env(ctx, t === 0.05 ? 0.8 : 0.5, t === 0.05 ? 0.25 : 0.03, t))
+      .connect(out);
     noise.start(t);
   }
 };
@@ -79,7 +88,10 @@ const closedHat: Voice = (ctx, out) => {
   const hp = ctx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 7500;
-  noise.connect(hp).connect(env(ctx, 0.5, 0.05)).connect(out);
+  noise
+    .connect(hp)
+    .connect(env(ctx, 0.5, 0.05))
+    .connect(out);
   noise.start(0);
 };
 
@@ -89,7 +101,10 @@ const openHat: Voice = (ctx, out) => {
   const hp = ctx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 7000;
-  noise.connect(hp).connect(env(ctx, 0.45, 0.35)).connect(out);
+  noise
+    .connect(hp)
+    .connect(env(ctx, 0.45, 0.35))
+    .connect(out);
   noise.start(0);
 };
 
@@ -105,7 +120,10 @@ const rim: Voice = (ctx, out) => {
   const hp = ctx.createBiquadFilter();
   hp.type = "highpass";
   hp.frequency.value = 4000;
-  noise.connect(hp).connect(env(ctx, 0.3, 0.015)).connect(out);
+  noise
+    .connect(hp)
+    .connect(env(ctx, 0.3, 0.015))
+    .connect(out);
   noise.start(0);
 };
 

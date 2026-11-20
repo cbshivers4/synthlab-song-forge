@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { djEvent, djProfileFor, learnBinding, learnable, relativeDelta, resolveDjAction, tempoPitch } from "./dj-midi-map";
+import {
+  djEvent,
+  djProfileFor,
+  learnBinding,
+  learnable,
+  relativeDelta,
+  resolveDjAction,
+  tempoPitch,
+} from "./dj-midi-map";
 
 describe("DJ controller layout", () => {
   const ddj = djProfileFor("DDJ-FLX4 MIDI 1")!;

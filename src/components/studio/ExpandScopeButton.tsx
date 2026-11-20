@@ -1,10 +1,25 @@
 import { Maximize2 } from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
-import { openScopeWindow, scopeSourceFor, type ScopeSource, type ScopeView } from "@/lib/synclab/scope-window";
+import {
+  openScopeWindow,
+  scopeSourceFor,
+  type ScopeSource,
+  type ScopeView,
+} from "@/lib/synclab/scope-window";
 import { cn } from "@/lib/utils";
 
 /** Small corner button on every scope that opens the big analyzer window on the same signal. */
-export function ExpandScopeButton({ scopeId, source, view, className }: { scopeId?: string; source?: ScopeSource; view?: ScopeView; className?: string }) {
+export function ExpandScopeButton({
+  scopeId,
+  source,
+  view,
+  className,
+}: {
+  scopeId?: string;
+  source?: ScopeSource;
+  view?: ScopeView;
+  className?: string;
+}) {
   const { tracks } = useStudio();
   return (
     <button

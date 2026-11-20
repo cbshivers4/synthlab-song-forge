@@ -8,7 +8,13 @@ import { Knob } from "../Knob";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { trackMenuStyle } from "@/lib/synclab/color-prefs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { MidiLearnBlock } from "../MidiLearn";
@@ -21,9 +27,26 @@ import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/c
 import { Scope } from "../Scope";
 import { ChannelEq } from "./ChannelEq";
 import { DeviceSlots, SendsMenu } from "./InsertRack";
-import { BUSES, BUS_COLOR, ChannelGain, ClipLed, ColorDot, FADER_CAP, FaderScale, KindIcon, Meter, PANEL, ROW, SEND_KEYS, VCA_IDS, fracToDb, toDb } from "./shared";
+import {
+  BUSES,
+  BUS_COLOR,
+  ChannelGain,
+  ClipLed,
+  ColorDot,
+  FADER_CAP,
+  FaderScale,
+  KindIcon,
+  Meter,
+  PANEL,
+  ROW,
+  SEND_KEYS,
+  VCA_IDS,
+  fracToDb,
+  toDb,
+} from "./shared";
 
-const panText = (p: number) => (Math.abs(p) < 0.005 ? "C" : p < 0 ? `L${Math.round(-p * 100)}` : `R${Math.round(p * 100)}`);
+const panText = (p: number) =>
+  Math.abs(p) < 0.005 ? "C" : p < 0 ? `L${Math.round(-p * 100)}` : `R${Math.round(p * 100)}`;
 
 /** Channel menu: rename, quick inserts, reset, duplicate, delete. */
 
@@ -32,24 +55,36 @@ function ChannelMenu({ t }: { t: Track }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon"
+        <Button
+          variant="ghost"
+          size="icon"
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
-          aria-label={`${t.name} channel menu`} title="Channel menu"
+          aria-label={`${t.name} channel menu`}
+          title="Channel menu"
           className="channel-menu-trigger size-6 shrink-0 text-foreground hover:bg-accent"
         >
           <MoreVertical className="size-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="mx-channel-menu track-tinted-menu w-56 space-y-2 p-3" style={trackMenuStyle(t.color)} onClick={(e) => e.stopPropagation()}>
+      <PopoverContent
+        align="start"
+        className="mx-channel-menu track-tinted-menu w-56 space-y-2 p-3"
+        style={trackMenuStyle(t.color)}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="label-xs">Channel</div>
         <input
-          aria-label={`${t.name} channel name`} value={t.name}
+          aria-label={`${t.name} channel name`}
+          value={t.name}
           onChange={(e) => updateTrack(t.id, { name: e.target.value })}
           className="h-7 w-full rounded-sm border border-border bg-surface-2 px-2 font-mono text-[10px] uppercase"
         />
         <div className="label-xs pt-1">Add effect</div>
-        <EffectPicker effects={availableEffects(installedPlugins)} onAdd={def => addPlugin(t.id, def)} />
+        <EffectPicker
+          effects={availableEffects(installedPlugins)}
+          onAdd={(def) => addPlugin(t.id, def)}
+        />
         <MidiLearnBlock id={t.id} />
         <div className="grid grid-cols-2 gap-1 pt-1">
           <button
@@ -102,20 +137,25 @@ export function Strip({
   const tint = (pct: number) => `color-mix(in oklab, ${t.color} ${pct}%, transparent)`;
   return (
     <div
-      role="group" onClick={(e) => { if (e.currentTarget.contains(e.target as Node)) onSelect(); }}
+      role="group"
+      onClick={(e) => {
+        if (e.currentTarget.contains(e.target as Node)) onSelect();
+      }}
       className={cn(
         "mx-channel flex shrink-0 cursor-pointer flex-col border-r border-border transition-colors",
-        narrow ? "w-[92px]" : "w-[132px]"
+        narrow ? "w-[92px]" : "w-[132px]",
       )}
       data-selected={selected}
       aria-label={`${t.name} mixer channel`}
-      style={{
-        "--mixer-channel-color": t.color,
-        background: selected
-          ? `linear-gradient(${tint(16)}, ${tint(16)}), ${PANEL}`
-          : `linear-gradient(${tint(8)}, ${tint(8)}), ${PANEL}`,
-        boxShadow: `inset 4px 0 0 0 ${t.color}, inset 0 1px 0 0 rgba(255,255,255,0.08)${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
-      } as CSSProperties}
+      style={
+        {
+          "--mixer-channel-color": t.color,
+          background: selected
+            ? `linear-gradient(${tint(16)}, ${tint(16)}), ${PANEL}`
+            : `linear-gradient(${tint(8)}, ${tint(8)}), ${PANEL}`,
+          boxShadow: `inset 4px 0 0 0 ${t.color}, inset 0 1px 0 0 rgba(255,255,255,0.08)${selected ? `, inset 0 0 0 1px ${tint(45)}` : ""}`,
+        } as CSSProperties
+      }
     >
       {/* channel name plate — sits above the controls and never floats over the level meter */}
       <div
@@ -131,19 +171,25 @@ export function Strip({
           variant="ghost"
           aria-label={`Select ${t.name} mixer channel`}
           aria-pressed={selected}
-          onClick={(e) => { e.stopPropagation(); onSelect(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
           className="mx-name-btn h-full min-w-0 flex-1 truncate rounded-none p-0 text-left font-mono text-[12px] font-bold uppercase tracking-wide text-foreground"
         >
           {t.name}
         </Button>
         <RenameTrackButton track={t} className="size-5 text-foreground" />
         <button
-          onClick={(e) => { e.stopPropagation(); clearClip(t.id); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            clearClip(t.id);
+          }}
           title="Clip indicator — click to reset"
           aria-label={`Clip indicator for ${t.name} — click to reset`}
           className={cn(
             "size-2.5 shrink-0 rounded-full border border-black/60 transition-shadow",
-            clip ? "bg-red-500 shadow-[0_0_6px_1px_rgba(239,68,68,0.8)]" : "bg-black/50"
+            clip ? "bg-red-500 shadow-[0_0_6px_1px_rgba(239,68,68,0.8)]" : "bg-black/50",
           )}
         />
       </div>
@@ -158,7 +204,10 @@ export function Strip({
         <TrackNotes track={t} />
         <ChannelMenu t={t} />
         <button
-          onClick={(e) => { e.stopPropagation(); moveTrack(t.id, -1); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            moveTrack(t.id, -1);
+          }}
           disabled={index === 0}
           title="Move channel left"
           aria-label="Move channel left"
@@ -167,7 +216,10 @@ export function Strip({
           <ChevronLeft className="size-3.5" />
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); moveTrack(t.id, 1); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            moveTrack(t.id, 1);
+          }}
           disabled={index >= tracks.length - 1}
           title="Move channel right"
           aria-label="Move channel right"
@@ -179,8 +231,8 @@ export function Strip({
       </div>
 
       <div className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}>
-          <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
-        </div>
+        <Scope scopeId={`ch:${t.id}`} height={40} compact color={t.color} />
+      </div>
 
       <ChannelEq t={t} />
 
@@ -193,29 +245,43 @@ export function Strip({
 
       {/* send amount bars */}
       {advanced && (
-        <div className={cn(ROW.sendBars, "flex items-center gap-1 border-b border-border/60 px-1.5")}>
+        <div
+          className={cn(ROW.sendBars, "flex items-center gap-1 border-b border-border/60 px-1.5")}
+        >
           {SEND_KEYS.map(([key, label]) => {
             const v = t.sends?.[key] ?? 0;
             return (
               <div key={key} className="flex-1" title={`${label} ${Math.round(v * 100)}%`}>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/40">
-                  <div className="h-full rounded-full" style={{ width: `${v * 100}%`, background: t.color }} />
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${v * 100}%`, background: t.color }}
+                  />
                 </div>
-                <div className="mt-[1px] text-center font-mono text-[7px] text-muted-foreground">{label}</div>
+                <div className="mt-[1px] text-center font-mono text-[7px] text-muted-foreground">
+                  {label}
+                </div>
               </div>
             );
           })}
         </div>
       )}
 
-
       {/* audio-to routing */}
-      <div className={cn(ROW.io, "flex flex-col justify-center gap-0.5 border-b border-border/60 px-1")}>
+      <div
+        className={cn(
+          ROW.io,
+          "flex flex-col justify-center gap-0.5 border-b border-border/60 px-1",
+        )}
+      >
         <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
-          <SelectTrigger aria-label={`${t.name} output bus`}
+          <SelectTrigger
+            aria-label={`${t.name} output bus`}
             onClick={(e) => e.stopPropagation()}
             className="h-6 w-full rounded-sm border-border px-1 font-mono text-[8px] uppercase"
-            style={{ background: `color-mix(in oklab, ${BUS_COLOR[t.bus] ?? t.color} 22%, var(--surface-2, transparent))` }}
+            style={{
+              background: `color-mix(in oklab, ${BUS_COLOR[t.bus] ?? t.color} 22%, var(--surface-2, transparent))`,
+            }}
           >
             <SelectValue />
           </SelectTrigger>
@@ -227,13 +293,24 @@ export function Strip({
             ))}
           </SelectContent>
         </Select>
-        <Select value={t.vca ?? "none"} onValueChange={(v) => updateTrack(t.id, { vca: v === "none" ? undefined : v as VcaId })}>
-          <SelectTrigger onClick={(e) => e.stopPropagation()} aria-label={`${t.name} VCA group`} className="h-5 w-full rounded-sm border-border px-1 font-mono text-[8px] uppercase">
+        <Select
+          value={t.vca ?? "none"}
+          onValueChange={(v) => updateTrack(t.id, { vca: v === "none" ? undefined : (v as VcaId) })}
+        >
+          <SelectTrigger
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`${t.name} VCA group`}
+            className="h-5 w-full rounded-sm border-border px-1 font-mono text-[8px] uppercase"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">No VCA</SelectItem>
-            {VCA_IDS.map((id) => <SelectItem key={id} value={id}>VCA {id}</SelectItem>)}
+            {VCA_IDS.map((id) => (
+              <SelectItem key={id} value={id}>
+                VCA {id}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -261,14 +338,16 @@ export function Strip({
 
       {/* fader + scale + meter */}
       <div
-        className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}
+        className={cn(
+          ROW.fader,
+          "flex items-stretch justify-center gap-1 border-b border-border/60 py-1",
+        )}
         style={{ "--primary": t.color } as CSSProperties}
       >
-        {!narrow && (
-          <FaderScale />
-        )}
+        {!narrow && <FaderScale />}
         <Slider
-          aria-label={`${t.name} volume`} aria-valuetext={t.volume === 0 ? "Silent" : `${toDb(t.volume).toFixed(1)} decibels`}
+          aria-label={`${t.name} volume`}
+          aria-valuetext={t.volume === 0 ? "Silent" : `${toDb(t.volume).toFixed(1)} decibels`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
           value={[faderPosition(t.volume)]}
@@ -279,18 +358,47 @@ export function Strip({
           onValueChange={([v = 0]) => updateTrack(t.id, { volume: faderGain(v) })}
         />
         {vcaState && (
-          <div className="relative w-2 shrink-0 rounded-sm bg-surface-2" title={`After VCA ${t.vca}: ${toDb(effective).toFixed(1)} dB`} aria-label={`Level after VCA ${t.vca}`}>
-            <div className="absolute inset-x-0 bottom-0 rounded-sm bg-primary/70 transition-[height] duration-75" style={{ height: `${effective * 100}%` }} />
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[7px] text-primary">{t.vca}</span>
+          <div
+            className="relative w-2 shrink-0 rounded-sm bg-surface-2"
+            title={`After VCA ${t.vca}: ${toDb(effective).toFixed(1)} dB`}
+            aria-label={`Level after VCA ${t.vca}`}
+          >
+            <div
+              className="absolute inset-x-0 bottom-0 rounded-sm bg-primary/70 transition-[height] duration-75"
+              style={{ height: `${effective * 100}%` }}
+            />
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[7px] text-primary">
+              {t.vca}
+            </span>
           </div>
         )}
         <Meter id={t.id} level={level} tall />
       </div>
 
       {/* fader dB + live peak dB */}
-      <div className={cn(ROW.readout, "flex items-center justify-between border-b border-border/60 px-1.5")}>
-        <span className={cn("font-mono text-[9px]", vcaState ? "text-primary" : "text-muted-foreground")} title={vcaState ? `Fader ${toDb(t.volume).toFixed(1)} dB, after VCA ${t.vca}` : undefined}>{toDb(effective).toFixed(1)}</span>
-        <span className={cn("font-mono text-[9px]", peakHoldDb(t.id) > -0.2 ? "text-red-400" : "text-foreground/70")} title="Peak hold (dBFS) — highest level since reset; click CLIP to reset" aria-label={`${t.name} peak hold ${peakHoldText(t.id)} dB`}>
+      <div
+        className={cn(
+          ROW.readout,
+          "flex items-center justify-between border-b border-border/60 px-1.5",
+        )}
+      >
+        <span
+          className={cn(
+            "font-mono text-[9px]",
+            vcaState ? "text-primary" : "text-muted-foreground",
+          )}
+          title={vcaState ? `Fader ${toDb(t.volume).toFixed(1)} dB, after VCA ${t.vca}` : undefined}
+        >
+          {toDb(effective).toFixed(1)}
+        </span>
+        <span
+          className={cn(
+            "font-mono text-[9px]",
+            peakHoldDb(t.id) > -0.2 ? "text-red-400" : "text-foreground/70",
+          )}
+          title="Peak hold (dBFS) — highest level since reset; click CLIP to reset"
+          aria-label={`${t.name} peak hold ${peakHoldText(t.id)} dB`}
+        >
           {peakHoldText(t.id)}
         </span>
         <ClipLed id={t.id} compact />
@@ -299,12 +407,15 @@ export function Strip({
       {/* M / S / REC / MON — Studio Pro style letter buttons at the bottom (2x2 so they stay big and tappable) */}
       <div className={cn(ROW.buttons, "grid grid-cols-2 gap-1 px-1")}>
         <button
-          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { muted: !t.muted }); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            updateTrack(t.id, { muted: !t.muted });
+          }}
           className={cn(
             "h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
             t.muted
               ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
-              : "bg-black/30 text-muted-foreground hover:text-foreground"
+              : "bg-black/30 text-muted-foreground hover:text-foreground",
           )}
           title={t.muted ? "Muted — click to unmute" : "Mute this channel"}
           aria-label={`Mute ${t.name}`}
@@ -313,12 +424,15 @@ export function Strip({
           M
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { solo: !t.solo }); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            updateTrack(t.id, { solo: !t.solo });
+          }}
           className={cn(
             "h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
             t.solo
               ? "bg-emerald-400 text-black shadow-[0_0_10px_rgba(52,211,153,0.8)]"
-              : "bg-black/30 text-muted-foreground hover:text-foreground"
+              : "bg-black/30 text-muted-foreground hover:text-foreground",
           )}
           title={t.solo ? "Soloed — click to unsolo" : "Solo this channel"}
           aria-label={`Solo ${t.name}`}
@@ -327,16 +441,26 @@ export function Strip({
           S
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); updateTrack(t.id, { armed: !t.armed }); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            updateTrack(t.id, { armed: !t.armed });
+          }}
           title={t.armed ? "Armed for recording" : "Arm this channel for recording"}
           aria-label={`Record arm ${t.name}`}
           aria-pressed={t.armed}
           className={cn(
             "flex h-8 w-full items-center justify-center rounded-[3px] transition-colors",
-            t.armed ? "bg-red-500/20" : "bg-black/30 hover:bg-black/50"
+            t.armed ? "bg-red-500/20" : "bg-black/30 hover:bg-black/50",
           )}
         >
-          <span className={cn("size-4 rounded-full border", t.armed ? "border-red-300 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]" : "border-red-500/60 bg-red-500/20")} />
+          <span
+            className={cn(
+              "size-4 rounded-full border",
+              t.armed
+                ? "border-red-300 bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.9)]"
+                : "border-red-500/60 bg-red-500/20",
+            )}
+          />
         </button>
         <button
           onClick={(e) => {
@@ -355,7 +479,7 @@ export function Strip({
             "h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors disabled:opacity-40",
             t.armed && transport.monitor
               ? "bg-sky-400 text-black"
-              : "bg-black/30 text-muted-foreground hover:text-foreground"
+              : "bg-black/30 text-muted-foreground hover:text-foreground",
           )}
         >
           ⌁
@@ -364,7 +488,10 @@ export function Strip({
 
       {/* channel icon — centred at the foot of the strip, in its own row so nothing overlaps */}
       <div
-        className={cn(ROW.icon, "flex shrink-0 items-center justify-center border-t border-border/60")}
+        className={cn(
+          ROW.icon,
+          "flex shrink-0 items-center justify-center border-t border-border/60",
+        )}
         title={t.name}
         aria-hidden
       >

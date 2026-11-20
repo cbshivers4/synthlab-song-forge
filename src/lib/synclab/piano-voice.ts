@@ -7,7 +7,8 @@
  * Rendering is pure maths (no audio API) so live playback and offline exports use identical audio.
  */
 
-export type PianoModel = "grand" | "bright" | "felt" | "upright" | "honky" | "tine" | "reed" | "toy";
+export type PianoModel =
+  "grand" | "bright" | "felt" | "upright" | "honky" | "tine" | "reed" | "toy";
 
 export interface PianoEngine {
   model: PianoModel;
@@ -37,7 +38,8 @@ export const pianoZone = (midi: number): number => {
   return Math.min(HIGH, LOW + Math.round((m - LOW) / ZONE) * ZONE);
 };
 /** Velocity layer: 0 soft, 1 medium, 2 hard — harder notes are brighter, not just louder. */
-export const pianoLayer = (velocity: number): 0 | 1 | 2 => (velocity < 0.42 ? 0 : velocity < 0.78 ? 1 : 2);
+export const pianoLayer = (velocity: number): 0 | 1 | 2 =>
+  velocity < 0.42 ? 0 : velocity < 0.78 ? 1 : 2;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -66,22 +68,91 @@ interface StringCfg {
 }
 
 const STRINGS: Record<"grand" | "bright" | "felt" | "upright" | "honky", StringCfg> = {
-  grand: { detune: 0.9, B: 1.3e-4, slope: [1.9, 1.45, 1.1], hammerHz: [850, 1700, 3400], strike: 1 / 7.3, prompt: 1, after: 1, noise: 0.05, thump: 0.04, maxLen: 5 },
-  bright: { detune: 1.1, B: 1.4e-4, slope: [1.6, 1.2, 0.9], hammerHz: [1500, 3000, 6000], strike: 1 / 8.1, prompt: 0.9, after: 0.9, noise: 0.07, thump: 0.03, maxLen: 4.5 },
-  felt: { detune: 0.7, B: 1.2e-4, slope: [2.6, 2.2, 1.9], hammerHz: [380, 650, 1100], strike: 1 / 7, prompt: 0.9, after: 0.75, noise: 0.025, thump: 0.08, maxLen: 4 },
-  upright: { detune: 1.8, B: 2.2e-4, slope: [2, 1.55, 1.2], hammerHz: [800, 1500, 2900], strike: 1 / 6.4, prompt: 0.75, after: 0.6, noise: 0.06, thump: 0.06, maxLen: 3.6 },
-  honky: { detune: 11, B: 2e-4, slope: [1.7, 1.3, 1], hammerHz: [1200, 2400, 4600], strike: 1 / 7.6, prompt: 0.8, after: 0.65, noise: 0.07, thump: 0.04, maxLen: 3.6 },
+  grand: {
+    detune: 0.9,
+    B: 1.3e-4,
+    slope: [1.9, 1.45, 1.1],
+    hammerHz: [850, 1700, 3400],
+    strike: 1 / 7.3,
+    prompt: 1,
+    after: 1,
+    noise: 0.05,
+    thump: 0.04,
+    maxLen: 5,
+  },
+  bright: {
+    detune: 1.1,
+    B: 1.4e-4,
+    slope: [1.6, 1.2, 0.9],
+    hammerHz: [1500, 3000, 6000],
+    strike: 1 / 8.1,
+    prompt: 0.9,
+    after: 0.9,
+    noise: 0.07,
+    thump: 0.03,
+    maxLen: 4.5,
+  },
+  felt: {
+    detune: 0.7,
+    B: 1.2e-4,
+    slope: [2.6, 2.2, 1.9],
+    hammerHz: [380, 650, 1100],
+    strike: 1 / 7,
+    prompt: 0.9,
+    after: 0.75,
+    noise: 0.025,
+    thump: 0.08,
+    maxLen: 4,
+  },
+  upright: {
+    detune: 1.8,
+    B: 2.2e-4,
+    slope: [2, 1.55, 1.2],
+    hammerHz: [800, 1500, 2900],
+    strike: 1 / 6.4,
+    prompt: 0.75,
+    after: 0.6,
+    noise: 0.06,
+    thump: 0.06,
+    maxLen: 3.6,
+  },
+  honky: {
+    detune: 11,
+    B: 2e-4,
+    slope: [1.7, 1.3, 1],
+    hammerHz: [1200, 2400, 4600],
+    strike: 1 / 7.6,
+    prompt: 0.8,
+    after: 0.65,
+    noise: 0.07,
+    thump: 0.04,
+    maxLen: 3.6,
+  },
 };
 
 /** Render one sinusoid with two-stage exponential decay into `out`, via a rotating phasor (no Math.sin per sample). */
-function addPartial(out: Float32Array, sr: number, freq: number, amp: number, phase: number, tauP: number, tauA: number, wP: number, endSec: number) {
+function addPartial(
+  out: Float32Array,
+  sr: number,
+  freq: number,
+  amp: number,
+  phase: number,
+  tauP: number,
+  tauA: number,
+  wP: number,
+  endSec: number,
+) {
   if (freq >= sr * 0.47 || amp < 1e-6) return;
   const end = Math.min(out.length, Math.ceil(endSec * sr));
   const w = (2 * Math.PI * freq) / sr;
-  const cw = Math.cos(w), sw = Math.sin(w);
-  let c = Math.cos(phase), s = Math.sin(phase);
-  let eP = amp * wP, eA = amp * (1 - wP);
-  const dP = Math.exp(-1 / (tauP * sr)), dA = Math.exp(-1 / (tauA * sr));
+  const cw = Math.cos(w),
+    sw = Math.sin(w);
+  let c = Math.cos(phase),
+    s = Math.sin(phase);
+  let eP = amp * wP,
+    eA = amp * (1 - wP);
+  const dP = Math.exp(-1 / (tauP * sr)),
+    dA = Math.exp(-1 / (tauA * sr));
   for (let i = 0; i < end; i++) {
     out[i]! += s * (eP + eA);
     const nc = c * cw - s * sw;
@@ -92,7 +163,13 @@ function addPartial(out: Float32Array, sr: number, freq: number, amp: number, ph
   }
 }
 
-function renderStrings(cfg: StringCfg, root: number, layer: 0 | 1 | 2, sr: number, seed: number): Float32Array {
+function renderStrings(
+  cfg: StringCfg,
+  root: number,
+  layer: 0 | 1 | 2,
+  sr: number,
+  seed: number,
+): Float32Array {
   const rand = rng(seed);
   const f0 = 440 * 2 ** ((root - 69) / 12);
   const k = (root - LOW) / (HIGH - LOW);
@@ -102,7 +179,12 @@ function renderStrings(cfg: StringCfg, root: number, layer: 0 | 1 | 2, sr: numbe
   const len = Math.round(sr * clamp(2.4 * tauA, 1.2, cfg.maxLen));
   const out = new Float32Array(len);
   const strings = root < 33 ? 1 : root < 50 ? 2 : 3;
-  const dets = strings === 1 ? [0] : strings === 2 ? [-cfg.detune / 2, cfg.detune / 2] : [-cfg.detune / 2, cfg.detune * 0.08, cfg.detune / 2];
+  const dets =
+    strings === 1
+      ? [0]
+      : strings === 2
+        ? [-cfg.detune / 2, cfg.detune / 2]
+        : [-cfg.detune / 2, cfg.detune * 0.08, cfg.detune / 2];
   const B = clamp(cfg.B * 2 ** ((root - 60) / 13), 3e-5, 0.02);
   const p = cfg.slope[layer];
   const fc = cfg.hammerHz[layer] * (1 + 1.4 * k);
@@ -122,7 +204,17 @@ function renderStrings(cfg: StringCfg, root: number, layer: 0 | 1 | 2, sr: numbe
     const copies = n <= 10 ? dets : [0];
     for (const d of copies) {
       const f = fn * 2 ** ((d + (rand() - 0.5) * 0.25) / 1200);
-      addPartial(out, sr, f, (a / copies.length) * (0.9 + rand() * 0.2), rand() * Math.PI * 2, tp, ta, 0.62, endSec);
+      addPartial(
+        out,
+        sr,
+        f,
+        (a / copies.length) * (0.9 + rand() * 0.2),
+        rand() * Math.PI * 2,
+        tp,
+        ta,
+        0.62,
+        endSec,
+      );
     }
   }
   // hammer noise (felt hitting the string) and a low key thump
@@ -138,7 +230,12 @@ function renderStrings(cfg: StringCfg, root: number, layer: 0 | 1 | 2, sr: numbe
   }
   const thumpF = 55 + 40 * k;
   const tEnd = Math.min(len, Math.ceil(0.25 * sr));
-  for (let i = 0; i < tEnd; i++) out[i]! += Math.sin((2 * Math.PI * thumpF * i) / sr) * cfg.thump * Math.exp(-i / (0.035 * sr)) * (0.5 + layer * 0.25);
+  for (let i = 0; i < tEnd; i++)
+    out[i]! +=
+      Math.sin((2 * Math.PI * thumpF * i) / sr) *
+      cfg.thump *
+      Math.exp(-i / (0.035 * sr)) *
+      (0.5 + layer * 0.25);
   return out;
 }
 
@@ -162,7 +259,8 @@ function renderTine(root: number, layer: 0 | 1 | 2, sr: number, seed: number): F
     let y = Math.sin(ph + I * Math.sin(ph));
     y += y * y * bark; // pickup asymmetry → the "bark" of a hard-hit tine
     if (bellF < sr * 0.45) y += Math.sin(wb * i) * bell * Math.exp(-t / 0.05);
-    const env = (0.5 * Math.exp(-t / (tau * 0.22)) + 0.5 * Math.exp(-t / tau)) * Math.min(1, t / 0.0012);
+    const env =
+      (0.5 * Math.exp(-t / (tau * 0.22)) + 0.5 * Math.exp(-t / tau)) * Math.min(1, t / 0.0012);
     dc += (y - dc) * 0.004;
     out[i] = (y - dc) * env;
   }
@@ -186,7 +284,8 @@ function renderReed(root: number, layer: 0 | 1 | 2, sr: number): Float32Array {
     const kk = Math.min(kMax, 1 + (k0 - 1) * Math.exp(-t / 0.16));
     const x = Math.sin(w * i + 0.25 * Math.sin(2 * w * i) * Math.exp(-t / 0.3));
     let y = Math.tanh(kk * x + 0.18) / Math.tanh(kk);
-    const env = (0.45 * Math.exp(-t / (tau * 0.3)) + 0.55 * Math.exp(-t / tau)) * Math.min(1, t / 0.002);
+    const env =
+      (0.45 * Math.exp(-t / (tau * 0.3)) + 0.55 * Math.exp(-t / tau)) * Math.min(1, t / 0.002);
     dc += (y - dc) * 0.004;
     y -= dc;
     out[i] = y * env;
@@ -209,17 +308,27 @@ function renderToy(root: number, layer: 0 | 1 | 2, sr: number, seed: number): Fl
     addPartial(out, sr, f0 * r, a, rand() * Math.PI * 2, t * 0.4, t, 0.3, len / sr);
   });
   const nEnd = Math.min(len, Math.ceil(0.01 * sr));
-  for (let i = 0; i < nEnd; i++) out[i]! += (rand() * 2 - 1) * 0.12 * bright * Math.exp(-i / (0.0015 * sr));
+  for (let i = 0; i < nEnd; i++)
+    out[i]! += (rand() * 2 - 1) * 0.12 * bright * Math.exp(-i / (0.0015 * sr));
   return out;
 }
 
 /** Render one piano zone (pure). Normalised so every zone and model plays at the same body level. */
-export function renderPianoNote(model: PianoModel, root: number, layer: 0 | 1 | 2, sr = PIANO_RATE): Float32Array {
+export function renderPianoNote(
+  model: PianoModel,
+  root: number,
+  layer: 0 | 1 | 2,
+  sr = PIANO_RATE,
+): Float32Array {
   const seed = root * 31 + layer * 7 + model.length * 1009;
-  const data = model === "tine" ? renderTine(root, layer, sr, seed)
-    : model === "reed" ? renderReed(root, layer, sr)
-    : model === "toy" ? renderToy(root, layer, sr, seed)
-    : renderStrings(STRINGS[model] ?? STRINGS.grand, root, layer, sr, seed);
+  const data =
+    model === "tine"
+      ? renderTine(root, layer, sr, seed)
+      : model === "reed"
+        ? renderReed(root, layer, sr)
+        : model === "toy"
+          ? renderToy(root, layer, sr, seed)
+          : renderStrings(STRINGS[model] ?? STRINGS.grand, root, layer, sr, seed);
   // body loudness over the first 0.3 s → fixed target, peak kept below full scale
   const win = Math.min(data.length, Math.round(sr * 0.3));
   let sum = 0;
@@ -247,16 +356,27 @@ const keyOf = (model: PianoModel, root: number, layer: number) => `${model}:${ro
 export function pianoPcm(model: PianoModel, root: number, layer: 0 | 1 | 2): Float32Array {
   const key = keyOf(model, root, layer);
   let d = pcm.get(key);
-  if (!d) { d = renderPianoNote(model, root, layer); pcm.set(key, d); }
+  if (!d) {
+    d = renderPianoNote(model, root, layer);
+    pcm.set(key, d);
+  }
   return d;
 }
 
-export function pianoBuffer(ctx: BaseAudioContext, model: PianoModel, midi: number, velocity: number): { buffer: AudioBuffer; root: number } {
+export function pianoBuffer(
+  ctx: BaseAudioContext,
+  model: PianoModel,
+  midi: number,
+  velocity: number,
+): { buffer: AudioBuffer; root: number } {
   const root = pianoZone(midi);
   const layer = pianoLayer(velocity);
   const key = keyOf(model, root, layer);
   let map = buffers.get(ctx);
-  if (!map) { map = new Map(); buffers.set(ctx, map); }
+  if (!map) {
+    map = new Map();
+    buffers.set(ctx, map);
+  }
   let buffer = map.get(key);
   if (!buffer) {
     const d = pianoPcm(model, root, layer);
@@ -273,11 +393,16 @@ export function warmPiano(model: PianoModel) {
   if (warming.has(model) || typeof setTimeout === "undefined") return;
   warming.add(model);
   const queue: [number, 0 | 1 | 2][] = [];
-  for (const layer of [1, 2, 0] as const) for (let r = 48; r <= 84; r += ZONE) queue.push([pianoZone(r), layer]);
-  for (const layer of [1, 2, 0] as const) for (let r = 27; r <= 105; r += ZONE) if (r < 48 || r > 84) queue.push([pianoZone(r), layer]);
+  for (const layer of [1, 2, 0] as const)
+    for (let r = 48; r <= 84; r += ZONE) queue.push([pianoZone(r), layer]);
+  for (const layer of [1, 2, 0] as const)
+    for (let r = 27; r <= 105; r += ZONE) if (r < 48 || r > 84) queue.push([pianoZone(r), layer]);
   const idle = (fn: () => void) => {
-    const ric = (globalThis as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback;
-    if (ric) ric(fn, { timeout: 400 }); else setTimeout(fn, 40);
+    const ric = (
+      globalThis as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }
+    ).requestIdleCallback;
+    if (ric) ric(fn, { timeout: 400 });
+    else setTimeout(fn, 40);
   };
   const next = () => {
     const job = queue.shift();

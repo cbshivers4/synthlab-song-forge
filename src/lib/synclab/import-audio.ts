@@ -13,7 +13,13 @@ interface ImportActions {
  * a file that can't be decoded leaves no empty channel behind.
  */
 export async function importAudioToSampler(a: ImportActions, file: File): Promise<boolean> {
-  const id = a.addTrack("sampler", file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 16));
+  const id = a.addTrack(
+    "sampler",
+    file.name
+      .replace(/\.[^.]+$/, "")
+      .toUpperCase()
+      .slice(0, 16),
+  );
   a.setPanel("sampler");
   const ok = await a.loadSample(id, file);
   if (!ok) a.removeTrack(id);

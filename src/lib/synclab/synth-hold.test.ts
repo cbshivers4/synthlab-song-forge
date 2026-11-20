@@ -1,5 +1,16 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { canHold, HELD_NOTE_SECONDS, holdApplies, isHoldOn, latchPitch, liveNoteSeconds, onHoldRelease, releaseLatched, resetSynthHold, setHold } from "./synth-hold";
+import {
+  canHold,
+  HELD_NOTE_SECONDS,
+  holdApplies,
+  isHoldOn,
+  latchPitch,
+  liveNoteSeconds,
+  onHoldRelease,
+  releaseLatched,
+  resetSynthHold,
+  setHold,
+} from "./synth-hold";
 import type { SynthPatch } from "./types";
 
 const patch = {} as SynthPatch;

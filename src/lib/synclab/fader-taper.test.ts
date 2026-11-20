@@ -21,6 +21,7 @@ describe("mixer fader taper", () => {
     expect(faderGain(1)).toBeGreaterThan(faderGain(0.9));
   });
   it("position and gain convert back and forth", () => {
-    for (const p of [0.02, 0.1, 0.3, 0.5, 0.75, 0.95]) expect(faderPosition(faderGain(p))).toBeCloseTo(p, 6);
+    for (const p of [0.02, 0.1, 0.3, 0.5, 0.75, 0.95])
+      expect(faderPosition(faderGain(p))).toBeCloseTo(p, 6);
   });
 });

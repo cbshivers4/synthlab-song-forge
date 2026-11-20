@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { BUILT_IN_PLUGINS } from "./plugins";
 import { resonatorQ } from "./audio-engine";
 
-const ids = (name: string) => BUILT_IN_PLUGINS.find(p => p.name === name)?.params.map(p => p.id) ?? [];
+const ids = (name: string) =>
+  BUILT_IN_PLUGINS.find((p) => p.name === name)?.params.map((p) => p.id) ?? [];
 
 describe("effects that share a sound engine still differ", () => {
   it("Tape Echo has tape heads, wow and saturation; Stereo Delay bounces left/right instead", () => {

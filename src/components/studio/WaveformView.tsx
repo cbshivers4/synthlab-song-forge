@@ -73,30 +73,51 @@ export const WaveformView = memo(function WaveformView({
 
       {grid &&
         [14, 28, 72, 86].map((y) => (
-          <line key={y} x1="0" y1={y} x2="1000" y2={y} stroke={color} strokeOpacity="0.08" strokeWidth="0.5" />
+          <line
+            key={y}
+            x1="0"
+            y1={y}
+            x2="1000"
+            y2={y}
+            stroke={color}
+            strokeOpacity="0.08"
+            strokeWidth="0.5"
+          />
         ))}
 
       <path d={body} fill={`url(#wv-${uid})`} />
       <path d={core} fill={color} fillOpacity="0.55" />
-      {outline && <><path
-        d={top}
-        fill="none"
+      {outline && (
+        <>
+          <path
+            d={top}
+            fill="none"
+            stroke={color}
+            strokeOpacity="0.95"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+            strokeLinejoin="round"
+          />
+          <path
+            d={bottom}
+            fill="none"
+            stroke={color}
+            strokeOpacity="0.55"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+            strokeLinejoin="round"
+          />
+        </>
+      )}
+      <line
+        x1="0"
+        y1="50"
+        x2="1000"
+        y2="50"
         stroke={color}
-        strokeOpacity="0.95"
-        strokeWidth="1"
-        vectorEffect="non-scaling-stroke"
-        strokeLinejoin="round"
+        strokeOpacity="0.35"
+        strokeWidth="0.5"
       />
-      <path
-        d={bottom}
-        fill="none"
-        stroke={color}
-        strokeOpacity="0.55"
-        strokeWidth="1"
-        vectorEffect="non-scaling-stroke"
-        strokeLinejoin="round"
-      /></>}
-      <line x1="0" y1="50" x2="1000" y2="50" stroke={color} strokeOpacity="0.35" strokeWidth="0.5" />
     </svg>
   );
 });

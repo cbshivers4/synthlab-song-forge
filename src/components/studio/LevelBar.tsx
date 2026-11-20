@@ -1,4 +1,12 @@
-import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import {
+  levelColor,
+  peakOf,
+  spectrumColor,
+  dbColor,
+  LEVEL_GREEN,
+  LEVEL_ORANGE,
+  LEVEL_RED,
+} from "@/lib/synclab/level-colors";
 import { useEffect, useRef } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
@@ -36,7 +44,12 @@ export function LevelBar({
     let smooth = 0;
     const loop = () => {
       const engine = getEngine();
-      const raw = source === "input" ? engine.inputLevel() : id === "master" ? engine.getLevel() : engine.getTrackLevel(id);
+      const raw =
+        source === "input"
+          ? engine.inputLevel()
+          : id === "master"
+            ? engine.getLevel()
+            : engine.getTrackLevel(id);
       smooth = raw > smooth ? raw : smooth * 0.86;
       reportLevel(id, raw);
       const node = fill.current;
@@ -74,7 +87,7 @@ export function LevelBar({
         }}
         className={cn(
           "shrink-0 rounded-[2px] px-1 font-mono text-[8px] font-bold uppercase leading-[14px] tracking-wider transition-colors",
-          clipped ? "animate-pulse bg-red-500 text-black" : "bg-black/40 text-muted-foreground"
+          clipped ? "animate-pulse bg-red-500 text-black" : "bg-black/40 text-muted-foreground",
         )}
       >
         CLIP

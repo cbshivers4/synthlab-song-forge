@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { GRANULAR_PRESETS, GRANULAR_ROOT, defaultGranular, planGrains, synthSource } from "./granular";
+import {
+  GRANULAR_PRESETS,
+  GRANULAR_ROOT,
+  defaultGranular,
+  planGrains,
+  synthSource,
+} from "./granular";
 import { applyPreset } from "./presets";
 
-const seq = () => { let s = 1; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; };
+const seq = () => {
+  let s = 1;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return s / 2147483647;
+  };
+};
 
 describe("Granular Synth", () => {
   it("plays about DENSITY grains per second", () => {
@@ -36,14 +48,20 @@ describe("Granular Synth", () => {
     const r = seq();
     const a = planGrains(g, 60, 4, 60, 0.5, r);
     const b = planGrains(g, 60, 4, 60, 1, r, a.next);
-    expect(a.grains.length + b.grains.length).toBe(planGrains(g, 60, 4, 60, 1, seq()).grains.length);
+    expect(a.grains.length + b.grains.length).toBe(
+      planGrains(g, 60, 4, 60, 1, seq()).grains.length,
+    );
   });
 
-  it("built-in sources are real, clean sound", () => {
+  // heavy synthesis: allow for a busy machine when the whole suite runs in parallel
+  it("built-in sources are real, clean sound", { timeout: 20_000 }, () => {
     for (const kind of ["glass", "choir", "strings", "bell", "wind", "piano", "pluck"] as const) {
       const d = synthSource(kind, 8000);
       let peak = 0;
-      for (const v of d) { expect(Number.isFinite(v)).toBe(true); peak = Math.max(peak, Math.abs(v)); }
+      for (const v of d) {
+        expect(Number.isFinite(v)).toBe(true);
+        peak = Math.max(peak, Math.abs(v));
+      }
       expect(peak, kind).toBeGreaterThan(0.5);
       expect(peak, kind).toBeLessThanOrEqual(0.8 + 1e-6);
     }

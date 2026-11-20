@@ -102,7 +102,11 @@ export function collectDiagnostics(extra: Record<string, unknown> = {}): Record<
         : /iPhone|iPad/i.test(ua)
           ? "iOS"
           : "Other";
-  const device = /iPhone|Android.*Mobile/i.test(ua) ? "Phone" : /iPad|Tablet/i.test(ua) ? "Tablet" : "Desktop";
+  const device = /iPhone|Android.*Mobile/i.test(ua)
+    ? "Phone"
+    : /iPad|Tablet/i.test(ua)
+      ? "Tablet"
+      : "Desktop";
   return {
     version: SYNCLAB_VERSION,
     runtime: "Web browser (SYNCLAB Desktop not installed)",

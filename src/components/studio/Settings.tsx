@@ -27,7 +27,15 @@ import {
   onDeviceChange,
 } from "@/lib/synclab/mic";
 import { midiSupported, midiUnsupportedMessage, toggleMidiInput } from "@/lib/synclab/midi";
-import { getInputChannel, getInputGainDb, outputRoutingHint, setInputChannel, setInputGainDb, setOutputDevice, type InputChannel } from "@/lib/synclab/mic";
+import {
+  getInputChannel,
+  getInputGainDb,
+  outputRoutingHint,
+  setInputChannel,
+  setInputGainDb,
+  setOutputDevice,
+  type InputChannel,
+} from "@/lib/synclab/mic";
 import { useIsAppleMobile } from "@/hooks/use-is-apple-mobile";
 import { openExport } from "@/components/studio/ExportDialog";
 import { DesktopPanel } from "@/components/studio/DesktopPanel";
@@ -35,18 +43,34 @@ import { PluginManager } from "@/components/studio/PluginManager";
 import { AudioInterfaceCard } from "@/components/studio/AudioInterfaceCard";
 import { connectedInterface } from "@/lib/synclab/audio-interface-detect";
 import { BluetoothDevices } from "@/components/studio/BluetoothDevices";
-import { replayMobileTour, saveMobileAccessibility, useMobileAccessibility } from "@/lib/synclab/mobile-accessibility";
+import {
+  replayMobileTour,
+  saveMobileAccessibility,
+  useMobileAccessibility,
+} from "@/lib/synclab/mobile-accessibility";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MidiSettingsPanel } from "./MidiSettingsPanel";
 import { LibraryPanel } from "./LibraryPanel";
 import { useApp } from "@/lib/synclab/app-state";
 import { usePlan } from "@/lib/synclab/plan";
-import { qwertyEnabled, setQwertyEnabled, qwertyOctave, setQwertyOctave } from "@/lib/synclab/qwerty";
+import {
+  qwertyEnabled,
+  setQwertyEnabled,
+  qwertyOctave,
+  setQwertyOctave,
+} from "@/lib/synclab/qwerty";
 import { notifyPreferencesChanged } from "@/lib/synclab/preferences";
 import { Bluetooth, Mic } from "lucide-react";
 import { SettingsDiagnostics } from "./SettingsDiagnostics";
 import { KeyboardShortcuts } from "./KeyboardShortcuts";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteMyAccount } from "@/utils/account.functions";
@@ -139,7 +163,15 @@ function punchLabel(step: number | null | undefined) {
   return `Bar ${Math.floor(step / spb) + 1}, beat ${Math.floor((step % spb) / 4) + 1}`;
 }
 
-function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Row({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="settings-row grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 py-2.5 last:border-0">
       <div className="min-w-0">
@@ -195,7 +227,14 @@ function Num({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <Slider className="w-32" value={[value]} min={min} max={max} step={step} onValueChange={([v = 0]) => onChange(v)} />
+      <Slider
+        className="w-32"
+        value={[value]}
+        min={min}
+        max={max}
+        step={step}
+        onValueChange={([v = 0]) => onChange(v)}
+      />
       <span className="w-16 text-right font-mono text-xs text-primary">
         {value}
         {unit ? ` ${unit}` : ""}
@@ -209,7 +248,20 @@ function LatencyOffset() {
   useEffect(() => setMs(getInputLatencyMs()), []);
   return (
     <label className="flex items-center gap-2 text-xs">
-      <input type="range" min={0} max={300} step={1} value={ms} aria-label="Mic recording offset in milliseconds" onChange={(e) => { const v = Number(e.target.value); setMs(v); setInputLatencyMs(v); }} className="w-32 accent-primary" />
+      <input
+        type="range"
+        min={0}
+        max={300}
+        step={1}
+        value={ms}
+        aria-label="Mic recording offset in milliseconds"
+        onChange={(e) => {
+          const v = Number(e.target.value);
+          setMs(v);
+          setInputLatencyMs(v);
+        }}
+        className="w-32 accent-primary"
+      />
       <span className="w-12 text-right text-primary">{ms} ms</span>
     </label>
   );
@@ -218,7 +270,8 @@ function LatencyOffset() {
 export function Settings() {
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState("audio");
-  const { transport, setTransport, midiInputs, midiInputId, enableMidi, setMidiInput, setPanel } = useStudio();
+  const { transport, setTransport, midiInputs, midiInputId, enableMidi, setMidiInput, setPanel } =
+    useStudio();
   const { setStage, setSignedIn } = useApp();
   const deleteAccountFn = useServerFn(deleteMyAccount);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -234,7 +287,9 @@ export function Settings() {
       setSignedIn(false);
       setDeleteOpen(false);
       setStage("welcome");
-      toast.success("Your account has been deleted", { description: "Your projects, files and subscription record were removed." });
+      toast.success("Your account has been deleted", {
+        description: "Your projects, files and subscription record were removed.",
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not delete your account. Try again.");
       setDeleting(false);
@@ -244,25 +299,38 @@ export function Settings() {
   const [typing, setTyping] = useState(true);
   const [octave, setOctave] = useState(4);
   useEffect(() => {
-    const sync = () => { setTyping(qwertyEnabled()); setOctave(qwertyOctave()); };
-    sync(); window.addEventListener("synclab:qwerty", sync);
+    const sync = () => {
+      setTyping(qwertyEnabled());
+      setOctave(qwertyOctave());
+    };
+    sync();
+    window.addEventListener("synclab:qwerty", sync);
     return () => window.removeEventListener("synclab:qwerty", sync);
   }, []);
   const [p, setP] = useState<Prefs>(DEFAULTS);
   const apple = useIsAppleMobile();
   const [inChan, setInChan] = useState<InputChannel>("stereo");
   const [inGain, setInGain] = useState(0);
-  useEffect(() => { setInChan(getInputChannel()); setInGain(getInputGainDb()); }, []);
+  useEffect(() => {
+    setInChan(getInputChannel());
+    setInGain(getInputGainDb());
+  }, []);
   const [inputs, setInputs] = useState<{ id: string; label: string }[]>([]);
   const [outputs, setOutputs] = useState<{ id: string; label: string }[]>([]);
   const [scanning, setScanning] = useState(false);
   const interfaceName = connectedInterface(inputs, outputs, p.inputDevice);
   const mobilePrefs = useMobileAccessibility();
   const [hapticsAvailable, setHapticsAvailable] = useState(false);
-  useEffect(() => { setHapticsAvailable(typeof navigator !== "undefined" && typeof navigator.vibrate === "function"); }, []);
+  useEffect(() => {
+    setHapticsAvailable(
+      typeof navigator !== "undefined" && typeof navigator.vibrate === "function",
+    );
+  }, []);
   const midiRef = useRef(midiInputs);
   midiRef.current = midiInputs;
-  useEffect(() => { if (isMobile) setActiveTab((tab) => tab === "shortcuts" ? tab : "mobile"); }, [isMobile]);
+  useEffect(() => {
+    if (isMobile) setActiveTab((tab) => (tab === "shortcuts" ? tab : "mobile"));
+  }, [isMobile]);
   useEffect(() => {
     const open = () => setActiveTab("shortcuts");
     if (sessionStorage.getItem("synclab.settings.shortcuts") === "open") {
@@ -310,8 +378,12 @@ export function Settings() {
         res.stream.getTracks().forEach((t) => t.stop());
       }
       const list = await listAudioDevices();
-      const ins = list.filter((d) => d.kind === "audioinput").map((d) => ({ id: d.id, label: d.label }));
-      const outs = list.filter((d) => d.kind === "audiooutput").map((d) => ({ id: d.id, label: d.label }));
+      const ins = list
+        .filter((d) => d.kind === "audioinput")
+        .map((d) => ({ id: d.id, label: d.label }));
+      const outs = list
+        .filter((d) => d.kind === "audiooutput")
+        .map((d) => ({ id: d.id, label: d.label }));
       setInputs(ins);
       setOutputs(outs);
       const chosen = getPreferredInput();
@@ -383,17 +455,92 @@ export function Settings() {
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="grid min-w-0 w-full grid-cols-1 gap-x-4 overflow-x-hidden sm:grid-cols-[148px_minmax(0,1fr)] [&>[role=tabpanel]]:min-w-0 sm:[&>[role=tabpanel]]:col-start-2 sm:[&>[role=tabpanel]]:row-start-2">
+    <Tabs
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="grid min-w-0 w-full grid-cols-1 gap-x-4 overflow-x-hidden sm:grid-cols-[148px_minmax(0,1fr)] [&>[role=tabpanel]]:min-w-0 sm:[&>[role=tabpanel]]:col-start-2 sm:[&>[role=tabpanel]]:row-start-2"
+    >
       <div className="col-span-full mb-2 flex flex-wrap gap-2">
-        {<Button variant="secondary" className="h-12 gap-2 whitespace-nowrap" disabled={scanning} onClick={() => { setActiveTab("audio"); void scanDevices(true); }}><Mic className="size-4" /> {scanning ? "Connecting…" : "Enable microphone"}</Button>}
-        <Button variant="outline" className="gap-2" onClick={() => setActiveTab("audio")}><Bluetooth className="size-4" /> Bluetooth devices</Button>
-        <Button variant="outline" onClick={() => setActiveTab("diagnostics")}>Diagnostics</Button>
-        <Button variant="outline" onClick={() => setActiveTab("shortcuts")}>Keyboard shortcuts</Button>
+        {
+          <Button
+            variant="secondary"
+            className="h-12 gap-2 whitespace-nowrap"
+            disabled={scanning}
+            onClick={() => {
+              setActiveTab("audio");
+              void scanDevices(true);
+            }}
+          >
+            <Mic className="size-4" /> {scanning ? "Connecting…" : "Enable microphone"}
+          </Button>
+        }
+        <Button variant="outline" className="gap-2" onClick={() => setActiveTab("audio")}>
+          <Bluetooth className="size-4" /> Bluetooth devices
+        </Button>
+        <Button variant="outline" onClick={() => setActiveTab("diagnostics")}>
+          Diagnostics
+        </Button>
+        <Button variant="outline" onClick={() => setActiveTab("shortcuts")}>
+          Keyboard shortcuts
+        </Button>
       </div>
       <TabsList className="flex h-auto max-w-full flex-nowrap justify-start gap-1 overflow-x-auto rounded-none bg-surface sm:col-start-1 sm:row-start-2 sm:flex-col sm:items-stretch sm:self-start sm:overflow-x-hidden">
-        {(isMobile ? ["mobile", "general", "shortcuts", "browsing", "audio", "midi", "sync", "controls", "folders", "account", "recording", "metronome", "timing", "timeline", "mixing", "export", "desktop", "diagnostics"] : ["general", "shortcuts", "browsing", "audio", "midi", "sync", "controls", "folders", "account", "recording", "metronome", "timing", "timeline", "mixing", "export", "desktop", "mobile", "diagnostics"]).map((t) => (
-          <TabsTrigger key={t} value={t} className="min-h-9 justify-start rounded-none px-3 text-xs sm:w-full">
-            {t === "shortcuts" ? "Keyboard shortcuts" : t === "mobile" && isMobile ? "Phone features" : t === "general" ? "User interface" : t === "controls" ? "Other controls" : t}
+        {(isMobile
+          ? [
+              "mobile",
+              "general",
+              "shortcuts",
+              "browsing",
+              "audio",
+              "midi",
+              "sync",
+              "controls",
+              "folders",
+              "account",
+              "recording",
+              "metronome",
+              "timing",
+              "timeline",
+              "mixing",
+              "export",
+              "desktop",
+              "diagnostics",
+            ]
+          : [
+              "general",
+              "shortcuts",
+              "browsing",
+              "audio",
+              "midi",
+              "sync",
+              "controls",
+              "folders",
+              "account",
+              "recording",
+              "metronome",
+              "timing",
+              "timeline",
+              "mixing",
+              "export",
+              "desktop",
+              "mobile",
+              "diagnostics",
+            ]
+        ).map((t) => (
+          <TabsTrigger
+            key={t}
+            value={t}
+            className="min-h-9 justify-start rounded-none px-3 text-xs sm:w-full"
+          >
+            {t === "shortcuts"
+              ? "Keyboard shortcuts"
+              : t === "mobile" && isMobile
+                ? "Phone features"
+                : t === "general"
+                  ? "User interface"
+                  : t === "controls"
+                    ? "Other controls"
+                    : t}
           </TabsTrigger>
         ))}
       </TabsList>
@@ -401,7 +548,9 @@ export function Settings() {
       <TabsContent value="diagnostics" className="mt-4">
         <SettingsDiagnostics />
       </TabsContent>
-      <TabsContent value="shortcuts" className="mt-4"><KeyboardShortcuts /></TabsContent>
+      <TabsContent value="shortcuts" className="mt-4">
+        <KeyboardShortcuts />
+      </TabsContent>
 
       <TabsContent value="audio" className="mt-4">
         <BluetoothDevices
@@ -428,7 +577,14 @@ export function Settings() {
                 setOutputDevice(match?.id ?? null);
                 toast.success(`Output set to ${label}`);
               })
-              .catch((e: unknown) => toast.error("Couldn't change output", { description: e instanceof Error ? e.message : "This browser plays through your system output — pick the Bluetooth device in system sound settings." }));
+              .catch((e: unknown) =>
+                toast.error("Couldn't change output", {
+                  description:
+                    e instanceof Error
+                      ? e.message
+                      : "This browser plays through your system output — pick the Bluetooth device in system sound settings.",
+                }),
+              );
           }}
         />
         {/* Interface details only when one is actually plugged in — built-in mics and Bluetooth aren't interfaces. */}
@@ -460,25 +616,45 @@ export function Settings() {
               set("inputDevice", v);
               const match = inputs.find((d) => d.label === v);
               setPreferredInput(v === "System default" || !match ? null : match.id);
-              toast.success(v === "System default" ? "Using the system input" : `Input set to ${v}`);
+              toast.success(
+                v === "System default" ? "Using the system input" : `Input set to ${v}`,
+              );
             }}
           />
         </Row>
         {interfaceName && (
-        <Row label="Input channel" hint="Pick input 1 or 2 of your interface, or record both as stereo">
-          <Pick
-            value={inChan === "in1" ? "Input 1 (mono)" : inChan === "in2" ? "Input 2 (mono)" : "Stereo (1+2)"}
-            options={["Input 1 (mono)", "Input 2 (mono)", "Stereo (1+2)"]}
-            onChange={(v) => {
-              const c = v.startsWith("Input 1") ? "in1" : v.startsWith("Input 2") ? "in2" : "stereo";
-              setInChan(c);
-              setInputChannel(c);
-              toast.success("Input channel saved", { description: "Disarm and re-arm the track to apply it." });
-            }}
-          />
-        </Row>
+          <Row
+            label="Input channel"
+            hint="Pick input 1 or 2 of your interface, or record both as stereo"
+          >
+            <Pick
+              value={
+                inChan === "in1"
+                  ? "Input 1 (mono)"
+                  : inChan === "in2"
+                    ? "Input 2 (mono)"
+                    : "Stereo (1+2)"
+              }
+              options={["Input 1 (mono)", "Input 2 (mono)", "Stereo (1+2)"]}
+              onChange={(v) => {
+                const c = v.startsWith("Input 1")
+                  ? "in1"
+                  : v.startsWith("Input 2")
+                    ? "in2"
+                    : "stereo";
+                setInChan(c);
+                setInputChannel(c);
+                toast.success("Input channel saved", {
+                  description: "Disarm and re-arm the track to apply it.",
+                });
+              }}
+            />
+          </Row>
         )}
-        <Row label="Input gain" hint={`${inGain > 0 ? "+" : ""}${inGain} dB — applied before the meter and the recording`}>
+        <Row
+          label="Input gain"
+          hint={`${inGain > 0 ? "+" : ""}${inGain} dB — applied before the meter and the recording`}
+        >
           <Slider
             className="w-40"
             value={[inGain]}
@@ -518,7 +694,11 @@ export function Settings() {
                   setOutputDevice(id);
                   toast.success(`Output set to ${v}`);
                 })
-                .catch((e: unknown) => toast.error("Couldn't change output", { description: e instanceof Error ? e.message : undefined }));
+                .catch((e: unknown) =>
+                  toast.error("Couldn't change output", {
+                    description: e instanceof Error ? e.message : undefined,
+                  }),
+                );
             }}
           />
         </Row>
@@ -526,12 +706,19 @@ export function Settings() {
           label="Detect hardware"
           hint="Browsers only reveal device names after you allow microphone access"
         >
-          <Button size="sm" variant="secondary" disabled={scanning} onClick={() => void scanDevices(true)}>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={scanning}
+            onClick={() => void scanDevices(true)}
+          >
             {scanning ? "Scanning…" : "Detect devices"}
           </Button>
         </Row>
         <Row label="Sample rate" hint="Set by your device and browser">
-          <span className="font-mono text-sm text-primary">{getEngine().ctx ? `${getEngine().sampleRate} Hz` : "Shown once audio starts"}</span>
+          <span className="font-mono text-sm text-primary">
+            {getEngine().ctx ? `${getEngine().sampleRate} Hz` : "Shown once audio starts"}
+          </span>
         </Row>
         <Row label="Input monitoring" hint="Hear yourself while recording">
           <Switch
@@ -542,50 +729,120 @@ export function Settings() {
             }}
           />
         </Row>
-        <Row label="Audio buffer" hint="Managed by the browser and operating system; no ASIO/Core Audio buffer control is available."><span className="text-xs text-muted-foreground">Automatic</span></Row>
-        <Row label="Output latency" hint="Device-reported estimate; round-trip recording latency is not measured."><span className="text-xs text-primary">{getEngine().ctx ? `${Math.round(((getEngine().ctx?.baseLatency ?? 0) + (getEngine().ctx?.outputLatency ?? 0)) * 1000)} ms` : "Start playback to measure"}</span></Row>
-        <Row label="Mic recording offset" hint="Shifts new mic takes earlier to cancel your interface/mic delay. Raise it if vocals land behind the beat."><LatencyOffset /></Row>
-        <Row label="Master tuning / background audio" hint="Global tuning is not implemented. Phones and browsers may suspend background playback."><span className="text-xs text-muted-foreground">Not available</span></Row>
+        <Row
+          label="Audio buffer"
+          hint="Managed by the browser and operating system; no ASIO/Core Audio buffer control is available."
+        >
+          <span className="text-xs text-muted-foreground">Automatic</span>
+        </Row>
+        <Row
+          label="Output latency"
+          hint="Device-reported estimate; round-trip recording latency is not measured."
+        >
+          <span className="text-xs text-primary">
+            {getEngine().ctx
+              ? `${Math.round(((getEngine().ctx?.baseLatency ?? 0) + (getEngine().ctx?.outputLatency ?? 0)) * 1000)} ms`
+              : "Start playback to measure"}
+          </span>
+        </Row>
+        <Row
+          label="Mic recording offset"
+          hint="Shifts new mic takes earlier to cancel your interface/mic delay. Raise it if vocals land behind the beat."
+        >
+          <LatencyOffset />
+        </Row>
+        <Row
+          label="Master tuning / background audio"
+          hint="Global tuning is not implemented. Phones and browsers may suspend background playback."
+        >
+          <span className="text-xs text-muted-foreground">Not available</span>
+        </Row>
       </TabsContent>
 
       <TabsContent value="recording" className="mt-4">
-        <Row label="Audio record" hint="Records only the armed track's selected input — never other tracks, previews or browser audio">
+        <Row
+          label="Audio record"
+          hint="Records only the armed track's selected input — never other tracks, previews or browser audio"
+        >
           <span className="font-mono text-xs text-muted-foreground">ARM + REC</span>
         </Row>
         <Row label="Resample / bounce" hint="Render tracks or the master to a file">
-          <Button size="sm" variant="secondary" onClick={openExport}>Open export</Button>
+          <Button size="sm" variant="secondary" onClick={openExport}>
+            Open export
+          </Button>
         </Row>
         <Row label="Replace overlapping takes">
-          <Switch checked={Boolean(transport.replace)} onCheckedChange={(v) => setTransport({ replace: v })} />
+          <Switch
+            checked={Boolean(transport.replace)}
+            onCheckedChange={(v) => setTransport({ replace: v })}
+          />
         </Row>
         <Row label="Loop recording">
-          <Switch checked={Boolean(transport.loop)} onCheckedChange={(v) => setTransport({ loop: v })} />
+          <Switch
+            checked={Boolean(transport.loop)}
+            onCheckedChange={(v) => setTransport({ loop: v })}
+          />
         </Row>
         <Row label="Overdub">
-          <Switch checked={Boolean(transport.overdub)} onCheckedChange={(v) => setTransport({ overdub: v })} />
+          <Switch
+            checked={Boolean(transport.overdub)}
+            onCheckedChange={(v) => setTransport({ overdub: v })}
+          />
         </Row>
         <Row label="Punch in" hint="Recording starts at this position">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs text-primary">{punchLabel(transport.punchIn)}</span>
-            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchIn: getPlayStep() })}>Set at playhead</Button>
-            <Button size="sm" variant="ghost" disabled={transport.punchIn == null} onClick={() => setTransport({ punchIn: null, punchOut: null })}>Clear</Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setTransport({ punchIn: getPlayStep() })}
+            >
+              Set at playhead
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={transport.punchIn == null}
+              onClick={() => setTransport({ punchIn: null, punchOut: null })}
+            >
+              Clear
+            </Button>
           </div>
         </Row>
         <Row label="Punch out" hint="Recording stops at this position">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs text-primary">{punchLabel(transport.punchOut)}</span>
-            <Button size="sm" variant="secondary" onClick={() => setTransport({ punchOut: getPlayStep() })}>Set at playhead</Button>
-            <Button size="sm" variant="ghost" disabled={transport.punchOut == null} onClick={() => setTransport({ punchOut: null })}>Clear</Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setTransport({ punchOut: getPlayStep() })}
+            >
+              Set at playhead
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={transport.punchOut == null}
+              onClick={() => setTransport({ punchOut: null })}
+            >
+              Clear
+            </Button>
           </div>
         </Row>
       </TabsContent>
 
       <TabsContent value="metronome" className="mt-4">
         <Row label="Metronome">
-          <Switch checked={transport.metronome} onCheckedChange={(v) => setTransport({ metronome: v })} />
+          <Switch
+            checked={transport.metronome}
+            onCheckedChange={(v) => setTransport({ metronome: v })}
+          />
         </Row>
         <Row label="Count-in">
-          <Switch checked={Boolean(transport.countIn)} onCheckedChange={(v) => setTransport({ countIn: v })} />
+          <Switch
+            checked={Boolean(transport.countIn)}
+            onCheckedChange={(v) => setTransport({ countIn: v })}
+          />
         </Row>
         <Row label="Count-in length">
           <Pick
@@ -599,50 +856,140 @@ export function Settings() {
           />
         </Row>
         <Row label="Count-in click" hint="Metronome click during the count-in">
-          <Switch checked={transport.countInClick !== false} onCheckedChange={(countInClick) => setTransport({ countInClick })} />
+          <Switch
+            checked={transport.countInClick !== false}
+            onCheckedChange={(countInClick) => setTransport({ countInClick })}
+          />
         </Row>
-        <Row label="Count-in vibration" hint={hapticsAvailable ? "Haptic pulse on each count-in beat" : "Vibration unavailable in this browser"}>
-          <Switch disabled={!hapticsAvailable} checked={hapticsAvailable && !!transport.countInHaptics} onCheckedChange={(countInHaptics) => setTransport({ countInHaptics })} />
+        <Row
+          label="Count-in vibration"
+          hint={
+            hapticsAvailable
+              ? "Haptic pulse on each count-in beat"
+              : "Vibration unavailable in this browser"
+          }
+        >
+          <Switch
+            disabled={!hapticsAvailable}
+            checked={hapticsAvailable && !!transport.countInHaptics}
+            onCheckedChange={(countInHaptics) => setTransport({ countInHaptics })}
+          />
         </Row>
         <Row label="Click sound">
-          <Pick value={p.clickSound} options={["Detroit Rim", "Click", "Cowbell", "Sidestick", "Beep"]} onChange={(v) => set("clickSound", v)} />
+          <Pick
+            value={p.clickSound}
+            options={["Detroit Rim", "Click", "Cowbell", "Sidestick", "Beep"]}
+            onChange={(v) => set("clickSound", v)}
+          />
         </Row>
         <Row label="Click level">
-          <Num value={Math.round(p.clickLevel * 100)} min={0} max={100} unit="%" onChange={(v) => set("clickLevel", v / 100)} />
+          <Num
+            value={Math.round(p.clickLevel * 100)}
+            min={0}
+            max={100}
+            unit="%"
+            onChange={(v) => set("clickLevel", v / 100)}
+          />
         </Row>
         <Row label="Click during playback" hint="Off = click only while recording">
-          <Switch checked={p.clickWhilePlaying} onCheckedChange={(v) => set("clickWhilePlaying", v)} />
+          <Switch
+            checked={p.clickWhilePlaying}
+            onCheckedChange={(v) => set("clickWhilePlaying", v)}
+          />
         </Row>
       </TabsContent>
 
       <TabsContent value="timing" className="mt-4">
         <Row label="Tempo">
-          <Num value={transport.bpm} min={60} max={190} unit="BPM" onChange={(v) => setTransport({ bpm: v })} />
+          <Num
+            value={transport.bpm}
+            min={60}
+            max={190}
+            unit="BPM"
+            onChange={(v) => setTransport({ bpm: v })}
+          />
         </Row>
         <Row label="Swing">
-          <Num value={Math.round(transport.swing * 100)} min={0} max={60} unit="%" onChange={(v) => setTransport({ swing: v / 100 })} />
+          <Num
+            value={Math.round(transport.swing * 100)}
+            min={0}
+            max={60}
+            unit="%"
+            onChange={(v) => setTransport({ swing: v / 100 })}
+          />
         </Row>
-        <Row label="Beats per bar" hint="Quarter-note beats shared by the ruler, metronome and looper"><Num value={transport.beatsPerBar ?? 4} min={1} max={12} onChange={(beatsPerBar) => setTransport({ beatsPerBar })} /></Row>
-        <Row label="Grid and note quantize"><Button variant="secondary" onClick={() => setActiveTab("timeline")}>Timeline settings</Button></Row>
-        <Row label="Project key / scale lock" hint="Set the key in project setup and use the piano roll's scale controls."><Button variant="secondary" onClick={() => setPanel("piano")}>Piano roll</Button></Row>
+        <Row
+          label="Beats per bar"
+          hint="Quarter-note beats shared by the ruler, metronome and looper"
+        >
+          <Num
+            value={transport.beatsPerBar ?? 4}
+            min={1}
+            max={12}
+            onChange={(beatsPerBar) => setTransport({ beatsPerBar })}
+          />
+        </Row>
+        <Row label="Grid and note quantize">
+          <Button variant="secondary" onClick={() => setActiveTab("timeline")}>
+            Timeline settings
+          </Button>
+        </Row>
+        <Row
+          label="Project key / scale lock"
+          hint="Set the key in project setup and use the piano roll's scale controls."
+        >
+          <Button variant="secondary" onClick={() => setPanel("piano")}>
+            Piano roll
+          </Button>
+        </Row>
       </TabsContent>
 
       <TabsContent value="timeline" className="mt-4">
         <Row label="Snap grid" hint="Used when you move or trim clips on the timeline">
           <Pick
             value={
-              ({ 0: "Off", 1: "1/16 note", 2: "1/8 note", 4: "1/4 note", 8: "Half note" } as Record<number, string>)[transport.snap ?? 1] ?? "Bar"
+              (
+                {
+                  0: "Off",
+                  1: "1/16 note",
+                  2: "1/8 note",
+                  4: "1/4 note",
+                  8: "Half note",
+                } as Record<number, string>
+              )[transport.snap ?? 1] ?? "Bar"
             }
             options={["Off", "1/16 note", "1/8 note", "1/4 note", "Half note", "Bar"]}
-            onChange={(v) => setTransport({ snap: ({ Off: 0, "1/16 note": 1, "1/8 note": 2, "1/4 note": 4, "Half note": 8 } as Record<string, number>)[v] ?? stepsPerBar() })}
+            onChange={(v) =>
+              setTransport({
+                snap:
+                  (
+                    {
+                      Off: 0,
+                      "1/16 note": 1,
+                      "1/8 note": 2,
+                      "1/4 note": 4,
+                      "Half note": 8,
+                    } as Record<string, number>
+                  )[v] ?? stepsPerBar(),
+              })
+            }
             width="w-28"
           />
         </Row>
         <Row label="Follow playhead" hint="Scrolls the timeline to keep the playhead in view">
-          <Switch checked={!!transport.follow} onCheckedChange={(v) => setTransport({ follow: v })} />
+          <Switch
+            checked={!!transport.follow}
+            onCheckedChange={(v) => setTransport({ follow: v })}
+          />
         </Row>
         <Row label="Timeline length">
-          <Num value={transport.bars ?? 4} min={1} max={512} unit="bars" onChange={(v) => setTransport({ bars: v })} />
+          <Num
+            value={transport.bars ?? 4}
+            min={1}
+            max={512}
+            unit="bars"
+            onChange={(v) => setTransport({ bars: v })}
+          />
         </Row>
         <Row label="Loop playback">
           <Switch checked={transport.loop} onCheckedChange={(v) => setTransport({ loop: v })} />
@@ -655,28 +1002,70 @@ export function Settings() {
           <Switch checked={p.midiThru} onCheckedChange={(v) => set("midiThru", v)} />
         </Row>
         <Row label="Velocity curve">
-          <Pick value={p.velocityCurve} options={["Linear", "Soft", "Hard", "Fixed 100"]} onChange={(v) => set("velocityCurve", v)} />
+          <Pick
+            value={p.velocityCurve}
+            options={["Linear", "Soft", "Hard", "Fixed 100"]}
+            onChange={(v) => set("velocityCurve", v)}
+          />
         </Row>
         <Row label="Pitch bend range">
-          <Num value={p.pitchBendRange} min={1} max={24} unit="st" onChange={(v) => set("pitchBendRange", v)} />
+          <Num
+            value={p.pitchBendRange}
+            min={1}
+            max={24}
+            unit="st"
+            onChange={(v) => set("pitchBendRange", v)}
+          />
         </Row>
       </TabsContent>
 
       <TabsContent value="mixing" className="mt-4">
-        <Row label="Master effects" hint="Limiter ceiling, compression, EQ and width use the real master effect chain."><Button variant="secondary" onClick={() => setPanel("mixer")}>Open mixer</Button></Row>
-        <Row label="Mastering"><Button variant="secondary" onClick={() => setPanel("mastering")}>Open mastering</Button></Row>
-        <Row label="Pan law / headroom target" hint="Global pan-law and headroom-target preferences are not implemented."><span className="text-xs text-muted-foreground">Not available</span></Row>
+        <Row
+          label="Master effects"
+          hint="Limiter ceiling, compression, EQ and width use the real master effect chain."
+        >
+          <Button variant="secondary" onClick={() => setPanel("mixer")}>
+            Open mixer
+          </Button>
+        </Row>
+        <Row label="Mastering">
+          <Button variant="secondary" onClick={() => setPanel("mastering")}>
+            Open mastering
+          </Button>
+        </Row>
+        <Row
+          label="Pan law / headroom target"
+          hint="Global pan-law and headroom-target preferences are not implemented."
+        >
+          <span className="text-xs text-muted-foreground">Not available</span>
+        </Row>
       </TabsContent>
 
       <TabsContent value="export" className="mt-4">
         <Row label="Export format">
-          <Pick value={p.exportFormat} options={["WAV 16-bit", "WAV 24-bit", "WAV 32 float", "MP3 320", "FLAC"]} onChange={(v) => set("exportFormat", v)} width="w-44" />
+          <Pick
+            value={p.exportFormat}
+            options={["WAV 16-bit", "WAV 24-bit", "WAV 32 float", "MP3 320", "FLAC"]}
+            onChange={(v) => set("exportFormat", v)}
+            width="w-44"
+          />
         </Row>
         <Row label="Export sample rate">
-          <Pick value={p.exportRate} options={["44.1 kHz", "48 kHz", "96 kHz"]} onChange={(v) => set("exportRate", v)} width="w-32" />
+          <Pick
+            value={p.exportRate}
+            options={["44.1 kHz", "48 kHz", "96 kHz"]}
+            onChange={(v) => set("exportRate", v)}
+            width="w-32"
+          />
         </Row>
         <Row label="Tail length" hint="Extra time for reverb and delay to ring out">
-          <Num value={p.exportTail} min={0} max={10} unit="s" onChange={(v) => set("exportTail", v)} />
+          <Num
+            value={p.exportTail}
+            min={0}
+            max={10}
+            unit="s"
+            onChange={(v) => set("exportTail", v)}
+          />
         </Row>
         <Row label="Normalize on export">
           <Switch checked={p.normalizeExport} onCheckedChange={(v) => set("normalizeExport", v)} />
@@ -684,49 +1073,157 @@ export function Settings() {
       </TabsContent>
 
       <TabsContent value="browsing" className="mt-4">
-        <Row label="Sound browser"><Button variant="secondary" onClick={() => setPanel("browser")}>Open sound browser</Button></Row>
-        <Row label="Default song / templates" hint="Choose an existing saved template or starter song. Opening a new project discards unsaved edits."><Button variant="secondary" onClick={() => { if (window.confirm("Open project setup? Save your current song first; unsaved changes will be lost.")) setStage("start"); }}>Projects & templates</Button></Row>
-        <Row label="Stretch imported audio" hint="Manual stretching is available in the clip editor. Automatic import stretching, cloud-folder mounts and default-sound sorting are not implemented."><span className="text-xs text-muted-foreground">Manual only</span></Row>
+        <Row label="Sound browser">
+          <Button variant="secondary" onClick={() => setPanel("browser")}>
+            Open sound browser
+          </Button>
+        </Row>
+        <Row
+          label="Default song / templates"
+          hint="Choose an existing saved template or starter song. Opening a new project discards unsaved edits."
+        >
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Open project setup? Save your current song first; unsaved changes will be lost.",
+                )
+              )
+                setStage("start");
+            }}
+          >
+            Projects & templates
+          </Button>
+        </Row>
+        <Row
+          label="Stretch imported audio"
+          hint="Manual stretching is available in the clip editor. Automatic import stretching, cloud-folder mounts and default-sound sorting are not implemented."
+        >
+          <span className="text-xs text-muted-foreground">Manual only</span>
+        </Row>
         <LibraryPanel />
       </TabsContent>
       <TabsContent value="sync" className="mt-4">
         <MidiClockRows />
-        {["MIDI clock offsets", "Ableton Link"].map((label) => <Row key={label} label={label} hint="Not implemented."><span className="text-xs text-muted-foreground">Not available now</span></Row>)}
-        <Row label="Ableton project handoff" hint="Audio stems and standard MIDI export are available; this is not live synchronization."><Button variant="secondary" onClick={() => setPanel("apps")}>Other apps</Button></Row>
+        {["MIDI clock offsets", "Ableton Link"].map((label) => (
+          <Row key={label} label={label} hint="Not implemented.">
+            <span className="text-xs text-muted-foreground">Not available now</span>
+          </Row>
+        ))}
+        <Row
+          label="Ableton project handoff"
+          hint="Audio stems and standard MIDI export are available; this is not live synchronization."
+        >
+          <Button variant="secondary" onClick={() => setPanel("apps")}>
+            Other apps
+          </Button>
+        </Row>
       </TabsContent>
       <TabsContent value="controls" className="mt-4">
-        <Row label="Computer keyboard notes"><Switch aria-label="Computer keyboard notes" checked={typing} onCheckedChange={setQwertyEnabled} /></Row>
-        <Row label="Typing keyboard octave"><Num value={octave} min={1} max={7} onChange={setQwertyOctave} /></Row>
-        <Row label="On-screen piano"><Button variant="secondary" onClick={() => setPanel("keys")}>Open keyboard</Button></Row>
-        <Row label="External MIDI instruments" hint="Output port and channels 1–16 are set per instrument track."><Button variant="secondary" onClick={() => setPanel("synth")}>Instrument settings</Button></Row>
-        <Row label="External buses A–D" hint="Reason-style external MIDI buses are not implemented."><span className="text-xs text-muted-foreground">Not available</span></Row>
+        <Row label="Computer keyboard notes">
+          <Switch
+            aria-label="Computer keyboard notes"
+            checked={typing}
+            onCheckedChange={setQwertyEnabled}
+          />
+        </Row>
+        <Row label="Typing keyboard octave">
+          <Num value={octave} min={1} max={7} onChange={setQwertyOctave} />
+        </Row>
+        <Row label="On-screen piano">
+          <Button variant="secondary" onClick={() => setPanel("keys")}>
+            Open keyboard
+          </Button>
+        </Row>
+        <Row
+          label="External MIDI instruments"
+          hint="Output port and channels 1–16 are set per instrument track."
+        >
+          <Button variant="secondary" onClick={() => setPanel("synth")}>
+            Instrument settings
+          </Button>
+        </Row>
+        <Row
+          label="External buses A–D"
+          hint="Reason-style external MIDI buses are not implemented."
+        >
+          <span className="text-xs text-muted-foreground">Not available</span>
+        </Row>
       </TabsContent>
       <TabsContent value="folders" className="mt-4">
         <PluginManager />
-        <Row label="Audio folders"><Button variant="secondary" onClick={() => setPanel("browser")}>Open folder browser</Button></Row>
-        <Row label="Scratch disk" hint="Working audio uses memory and browser-managed storage. A selectable native scratch disk is not implemented."><span className="text-xs text-muted-foreground">Automatic</span></Row>
+        <Row label="Audio folders">
+          <Button variant="secondary" onClick={() => setPanel("browser")}>
+            Open folder browser
+          </Button>
+        </Row>
+        <Row
+          label="Scratch disk"
+          hint="Working audio uses memory and browser-managed storage. A selectable native scratch disk is not implemented."
+        >
+          <span className="text-xs text-muted-foreground">Automatic</span>
+        </Row>
       </TabsContent>
       <TabsContent value="account" className="mt-4">
-        <Row label="Signed-in account"><span className="break-all text-sm text-primary">{email ?? "Not signed in"}</span></Row>
-        <Row label="Access"><span className="text-sm uppercase text-primary">{tier}</span><Button variant="secondary" onClick={() => openUpgrade()}>Manage plan</Button></Row>
-        <Row label="Account / sign out" hint="Save your song before leaving the studio."><Button variant="secondary" onClick={() => { if (window.confirm("Return to your account and projects? Save your song first.")) setStage("start"); }}>Account & projects</Button></Row>
-        <Row label="Offline authorization" hint="No offline license authorization is implemented. Cloud projects, subscriptions and AI require internet access."><span className="text-xs text-muted-foreground">Not available now</span></Row>
-        <Row label="Project saving"><span className="text-xs text-primary">Manual — File → Save</span></Row>
+        <Row label="Signed-in account">
+          <span className="break-all text-sm text-primary">{email ?? "Not signed in"}</span>
+        </Row>
+        <Row label="Access">
+          <span className="text-sm uppercase text-primary">{tier}</span>
+          <Button variant="secondary" onClick={() => openUpgrade()}>
+            Manage plan
+          </Button>
+        </Row>
+        <Row label="Account / sign out" hint="Save your song before leaving the studio.">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              if (window.confirm("Return to your account and projects? Save your song first."))
+                setStage("start");
+            }}
+          >
+            Account & projects
+          </Button>
+        </Row>
+        <Row
+          label="Offline authorization"
+          hint="No offline license authorization is implemented. Cloud projects, subscriptions and AI require internet access."
+        >
+          <span className="text-xs text-muted-foreground">Not available now</span>
+        </Row>
+        <Row label="Project saving">
+          <span className="text-xs text-primary">Manual — File → Save</span>
+        </Row>
         <div className="mt-6 rounded-md border border-destructive/50 p-4">
           <h3 className="text-sm font-semibold text-destructive">Delete my account</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Permanently deletes your account, cloud projects, library files and subscription record. This cannot be undone.
+            Permanently deletes your account, cloud projects, library files and subscription record.
+            This cannot be undone.
           </p>
-          <Button variant="destructive" className="mt-3" onClick={() => { setDeleteText(""); setDeleteOpen(true); }}>
+          <Button
+            variant="destructive"
+            className="mt-3"
+            onClick={() => {
+              setDeleteText("");
+              setDeleteOpen(true);
+            }}
+          >
             Delete my account
           </Button>
         </div>
-        <Dialog open={deleteOpen} onOpenChange={(open) => { if (!deleting) setDeleteOpen(open); }}>
+        <Dialog
+          open={deleteOpen}
+          onOpenChange={(open) => {
+            if (!deleting) setDeleteOpen(open);
+          }}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Delete your account forever?</DialogTitle>
               <DialogDescription>
-                This permanently deletes your SYNCLAB account, all cloud projects, library files and your subscription record. This cannot be undone.
+                This permanently deletes your SYNCLAB account, all cloud projects, library files and
+                your subscription record. This cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
@@ -746,7 +1243,11 @@ export function Settings() {
               <Button variant="secondary" onClick={() => setDeleteOpen(false)} disabled={deleting}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={() => void handleDeleteAccount()} disabled={deleteText !== "DELETE" || deleting}>
+              <Button
+                variant="destructive"
+                onClick={() => void handleDeleteAccount()}
+                disabled={deleteText !== "DELETE" || deleting}
+              >
                 {deleting ? "Deleting…" : "Permanently delete my account"}
               </Button>
             </DialogFooter>
@@ -759,34 +1260,103 @@ export function Settings() {
       </TabsContent>
 
       <TabsContent value="mobile" className="mt-4">
-        <label htmlFor="phone-large-controls" className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
-          <span className="min-w-0"><span className="block text-base">Extra-large controls</span><span className="block text-sm text-muted-foreground">Larger buttons and more room for your fingers</span></span>
-          <Switch id="phone-large-controls" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.extraLargeControls} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, extraLargeControls: value })} />
+        <label
+          htmlFor="phone-large-controls"
+          className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3"
+        >
+          <span className="min-w-0">
+            <span className="block text-base">Extra-large controls</span>
+            <span className="block text-sm text-muted-foreground">
+              Larger buttons and more room for your fingers
+            </span>
+          </span>
+          <Switch
+            id="phone-large-controls"
+            className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5"
+            checked={mobilePrefs.extraLargeControls}
+            onCheckedChange={(value) =>
+              saveMobileAccessibility({ ...mobilePrefs, extraLargeControls: value })
+            }
+          />
         </label>
-        <label htmlFor="phone-text-size" className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
-          <span className="min-w-0"><span className="block text-base">Increased text size</span><span className="block text-sm text-muted-foreground">Bigger labels and text in the studio</span></span>
-          <Switch id="phone-text-size" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.increasedText} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, increasedText: value })} />
+        <label
+          htmlFor="phone-text-size"
+          className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3"
+        >
+          <span className="min-w-0">
+            <span className="block text-base">Increased text size</span>
+            <span className="block text-sm text-muted-foreground">
+              Bigger labels and text in the studio
+            </span>
+          </span>
+          <Switch
+            id="phone-text-size"
+            className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5"
+            checked={mobilePrefs.increasedText}
+            onCheckedChange={(value) =>
+              saveMobileAccessibility({ ...mobilePrefs, increasedText: value })
+            }
+          />
         </label>
-        <label htmlFor="phone-high-contrast" className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3">
-          <span className="min-w-0"><span className="block text-base">High-contrast mode</span><span className="block text-sm text-muted-foreground">Clearer text, borders and selected controls</span></span>
-          <Switch id="phone-high-contrast" className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5" checked={mobilePrefs.highContrast} onCheckedChange={(value) => saveMobileAccessibility({ ...mobilePrefs, highContrast: value })} />
+        <label
+          htmlFor="phone-high-contrast"
+          className="settings-row phone-feature-row grid min-h-20 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-border/60 py-3"
+        >
+          <span className="min-w-0">
+            <span className="block text-base">High-contrast mode</span>
+            <span className="block text-sm text-muted-foreground">
+              Clearer text, borders and selected controls
+            </span>
+          </span>
+          <Switch
+            id="phone-high-contrast"
+            className="h-7 w-12 shrink-0 [&>span]:size-6 data-[state=checked]:[&>span]:translate-x-5"
+            checked={mobilePrefs.highContrast}
+            onCheckedChange={(value) =>
+              saveMobileAccessibility({ ...mobilePrefs, highContrast: value })
+            }
+          />
         </label>
         <div className="pt-4">
-          <Button variant="secondary" className="h-12" onClick={replayMobileTour}>Replay mobile tour</Button>
+          <Button variant="secondary" className="h-12" onClick={replayMobileTour}>
+            Replay mobile tour
+          </Button>
         </div>
       </TabsContent>
 
       <TabsContent value="general" className="mt-4">
-        <Row label="Theme, wallpaper and interface mode"><Button variant="secondary" onClick={() => setPanel("appearance")}>Appearance & themes</Button></Row>
-        <Row label="Note audition / automation indication" hint="Note audition and per-track automation controls are available in the piano roll and timeline; global switches are not implemented."><Button variant="secondary" onClick={() => setPanel("piano")}>Piano roll</Button></Row>
-        <Row label="Rack cable visibility" hint="Front / Back switching is available in Studio View. Automatic cable hiding and adjustable knob ranges are not implemented."><Button variant="secondary" onClick={() => setPanel("studio-view")}>Studio View</Button></Row>
+        <Row label="Theme, wallpaper and interface mode">
+          <Button variant="secondary" onClick={() => setPanel("appearance")}>
+            Appearance & themes
+          </Button>
+        </Row>
+        <Row
+          label="Note audition / automation indication"
+          hint="Note audition and per-track automation controls are available in the piano roll and timeline; global switches are not implemented."
+        >
+          <Button variant="secondary" onClick={() => setPanel("piano")}>
+            Piano roll
+          </Button>
+        </Row>
+        <Row
+          label="Rack cable visibility"
+          hint="Front / Back switching is available in Studio View. Automatic cable hiding and adjustable knob ranges are not implemented."
+        >
+          <Button variant="secondary" onClick={() => setPanel("studio-view")}>
+            Studio View
+          </Button>
+        </Row>
         <Row label="Show tooltips">
           <Switch checked={p.showTooltips} onCheckedChange={(v) => set("showTooltips", v)} />
         </Row>
         <Row label="Reduce motion">
           <Switch checked={p.reduceMotion} onCheckedChange={(v) => set("reduceMotion", v)} />
         </Row>
-        <div className="pt-4"><Button variant="secondary" onClick={() => setActiveTab("shortcuts")}>Keyboard shortcuts</Button></div>
+        <div className="pt-4">
+          <Button variant="secondary" onClick={() => setActiveTab("shortcuts")}>
+            Keyboard shortcuts
+          </Button>
+        </div>
         <div className="flex gap-2 pt-4">
           <Button
             size="sm"
@@ -832,12 +1402,28 @@ function InputMeter() {
 function MidiClockRows() {
   const [prefs, setPrefs] = useState(midiClockPrefs);
   useEffect(() => onMidiClockPrefs(() => setPrefs({ ...midiClockPrefs() })), []);
-  return <>
-    <Row label="Send MIDI clock" hint="Sends 24-per-beat clock to every MIDI output while the song plays, with Start, Continue (from the song position) and Stop. Drum machines and other apps set to external clock follow SYNCLAB's tempo.">
-      <Switch aria-label="Send MIDI clock" checked={prefs.send} onCheckedChange={(v) => setMidiClockPrefs({ send: v })} />
-    </Row>
-    <Row label="Follow MIDI clock" hint="Start, Continue and Stop from your enabled MIDI inputs control the song, and their clock sets the tempo (whole BPM). Turn off Send MIDI clock on the other device's side to avoid a loop.">
-      <Switch aria-label="Follow MIDI clock" checked={prefs.follow} onCheckedChange={(v) => setMidiClockPrefs({ follow: v })} />
-    </Row>
-  </>;
+  return (
+    <>
+      <Row
+        label="Send MIDI clock"
+        hint="Sends 24-per-beat clock to every MIDI output while the song plays, with Start, Continue (from the song position) and Stop. Drum machines and other apps set to external clock follow SYNCLAB's tempo."
+      >
+        <Switch
+          aria-label="Send MIDI clock"
+          checked={prefs.send}
+          onCheckedChange={(v) => setMidiClockPrefs({ send: v })}
+        />
+      </Row>
+      <Row
+        label="Follow MIDI clock"
+        hint="Start, Continue and Stop from your enabled MIDI inputs control the song, and their clock sets the tempo (whole BPM). Turn off Send MIDI clock on the other device's side to avoid a loop."
+      >
+        <Switch
+          aria-label="Follow MIDI clock"
+          checked={prefs.follow}
+          onCheckedChange={(v) => setMidiClockPrefs({ follow: v })}
+        />
+      </Row>
+    </>
+  );
 }

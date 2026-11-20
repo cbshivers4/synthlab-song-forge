@@ -3,13 +3,23 @@ import { SYNTH_PRESETS } from "./presets";
 import { GRANULAR_PRESETS, GRANULAR_PRESET_TYPES } from "./granular";
 import { classifyPreset, presetBrowserIndex, presetMatchesSynth } from "./preset-categories";
 
-const indexFor = (style: string) => presetBrowserIndex(SYNTH_PRESETS.filter((p) => presetMatchesSynth(p.category, style)), [], GRANULAR_PRESET_TYPES);
-const typeOf = (style: string, name: string) => indexFor(style).types.find((g) => g.items.includes(name))?.label;
+const indexFor = (style: string) =>
+  presetBrowserIndex(
+    SYNTH_PRESETS.filter((p) => presetMatchesSynth(p.category, style)),
+    [],
+    GRANULAR_PRESET_TYPES,
+  );
+const typeOf = (style: string, name: string) =>
+  indexFor(style).types.find((g) => g.items.includes(name))?.label;
 
 describe("synth preset browser categories", () => {
   it("puts every preset of every synth into exactly one sound type", () => {
     for (const style of ["spec4", "acid", "poly", "modular", "granular"]) {
-      const names = [...new Set(SYNTH_PRESETS.filter((p) => presetMatchesSynth(p.category, style)).map((p) => p.name))];
+      const names = [
+        ...new Set(
+          SYNTH_PRESETS.filter((p) => presetMatchesSynth(p.category, style)).map((p) => p.name),
+        ),
+      ];
       const listed = indexFor(style).types.flatMap((g) => g.items);
       expect(listed.length).toBe(names.length);
       expect(new Set(listed)).toEqual(new Set(names));
@@ -17,10 +27,22 @@ describe("synth preset browser categories", () => {
   });
 
   it("sorts genre-group presets by sound and keeps the genre as a style", () => {
-    expect(classifyPreset({ name: "Cybotron Lead", category: "Detroit Electro" })).toEqual({ type: "Lead", style: "Detroit Electro" });
-    expect(classifyPreset({ name: "Trap Bell", category: "Trap" })).toEqual({ type: "Bell", style: "Trap" });
-    expect(classifyPreset({ name: "Hoover Rave", category: "Rave" })).toEqual({ type: "Lead", style: "Rave" });
-    expect(classifyPreset({ name: "Juan's Strings", category: "Detroit Classics" })).toEqual({ type: "Strings", style: "Detroit Classics" });
+    expect(classifyPreset({ name: "Cybotron Lead", category: "Detroit Electro" })).toEqual({
+      type: "Lead",
+      style: "Detroit Electro",
+    });
+    expect(classifyPreset({ name: "Trap Bell", category: "Trap" })).toEqual({
+      type: "Bell",
+      style: "Trap",
+    });
+    expect(classifyPreset({ name: "Hoover Rave", category: "Rave" })).toEqual({
+      type: "Lead",
+      style: "Rave",
+    });
+    expect(classifyPreset({ name: "Juan's Strings", category: "Detroit Classics" })).toEqual({
+      type: "Strings",
+      style: "Detroit Classics",
+    });
     expect(indexFor("spec4").styles.map((g) => g.label)).toContain("Detroit Techno");
   });
 
@@ -52,7 +74,8 @@ describe("synth preset browser categories", () => {
   });
 
   it("groups Modular Tech racks by the device they're built on", () => {
-    const styleOf = (name: string) => indexFor("modular").styles.find((g) => g.items.includes(name))?.label;
+    const styleOf = (name: string) =>
+      indexFor("modular").styles.find((g) => g.items.includes(name))?.label;
     expect(styleOf("Modular Tech Seq Bass Detroit")).toBe("Step Sequencer");
     expect(typeOf("modular", "Modular Tech Seq Bass Detroit")).toBe("Bass");
     expect(styleOf("Modular Tech Chaos Storm Lead")).toBe("Chaos");
@@ -63,7 +86,10 @@ describe("synth preset browser categories", () => {
   });
 
   it("lists My Presets last in the arrow order", () => {
-    const idx = presetBrowserIndex([{ name: "Poly Synth Brass", category: "Poly Synth · Brass" }], ["My Lead"]);
+    const idx = presetBrowserIndex(
+      [{ name: "Poly Synth Brass", category: "Poly Synth · Brass" }],
+      ["My Lead"],
+    );
     expect(idx.order).toEqual(["Poly Synth Brass", "My Lead"]);
     expect(idx.mine).toEqual(["My Lead"]);
   });

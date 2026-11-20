@@ -37,7 +37,8 @@ export function placeSideways(o: SidewaysPlaceInput) {
   const align = o.align ?? "center";
   let side: PopSide = o.side ?? "bottom";
   const along = (start: number, end: number, size: number, view: number) => {
-    const pos = align === "start" ? start : align === "end" ? end - size : (start + end) / 2 - size / 2;
+    const pos =
+      align === "start" ? start : align === "end" ? end - size : (start + end) / 2 - size / 2;
     return clamp(pos, pad, view - pad - size);
   };
   if (side === "top" || side === "bottom") {
@@ -49,7 +50,11 @@ export function placeSideways(o: SidewaysPlaceInput) {
     // Too little room on either side: let it overlap its button rather than shrink to nothing.
     const maxH = Math.max(0, room >= Math.min(height, 120) ? room : viewH - 2 * pad);
     const h = Math.min(height, maxH);
-    const y = clamp(side === "bottom" ? a.bottom + offset : a.top - offset - h, pad, viewH - pad - h);
+    const y = clamp(
+      side === "bottom" ? a.bottom + offset : a.top - offset - h,
+      pad,
+      viewH - pad - h,
+    );
     return { x: along(a.left, a.right, width, viewW), y, maxH, side };
   }
   const right = viewW - pad - (a.right + offset);
@@ -58,11 +63,19 @@ export function placeSideways(o: SidewaysPlaceInput) {
   else if (side === "left" && width > left && right > left) side = "right";
   const maxH = Math.max(0, viewH - 2 * pad);
   const h = Math.min(height, maxH);
-  const x = clamp(side === "right" ? a.right + offset : a.left - offset - width, pad, viewW - pad - width);
+  const x = clamp(
+    side === "right" ? a.right + offset : a.left - offset - width,
+    pad,
+    viewW - pad - width,
+  );
   return { x, y: along(a.top, a.bottom, h, viewH), maxH, side };
 }
 
-type Opts = { side?: PopSide | undefined; align?: PopAlign | undefined; sideOffset?: number | undefined };
+type Opts = {
+  side?: PopSide | undefined;
+  align?: PopAlign | undefined;
+  sideOffset?: number | undefined;
+};
 
 function attach(node: HTMLElement, getOpts: () => Opts) {
   if (!sidewaysCanvas()) return undefined;
@@ -79,8 +92,13 @@ function attach(node: HTMLElement, getOpts: () => Opts) {
   };
   const place = () => {
     raf = 0;
-    if (!sidewaysCanvas() || !node.isConnected) { clear(); return; }
-    const trigger = node.id ? document.querySelector(`[aria-controls="${CSS.escape(node.id)}"]`) : null;
+    if (!sidewaysCanvas() || !node.isConnected) {
+      clear();
+      return;
+    }
+    const trigger = node.id
+      ? document.querySelector(`[aria-controls="${CSS.escape(node.id)}"]`)
+      : null;
     if (!trigger) return;
     const { side, align, sideOffset } = getOpts();
     const body = document.body;
@@ -103,7 +121,9 @@ function attach(node: HTMLElement, getOpts: () => Opts) {
     if (height > r.maxH + 1) wrapper.setAttribute("data-sideways-tall", "");
     else wrapper.removeAttribute("data-sideways-tall");
   };
-  const schedule = () => { if (!raf) raf = requestAnimationFrame(place); };
+  const schedule = () => {
+    if (!raf) raf = requestAnimationFrame(place);
+  };
   place();
   schedule();
   const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(schedule) : null;
@@ -119,14 +139,20 @@ function attach(node: HTMLElement, getOpts: () => Opts) {
 }
 
 /** Ref for a Radix pop-up content element; forwards to the caller's ref too. */
-export function useSidewaysPopper<T extends HTMLElement>(forwarded: React.ForwardedRef<T>, opts: Opts) {
+export function useSidewaysPopper<T extends HTMLElement>(
+  forwarded: React.ForwardedRef<T>,
+  opts: Opts,
+) {
   const optsRef = React.useRef(opts);
   optsRef.current = opts;
   const cleanup = React.useRef<(() => void) | undefined>(undefined);
-  return React.useCallback((node: T | null) => {
-    cleanup.current?.();
-    cleanup.current = node ? attach(node, () => optsRef.current) : undefined;
-    if (typeof forwarded === "function") forwarded(node);
-    else if (forwarded) forwarded.current = node;
-  }, [forwarded]);
+  return React.useCallback(
+    (node: T | null) => {
+      cleanup.current?.();
+      cleanup.current = node ? attach(node, () => optsRef.current) : undefined;
+      if (typeof forwarded === "function") forwarded(node);
+      else if (forwarded) forwarded.current = node;
+    },
+    [forwarded],
+  );
 }

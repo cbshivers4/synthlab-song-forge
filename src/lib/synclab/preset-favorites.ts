@@ -41,7 +41,9 @@ function read(): FavoriteMap {
   try {
     const parsed = JSON.parse(localStorage.getItem(KEY) || "{}") as Record<string, unknown>;
     cached = Object.fromEntries(Object.entries(parsed).map(([k, v]) => [k, normalizeSlots(v)]));
-  } catch { cached = {}; }
+  } catch {
+    cached = {};
+  }
   return cached;
 }
 export function favoriteSlots(model: string): FavoriteSlots {
@@ -49,11 +51,24 @@ export function favoriteSlots(model: string): FavoriteSlots {
 }
 export function setFavoriteSlots(model: string, slots: FavoriteSlots) {
   cached = { ...read(), [model]: normalizeSlots(slots) };
-  try { localStorage.setItem(KEY, JSON.stringify(cached)); } catch { /* storage blocked */ }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(cached));
+  } catch {
+    /* storage blocked */
+  }
   for (const fn of subs) fn();
 }
-const subscribe = (fn: () => void) => { subs.add(fn); return () => { subs.delete(fn); }; };
+const subscribe = (fn: () => void) => {
+  subs.add(fn);
+  return () => {
+    subs.delete(fn);
+  };
+};
 /** Server render and first paint show empty keys, then this device's saved favorites. */
 export function useFavoriteSlots(model: string): FavoriteSlots {
-  return useSyncExternalStore(subscribe, () => favoriteSlots(model), () => EMPTY);
+  return useSyncExternalStore(
+    subscribe,
+    () => favoriteSlots(model),
+    () => EMPTY,
+  );
 }

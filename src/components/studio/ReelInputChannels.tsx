@@ -14,14 +14,27 @@ export function ReelInputChannels() {
   const ids = useRef<(string | null)[]>([]);
 
   useEffect(() => {
-    try { const v = JSON.parse(localStorage.getItem(KEY) ?? "null"); if (Array.isArray(v)) setAssign(Array.from({ length: COUNT }, (_, i) => v[i] ?? null)); } catch { /* ignore */ }
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY) ?? "null");
+      if (Array.isArray(v)) setAssign(Array.from({ length: COUNT }, (_, i) => v[i] ?? null));
+    } catch {
+      /* ignore */
+    }
   }, []);
-  const resolved = assign.map((id, i) => (id && tracks.some((t) => t.id === id) ? id : id === "" ? null : tracks[i]?.id ?? null));
+  const resolved = assign.map((id, i) =>
+    id && tracks.some((t) => t.id === id) ? id : id === "" ? null : (tracks[i]?.id ?? null),
+  );
   ids.current = resolved;
 
   const choose = (i: number, id: string) => {
-    const next = [...assign]; next[i] = id; setAssign(next);
-    try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    const next = [...assign];
+    next[i] = id;
+    setAssign(next);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
   };
 
   useEffect(() => {
@@ -42,7 +55,10 @@ export function ReelInputChannels() {
     <div ref={root} className="mt-4 border-t border-border pt-3" aria-label="Tape input channels">
       <div className="mb-2 flex items-center gap-2">
         <h3 className="label-xs">16 INPUT CHANNELS</h3>
-        <span className="text-[10px] text-muted-foreground">Each channel takes a timeline track. Mute and solo change what the song master sends to tape.</span>
+        <span className="text-[10px] text-muted-foreground">
+          Each channel takes a timeline track. Mute and solo change what the song master sends to
+          tape.
+        </span>
       </div>
       <div className="reel-channels">
         {resolved.map((id, i) => {
@@ -50,7 +66,12 @@ export function ReelInputChannels() {
           return (
             <div key={i} className="reel-channel" data-active={!!t}>
               <span className="font-mono text-[10px] font-bold">CH {i + 1}</span>
-              <VuFace vuDb={-60} className="vuf-mini" needleProps={{ "data-reel-needle": true }} ariaLabel={`Channel ${i + 1} analog meter`} />
+              <VuFace
+                vuDb={-60}
+                className="vuf-mini"
+                needleProps={{ "data-reel-needle": true }}
+                ariaLabel={`Channel ${i + 1} analog meter`}
+              />
               <select
                 aria-label={`Channel ${i + 1} input`}
                 value={id ?? ""}
@@ -58,11 +79,33 @@ export function ReelInputChannels() {
                 className="h-7 w-full rounded border border-input bg-background px-1 text-[10px]"
               >
                 <option value="">— none —</option>
-                {tracks.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                {tracks.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
               </select>
               <div className="flex w-full gap-1">
-                <button type="button" disabled={!t} aria-pressed={!!t?.muted} aria-label={`Mute channel ${i + 1}`} onClick={() => t && updateTrack(t.id, { muted: !t.muted })} className={`reel-ch-btn ${t?.muted ? "is-mute" : ""}`}>M</button>
-                <button type="button" disabled={!t} aria-pressed={!!t?.solo} aria-label={`Solo channel ${i + 1}`} onClick={() => t && updateTrack(t.id, { solo: !t.solo })} className={`reel-ch-btn ${t?.solo ? "is-solo" : ""}`}>S</button>
+                <button
+                  type="button"
+                  disabled={!t}
+                  aria-pressed={!!t?.muted}
+                  aria-label={`Mute channel ${i + 1}`}
+                  onClick={() => t && updateTrack(t.id, { muted: !t.muted })}
+                  className={`reel-ch-btn ${t?.muted ? "is-mute" : ""}`}
+                >
+                  M
+                </button>
+                <button
+                  type="button"
+                  disabled={!t}
+                  aria-pressed={!!t?.solo}
+                  aria-label={`Solo channel ${i + 1}`}
+                  onClick={() => t && updateTrack(t.id, { solo: !t.solo })}
+                  className={`reel-ch-btn ${t?.solo ? "is-solo" : ""}`}
+                >
+                  S
+                </button>
               </div>
             </div>
           );

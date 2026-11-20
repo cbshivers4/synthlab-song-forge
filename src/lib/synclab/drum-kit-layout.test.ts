@@ -2,7 +2,26 @@ import { describe, expect, it } from "vitest";
 import { DRUM_GENRES, GENRE_GROUPS, type DrumRole } from "./drummer";
 import { kitHue, kitLayoutFor, pieceForRole } from "./drum-kit-layout";
 
-const ROLES: DrumRole[] = ["kick", "snare", "clap", "rim", "hat", "openhat", "ride", "crash", "tomHi", "tomMid", "tomLo", "shaker", "conga", "congaLo", "cowbell", "clave", "tamb", "perc"];
+const ROLES: DrumRole[] = [
+  "kick",
+  "snare",
+  "clap",
+  "rim",
+  "hat",
+  "openhat",
+  "ride",
+  "crash",
+  "tomHi",
+  "tomMid",
+  "tomLo",
+  "shaker",
+  "conga",
+  "congaLo",
+  "cowbell",
+  "clave",
+  "tamb",
+  "perc",
+];
 
 describe("drum set picture", () => {
   it("each genre group has its own kind of set", () => {
@@ -15,22 +34,28 @@ describe("drum set picture", () => {
   });
 
   it("every drum the drummer can hit shows on a piece of every set", () => {
-    for (const g of GENRE_GROUPS) for (const role of ROLES) expect(pieceForRole(kitLayoutFor(g), role), `${g}: ${role}`).not.toBeNull();
+    for (const g of GENRE_GROUPS)
+      for (const role of ROLES)
+        expect(pieceForRole(kitLayoutFor(g), role), `${g}: ${role}`).not.toBeNull();
   });
 
   it("every style used by a genre lights a piece of that genre's set", () => {
-    for (const genre of DRUM_GENRES) for (const role of Object.keys(genre.lanes) as DrumRole[]) expect(pieceForRole(kitLayoutFor(genre.group), role)).not.toBeNull();
+    for (const genre of DRUM_GENRES)
+      for (const role of Object.keys(genre.lanes) as DrumRole[])
+        expect(pieceForRole(kitLayoutFor(genre.group), role)).not.toBeNull();
   });
 
   it("rock styles have their own group and play on the rock kit", () => {
     const rock = DRUM_GENRES.filter((g) => g.group === "Rock").map((g) => g.id);
-    for (const id of ["rock", "classic-rock", "hard-rock", "punk", "metal", "grunge"]) expect(rock).toContain(id);
+    for (const id of ["rock", "classic-rock", "hard-rock", "punk", "metal", "grunge"])
+      expect(rock).toContain(id);
     expect(GENRE_GROUPS).toContain("Rock");
   });
 
   it("jazz styles have their own group and play on the jazz kit", () => {
     const jazz = DRUM_GENRES.filter((g) => g.group === "Jazz");
-    for (const id of ["jazz-swing", "bebop", "brush-ballad", "big-band", "latin-jazz"]) expect(jazz.map((g) => g.id)).toContain(id);
+    for (const id of ["jazz-swing", "bebop", "brush-ballad", "big-band", "latin-jazz"])
+      expect(jazz.map((g) => g.id)).toContain(id);
     expect(jazz.every((g) => g.kit === "jazz")).toBe(true);
     expect(GENRE_GROUPS).toContain("Jazz");
   });

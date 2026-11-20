@@ -20,11 +20,24 @@ describe("timeline clip waveform", () => {
   });
   it("older razor pieces whose peaks were already cropped are drawn unchanged", () => {
     const piece = ramp.slice(30);
-    const shown = visibleClipPeaks({ id: "t1-b1762862770000", peaks: piece, duration: 10, offset: 3, length: 7 });
+    const shown = visibleClipPeaks({
+      id: "t1-b1762862770000",
+      peaks: piece,
+      duration: 10,
+      offset: 3,
+      length: 7,
+    });
     expect(shown).toEqual(piece);
   });
   it("new razor pieces share the file's peaks and each draws its own part", () => {
-    const right = visibleClipPeaks({ id: "t1-b1762862770000", peaks: ramp, peaksSpan: [0, 10], duration: 10, offset: 3, length: 7 });
+    const right = visibleClipPeaks({
+      id: "t1-b1762862770000",
+      peaks: ramp,
+      peaksSpan: [0, 10],
+      duration: 10,
+      offset: 3,
+      length: 7,
+    });
     expect(right[0]).toBeCloseTo(0.3);
     expect(right.length).toBe(70);
   });

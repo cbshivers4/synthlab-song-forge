@@ -16,8 +16,18 @@ export interface ProjectTemplate {
 }
 
 export const KEYS = [
-  "C Major", "A Minor", "F Minor", "G Minor", "D Minor", "E Minor",
-  "C Minor", "A# Minor", "F# Minor", "D Major", "G Major", "F Major",
+  "C Major",
+  "A Minor",
+  "F Minor",
+  "G Minor",
+  "D Minor",
+  "E Minor",
+  "C Minor",
+  "A# Minor",
+  "F# Minor",
+  "D Major",
+  "G Major",
+  "F Major",
 ];
 
 export const TIME_SIGS = ["4/4", "3/4", "6/8", "7/8", "5/4"];

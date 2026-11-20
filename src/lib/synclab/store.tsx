@@ -14,14 +14,37 @@ import { markTakeFailed } from "./take-status";
 import { setSongClock } from "./song-clock";
 import { sendClockForStep, sendTransportStart, sendTransportStop } from "./midi-clock";
 import { INPUT_CHANGED_EVENT, INPUT_FALLBACK_EVENT, INPUT_LOST_EVENT } from "./mic";
-import { clipboardOrigin, copyPartSpan, drumCopySpan, livePasteStep, materialEnd, multiPasteSteps, noteCopy, pasteEndStep, pasteEndSteps, pasteTrackContent } from "./arrangement-edit";
+import {
+  clipboardOrigin,
+  copyPartSpan,
+  drumCopySpan,
+  livePasteStep,
+  materialEnd,
+  multiPasteSteps,
+  noteCopy,
+  pasteEndStep,
+  pasteEndSteps,
+  pasteTrackContent,
+} from "./arrangement-edit";
 
 /** Drum/sampler tracks can hold values the browser cannot deep-copy; fall back so copy never silently fails. */
 function cloneTrack(t: Track): Track {
-  try { return structuredClone(t); } catch { return JSON.parse(JSON.stringify(t)) as Track; }
+  try {
+    return structuredClone(t);
+  } catch {
+    return JSON.parse(JSON.stringify(t)) as Track;
+  }
 }
 import { createRecordingFinalizer } from "./recording-finalizer";
-import { capturedNote, heardNoteSteps, isLoopWrap, loopKeepsRecording, loopRegion, nextPlayStep, snapRecordedStep } from "./recording-region";
+import {
+  capturedNote,
+  heardNoteSteps,
+  isLoopWrap,
+  loopKeepsRecording,
+  loopRegion,
+  nextPlayStep,
+  snapRecordedStep,
+} from "./recording-region";
 import { liveNoteTarget } from "./live-note-target";
 import { editDrumPads, type DrumBulkEdit } from "./drum-bulk";
 import { appendDrumPad } from "./drum-banks";
@@ -33,13 +56,41 @@ import { previewTrack } from "./note-preview";
 import { bendCents, playbackPreferences } from "./preferences";
 import { toast } from "sonner";
 import { getEngine } from "./audio-engine";
-import { stepsPerBar, setBeatsPerBar, getBeatsPerBar, STEPS_PER_BEAT, songSteps, stepSeconds, barsForSteps } from "./timebase";
+import {
+  stepsPerBar,
+  setBeatsPerBar,
+  getBeatsPerBar,
+  STEPS_PER_BEAT,
+  songSteps,
+  stepSeconds,
+  barsForSteps,
+} from "./timebase";
 import { openInOwnTab } from "./mic";
 import { TRACK_COLORS, applyPreset, defaultPads, defaultPatch, uid } from "./presets";
-import { moveClipToNewIn, movePartBetweenTracks, moveTrackToIndexIn, moveTrackToNewIn } from "./track-move";
-import { BUILT_IN_PLUGINS, instantiate, processMidiThroughPlugins, withDefaultParams } from "./plugins";
+import {
+  moveClipToNewIn,
+  movePartBetweenTracks,
+  moveTrackToIndexIn,
+  moveTrackToNewIn,
+} from "./track-move";
+import {
+  BUILT_IN_PLUGINS,
+  instantiate,
+  processMidiThroughPlugins,
+  withDefaultParams,
+} from "./plugins";
 import { insertRigDevice } from "./guitar-rig";
-import { claimControllerMidi, getMidiAccess, listInputs, listOutputs, midiInputEnabled, midiSupported, midiUnsupportedMessage, subscribe, type MidiPortInfo } from "./midi";
+import {
+  claimControllerMidi,
+  getMidiAccess,
+  listInputs,
+  listOutputs,
+  midiInputEnabled,
+  midiSupported,
+  midiUnsupportedMessage,
+  subscribe,
+  type MidiPortInfo,
+} from "./midi";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
@@ -48,13 +99,36 @@ import { scheduleStep as scheduleSongStep, triggerNote } from "./schedule-step";
 import { shownPassIndex, splitLoopPasses } from "./loop-takes";
 import { getPlayStep, setPlayStep } from "./playhead";
 import { cutTrackMaterial, removeTakeAndMaterial } from "./workflow";
-import { isLiveParam, laneReads, laneWrites, liveValue, movedLiveParams, valueAt, writePoint } from "./automation-write";
+import {
+  isLiveParam,
+  laneReads,
+  laneWrites,
+  liveValue,
+  movedLiveParams,
+  valueAt,
+  writePoint,
+} from "./automation-write";
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
 import { arpLiveRelease, arpReleaseAll, stopLiveArps } from "./live-arp";
-import { HELD_NOTE_SECONDS, holdApplies, latchPitch, onHoldRelease, releaseLatched } from "./synth-hold";
-import { controllerAutoButton, controllerAutoMap, resolveController, shiftStripBank, stripTrackIndex, withKnownSurfaces, type RemoteButton, type StripParam } from "./controller-profiles";
+import {
+  HELD_NOTE_SECONDS,
+  holdApplies,
+  latchPitch,
+  onHoldRelease,
+  releaseLatched,
+} from "./synth-hold";
+import {
+  controllerAutoButton,
+  controllerAutoMap,
+  resolveController,
+  shiftStripBank,
+  stripTrackIndex,
+  withKnownSurfaces,
+  type RemoteButton,
+  type StripParam,
+} from "./controller-profiles";
 import { joggedStep, jogTicks, mackieAction, stopPress } from "./mackie-control";
 import { describeRaw, noteSurfaceEvent } from "./surface-monitor";
 import type { CloudSession } from "./cloud";
@@ -71,7 +145,6 @@ import type {
   MidiNote,
   PluginDef,
   PluginInstance,
-
   PluginParam,
   SamplerState,
   SongSection,
@@ -88,7 +161,14 @@ import { alignedTake, getInputLatencyMs, outputDelay, preRollTake } from "./late
 import { peaksSpanOf } from "./clip-peaks";
 import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
 import { GRANULAR_KNOBS } from "./granular";
-import { externalNoteOff, externalNoteOn, isExternal, restoreExternalRoutes, sendExternalBend, sendExternalCc } from "./external-midi";
+import {
+  externalNoteOff,
+  externalNoteOn,
+  isExternal,
+  restoreExternalRoutes,
+  sendExternalBend,
+  sendExternalCc,
+} from "./external-midi";
 
 /** A persistent hardware CC destination. Namespaced parameters identify device controls. */
 /** A recorded instrument/drum take normally plays back as printed audio, which
@@ -110,7 +190,12 @@ function liveSound(t: Track): Track {
  * lands. Drums, samplers, outside hardware and Live Keys channels still print their live output.
  */
 function synthTake(t: Track): boolean {
-  return (t.kind === "instrument" || t.kind === "midi") && !!t.patch && !t.keyboardist && !isExternal(t.id);
+  return (
+    (t.kind === "instrument" || t.kind === "midi") &&
+    !!t.patch &&
+    !t.keyboardist &&
+    !isExternal(t.id)
+  );
 }
 
 /** Seconds of song audio queued ahead on the audio clock (see the scheduler). */
@@ -137,52 +222,20 @@ const readSwitchedOff = (): string[] => {
   try {
     const v: unknown = JSON.parse(window.localStorage.getItem(MIDI_OFF_KEY) ?? "[]");
     return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 };
 const writeSwitchedOff = (names: string[]) => {
-  try { window.localStorage.setItem(MIDI_OFF_KEY, JSON.stringify(names)); } catch { /* storage unavailable */ }
+  try {
+    window.localStorage.setItem(MIDI_OFF_KEY, JSON.stringify(names));
+  } catch {
+    /* storage unavailable */
+  }
 };
 
-/** Preserve the untouched portions of an older take when a new recording covers only part of it. */
-/** Snaps where a finished take lands to the edit grid (defaults to the nearest step). */
-export function snapRecStart(step: number, snap?: number): number {
-  const g = snap && snap > 0 ? snap : 1;
-  return Math.max(0, Math.round(step / g) * g);
-}
-
-export function replaceTakeRegion(clips: AudioClip[], start: number, end: number, stepDur: number): AudioClip[] {
-  return clips.flatMap((clip) => {
-    const from = clip.start ?? 0;
-    const rate = clipRate(clip);
-    const length = clip.length ?? clip.duration;
-    const until = from + length / rate / stepDur;
-    if (until <= start || from >= end) return [clip];
-    const left = Math.max(0, Math.min(start, until) - from) * stepDur * rate;
-    const right = Math.max(0, until - Math.max(end, from)) * stepDur * rate;
-    const pieces: AudioClip[] = [];
-    if (left > 0.01) pieces.push({
-      ...clip, id: uid(), length: left,
-      offset: (clip.offset ?? 0) + (clip.reverse ? length - left : 0),
-      fadeOut: Math.min(clip.fadeOut ?? 0.01, left / rate / 2),
-    });
-    if (right > 0.01) pieces.push({
-      ...clip, id: uid(), start: until - right / rate / stepDur, length: right,
-      offset: (clip.offset ?? 0) + (clip.reverse ? 0 : length - right),
-      fadeIn: Math.min(clip.fadeIn ?? 0.004, right / rate / 2),
-    });
-    return pieces;
-  });
-}
-
-/** Older takes a new recording covers — kept on the new clip so the user can comp between them. */
-export function coveredTakes(clips: AudioClip[], start: number, end: number, stepDur: number): AudioClip[] {
-  const hit = clips.filter((c) => {
-    const from = c.start ?? 0;
-    const until = from + (c.length ?? c.duration) / clipRate(c) / stepDur;
-    return until > start && from < end;
-  });
-  return [...hit.map((c) => ({ ...c, alts: undefined })), ...hit.flatMap((c) => c.alts ?? [])].slice(0, 12);
-}
+export { coveredTakes, replaceTakeRegion, snapRecStart } from "./take-region";
+import { coveredTakes, replaceTakeRegion, snapRecStart } from "./take-region";
 
 const ccRange = (value: number, min: number, max: number, step = 0) => {
   const scaled = min + value * (max - min);
@@ -191,19 +244,44 @@ const ccRange = (value: number, min: number, max: number, step = 0) => {
 
 /** Use the same ranges as the visible controls; never map a CC to an unsupported audio parameter. */
 const synthRanges: Record<string, [number, number, number?]> = {
-  cutoff: [40, 16000, 10], resonance: [0, 28, 0.5], drive: [0, 1], glide: [0, 0.5, 0.01],
-  noise: [0, 1], keyTracking: [0, 1], velocitySens: [0, 1], analog: [0, 1],
-  "filter2.cutoff": [40, 16000, 10], "filter2.resonance": [0, 28, 0.5],
+  cutoff: [40, 16000, 10],
+  resonance: [0, 28, 0.5],
+  drive: [0, 1],
+  glide: [0, 0.5, 0.01],
+  noise: [0, 1],
+  keyTracking: [0, 1],
+  velocitySens: [0, 1],
+  analog: [0, 1],
+  "filter2.cutoff": [40, 16000, 10],
+  "filter2.resonance": [0, 28, 0.5],
   "filterEnv.amount": [-6000, 6000, 50],
-  "unison.voices": [1, 7, 1], "unison.detune": [0, 60, 1],
-  "arp.octaves": [1, 4, 1], "arp.rate": [0.5, 4, 0.5],
+  "unison.voices": [1, 7, 1],
+  "unison.detune": [0, 60, 1],
+  "arp.octaves": [1, 4, 1],
+  "arp.rate": [0.5, 4, 0.5],
 };
 const drumRanges: Record<string, [number, number, number?]> = {
-  volume: [0, 1], pan: [-1, 1], pitch: [-12, 12, 1], decay: [0, 1], attack: [0, 1],
-  sustain: [0, 1], release: [0, 1], start: [0, 1], end: [0, 1], tone: [0, 1],
-  drive: [0, 1], compressor: [0, 1], snap: [0, 1], noise: [0, 1], width: [0, 1],
-  crush: [0, 1], mutation: [0, 1], cutoff: [0, 1], resonance: [0, 1],
-  filterEnv: [-1, 1], choke: [0, 4, 1],
+  volume: [0, 1],
+  pan: [-1, 1],
+  pitch: [-12, 12, 1],
+  decay: [0, 1],
+  attack: [0, 1],
+  sustain: [0, 1],
+  release: [0, 1],
+  start: [0, 1],
+  end: [0, 1],
+  tone: [0, 1],
+  drive: [0, 1],
+  compressor: [0, 1],
+  snap: [0, 1],
+  noise: [0, 1],
+  width: [0, 1],
+  crush: [0, 1],
+  mutation: [0, 1],
+  cutoff: [0, 1],
+  resonance: [0, 1],
+  filterEnv: [-1, 1],
+  choke: [0, 4, 1],
 };
 
 const busFor = (kind: TrackKind): BusId =>
@@ -291,7 +369,6 @@ interface StudioState {
   setProjectNotes: (notes: string) => void;
 }
 
-
 interface StudioApi extends StudioState {
   snapshot: () => CloudSession;
   restore: (session: CloudSession) => void;
@@ -327,7 +404,10 @@ interface StudioApi extends StudioState {
   selectAll: () => void;
   toggleSelectId: (id: string) => void;
   /** Mouse box selection: select these channels and their boxed clips. */
-  selectBoxed: (picks: { trackId: string; clipId?: string; span?: [number, number] }[], add: boolean) => void;
+  selectBoxed: (
+    picks: { trackId: string; clipId?: string; span?: [number, number] }[],
+    add: boolean,
+  ) => void;
   /** Mouse drag down the channel names: highlight exactly these channels; the anchor stays the current channel. */
   paintSelectIds: (ids: string[], anchorId: string | null) => void;
   /** Click outside the timeline: drop highlighted clips/parts and extra checked channels (the current channel stays). */
@@ -335,14 +415,25 @@ interface StudioApi extends StudioState {
   splitClipAt: (trackId: string, frac: number) => void;
   razorAt: (trackId: string, posSteps: number) => void;
   splitAtPlayhead: () => void;
-  addTrack: (kind: TrackKind, name?: string, preset?: string, opts?: { keepPanel?: boolean }) => string;
+  addTrack: (
+    kind: TrackKind,
+    name?: string,
+    preset?: string,
+    opts?: { keepPanel?: boolean },
+  ) => string;
   updateTrack: (id: string, patch: Partial<Track>) => void;
   removeTrack: (id: string) => void;
   duplicateTrack: (id: string) => void;
   moveTrack: (id: string, dir: -1 | 1) => void;
   moveTrackToIndex: (id: string, index: number) => void;
   /** Move one note block / beat part [a, b) onto another channel at step `to`; null when it can't go there. */
-  movePartToTrack: (srcId: string, destId: string, a: number, b: number, to: number) => { unmatched: number } | null;
+  movePartToTrack: (
+    srcId: string,
+    destId: string,
+    a: number,
+    b: number,
+    to: number,
+  ) => { unmatched: number } | null;
   moveTrackToNew: (id: string) => void;
   moveClipToNew: (trackId: string, clipId: string, sourceStart: number) => void;
   clipboardName: string | null;
@@ -371,14 +462,23 @@ interface StudioApi extends StudioState {
   changeInstrument: (trackId: string, preset: string) => void;
   setActiveClip: (trackId: string, clipId: string) => void;
   toggleAutomationLane: (trackId: string, param: AutomationParam) => void;
-  setAutomationPoints: (trackId: string, param: AutomationParam, points: AutomationPoint[], label?: string) => void;
+  setAutomationPoints: (
+    trackId: string,
+    param: AutomationParam,
+    points: AutomationPoint[],
+    label?: string,
+  ) => void;
   undoAutomationEdit: (trackId: string, param: AutomationParam) => void;
   redoAutomationEdit: (trackId: string, param: AutomationParam) => void;
   automationHistory: (
     trackId: string,
     param: AutomationParam,
   ) => { canUndo: boolean; canRedo: boolean; undoLabel: string | null; redoLabel: string | null };
-  setAutomationMode: (trackId: string, param: AutomationParam, mode: AutomationLane["mode"]) => void;
+  setAutomationMode: (
+    trackId: string,
+    param: AutomationParam,
+    mode: AutomationLane["mode"],
+  ) => void;
   setAutomationLaneLock: (trackId: string, param: AutomationParam, locked: boolean) => void;
   previewAutomation: (trackId: string, param: AutomationParam, value: number) => void;
   removeClip: (trackId: string, clipId: string) => void;
@@ -394,7 +494,13 @@ interface StudioApi extends StudioState {
   savePreset: (name: string) => void;
   loadPreset: (trackId: string, name: string) => void;
   generateBeat: (trackId: string, genre: string, energy: number) => void;
-  previewNote: (trackId: string, midi: number, duration?: number, capture?: boolean, patch?: SynthPatch) => void;
+  previewNote: (
+    trackId: string,
+    midi: number,
+    duration?: number,
+    capture?: boolean,
+    patch?: SynthPatch,
+  ) => void;
   /** Writes a note into the live timeline recording without playing it (the caller already sounded it). */
   captureNote: (trackId: string, midi: number, velocity?: number) => void;
   /** Resolves true once the file is decoded onto the sampler; false (after an error toast) when it can't be read. */
@@ -428,7 +534,6 @@ interface StudioApi extends StudioState {
   toggleFxBypass: (target: string, instanceId: string) => void;
   setFxParam: (target: string, instanceId: string, paramId: string, value: number) => void;
 }
-
 
 // Reuse a single context across hot-reloaded module instances so provider and
 // consumers never end up bound to two different copies of this module.
@@ -483,7 +588,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [transport.step]);
 
   // Tracks routed to external MIDI instruments on this device reconnect at start-up.
-  useEffect(() => { restoreExternalRoutes(); }, []);
+  useEffect(() => {
+    restoreExternalRoutes();
+  }, []);
 
   const tracksRef = useRef(tracks);
   tracksRef.current = tracks;
@@ -539,11 +646,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     master: { volume: 1, muted: false },
   });
   const [vcas, setVcas] = useState<Record<VcaId, BusState>>({
-    A: { volume: 1, muted: false }, B: { volume: 1, muted: false },
-    C: { volume: 1, muted: false }, D: { volume: 1, muted: false },
+    A: { volume: 1, muted: false },
+    B: { volume: 1, muted: false },
+    C: { volume: 1, muted: false },
+    D: { volume: 1, muted: false },
   });
   const [auxReturns, setAuxReturns] = useState<Record<AuxId, BusState>>({
-    reverb: { volume: 1, muted: false }, delay: { volume: 1, muted: false }, chorus: { volume: 1, muted: false },
+    reverb: { volume: 1, muted: false },
+    delay: { volume: 1, muted: false },
+    chorus: { volume: 1, muted: false },
   });
 
   const [installedPlugins, setInstalledPlugins] = useState<PluginDef[]>(BUILT_IN_PLUGINS);
@@ -570,7 +681,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [midiMap, setMidiMap] = useState<Record<string, MidiTarget>>(() => {
     if (typeof window === "undefined") return {};
     try {
-      return JSON.parse(window.localStorage.getItem(MIDI_MAP_KEY) || "{}") as Record<string, MidiTarget>;
+      return JSON.parse(window.localStorage.getItem(MIDI_MAP_KEY) || "{}") as Record<
+        string,
+        MidiTarget
+      >;
     } catch {
       return {};
     }
@@ -587,28 +701,74 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   /** Bars a selection box covered on each channel (steps), so Copy/Cut take exactly those blocks. */
   const boxSpansRef = useRef(new Map<string, [number, number]>());
   /** Several tracks copied together (2+), each pasted back onto its own channel. */
-  const multiClipboardRef = useRef<{ trackId: string; track: Track; span: [number, number] | null }[] | null>(null);
+  const multiClipboardRef = useRef<
+    { trackId: string; track: Track; span: [number, number] | null }[] | null
+  >(null);
   const [clipClipboardName, setClipClipboardName] = useState<string | null>(null);
   const clipClipboardRef = useRef<AudioClip | null>(null);
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
   /** Recorded live notes still sounding: keys held down, and notes latched by a synth's HOLD (`latched`). */
-  const heldRef = useRef(new Map<string, { ids: string[]; trackId: string; t0: number; startStep: number; pitch?: number; latched?: boolean; base?: number }>());
+  const heldRef = useRef(
+    new Map<
+      string,
+      {
+        ids: string[];
+        trackId: string;
+        t0: number;
+        startStep: number;
+        pitch?: number;
+        latched?: boolean;
+        base?: number;
+      }
+    >(),
+  );
   /** Gives a recorded live note the length it was actually held for (bounded by the loop being recorded). */
-  const finishHeldNote = (held: { ids: string[]; trackId: string; t0: number; startStep: number; base?: number }) => {
+  const finishHeldNote = (held: {
+    ids: string[];
+    trackId: string;
+    t0: number;
+    startStep: number;
+    base?: number;
+  }) => {
     const tp = transportRef.current;
     const stepDur = stepSeconds(tp.bpm);
     const elapsed = Math.round(((performance.now() - held.t0) / 1000 / stepDur) * 4) / 4;
     // A held note may cross bar lines, but never the end of the loop region being recorded.
-    const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0) ? (tp.loopEnd ?? 0) : Number.POSITIVE_INFINITY;
+    const regionEnd =
+      tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
+        ? (tp.loopEnd ?? 0)
+        : Number.POSITIVE_INFINITY;
     // never shorter than the note you heard, so the take keeps its ring-out
-    const steps = Math.max(0.25, Math.min(heardNoteSteps(held.base ?? LIVE_MIDI_NOTE_SECONDS, stepDur, elapsed), regionEnd - held.startStep));
-    setTracks((ts) => ts.map((t) => (t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => (held.ids.includes(n.id) ? { ...n, length: steps } : n)) } : t)));
+    const steps = Math.max(
+      0.25,
+      Math.min(
+        heardNoteSteps(held.base ?? LIVE_MIDI_NOTE_SECONDS, stepDur, elapsed),
+        regionEnd - held.startStep,
+      ),
+    );
+    setTracks((ts) =>
+      ts.map((t) =>
+        t.id === held.trackId
+          ? {
+              ...t,
+              notes: (t.notes ?? []).map((n) =>
+                held.ids.includes(n.id) ? { ...n, length: steps } : n,
+              ),
+            }
+          : t,
+      ),
+    );
   };
   /** Ends HOLD-latched recorded notes on a channel (only `pitch` when given). */
   const finishLatchedNotes = (trackId: string, pitch?: number) => {
     for (const [key, held] of heldRef.current) {
-      if (!held.latched || held.trackId !== trackId || (pitch !== undefined && held.pitch !== pitch)) continue;
+      if (
+        !held.latched ||
+        held.trackId !== trackId ||
+        (pitch !== undefined && held.pitch !== pitch)
+      )
+        continue;
       heldRef.current.delete(key);
       finishHeldNote(held);
     }
@@ -636,7 +796,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   };
   const recordingKeepsLooping = () => {
     const e = getEngine();
-    return loopKeepsRecording(transportRef.current, { mic: e.isRecording, print: e.isTrackRecording, synth: !!midiTakeRef.current });
+    return loopKeepsRecording(transportRef.current, {
+      mic: e.isRecording,
+      print: e.isTrackRecording,
+      synth: !!midiTakeRef.current,
+    });
   };
   /** Older notes inside the region being re-recorded (replace mode): silent while recording, removed when the take lands. */
   const replacedNoteIdsRef = useRef(new Set<string>());
@@ -675,11 +839,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     return Math.max(0, Math.min(total - 0.001, pos));
   };
   /** TOUCH releases shortly after a gesture; LATCH holds until playback stops. */
-  const automationGestureRef = useRef(new Map<string, { touchedUntil: number; latched: boolean }>());
+  const automationGestureRef = useRef(
+    new Map<string, { touchedUntil: number; latched: boolean }>(),
+  );
   // Per-lane edit history so a device automation lane can be stepped back on its
   // own without rewinding the rest of the project.
   const automationHistoryRef = useRef(
-    new Map<string, { past: { points: AutomationPoint[]; label: string }[]; future: { points: AutomationPoint[]; label: string }[] }>(),
+    new Map<
+      string,
+      {
+        past: { points: AutomationPoint[]; label: string }[];
+        future: { points: AutomationPoint[]; label: string }[];
+      }
+    >(),
   );
   const automationLastPushRef = useRef(new Map<string, { label: string; at: number }>());
   const [automationHistoryTick, setAutomationHistoryTick] = useState(0);
@@ -706,13 +878,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       setMidiInputs(list);
       setMidiOutputs(listOutputs(a));
       if (!list.length) {
-        if (!quiet) toast("No MIDI controller found", { description: "Plug one in, then press MIDI again." });
+        if (!quiet)
+          toast("No MIDI controller found", { description: "Plug one in, then press MIDI again." });
         return;
       }
       setMidiInputId((cur) => {
         // Detection must never collapse All devices or a saved multi-input choice.
         if (cur !== null) return cur;
-        try { window.localStorage.setItem(MIDI_INPUT_KEY, "all"); } catch { /* storage unavailable */ }
+        try {
+          window.localStorage.setItem(MIDI_INPUT_KEY, "all");
+        } catch {
+          /* storage unavailable */
+        }
         return "all";
       });
       if (!quiet)
@@ -738,7 +915,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     if (midiAutoTriedRef.current || !midiSupported()) return;
     midiAutoTriedRef.current = true;
     const tryConnect = () => enableMidi({ quiet: true });
-    const perms = (navigator as unknown as { permissions?: { query(q: { name: string }): Promise<{ state: string }> } }).permissions;
+    const perms = (
+      navigator as unknown as {
+        permissions?: { query(q: { name: string }): Promise<{ state: string }> };
+      }
+    ).permissions;
     if (perms?.query) {
       void perms
         .query({ name: "midi" })
@@ -760,7 +941,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const prev = midiInputIdRef.current;
     const off = new Set(readSwitchedOff());
     for (const p of midiInputsRef.current) {
-      const was = midiInputEnabled(prev, p.id), now = midiInputEnabled(id, p.id);
+      const was = midiInputEnabled(prev, p.id),
+        now = midiInputEnabled(id, p.id);
       if (was && !now) off.add(p.name);
       else if (now) off.delete(p.name);
     }
@@ -782,7 +964,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const next = withKnownSurfaces(cur, midiInputs, readSwitchedOff());
     if (next === cur) return;
     setMidiInputId(next);
-    try { if (next) window.localStorage.setItem(MIDI_INPUT_KEY, next); } catch { /* storage unavailable */ }
+    try {
+      if (next) window.localStorage.setItem(MIDI_INPUT_KEY, next);
+    } catch {
+      /* storage unavailable */
+    }
   }, [midiInputs]);
 
   // Live MIDI controller input: plays the armed/selected instrument and
@@ -808,23 +994,31 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (button === "play") studio?.togglePlay();
         else if (button === "stop") {
           // Like Studio Pro: first press stops where you are, a second press goes back to the start.
-          const press = stopPress({ playing: !!tp.playing, recording: !!tp.recording || tp.countInLeft != null });
+          const press = stopPress({
+            playing: !!tp.playing,
+            recording: !!tp.recording || tp.countInLeft != null,
+          });
           if (press === "end-take") void studio?.stop();
           else if (press === "stop-here") {
             stopLiveArps();
             releaseLatched();
             setTransportState((s) => ({ ...s, playing: false, paused: false }));
           } else setTransportState((s) => ({ ...s, paused: false, step: 0 }));
-        }
-        else if (button === "record") studio?.toggleRecord();
+        } else if (button === "record") studio?.toggleRecord();
         else if (button === "loop") setTransportState((s) => ({ ...s, loop: !s.loop }));
-        else if (button === "start") { if (!tp.playing && !tp.recording) setTransportState((s) => ({ ...s, step: s.loop ? (s.loopStart ?? 0) : 0 })); }
-        else if (button === "rewind" || button === "forward") {
-          if (!tp.playing && !tp.recording) setTransportState((s) => {
-            const at = s.step ?? 0;
-            const next = button === "rewind" ? Math.ceil(at / bar - 1) * bar : Math.floor(at / bar + 1) * bar;
-            return { ...s, step: Math.max(0, Math.min(songSteps(s.bars) - 1, next)) };
-          });
+        else if (button === "start") {
+          if (!tp.playing && !tp.recording)
+            setTransportState((s) => ({ ...s, step: s.loop ? (s.loopStart ?? 0) : 0 }));
+        } else if (button === "rewind" || button === "forward") {
+          if (!tp.playing && !tp.recording)
+            setTransportState((s) => {
+              const at = s.step ?? 0;
+              const next =
+                button === "rewind"
+                  ? Math.ceil(at / bar - 1) * bar
+                  : Math.floor(at / bar + 1) * bar;
+              return { ...s, step: Math.max(0, Math.min(songSteps(s.bars) - 1, next)) };
+            });
         } else {
           const bank = shiftStripBank(button === "bank-next" ? 1 : -1, tracksRef.current.length);
           toast(`Controller: tracks ${bank * 8 + 1}–${bank * 8 + 8}`);
@@ -833,16 +1027,27 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const runStrip = (strip: number, param: StripParam, v: number) => {
         const track = tracksRef.current[stripTrackIndex(strip)];
         if (!track) return;
-        if ((param === "solo" || param === "mute" || param === "arm" || param === "select") && v < 0.5) return; // toggle on press only
-        if (param === "select") { setSelectedId(track.id); return; }
-        setTracks((ts) => ts.map((t) => {
-          if (t.id !== track.id) return t;
-          if (param === "volume") return { ...t, volume: faderGain(v) };
-          if (param === "pan") return { ...t, pan: v * 2 - 1 };
-          if (param === "solo") return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
-          if (param === "mute") return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
-          return { ...t, armed: !t.armed };
-        }));
+        if (
+          (param === "solo" || param === "mute" || param === "arm" || param === "select") &&
+          v < 0.5
+        )
+          return; // toggle on press only
+        if (param === "select") {
+          setSelectedId(track.id);
+          return;
+        }
+        setTracks((ts) =>
+          ts.map((t) => {
+            if (t.id !== track.id) return t;
+            if (param === "volume") return { ...t, volume: faderGain(v) };
+            if (param === "pan") return { ...t, pan: v * 2 - 1 };
+            if (param === "solo")
+              return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
+            if (param === "mute")
+              return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
+            return { ...t, armed: !t.armed };
+          }),
+        );
       };
       // Jog wheel: clicks are gathered for a moment so a fast spin is one smooth move, not dozens of seeks.
       const jog = (ticks: number) => {
@@ -854,23 +1059,36 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!playing) return;
           window.clearTimeout(jogTimer);
         }
-        jogTimer = window.setTimeout(() => {
-          jogTimer = null;
-          const n = jogPending;
-          jogPending = 0;
-          const tp = transportRef.current;
-          if (tp.recording) return;
-          const beat = Math.round(stepsPerBar() / Math.max(1, tp.beatsPerBar ?? 4));
-          const target = joggedStep(tp.step ?? 0, n, beat, songSteps(tp.bars));
-          if (tp.playing) {
-            seekStepRef.current = target;
-            setPlayStep(target);
-            setSeekTick((x) => x + 1);
-          }
-          setTransportState((s) => ({ ...s, step: target }));
-        }, playing ? 180 : 40);
+        jogTimer = window.setTimeout(
+          () => {
+            jogTimer = null;
+            const n = jogPending;
+            jogPending = 0;
+            const tp = transportRef.current;
+            if (tp.recording) return;
+            const beat = Math.round(stepsPerBar() / Math.max(1, tp.beatsPerBar ?? 4));
+            const target = joggedStep(tp.step ?? 0, n, beat, songSteps(tp.bars));
+            if (tp.playing) {
+              seekStepRef.current = target;
+              setPlayStep(target);
+              setSeekTick((x) => x + 1);
+            }
+            setTransportState((s) => ({ ...s, step: target }));
+          },
+          playing ? 180 : 40,
+        );
       };
-      const BUTTON_LABEL: Record<RemoteButton, string> = { play: "Play", stop: "Stop", record: "Record", start: "Go to start", rewind: "One bar back", forward: "One bar forward", loop: "Loop on/off", "bank-prev": "Tracks ◀", "bank-next": "Tracks ▶" };
+      const BUTTON_LABEL: Record<RemoteButton, string> = {
+        play: "Play",
+        stop: "Stop",
+        record: "Record",
+        start: "Go to start",
+        rewind: "One bar back",
+        forward: "One bar forward",
+        loop: "Loop on/off",
+        "bank-prev": "Tracks ◀",
+        "bank-next": "Tracks ▶",
+      };
       const stripLabel = (strip: number, param: string) => {
         const i = stripTrackIndex(strip);
         const t = tracksRef.current[i];
@@ -881,29 +1099,54 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       offSurface = claimControllerMidi((m) => {
         const profile = resolveController(m.portName);
         if (!profile?.map) {
-          noteSurfaceEvent({ port: m.portName || "MIDI input", raw: describeRaw(m.status, m.d1, m.d2), action: "No mixer layout for this device — notes play instruments, other controls need MIDI Learn" });
+          noteSurfaceEvent({
+            port: m.portName || "MIDI input",
+            raw: describeRaw(m.status, m.d1, m.d2),
+            action:
+              "No mixer layout for this device — notes play instruments, other controls need MIDI Learn",
+          });
           return false;
         }
         const cmd = m.status & 0xf0;
         const ch = m.status & 0x0f;
         const raw = describeRaw(m.status, m.d1, m.d2);
         const port = m.portName || profile.model;
-        if (profile.mackie && profile.port.test(m.portName) && (cmd === 0xe0 || cmd === 0x90 || cmd === 0x80) && !mackiePortsRef.current.has(m.inputId)) {
+        if (
+          profile.mackie &&
+          profile.port.test(m.portName) &&
+          (cmd === 0xe0 || cmd === 0x90 || cmd === 0x80) &&
+          !mackiePortsRef.current.has(m.inputId)
+        ) {
           mackiePortsRef.current.add(m.inputId);
-          toast(`${profile.model}: DAW mode detected`, { description: "Using its Mackie Control layout — faders, knobs and buttons control tracks 1–8." });
+          toast(`${profile.model}: DAW mode detected`, {
+            description:
+              "Using its Mackie Control layout — faders, knobs and buttons control tracks 1–8.",
+          });
         }
         const mackie = mackiePortsRef.current.has(m.inputId);
         const mode = mackie ? "DAW mode (Mackie Control)" : "Assignable (CC)";
-        const learnedKey = cmd === 0xb0 ? `${ch}:${m.d1}` : cmd === 0x90 || cmd === 0x80 ? `n:${ch}:${m.d1}` : null;
+        const learnedKey =
+          cmd === 0xb0 ? `${ch}:${m.d1}` : cmd === 0x90 || cmd === 0x80 ? `n:${ch}:${m.d1}` : null;
         if (midiLearnRef.current || (learnedKey && midiMapRef.current[learnedKey])) {
-          noteSurfaceEvent({ port, raw, mode, action: midiLearnRef.current ? "MIDI Learn" : "Your MIDI Learn assignment" });
+          noteSurfaceEvent({
+            port,
+            raw,
+            mode,
+            action: midiLearnRef.current ? "MIDI Learn" : "Your MIDI Learn assignment",
+          });
           return false;
         }
         if (!mackie && cmd === 0xb0 && profile.jog === m.d1) {
           const ticks = jogTicks(m.d2, jogLast.get(m.inputId));
           jogLast.set(m.inputId, m.d2);
           jog(ticks);
-          noteSurfaceEvent({ port, raw, mode, action: ticks > 0 ? "Jog: playhead forward" : ticks < 0 ? "Jog: playhead back" : "Jog wheel" });
+          noteSurfaceEvent({
+            port,
+            raw,
+            mode,
+            action:
+              ticks > 0 ? "Jog: playhead forward" : ticks < 0 ? "Jog: playhead back" : "Jog wheel",
+          });
           return true;
         }
         if (!mackie) {
@@ -919,15 +1162,30 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }
         const act = mackieAction(m.status, m.d1, m.d2);
         let action = "Not used";
-        if (act?.kind === "volume") { runStrip(act.strip, "volume", act.value); action = stripLabel(act.strip, "volume"); }
-        else if (act?.kind === "pan") {
+        if (act?.kind === "volume") {
+          runStrip(act.strip, "volume", act.value);
+          action = stripLabel(act.strip, "volume");
+        } else if (act?.kind === "pan") {
           const track = tracksRef.current[stripTrackIndex(act.strip)];
-          if (track) setTracks((ts) => ts.map((t) => t.id === track.id ? { ...t, pan: Math.max(-1, Math.min(1, (t.pan ?? 0) + act.delta)) } : t));
+          if (track)
+            setTracks((ts) =>
+              ts.map((t) =>
+                t.id === track.id
+                  ? { ...t, pan: Math.max(-1, Math.min(1, (t.pan ?? 0) + act.delta)) }
+                  : t,
+              ),
+            );
           action = stripLabel(act.strip, "pan");
-        } else if (act?.kind === "switch") { runStrip(act.strip, act.param, 1); action = stripLabel(act.strip, act.param); }
-        else if (act?.kind === "master") { setBuses((b) => ({ ...b, master: { ...b.master, volume: faderGain(act.value) } })); action = "Master volume"; }
-        else if (act?.kind === "button") { runButton(act.button); action = BUTTON_LABEL[act.button]; }
-        else if (act?.kind === "jog") {
+        } else if (act?.kind === "switch") {
+          runStrip(act.strip, act.param, 1);
+          action = stripLabel(act.strip, act.param);
+        } else if (act?.kind === "master") {
+          setBuses((b) => ({ ...b, master: { ...b.master, volume: faderGain(act.value) } }));
+          action = "Master volume";
+        } else if (act?.kind === "button") {
+          runButton(act.button);
+          action = BUTTON_LABEL[act.button];
+        } else if (act?.kind === "jog") {
           jog(act.ticks);
           action = act.ticks > 0 ? "Jog: playhead forward" : "Jog: playhead back";
         } else if (act?.kind === "ignore") action = "Button released / not used";
@@ -948,7 +1206,25 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const at = tp.step % total;
           const stale = neighbourLiveHits(hit.track.id, hit.pad.id, at, total);
           markLiveHit(hit.track.id, hit.pad.id, at);
-          setTracks(ts => ts.map(t => t.id === hit.track.id ? { ...t, pads: (t.pads ?? []).map(p => p.id === hit.pad.id ? { ...p, steps: p.steps.map((v, i) => i === at ? Math.max(0.15, velocity) : stale.includes(i) ? 0 : v) } : p) } : t));
+          setTracks((ts) =>
+            ts.map((t) =>
+              t.id === hit.track.id
+                ? {
+                    ...t,
+                    pads: (t.pads ?? []).map((p) =>
+                      p.id === hit.pad.id
+                        ? {
+                            ...p,
+                            steps: p.steps.map((v, i) =>
+                              i === at ? Math.max(0.15, velocity) : stale.includes(i) ? 0 : v,
+                            ),
+                          }
+                        : p,
+                    ),
+                  }
+                : t,
+            ),
+          );
         };
         // Hardware mixer: knobs and faders send control-change messages.
         if (msg.type === "cc") {
@@ -972,7 +1248,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               return next;
             });
             setMidiLearn(null);
-            toast.success(`CC ${msg.cc} mapped`, { description: `Controls ${learning.param} on this channel.` });
+            toast.success(`CC ${msg.cc} mapped`, {
+              description: `Controls ${learning.param} on this channel.`,
+            });
             return;
           }
           const target = midiMapRef.current[key];
@@ -988,9 +1266,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             if (!hit) {
               // Unmapped knobs, mod wheel and sustain pedal play the external instrument the keyboard is playing.
               const ch0 = msg.channel + 1;
-              const ext = tracksRef.current.find((t) => isExternal(t.id) && t.midiChannel === ch0)
-                ?? tracksRef.current.find((t) => isExternal(t.id) && t.armed && (t.midiChannel == null || t.midiChannel === ch0))
-                ?? tracksRef.current.find((t) => isExternal(t.id) && t.id === selectedIdRef.current);
+              const ext =
+                tracksRef.current.find((t) => isExternal(t.id) && t.midiChannel === ch0) ??
+                tracksRef.current.find(
+                  (t) =>
+                    isExternal(t.id) && t.armed && (t.midiChannel == null || t.midiChannel === ch0),
+                ) ??
+                tracksRef.current.find((t) => isExternal(t.id) && t.id === selectedIdRef.current);
               if (ext) sendExternalCc(ext.id, msg.cc, msg.value);
               return;
             }
@@ -999,138 +1281,284 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
           const v = msg.value;
           const live = ccAction(target.id, target.param);
-          if (live) { live(v); return; }
-           if (target.id === "transport") {
-             if (target.param === "bpm") setTransportState((s) => ({ ...s, bpm: ccRange(v, 60, 190, 1) }));
-             else if (target.param === "swing") setTransportState((s) => ({ ...s, swing: ccRange(v, 0, 0.6, 0.01) }));
-             return;
-           }
-           if (target.id.startsWith("looper:") && target.param === "volume") {
-             const index = Number(target.id.slice(7));
-             if (Number.isInteger(index) && index >= 0 && index < getLooper().slots.length) getLooper().setVolume(index, ccRange(v, 0, 1.2));
-             return;
-           }
-           if (target.id.startsWith("bus:") || target.id.startsWith("vca:") || target.id.startsWith("aux:")) {
-             const [kind, id] = target.id.split(":");
-             if (!id || !["volume", "mute"].includes(target.param)) return;
-             const patch = target.param === "volume" ? { volume: faderGain(v) } : { muted: v >= 0.5 };
-             if (kind === "bus" && ["drums", "synths", "vocals", "fx", "master"].includes(id))
-               setBuses((b) => ({ ...b, [id]: { ...b[id as BusId], ...patch } }));
-             if (kind === "vca" && ["A", "B", "C", "D"].includes(id))
-               setVcas((b) => ({ ...b, [id]: { ...b[id as VcaId], ...patch } }));
-             if (kind === "aux" && ["reverb", "delay", "chorus"].includes(id))
-               setAuxReturns((b) => ({ ...b, [id]: { ...b[id as AuxId], ...patch } }));
-             return;
-           }
-          if (target.id === "master") {
-            if (target.param === "volume") setBuses((b) => ({ ...b, master: { ...b.master, volume: faderGain(v) } }));
-            else if (target.param === "gain") setBuses((b) => ({ ...b, master: { ...b.master, gain: trimFromCc(v) } }));
-            else if (target.param === "mute" && v >= 0.5) setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
+          if (live) {
+            live(v);
             return;
-           }
-           if (target.param.startsWith("synth:")) {
-             const path = target.param.slice(6).split(":");
-             const field = path[0];
-             setTracks((ts) => ts.map((t) => {
-               if (t.id !== target.id || !t.patch || !field) return t;
-               const patch = t.patch;
-               if (path.length === 1 && synthRanges[field]) {
-                 const [min, max, step] = synthRanges[field];
-                 return liveSound({ ...t, patch: { ...patch, [field]: ccRange(v, min, max, step) } });
-               }
-               if (field === "granular" && path[1] && patch.granular) {
-                 const knob = GRANULAR_KNOBS.find((k) => k.id === path[1]);
-                 if (!knob) return t;
-                 return liveSound({ ...t, patch: { ...patch, granular: { ...patch.granular, [knob.id]: ccRange(v, knob.min, knob.max, knob.step) } } });
-               }
-               if (field === "macro" && path[1] && /^[0-3]$/.test(path[1])) {
-                 const macros = [...(patch.macros ?? [0, 0, 0, 0])];
-                 macros[Number(path[1])] = v;
-                 return liveSound({ ...t, patch: { ...patch, macros } });
-               }
-               if (field === "fx" && path[1] && Object.hasOwn(patch.fx, path[1]) && typeof patch.fx[path[1] as keyof typeof patch.fx] === "number")
-                 return liveSound({ ...t, patch: { ...patch, fx: { ...patch.fx, [path[1]]: v } } });
-               if (["amp", "filterEnv", "modEnv", "filter2", "unison", "arp"].includes(field) && path[1]) {
-                 const group = patch[field as "amp" | "filterEnv" | "modEnv" | "filter2" | "unison" | "arp"];
-                 if (!group || typeof group !== "object" || typeof (group as Record<string, unknown>)[path[1]] !== "number") return t;
-                 const range = synthRanges[`${field}.${path[1]}`];
-                 const max = field === "amp" || field === "filterEnv" || field === "modEnv" ? (path[1] === "sustain" ? 1 : 3) : 1;
-                 const value = range ? ccRange(v, ...range) : ccRange(v, 0, max);
-                 return liveSound({ ...t, patch: { ...patch, [field]: { ...group, [path[1]]: value } } });
-               }
-               if ((field === "osc" || field === "lfo") && path[1] && path[2]) {
-                 const index = Number(path[1]);
+          }
+          if (target.id === "transport") {
+            if (target.param === "bpm")
+              setTransportState((s) => ({ ...s, bpm: ccRange(v, 60, 190, 1) }));
+            else if (target.param === "swing")
+              setTransportState((s) => ({ ...s, swing: ccRange(v, 0, 0.6, 0.01) }));
+            return;
+          }
+          if (target.id.startsWith("looper:") && target.param === "volume") {
+            const index = Number(target.id.slice(7));
+            if (Number.isInteger(index) && index >= 0 && index < getLooper().slots.length)
+              getLooper().setVolume(index, ccRange(v, 0, 1.2));
+            return;
+          }
+          if (
+            target.id.startsWith("bus:") ||
+            target.id.startsWith("vca:") ||
+            target.id.startsWith("aux:")
+          ) {
+            const [kind, id] = target.id.split(":");
+            if (!id || !["volume", "mute"].includes(target.param)) return;
+            const patch =
+              target.param === "volume" ? { volume: faderGain(v) } : { muted: v >= 0.5 };
+            if (kind === "bus" && ["drums", "synths", "vocals", "fx", "master"].includes(id))
+              setBuses((b) => ({ ...b, [id]: { ...b[id as BusId], ...patch } }));
+            if (kind === "vca" && ["A", "B", "C", "D"].includes(id))
+              setVcas((b) => ({ ...b, [id]: { ...b[id as VcaId], ...patch } }));
+            if (kind === "aux" && ["reverb", "delay", "chorus"].includes(id))
+              setAuxReturns((b) => ({ ...b, [id]: { ...b[id as AuxId], ...patch } }));
+            return;
+          }
+          if (target.id === "master") {
+            if (target.param === "volume")
+              setBuses((b) => ({ ...b, master: { ...b.master, volume: faderGain(v) } }));
+            else if (target.param === "gain")
+              setBuses((b) => ({ ...b, master: { ...b.master, gain: trimFromCc(v) } }));
+            else if (target.param === "mute" && v >= 0.5)
+              setBuses((b) => ({ ...b, master: { ...b.master, muted: !b.master.muted } }));
+            return;
+          }
+          if (target.param.startsWith("synth:")) {
+            const path = target.param.slice(6).split(":");
+            const field = path[0];
+            setTracks((ts) =>
+              ts.map((t) => {
+                if (t.id !== target.id || !t.patch || !field) return t;
+                const patch = t.patch;
+                if (path.length === 1 && synthRanges[field]) {
+                  const [min, max, step] = synthRanges[field];
+                  return liveSound({
+                    ...t,
+                    patch: { ...patch, [field]: ccRange(v, min, max, step) },
+                  });
+                }
+                if (field === "granular" && path[1] && patch.granular) {
+                  const knob = GRANULAR_KNOBS.find((k) => k.id === path[1]);
+                  if (!knob) return t;
+                  return liveSound({
+                    ...t,
+                    patch: {
+                      ...patch,
+                      granular: {
+                        ...patch.granular,
+                        [knob.id]: ccRange(v, knob.min, knob.max, knob.step),
+                      },
+                    },
+                  });
+                }
+                if (field === "macro" && path[1] && /^[0-3]$/.test(path[1])) {
+                  const macros = [...(patch.macros ?? [0, 0, 0, 0])];
+                  macros[Number(path[1])] = v;
+                  return liveSound({ ...t, patch: { ...patch, macros } });
+                }
+                if (
+                  field === "fx" &&
+                  path[1] &&
+                  Object.hasOwn(patch.fx, path[1]) &&
+                  typeof patch.fx[path[1] as keyof typeof patch.fx] === "number"
+                )
+                  return liveSound({
+                    ...t,
+                    patch: { ...patch, fx: { ...patch.fx, [path[1]]: v } },
+                  });
+                if (
+                  ["amp", "filterEnv", "modEnv", "filter2", "unison", "arp"].includes(field) &&
+                  path[1]
+                ) {
+                  const group =
+                    patch[field as "amp" | "filterEnv" | "modEnv" | "filter2" | "unison" | "arp"];
+                  if (
+                    !group ||
+                    typeof group !== "object" ||
+                    typeof (group as Record<string, unknown>)[path[1]] !== "number"
+                  )
+                    return t;
+                  const range = synthRanges[`${field}.${path[1]}`];
+                  const max =
+                    field === "amp" || field === "filterEnv" || field === "modEnv"
+                      ? path[1] === "sustain"
+                        ? 1
+                        : 3
+                      : 1;
+                  const value = range ? ccRange(v, ...range) : ccRange(v, 0, max);
+                  return liveSound({
+                    ...t,
+                    patch: { ...patch, [field]: { ...group, [path[1]]: value } },
+                  });
+                }
+                if ((field === "osc" || field === "lfo") && path[1] && path[2]) {
+                  const index = Number(path[1]);
                   const property = path[2];
-                 const list = field === "osc" ? patch.oscillators : patch.lfos;
-                 const item = list[index];
-                  if (!property || !item || typeof (item as unknown as Record<string, unknown>)[property] !== "number") return t;
-                   const range = field === "osc" ? ({ octave: [-3, 3, 1], semitone: [-12, 12, 1], fine: [-50, 50, 1], detune: [-50, 50, 1], pulseWidth: [0.05, 0.95], pan: [-1, 1] } as Record<string, [number, number, number?]>)[property] : property === "rate" ? [0.05, 20, 0.05] as [number, number, number?] : undefined;
-                  const updated = list.map((item, i) => i === index ? { ...item, [property]: range ? ccRange(v, ...range) : v } : item);
-                 return liveSound({ ...t, patch: { ...patch, [field === "osc" ? "oscillators" : "lfos"]: updated } });
-               }
-               return t;
-             }));
-             return;
-           }
-           if (target.param.startsWith("drum-trigger:")) {
-             if (v >= 0.5) triggerLearnedDrum(target, v);
-             return;
-           }
-           if (target.param.startsWith("drum:")) {
-             const [, padId, field] = target.param.split(":");
-             const range = field ? drumRanges[field] : undefined;
-             if (padId && field && range) setTracks((ts) => ts.map((t) => t.id === target.id && t.pads
-               ? liveSound({ ...t, pads: t.pads.map((pad) => pad.id === padId ? { ...pad, [field]: ccRange(v, ...range) } : pad) }) : t));
-             return;
-           }
-           if (target.param.startsWith("sampler:")) {
-             const field = target.param.slice(8);
-             const ranges: Record<string, [number, number, number?]> = {
-               start: [0, 1, 0.001], end: [0, 1, 0.001], gain: [0, 2, 0.01],
-               pitch: [-24, 24, 0.1], rootNote: [24, 96, 1], attack: [0, 2, 0.001],
-               release: [0.005, 4, 0.005], decay: [0, 3, 0.005], sustain: [0, 1, 0.01],
-               fadeIn: [0, 2, 0.005], fadeOut: [0, 2, 0.005], resonance: [0.1, 20, 0.1],
-               sampleBpm: [60, 200, 1],
-             };
-              const range = ranges[field];
-              if (field === "cutoff" || range) setTracks((ts) => ts.map((t) => {
-               if (t.id !== target.id || !t.sampler) return t;
-                const value = field === "cutoff" ? Math.round(Math.pow(10, ccRange(v, Math.log10(20), Math.log10(20000)))) : range ? ccRange(v, ...range) : 0;
-               const bounded = field === "start" ? Math.min(value, t.sampler.end - 0.002) : field === "end" ? Math.max(value, t.sampler.start + 0.002) : value;
-               return { ...t, sampler: { ...t.sampler, [field]: bounded } };
-             }));
-             return;
-           }
-           if (target.param.startsWith("plugin:")) {
-             const [, instanceId, paramId] = target.param.split(":");
-             if (instanceId && paramId) setTracks((ts) => ts.map((t) => t.id === target.id ? { ...t, plugins: (t.plugins ?? []).map((p) => p.id === instanceId
-               ? { ...p, params: p.params.map((param) => param.id === paramId ? { ...param, value: ccRange(v, param.min, param.max) } : param) } : p) } : t));
-             return;
-           }
-           if (target.param.startsWith("fx:")) {
-             const [, instanceId, paramId] = target.param.split(":");
-             if (instanceId && paramId) setFxChains((chains) => ({ ...chains, [target.id]: (chains[target.id] ?? []).map((p) => p.id === instanceId
-               ? { ...p, params: p.params.map((param) => param.id === paramId ? { ...param, value: ccRange(v, param.min, param.max) } : param) } : p) }));
-             return;
-           }
-           if (target.id.startsWith("sampler-pad:") && target.param.startsWith("pad:")) {
-             const index = Number(target.id.slice("sampler-pad:".length));
-             const field = target.param.slice(4);
-             const ranges: Record<string, [number, number, number?]> = {
-               gain: [0, 2, 0.01], pitch: [-24, 24, 0.1], attack: [0, 1, 0.001],
-               release: [0.005, 4, 0.005], choke: [0, 4, 1],
-             };
-             const range = ranges[field];
-             if (Number.isInteger(index) && range) {
-               const pads = getPadBank();
-               const pad = pads[index];
-               if (pad) setPadBank({ ...pads, [index]: { ...pad, [field]: ccRange(v, ...range) } });
-             }
-             return;
-           }
+                  const list = field === "osc" ? patch.oscillators : patch.lfos;
+                  const item = list[index];
+                  if (
+                    !property ||
+                    !item ||
+                    typeof (item as unknown as Record<string, unknown>)[property] !== "number"
+                  )
+                    return t;
+                  const range =
+                    field === "osc"
+                      ? (
+                          {
+                            octave: [-3, 3, 1],
+                            semitone: [-12, 12, 1],
+                            fine: [-50, 50, 1],
+                            detune: [-50, 50, 1],
+                            pulseWidth: [0.05, 0.95],
+                            pan: [-1, 1],
+                          } as Record<string, [number, number, number?]>
+                        )[property]
+                      : property === "rate"
+                        ? ([0.05, 20, 0.05] as [number, number, number?])
+                        : undefined;
+                  const updated = list.map((item, i) =>
+                    i === index ? { ...item, [property]: range ? ccRange(v, ...range) : v } : item,
+                  );
+                  return liveSound({
+                    ...t,
+                    patch: { ...patch, [field === "osc" ? "oscillators" : "lfos"]: updated },
+                  });
+                }
+                return t;
+              }),
+            );
+            return;
+          }
+          if (target.param.startsWith("drum-trigger:")) {
+            if (v >= 0.5) triggerLearnedDrum(target, v);
+            return;
+          }
+          if (target.param.startsWith("drum:")) {
+            const [, padId, field] = target.param.split(":");
+            const range = field ? drumRanges[field] : undefined;
+            if (padId && field && range)
+              setTracks((ts) =>
+                ts.map((t) =>
+                  t.id === target.id && t.pads
+                    ? liveSound({
+                        ...t,
+                        pads: t.pads.map((pad) =>
+                          pad.id === padId ? { ...pad, [field]: ccRange(v, ...range) } : pad,
+                        ),
+                      })
+                    : t,
+                ),
+              );
+            return;
+          }
+          if (target.param.startsWith("sampler:")) {
+            const field = target.param.slice(8);
+            const ranges: Record<string, [number, number, number?]> = {
+              start: [0, 1, 0.001],
+              end: [0, 1, 0.001],
+              gain: [0, 2, 0.01],
+              pitch: [-24, 24, 0.1],
+              rootNote: [24, 96, 1],
+              attack: [0, 2, 0.001],
+              release: [0.005, 4, 0.005],
+              decay: [0, 3, 0.005],
+              sustain: [0, 1, 0.01],
+              fadeIn: [0, 2, 0.005],
+              fadeOut: [0, 2, 0.005],
+              resonance: [0.1, 20, 0.1],
+              sampleBpm: [60, 200, 1],
+            };
+            const range = ranges[field];
+            if (field === "cutoff" || range)
+              setTracks((ts) =>
+                ts.map((t) => {
+                  if (t.id !== target.id || !t.sampler) return t;
+                  const value =
+                    field === "cutoff"
+                      ? Math.round(Math.pow(10, ccRange(v, Math.log10(20), Math.log10(20000))))
+                      : range
+                        ? ccRange(v, ...range)
+                        : 0;
+                  const bounded =
+                    field === "start"
+                      ? Math.min(value, t.sampler.end - 0.002)
+                      : field === "end"
+                        ? Math.max(value, t.sampler.start + 0.002)
+                        : value;
+                  return { ...t, sampler: { ...t.sampler, [field]: bounded } };
+                }),
+              );
+            return;
+          }
+          if (target.param.startsWith("plugin:")) {
+            const [, instanceId, paramId] = target.param.split(":");
+            if (instanceId && paramId)
+              setTracks((ts) =>
+                ts.map((t) =>
+                  t.id === target.id
+                    ? {
+                        ...t,
+                        plugins: (t.plugins ?? []).map((p) =>
+                          p.id === instanceId
+                            ? {
+                                ...p,
+                                params: p.params.map((param) =>
+                                  param.id === paramId
+                                    ? { ...param, value: ccRange(v, param.min, param.max) }
+                                    : param,
+                                ),
+                              }
+                            : p,
+                        ),
+                      }
+                    : t,
+                ),
+              );
+            return;
+          }
+          if (target.param.startsWith("fx:")) {
+            const [, instanceId, paramId] = target.param.split(":");
+            if (instanceId && paramId)
+              setFxChains((chains) => ({
+                ...chains,
+                [target.id]: (chains[target.id] ?? []).map((p) =>
+                  p.id === instanceId
+                    ? {
+                        ...p,
+                        params: p.params.map((param) =>
+                          param.id === paramId
+                            ? { ...param, value: ccRange(v, param.min, param.max) }
+                            : param,
+                        ),
+                      }
+                    : p,
+                ),
+              }));
+            return;
+          }
+          if (target.id.startsWith("sampler-pad:") && target.param.startsWith("pad:")) {
+            const index = Number(target.id.slice("sampler-pad:".length));
+            const field = target.param.slice(4);
+            const ranges: Record<string, [number, number, number?]> = {
+              gain: [0, 2, 0.01],
+              pitch: [-24, 24, 0.1],
+              attack: [0, 1, 0.001],
+              release: [0.005, 4, 0.005],
+              choke: [0, 4, 1],
+            };
+            const range = ranges[field];
+            if (Number.isInteger(index) && range) {
+              const pads = getPadBank();
+              const pad = pads[index];
+              if (pad) setPadBank({ ...pads, [index]: { ...pad, [field]: ccRange(v, ...range) } });
+            }
+            return;
+          }
           setTracks((ts) =>
             ts.map((t) =>
-               t.id === target.id && ["volume", "pan", "mute", "solo", "gain"].includes(target.param)
+              t.id === target.id && ["volume", "pan", "mute", "solo", "gain"].includes(target.param)
                 ? target.param === "volume"
                   ? { ...t, volume: faderGain(v) }
                   : target.param === "gain"
@@ -1138,9 +1566,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                     : target.param === "pan"
                       ? { ...t, pan: v * 2 - 1 }
                       : target.param === "mute"
-                        // Buttons toggle on press; releasing the button (value 0) does nothing.
-                        ? v >= 0.5 ? { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) } : t
-                        : v >= 0.5 ? { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) } : t
+                        ? // Buttons toggle on press; releasing the button (value 0) does nothing.
+                          v >= 0.5
+                          ? { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) }
+                          : t
+                        : v >= 0.5
+                          ? { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) }
+                          : t
                 : t,
             ),
           );
@@ -1169,7 +1601,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               return next;
             });
             setMidiLearn(null);
-            toast.success(`Button mapped`, { description: `Controls ${learning.param} on this channel.` });
+            toast.success(`Button mapped`, {
+              description: `Controls ${learning.param} on this channel.`,
+            });
             return;
           }
           const noteTarget = midiMapRef.current[nKey];
@@ -1186,8 +1620,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             setTracks((ts) =>
               ts.map((t) => {
                 if (t.id !== noteTarget.id) return t;
-                if (noteTarget.param === "mute") return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
-                if (noteTarget.param === "solo") return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
+                if (noteTarget.param === "mute")
+                  return { ...t, ...manualSwitchPatch({ muted: !t.muted }, isTakingSwitches()) };
+                if (noteTarget.param === "solo")
+                  return { ...t, ...manualSwitchPatch({ solo: !t.solo }, isTakingSwitches()) };
                 if (noteTarget.param === "arm") return { ...t, armed: !t.armed };
                 return t;
               }),
@@ -1199,9 +1635,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           // live pitch wheel: ±2 semitones on the track the keyboard is playing
           const ch0 = msg.channel + 1;
           const pbTarget = liveNoteTarget(tracksRef.current, selectedIdRef.current, {
-            playable: (t) => !!t.patch, channel: ch0, recording: transportRef.current.recording,
+            playable: (t) => !!t.patch,
+            channel: ch0,
+            recording: transportRef.current.recording,
           });
-          if (pbTarget && !sendExternalBend(pbTarget.id, msg.value)) getEngine().setPitchBend(pbTarget.id, bendCents(msg.value, playbackPreferences().pitchBendRange));
+          if (pbTarget && !sendExternalBend(pbTarget.id, msg.value))
+            getEngine().setPitchBend(
+              pbTarget.id,
+              bendCents(msg.value, playbackPreferences().pitchBendRange),
+            );
           return;
         }
         const { type, pitch, velocity } = msg;
@@ -1216,11 +1658,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // owns the incoming note, that pad plays — and while recording, the note
         // is written onto the step that is sounding, exactly like tapping a pad.
         const drumTarget =
-          tracksRef.current.find((t) => t.kind === "drum" && t.pads?.length && t.midiChannel === ch) ??
-          tracksRef.current.find((t) => t.armed && t.kind === "drum" && t.pads?.length && hears(t)) ??
-          (tracksRef.current.find((t) => t.id === selectedIdRef.current && t.kind === "drum" && t.pads?.length) as
-            | Track
-            | undefined);
+          tracksRef.current.find(
+            (t) => t.kind === "drum" && t.pads?.length && t.midiChannel === ch,
+          ) ??
+          tracksRef.current.find(
+            (t) => t.armed && t.kind === "drum" && t.pads?.length && hears(t),
+          ) ??
+          (tracksRef.current.find(
+            (t) => t.id === selectedIdRef.current && t.kind === "drum" && t.pads?.length,
+          ) as Track | undefined);
         if (drumTarget?.pads) {
           const hit = drumTarget.pads.find((p) => padNote(p, drumTarget.pads!) === pitch);
           if (hit) {
@@ -1243,7 +1689,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                           ...t,
                           pads: (t.pads ?? []).map((p) =>
                             p.id === hit.id
-                              ? { ...p, steps: p.steps.map((v, i) => (i === at ? Math.max(0.15, velocity) : stale.includes(i) ? 0 : v)) }
+                              ? {
+                                  ...p,
+                                  steps: p.steps.map((v, i) =>
+                                    i === at ? Math.max(0.15, velocity) : stale.includes(i) ? 0 : v,
+                                  ),
+                                }
                               : p,
                           ),
                         }
@@ -1258,10 +1709,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        const notable = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
+        const notable = (t: Track) =>
+          t.kind === "instrument" || t.kind === "midi" || t.kind === "sampler";
         // The synth you are on plays (not another armed channel); while recording, the recording channel.
         const target = liveNoteTarget(tracksRef.current, selectedIdRef.current, {
-          playable: notable, channel: ch, recording: transportRef.current.recording, anyFallback: true,
+          playable: notable,
+          channel: ch,
+          recording: transportRef.current.recording,
+          anyFallback: true,
         });
         if (!target) return;
         const engine = getEngine();
@@ -1278,26 +1733,61 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // External instruments hold the note until the key is released, like a real keyboard.
             const anySolo = tracksRef.current.some((t) => t.solo);
             const audible = !target.muted && !target.deviceBypassed && (!anySolo || target.solo);
-            if (audible) for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) externalNoteOn(target.id, p, Math.max(0.15, velocity));
-          } else triggerNote(engine, target, pitch, holding ? HELD_NOTE_SECONDS : LIVE_MIDI_NOTE_SECONDS, Math.max(0.15, velocity), undefined, holding ? HELD_NOTE_SECONDS : 30);
+            if (audible)
+              for (const p of processMidiThroughPlugins(
+                pitch + (target.octave ?? 0) * 12,
+                target.plugins,
+              ))
+                externalNoteOn(target.id, p, Math.max(0.15, velocity));
+          } else
+            triggerNote(
+              engine,
+              target,
+              pitch,
+              holding ? HELD_NOTE_SECONDS : LIVE_MIDI_NOTE_SECONDS,
+              Math.max(0.15, velocity),
+              undefined,
+              holding ? HELD_NOTE_SECONDS : 30,
+            );
           if (tp.recording && target.recording) {
             const pitches = processMidiThroughPlugins(pitch, target.plugins);
             const heard = heardStepPos();
-            const at = tp.snapRecording === false ? heard : snapRecordedStep(heard, tp.quantize ?? 1, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)], tp.loop);
+            const at =
+              tp.snapRecording === false
+                ? heard
+                : snapRecordedStep(
+                    heard,
+                    tp.quantize ?? 1,
+                    tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)],
+                    tp.loop,
+                  );
             const notes: MidiNote[] = pitches.flatMap((recordedPitch) => {
-              const note = capturedNote({
-              id: uid(),
-              step: at,
-              length: heardNoteSteps(LIVE_MIDI_NOTE_SECONDS, stepDur),
-              pitch: recordedPitch,
-              velocity: Math.max(0.15, velocity),
-              }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
+              const note = capturedNote(
+                {
+                  id: uid(),
+                  step: at,
+                  length: heardNoteSteps(LIVE_MIDI_NOTE_SECONDS, stepDur),
+                  pitch: recordedPitch,
+                  velocity: Math.max(0.15, velocity),
+                },
+                tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)],
+              );
               return note ? [note] : [];
             });
-            notes.forEach((note) => recordedNoteIdsRef.current.set(note.id, engine.ctx?.currentTime ?? 0));
-            heldRef.current.set(heldKey, { ids: notes.map((note) => note.id), trackId: target.id, t0: performance.now(), startStep: at, pitch });
+            notes.forEach((note) =>
+              recordedNoteIdsRef.current.set(note.id, engine.ctx?.currentTime ?? 0),
+            );
+            heldRef.current.set(heldKey, {
+              ids: notes.map((note) => note.id),
+              trackId: target.id,
+              t0: performance.now(),
+              startStep: at,
+              pitch,
+            });
             setTracks((ts) =>
-              ts.map((t) => (t.id === target.id ? { ...t, notes: [...(t.notes ?? []), ...notes] } : t)),
+              ts.map((t) =>
+                t.id === target.id ? { ...t, notes: [...(t.notes ?? []), ...notes] } : t,
+              ),
             );
           }
         } else {
@@ -1308,12 +1798,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             // note gets its length when HOLD lets go.
             if (held) {
               heldRef.current.delete(heldKey);
-              heldRef.current.set(`latch:${held.trackId}:${held.ids[0] ?? uid()}`, { ...held, latched: true });
+              heldRef.current.set(`latch:${held.trackId}:${held.ids[0] ?? uid()}`, {
+                ...held,
+                latched: true,
+              });
             }
             return;
           }
           keyUp(pitch);
-          for (const p of processMidiThroughPlugins(pitch + (target.octave ?? 0) * 12, target.plugins)) { arpLiveRelease(target.id, p); externalNoteOff(target.id, p); }
+          for (const p of processMidiThroughPlugins(
+            pitch + (target.octave ?? 0) * 12,
+            target.plugins,
+          )) {
+            arpLiveRelease(target.id, p);
+            externalNoteOff(target.id, p);
+          }
           if (!held) return;
           heldRef.current.delete(heldKey);
           finishHeldNote(held);
@@ -1330,18 +1829,24 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   // A synth's HOLD letting go (switched off, or Stop): release its latched voices, arp keys,
   // external hardware notes and key lights, and give recorded notes their held length.
-  useEffect(() => onHoldRelease((trackId, pitches) => {
-    const engine = getEngine();
-    engine.releaseHeld(trackId);
-    arpReleaseAll(trackId);
-    const t = tracksRef.current.find((x) => x.id === trackId);
-    for (const pitch of pitches) {
-      keyUp(pitch);
-      if (t && isExternal(trackId)) for (const p of processMidiThroughPlugins(pitch + (t.octave ?? 0) * 12, t.plugins)) externalNoteOff(trackId, p);
-    }
-    finishLatchedNotes(trackId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), []);
+  useEffect(
+    () =>
+      onHoldRelease((trackId, pitches) => {
+        const engine = getEngine();
+        engine.releaseHeld(trackId);
+        arpReleaseAll(trackId);
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        for (const pitch of pitches) {
+          keyUp(pitch);
+          if (t && isExternal(trackId))
+            for (const p of processMidiThroughPlugins(pitch + (t.octave ?? 0) * 12, t.plugins))
+              externalNoteOff(trackId, p);
+        }
+        finishLatchedNotes(trackId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined" && getEngine().ctx) {
@@ -1362,10 +1867,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     }
   }, [transport.recording]);
 
-
   useEffect(() => {
     if (typeof window === "undefined") return;
-    for (const [id, b] of Object.entries(buses)) getEngine().setBus(id, b.volume, b.muted, b.gain ?? 1);
+    for (const [id, b] of Object.entries(buses))
+      getEngine().setBus(id, b.volume, b.muted, b.gain ?? 1);
   }, [buses]);
 
   useEffect(() => {
@@ -1375,14 +1880,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    for (const [id, value] of Object.entries(auxReturns)) getEngine().setAuxReturn(id, value.volume, value.muted);
+    for (const [id, value] of Object.entries(auxReturns))
+      getEngine().setAuxReturn(id, value.volume, value.muted);
   }, [auxReturns]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !getEngine().ctx) return;
     for (const [target, list] of Object.entries(fxChains)) getEngine().setFxInserts(target, list);
   }, [fxChains]);
-
 
   // step clock — a look-ahead scheduler. Steps are queued against the audio
   // clock a little before they sound, so playback stays tight even when the
@@ -1445,7 +1950,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     /** Everything that should happen the moment a step is actually heard. */
     let prevAt = -1;
     // Mute/solo presses captured during the current take (timeline or reel recording), and the last replayed step.
-    let switchTake: { start: number; prev: number; baseline: Map<string, { muted: boolean; solo: boolean }> } | null = null;
+    let switchTake: {
+      start: number;
+      prev: number;
+      baseline: Map<string, { muted: boolean; solo: boolean }>;
+    } | null = null;
     let switchPrev = -1;
     const reachStep = (n: number) => {
       const tp = transportRef.current;
@@ -1464,17 +1973,37 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (tp.punchOut != null && at === tp.punchOut) punchRef.current?.stop();
       // Mute/solo buttons: recorded with their timing during a take, replayed otherwise.
       {
-        const taking = tp.playing && (tp.recording || getReelRecorder().getSnapshot().mode === "recording");
+        const taking =
+          tp.playing && (tp.recording || getReelRecorder().getSnapshot().mode === "recording");
         const patches = new Map<string, Partial<Track>>();
         if (taking) {
-          const take = switchTake ?? (switchTake = { start: at, prev: at - 1, baseline: new Map() });
+          const take =
+            switchTake ?? (switchTake = { start: at, prev: at - 1, baseline: new Map() });
           const from = at <= take.prev ? at - 1 : take.prev;
           for (const t of list) {
             const base = take.baseline.get(t.id) ?? { muted: !!t.muted, solo: !!t.solo };
             if (!take.baseline.has(t.id)) take.baseline.set(t.id, base);
-            const muteEvents = writeSwitchStep(t.muteEvents, from, at, !!t.muted, base.muted, take.start);
-            const soloEvents = writeSwitchStep(t.soloEvents, from, at, !!t.solo, base.solo, take.start);
-            if (muteEvents || soloEvents) patches.set(t.id, { ...(muteEvents ? { muteEvents } : {}), ...(soloEvents ? { soloEvents } : {}) });
+            const muteEvents = writeSwitchStep(
+              t.muteEvents,
+              from,
+              at,
+              !!t.muted,
+              base.muted,
+              take.start,
+            );
+            const soloEvents = writeSwitchStep(
+              t.soloEvents,
+              from,
+              at,
+              !!t.solo,
+              base.solo,
+              take.start,
+            );
+            if (muteEvents || soloEvents)
+              patches.set(t.id, {
+                ...(muteEvents ? { muteEvents } : {}),
+                ...(soloEvents ? { soloEvents } : {}),
+              });
           }
           take.prev = at;
           switchPrev = at;
@@ -1482,8 +2011,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           switchTake = null;
           // Replay at recorded presses (and when playback starts), so a manual press still works between them.
           for (const t of list) {
-            const muted = switchEdge(t.muteEvents, switchPrev, at) ? switchStateAt(t.muteEvents, at) : undefined;
-            const solo = switchEdge(t.soloEvents, switchPrev, at) ? switchStateAt(t.soloEvents, at) : undefined;
+            const muted = switchEdge(t.muteEvents, switchPrev, at)
+              ? switchStateAt(t.muteEvents, at)
+              : undefined;
+            const solo = switchEdge(t.soloEvents, switchPrev, at)
+              ? switchStateAt(t.soloEvents, at)
+              : undefined;
             const patch: Partial<Track> = {};
             if (muted !== undefined && muted !== !!t.muted) patch.muted = muted;
             if (solo !== undefined && solo !== !!t.solo) patch.solo = solo;
@@ -1494,7 +2027,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (patches.size) {
           const next = list.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t));
           tracksRef.current = next;
-          setTracks((current) => current.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t)));
+          setTracks((current) =>
+            current.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t)),
+          );
           if (!taking) engine.syncMixIfChanged(next);
         }
       }
@@ -1513,7 +2048,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             setTracks((current) =>
               current.map((track) =>
                 track.id === t.id
-                  ? { ...track, automation: (track.automation ?? []).map((item) => (item.param === lane.param ? { ...item, points } : item)) }
+                  ? {
+                      ...track,
+                      automation: (track.automation ?? []).map((item) =>
+                        item.param === lane.param ? { ...item, points } : item,
+                      ),
+                    }
                   : track,
               ),
             );
@@ -1524,21 +2064,31 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             const plugin = (t.plugins ?? []).find((item) => item.id === pluginId);
             const control = plugin?.params.find((item) => item.id === paramId);
             if (control) {
-              const normalized = control.max > control.min ? (control.value - control.min) / (control.max - control.min) : 0;
-              const points = [...lane.points.filter((point) => point.step !== at), { step: at, value: normalized }].sort(
-                (a, b) => a.step - b.step,
-              );
+              const normalized =
+                control.max > control.min
+                  ? (control.value - control.min) / (control.max - control.min)
+                  : 0;
+              const points = [
+                ...lane.points.filter((point) => point.step !== at),
+                { step: at, value: normalized },
+              ].sort((a, b) => a.step - b.step);
               setTracks((current) =>
                 current.map((track) =>
                   track.id === t.id
-                    ? { ...track, automation: (track.automation ?? []).map((item) => (item.param === lane.param ? { ...item, points } : item)) }
+                    ? {
+                        ...track,
+                        automation: (track.automation ?? []).map((item) =>
+                          item.param === lane.param ? { ...item, points } : item,
+                        ),
+                      }
                     : track,
                 ),
               );
             }
             continue;
           }
-          if (laneReads(lane, touching, latched) && lane.points.length > 0) ride[lane.param] = valueAt(lane.points, at);
+          if (laneReads(lane, touching, latched) && lane.points.length > 0)
+            ride[lane.param] = valueAt(lane.points, at);
         }
         if (Object.keys(ride).length > 0) engine.automate(t.id, ride);
       }
@@ -1571,7 +2121,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const tp = transportRef.current;
         const total = songSteps(tp.bars);
         const stepDur = stepSeconds(tp.bpm);
-        if (tp.recording && isLoopWrap(lastScheduled, step % total, tp) && takeInProgress() && !recordingKeepsLooping()) {
+        if (
+          tp.recording &&
+          isLoopWrap(lastScheduled, step % total, tp) &&
+          takeInProgress() &&
+          !recordingKeepsLooping()
+        ) {
           // Recording stops at the loop end: queue only the playhead's arrival at the loop start
           // (which ends the take and stops playback), never the sound of the next pass.
           queue.push({ step: step % total, time: nextTime });
@@ -1612,7 +2167,6 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transport.playing, seekTick]);
 
-
   // MIDI clock out: Start/Continue when the song starts, Stop when it stops.
   const midiWasPlayingRef = useRef(false);
   useEffect(() => {
@@ -1633,7 +2187,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (!lane || lane.locked || !["write", "touch", "latch"].includes(lane.mode)) continue;
           const key = `${id}:${param}`;
           const before = automationGestureRef.current.get(key);
-          automationGestureRef.current.set(key, { touchedUntil: performance.now() + 180, latched: lane.mode === "latch" || !!before?.latched });
+          automationGestureRef.current.set(key, {
+            touchedUntil: performance.now() + 180,
+            latched: lane.mode === "latch" || !!before?.latched,
+          });
         }
       }
     }
@@ -1643,7 +2200,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   // Arming an audio channel opens the microphone so its meter moves and, when
   // monitoring is on, you hear yourself. Recording is a separate step.
   const armedInputId =
-    tracks.find((t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"))?.id ?? null;
+    tracks.find(
+      (t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal" || t.kind === "sampler"),
+    )?.id ?? null;
   const monitorOn = transport.monitor ?? false;
   useEffect(() => {
     const engine = getEngine();
@@ -1679,10 +2238,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (!id || engine.isRecording) return;
       engine.stopInputMonitoring();
       void engine.startInputMonitoring(id, monitorOnRef.current).catch((err: unknown) =>
-        toast.error("Microphone unavailable", { description: err instanceof Error ? err.message : undefined }));
+        toast.error("Microphone unavailable", {
+          description: err instanceof Error ? err.message : undefined,
+        }),
+      );
     };
     const onChanged = () => {
-      if (getEngine().isRecording) toast("New input applies after this take", { description: "The take in progress keeps recording from the current input." });
+      if (getEngine().isRecording)
+        toast("New input applies after this take", {
+          description: "The take in progress keeps recording from the current input.",
+        });
       else reopen();
     };
     const onLost = (e: Event) => {
@@ -1690,16 +2255,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       if (owner !== "timeline") return;
       const engine = getEngine();
       if (engine.isRecording) {
-        toast.error("Audio input disconnected — recording stopped", { description: `${label || "The input"} went away. The take up to that point was kept. Reconnect it and press record again.`, duration: 10000 });
+        toast.error("Audio input disconnected — recording stopped", {
+          description: `${label || "The input"} went away. The take up to that point was kept. Reconnect it and press record again.`,
+          duration: 10000,
+        });
         void endRecordingRef.current?.(false).finally(reopen);
       } else {
-        toast.warning("Audio input disconnected", { description: `${label || "The input"} went away. Reconnect it, or choose another input in Settings → Audio.` });
+        toast.warning("Audio input disconnected", {
+          description: `${label || "The input"} went away. Reconnect it, or choose another input in Settings → Audio.`,
+        });
         reopen();
       }
     };
     const onFallback = (e: Event) => {
       const { label } = (e as CustomEvent<{ label?: string }>).detail ?? {};
-      toast.warning("Your chosen input isn't connected", { description: `Using ${label || "the default input"} instead. Pick another in Settings → Audio.` });
+      toast.warning("Your chosen input isn't connected", {
+        description: `Using ${label || "the default input"} instead. Pick another in Settings → Audio.`,
+      });
     };
     window.addEventListener(INPUT_CHANGED_EVENT, onChanged);
     window.addEventListener(INPUT_LOST_EVENT, onLost);
@@ -1725,7 +2297,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       result = await engine.stopInputRecording();
     } catch (err) {
       markTakeFailed();
-      toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Take couldn't be kept", {
+        description: err instanceof Error ? err.message : undefined,
+      });
     }
     if (!target) return;
     if (!result) {
@@ -1744,13 +2318,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     }
     // The recorder ran before the song started (count-in / opened before playback):
     // skip the lead-in so what was sung on beat 1 sits on beat 1.
-    const aligned = preRoll && measured == null && song && song.time >= recStartedAt
-      ? preRollTake(song.step, song.time + outputDelay(engine.ctx), recStartedAt, result.duration, getInputLatencyMs() / 1000)
-      : alignedTake(
-        measured ?? snapRecStart(recStartStepRef.current, transportRef.current.snap),
-        result.duration,
-        getInputLatencyMs() / 1000,
-      );
+    const aligned =
+      preRoll && measured == null && song && song.time >= recStartedAt
+        ? preRollTake(
+            song.step,
+            song.time + outputDelay(engine.ctx),
+            recStartedAt,
+            result.duration,
+            getInputLatencyMs() / 1000,
+          )
+        : alignedTake(
+            measured ?? snapRecStart(recStartStepRef.current, transportRef.current.snap),
+            result.duration,
+            getInputLatencyMs() / 1000,
+          );
     const clip: AudioClip = {
       id: uid(),
       name: `TAKE ${takeNo}`,
@@ -1759,7 +2340,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       url: result.url,
       start: aligned.start,
       offset: aligned.offset,
-      length: Math.min(aligned.length, Math.max(0, loopRegion(transportRef.current)[1] - aligned.start) * stepSeconds(transportRef.current.bpm)),
+      length: Math.min(
+        aligned.length,
+        Math.max(0, loopRegion(transportRef.current)[1] - aligned.start) *
+          stepSeconds(transportRef.current.bpm),
+      ),
       gain: 1,
     };
     const replace = !!transportRef.current.replace;
@@ -1769,17 +2354,40 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     if (passes > 0 && transportRef.current.loop) {
       // One continuous recording across loop passes: cut it into one take per pass.
       const [lo, hi] = loopRegion(transportRef.current);
-      const windows = splitLoopPasses({ start: aligned.start, offset: aligned.offset, duration: result.duration, lo, hi, stepDur });
+      const windows = splitLoopPasses({
+        start: aligned.start,
+        offset: aligned.offset,
+        duration: result.duration,
+        lo,
+        hi,
+        stepDur,
+      });
       if (windows.length > 1) {
         const shown = shownPassIndex(windows, lo, hi, stepDur);
-        const takes = windows.map((w, k) => ({ ...clip, id: uid(), name: `TAKE ${takeNo} · PASS ${k + 1}`, start: w.start, offset: w.offset, length: w.length }));
+        const takes = windows.map((w, k) => ({
+          ...clip,
+          id: uid(),
+          name: `TAKE ${takeNo} · PASS ${k + 1}`,
+          start: w.start,
+          offset: w.offset,
+          length: w.length,
+        }));
         const top = { ...takes[shown]! };
         const others = takes.filter((_, k) => k !== shown).reverse();
         const end = (top.start ?? 0) + (hi - (top.start ?? 0));
         const oldClips = target.clips ?? [];
         const kept = replace ? replaceTakeRegion(oldClips, lo, end, stepDur) : oldClips;
-        top.alts = [...others, ...(replace ? coveredTakes(oldClips, lo, end, stepDur) : [])].slice(0, 12);
-        setTracks((ts) => ts.map((t) => (t.id === target.id ? { ...t, recording: false, clips: [...kept, top], activeClipId: top.id } : t)));
+        top.alts = [...others, ...(replace ? coveredTakes(oldClips, lo, end, stepDur) : [])].slice(
+          0,
+          12,
+        );
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === target.id
+              ? { ...t, recording: false, clips: [...kept, top], activeClipId: top.id }
+              : t,
+          ),
+        );
         toast.success(`${windows.length} takes recorded on ${target.name}`, {
           description: `Showing pass ${shown + 1}. Pick another pass from the clip's takes — Undo brings back what was there before.`,
         });
@@ -1793,10 +2401,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const alts = coveredTakes(oldClips, clip.start ?? 0, newEnd, stepDur);
       if (alts.length) clip.alts = alts;
     }
-    const replaced = oldClips.filter((c) => (c.start ?? 0) < newEnd && (c.start ?? 0) + (c.length ?? c.duration) / clipRate(c) / stepDur > (clip.start ?? 0)).length;
+    const replaced = oldClips.filter(
+      (c) =>
+        (c.start ?? 0) < newEnd &&
+        (c.start ?? 0) + (c.length ?? c.duration) / clipRate(c) / stepDur > (clip.start ?? 0),
+    ).length;
     setTracks((ts) =>
       ts.map((t) =>
-        t.id === target.id ? { ...t, recording: false, clips: [...kept, clip], activeClipId: clip.id } : t,
+        t.id === target.id
+          ? { ...t, recording: false, clips: [...kept, clip], activeClipId: clip.id }
+          : t,
       ),
     );
     toast.success(`${clip.name} recorded on ${target.name}`, {
@@ -1811,89 +2425,158 @@ export function StudioProvider({ children }: { children: ReactNode }) {
    * those notes (every overdub pass included) through a flat copy of the channel, so playing the
    * block back through the real channel sounds like the notes once — no doubled effects or fader.
    */
-  const landMidiTake = useCallback(async (take: { trackId: string; passes: number }, heardEnd: number) => {
-    // state updates from note-offs/held notes must reach tracksRef before reading it
-    await new Promise((r) => window.setTimeout(r, 0));
-    const target = tracksRef.current.find((t) => t.id === take.trackId);
-    if (!target) return;
-    const tp = transportRef.current;
-    const stepDur = stepSeconds(tp.bpm);
-    const [lo, hi] = loopRegion(tp);
-    const captured = recordedNoteIdsRef.current;
-    const replacedIds = replacedNoteIdsRef.current;
-    const start = take.passes > 0 ? lo : Math.max(lo, Math.min(hi - 1, Math.floor(recStartStepRef.current)));
-    const rawEnd = take.passes > 0 ? hi : Math.max(start + 1, Math.ceil(heardEnd));
-    const end = Math.min(hi, Math.ceil(rawEnd / STEPS_PER_BEAT) * STEPS_PER_BEAT);
-    const barSteps = stepsPerBar();
-    const notes = (target.notes ?? []).filter((n) => !replacedIds.has(n.id)).map((n) => captured.has(n.id) ? {
-      ...n, recordedEnd: end, length: Math.max(0.25, Math.min(n.length, end - n.step)),
-    } : n);
-    const lastCaptured = notes.reduce((m, n) => (captured.has(n.id) ? Math.max(m, Math.floor(n.step) + 1) : m), 0);
-    const steps = lastCaptured > target.steps ? Math.ceil(end / barSteps) * barSteps : target.steps;
-    const played = notes.some((n) => captured.has(n.id));
-    const inRegion = notes.some((n) => n.step < end && n.step + n.length > start);
-    const landNotesOnly = (printedAudio: boolean) =>
-      setTracks((ts) => ts.map((t) => (t.id === take.trackId ? { ...t, notes, steps, recording: false, printedAudio } : t)));
-    if (!played && !replacedIds.size) {
-      landNotesOnly(!!target.printedAudio);
-      toast("No notes were played", { description: `Nothing was recorded on ${target.name}.` });
-      return;
-    }
-    if (!inRegion || isExternal(target.id)) {
-      // nothing left to draw (or the sound comes from outside hardware): the notes are the take
-      landNotesOnly(false);
-      toast.success(`${target.name} notes recorded`);
-      return;
-    }
-    const flat: Track = {
-      ...target, notes, steps, volume: 1, gain: 1, pan: 0, plugins: [], sends: { reverb: 0, delay: 0, chorus: 0 },
-      automation: [], muted: false, solo: false, deviceBypassed: false, frozen: false, printedAudio: false,
-      clips: [], recording: false, bus: "master", vca: undefined, muteEvents: undefined, soloEvents: undefined,
-    };
-    const engine = getEngine();
-    const ctx = engine.init();
-    const { renderSong } = await import("./song-render");
-    const cap = await renderSong({
-      tracks: [flat], transport: tp, buses: {}, vcas: {}, auxReturns: {}, fxChains: {},
-      startStep: start, lengthSteps: end - start, tail: 0, sampleRate: ctx.sampleRate,
-    });
-    if (!cap) {
-      landNotesOnly(false);
-      toast.success(`${target.name} notes recorded`, { description: "This browser can't draw the waveform; the notes play the part." });
-      return;
-    }
-    const url = URL.createObjectURL(encodeWav(cap));
-    await engine.ensureBuffer(url);
-    const frames = cap.left.length;
-    const duration = frames / cap.sampleRate;
-    const buckets = Math.min(1600, Math.max(160, Math.ceil(duration * 80)));
-    const peaks = Array.from({ length: buckets }, (_, b) => {
-      const from = Math.floor((b * frames) / buckets);
-      const to = Math.floor(((b + 1) * frames) / buckets);
-      let peak = 0;
-      for (let i = from; i < to; i++) peak = Math.max(peak, Math.abs(cap.left[i] ?? 0), Math.abs(cap.right[i] ?? 0));
-      return peak;
-    });
-    const latest = tracksRef.current.find((t) => t.id === take.trackId) ?? target;
-    const clip: AudioClip = {
-      id: uid(), name: `${target.name} TAKE ${(latest.clips?.length ?? 0) + 1}`,
-      peaks, duration, url, start, offset: 0, length: Math.min(duration, (end - start) * stepDur), gain: 1,
-    };
-    // The rendered take already holds every note in its bars, so older takes there step aside
-    // (kept as alternatives on the new block) instead of stacking and doubling.
-    const alts = coveredTakes(latest.clips ?? [], start, end, stepDur);
-    pickupClipIdsRef.current.add(clip.id);
-    setTracks((ts) => ts.map((t) => (t.id === take.trackId ? {
-      ...t, notes, steps, recording: false,
-      clips: [...replaceTakeRegion(t.clips ?? [], start, end, stepDur), alts.length ? { ...clip, alts } : clip],
-      activeClipId: clip.id, printedAudio: true,
-    } : t)));
-    toast.success(`${clip.name} recorded`, {
-      description: take.passes > 0
-        ? `${take.passes + 1} passes layered into one take. Delete the block to remove its notes too.`
-        : "Double-click the waveform to edit it; switch to Notes to edit the pattern.",
-    });
-  }, []);
+  const landMidiTake = useCallback(
+    async (take: { trackId: string; passes: number }, heardEnd: number) => {
+      // state updates from note-offs/held notes must reach tracksRef before reading it
+      await new Promise((r) => window.setTimeout(r, 0));
+      const target = tracksRef.current.find((t) => t.id === take.trackId);
+      if (!target) return;
+      const tp = transportRef.current;
+      const stepDur = stepSeconds(tp.bpm);
+      const [lo, hi] = loopRegion(tp);
+      const captured = recordedNoteIdsRef.current;
+      const replacedIds = replacedNoteIdsRef.current;
+      const start =
+        take.passes > 0 ? lo : Math.max(lo, Math.min(hi - 1, Math.floor(recStartStepRef.current)));
+      const rawEnd = take.passes > 0 ? hi : Math.max(start + 1, Math.ceil(heardEnd));
+      const end = Math.min(hi, Math.ceil(rawEnd / STEPS_PER_BEAT) * STEPS_PER_BEAT);
+      const barSteps = stepsPerBar();
+      const notes = (target.notes ?? [])
+        .filter((n) => !replacedIds.has(n.id))
+        .map((n) =>
+          captured.has(n.id)
+            ? {
+                ...n,
+                recordedEnd: end,
+                length: Math.max(0.25, Math.min(n.length, end - n.step)),
+              }
+            : n,
+        );
+      const lastCaptured = notes.reduce(
+        (m, n) => (captured.has(n.id) ? Math.max(m, Math.floor(n.step) + 1) : m),
+        0,
+      );
+      const steps =
+        lastCaptured > target.steps ? Math.ceil(end / barSteps) * barSteps : target.steps;
+      const played = notes.some((n) => captured.has(n.id));
+      const inRegion = notes.some((n) => n.step < end && n.step + n.length > start);
+      const landNotesOnly = (printedAudio: boolean) =>
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === take.trackId ? { ...t, notes, steps, recording: false, printedAudio } : t,
+          ),
+        );
+      if (!played && !replacedIds.size) {
+        landNotesOnly(!!target.printedAudio);
+        toast("No notes were played", { description: `Nothing was recorded on ${target.name}.` });
+        return;
+      }
+      if (!inRegion || isExternal(target.id)) {
+        // nothing left to draw (or the sound comes from outside hardware): the notes are the take
+        landNotesOnly(false);
+        toast.success(`${target.name} notes recorded`);
+        return;
+      }
+      const flat: Track = {
+        ...target,
+        notes,
+        steps,
+        volume: 1,
+        gain: 1,
+        pan: 0,
+        plugins: [],
+        sends: { reverb: 0, delay: 0, chorus: 0 },
+        automation: [],
+        muted: false,
+        solo: false,
+        deviceBypassed: false,
+        frozen: false,
+        printedAudio: false,
+        clips: [],
+        recording: false,
+        bus: "master",
+        vca: undefined,
+        muteEvents: undefined,
+        soloEvents: undefined,
+      };
+      const engine = getEngine();
+      const ctx = engine.init();
+      const { renderSong } = await import("./song-render");
+      const cap = await renderSong({
+        tracks: [flat],
+        transport: tp,
+        buses: {},
+        vcas: {},
+        auxReturns: {},
+        fxChains: {},
+        startStep: start,
+        lengthSteps: end - start,
+        tail: 0,
+        sampleRate: ctx.sampleRate,
+      });
+      if (!cap) {
+        landNotesOnly(false);
+        toast.success(`${target.name} notes recorded`, {
+          description: "This browser can't draw the waveform; the notes play the part.",
+        });
+        return;
+      }
+      const url = URL.createObjectURL(encodeWav(cap));
+      await engine.ensureBuffer(url);
+      const frames = cap.left.length;
+      const duration = frames / cap.sampleRate;
+      const buckets = Math.min(1600, Math.max(160, Math.ceil(duration * 80)));
+      const peaks = Array.from({ length: buckets }, (_, b) => {
+        const from = Math.floor((b * frames) / buckets);
+        const to = Math.floor(((b + 1) * frames) / buckets);
+        let peak = 0;
+        for (let i = from; i < to; i++)
+          peak = Math.max(peak, Math.abs(cap.left[i] ?? 0), Math.abs(cap.right[i] ?? 0));
+        return peak;
+      });
+      const latest = tracksRef.current.find((t) => t.id === take.trackId) ?? target;
+      const clip: AudioClip = {
+        id: uid(),
+        name: `${target.name} TAKE ${(latest.clips?.length ?? 0) + 1}`,
+        peaks,
+        duration,
+        url,
+        start,
+        offset: 0,
+        length: Math.min(duration, (end - start) * stepDur),
+        gain: 1,
+      };
+      // The rendered take already holds every note in its bars, so older takes there step aside
+      // (kept as alternatives on the new block) instead of stacking and doubling.
+      const alts = coveredTakes(latest.clips ?? [], start, end, stepDur);
+      pickupClipIdsRef.current.add(clip.id);
+      setTracks((ts) =>
+        ts.map((t) =>
+          t.id === take.trackId
+            ? {
+                ...t,
+                notes,
+                steps,
+                recording: false,
+                clips: [
+                  ...replaceTakeRegion(t.clips ?? [], start, end, stepDur),
+                  alts.length ? { ...clip, alts } : clip,
+                ],
+                activeClipId: clip.id,
+                printedAudio: true,
+              }
+            : t,
+        ),
+      );
+      toast.success(`${clip.name} recorded`, {
+        description:
+          take.passes > 0
+            ? `${take.passes + 1} passes layered into one take. Delete the block to remove its notes too.`
+            : "Double-click the waveform to edit it; switch to Notes to edit the pattern.",
+      });
+    },
+    [],
+  );
 
   const finishTrackRecording = useCallback(async () => {
     const engine = getEngine();
@@ -1908,7 +2591,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         replacedNoteIdsRef.current = new Set();
         clearLiveHits();
       }, 80);
-      setTracks((ts) => ts.map((t) => (t.recording && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum") ? { ...t, recording: false } : t)));
+      setTracks((ts) =>
+        ts.map((t) =>
+          t.recording && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum")
+            ? { ...t, recording: false }
+            : t,
+        ),
+      );
     };
     const midiTake = midiTakeRef.current;
     if (!engine.isTrackRecording && !midiTake) {
@@ -1919,21 +2608,34 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     // the loop end when looping, otherwise where the transport stopped.
     const tp = transportRef.current;
     const endStep = loopEndStepRef.current ?? tp.step;
-    const regionEnd = tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0)
-      ? (tp.loopEnd ?? 0)
-      : endStep;
+    const regionEnd =
+      tp.loop && (tp.loopEnd ?? 0) > (tp.loopStart ?? 0) ? (tp.loopEnd ?? 0) : endStep;
     for (const [pitch, held] of heldRef.current) {
       heldRef.current.delete(pitch);
       const end = regionEnd >= held.startStep ? regionEnd : regionEnd + songSteps(tp.bars);
       const length = Math.max(0.25, end - held.startStep);
-      setTracks((ts) => ts.map((t) => t.id === held.trackId ? { ...t, notes: (t.notes ?? []).map((n) => held.ids.includes(n.id) ? { ...n, length } : n) } : t));
+      setTracks((ts) =>
+        ts.map((t) =>
+          t.id === held.trackId
+            ? {
+                ...t,
+                notes: (t.notes ?? []).map((n) => (held.ids.includes(n.id) ? { ...n, length } : n)),
+              }
+            : t,
+        ),
+      );
     }
     if (midiTake) {
       try {
-        await landMidiTake(midiTake, loopEndStepRef.current ?? (tp.playing ? getPlayStep() : endStep));
+        await landMidiTake(
+          midiTake,
+          loopEndStepRef.current ?? (tp.playing ? getPlayStep() : endStep),
+        );
       } catch (err) {
         markTakeFailed();
-        toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
+        toast.error("Take couldn't be kept", {
+          description: err instanceof Error ? err.message : undefined,
+        });
       } finally {
         midiTakeRef.current = null;
         releaseTake();
@@ -1950,22 +2652,30 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const target = tracksRef.current.find((t) => t.id === result.trackId);
       if (!target) return;
       const stepDur = stepSeconds(transportRef.current.bpm);
-      const takeEnd = Math.min(loopRegion(transportRef.current)[1], recStartStepRef.current + Math.max(1, Math.ceil(result.duration / stepDur)));
+      const takeEnd = Math.min(
+        loopRegion(transportRef.current)[1],
+        recStartStepRef.current + Math.max(1, Math.ceil(result.duration / stepDur)),
+      );
       const capturedIds = recordedNoteIdsRef.current;
       // Replace mode: older notes under the new take are removed, so the part
       // is exactly what was just played (overdub keeps them).
       const replacedIds = replacedNoteIdsRef.current;
       // The print started just before the song: trim that lead-in so the waveform lines up with the notes.
       const song = songStartRef.current;
-      const pre = printPreRoll && song && song.time >= printStartedAt
-        ? preRollTake(song.step, song.time, printStartedAt, result.duration, 0)
-        : null;
+      const pre =
+        printPreRoll && song && song.time >= printStartedAt
+          ? preRollTake(song.step, song.time, printStartedAt, result.duration, 0)
+          : null;
       const s0 = pre ? pre.start : snapRecStart(recStartStepRef.current, transportRef.current.snap);
       const lead = pre ? pre.offset : 0;
       const clip: AudioClip = {
-        id: uid(), name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
-        peaks: result.peaks, duration: result.duration, url: result.url,
-        start: s0, offset: lead,
+        id: uid(),
+        name: `${target.name} TAKE ${(target.clips?.length ?? 0) + 1}`,
+        peaks: result.peaks,
+        duration: result.duration,
+        url: result.url,
+        start: s0,
+        offset: lead,
         // a looped take never runs past the loop end (its tail would overlap the next pass)
         length: (() => {
           const tpl = transportRef.current;
@@ -1983,58 +2693,107 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const barSteps = stepsPerBar();
       // the printed take starts mid-pass: the scheduler picks it up where the playhead is
       pickupClipIdsRef.current.add(clip.id);
-      setTracks((ts) => ts.map((t) => {
-        if (t.id !== result.trackId) return t;
-        const notes = (t.notes ?? []).filter((n) => !replacedIds.has(n.id)).map((n) => capturedIds.has(n.id) ? {
-          ...n, recordedEnd: takeEnd,
-          length: Math.max(0.25, Math.min(n.length, takeEnd - n.step)),
-        } : n);
-        // A take longer than the pattern would otherwise wrap and replay its
-        // own notes every pattern length — grow the pattern to hold the take.
-        const lastCaptured = notes.reduce((m, n) => (capturedIds.has(n.id) ? Math.max(m, Math.floor(n.step) + 1) : m), 0);
-        const steps = t.kind !== "drum" && lastCaptured > t.steps ? Math.ceil(takeEnd / barSteps) * barSteps : t.steps;
-        const alts = replace ? coveredTakes(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : [];
-        return {
-          ...t, notes, steps, recording: false,
-          clips: [...(replace ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : (t.clips ?? [])), alts.length ? { ...clip, alts } : clip],
-          // When notes were played, the editable notes stay what you hear (piano roll
-          // edits change the sound); the audio take is kept under WAVE.
-          activeClipId: clip.id, printedAudio: true,
-        };
-      }));
+      setTracks((ts) =>
+        ts.map((t) => {
+          if (t.id !== result.trackId) return t;
+          const notes = (t.notes ?? [])
+            .filter((n) => !replacedIds.has(n.id))
+            .map((n) =>
+              capturedIds.has(n.id)
+                ? {
+                    ...n,
+                    recordedEnd: takeEnd,
+                    length: Math.max(0.25, Math.min(n.length, takeEnd - n.step)),
+                  }
+                : n,
+            );
+          // A take longer than the pattern would otherwise wrap and replay its
+          // own notes every pattern length — grow the pattern to hold the take.
+          const lastCaptured = notes.reduce(
+            (m, n) => (capturedIds.has(n.id) ? Math.max(m, Math.floor(n.step) + 1) : m),
+            0,
+          );
+          const steps =
+            t.kind !== "drum" && lastCaptured > t.steps
+              ? Math.ceil(takeEnd / barSteps) * barSteps
+              : t.steps;
+          const alts = replace ? coveredTakes(t.clips ?? [], clip.start ?? 0, newEnd, stepDur) : [];
+          return {
+            ...t,
+            notes,
+            steps,
+            recording: false,
+            clips: [
+              ...(replace
+                ? replaceTakeRegion(t.clips ?? [], clip.start ?? 0, newEnd, stepDur)
+                : (t.clips ?? [])),
+              alts.length ? { ...clip, alts } : clip,
+            ],
+            // When notes were played, the editable notes stay what you hear (piano roll
+            // edits change the sound); the audio take is kept under WAVE.
+            activeClipId: clip.id,
+            printedAudio: true,
+          };
+        }),
+      );
       landed = true;
-      toast.success(`${clip.name} recorded`, { description: "Double-click the waveform to edit it; switch to Notes to edit the pattern." });
+      toast.success(`${clip.name} recorded`, {
+        description: "Double-click the waveform to edit it; switch to Notes to edit the pattern.",
+      });
     } catch (err) {
       markTakeFailed();
-      toast.error("Take couldn't be kept", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Take couldn't be kept", {
+        description: err instanceof Error ? err.message : undefined,
+      });
     } finally {
       releaseTake();
       if (!landed) pickupClipIdsRef.current.clear();
     }
   }, [landMidiTake]);
 
-  const finalizeRecording = useMemo(() => createRecordingFinalizer(
-    () => pendingInputStartRef.current,
-    async () => { await Promise.all([finishRecording(), finishTrackRecording()]); },
-  ), [finishRecording, finishTrackRecording]);
+  const finalizeRecording = useMemo(
+    () =>
+      createRecordingFinalizer(
+        () => pendingInputStartRef.current,
+        async () => {
+          await Promise.all([finishRecording(), finishTrackRecording()]);
+        },
+      ),
+    [finishRecording, finishTrackRecording],
+  );
 
   /** `rewind`: true stops and returns to the start; a step number stops and parks the playhead there. */
-  const endRecording = useCallback(async (rewind: boolean | number = false) => {
-    const stopping = rewind !== false;
-    recordingGenerationRef.current += 1;
-    finalizingRef.current = true;
-    if (countInTimerRef.current != null) window.clearInterval(countInTimerRef.current);
-    countInTimerRef.current = null;
-    transportRef.current = { ...transportRef.current, playing: stopping ? false : transportRef.current.playing, recording: false, countInLeft: null };
-    setTransportState(transportRef.current);
-    try { await finalizeRecording(); }
-    finally {
-      finalizingRef.current = false;
-      loopEndStepRef.current = null;
-      setTracks(ts => ts.map(t => t.recording ? { ...t, recording: false } : t));
-      if (stopping) setTransportState(s => ({ ...s, playing: false, paused: false, step: typeof rewind === "number" ? rewind : 0 }));
-    }
-  }, [finalizeRecording]);
+  const endRecording = useCallback(
+    async (rewind: boolean | number = false) => {
+      const stopping = rewind !== false;
+      recordingGenerationRef.current += 1;
+      finalizingRef.current = true;
+      if (countInTimerRef.current != null) window.clearInterval(countInTimerRef.current);
+      countInTimerRef.current = null;
+      transportRef.current = {
+        ...transportRef.current,
+        playing: stopping ? false : transportRef.current.playing,
+        recording: false,
+        countInLeft: null,
+      };
+      setTransportState(transportRef.current);
+      try {
+        await finalizeRecording();
+      } finally {
+        finalizingRef.current = false;
+        loopEndStepRef.current = null;
+        setTracks((ts) => ts.map((t) => (t.recording ? { ...t, recording: false } : t)));
+        if (stopping)
+          setTransportState((s) => ({
+            ...s,
+            playing: false,
+            paused: false,
+            step: typeof rewind === "number" ? rewind : 0,
+          }));
+      }
+    },
+    [finalizeRecording],
+  );
   endRecordingRef.current = endRecording;
 
   // keep the punch hooks pointing at the current record helpers
@@ -2043,27 +2802,43 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       start: (at: number) => {
         const engine = getEngine();
         if (engine.isRecording || engine.isTrackRecording || midiTakeRef.current) return;
-        const target = tracksRef.current.find((t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal"));
+        const target = tracksRef.current.find(
+          (t) => t.armed && (t.kind === "audio" || t.kind === "ai-vocal"),
+        );
         if (!target) {
           // Instrument, drum and sampler channels punch in too: notes and their printed take start at the marker.
-          const note = tracksRef.current.find((t) => t.armed && (t.kind === "instrument" || t.kind === "midi" || t.kind === "drum" || t.kind === "sampler"));
+          const note = tracksRef.current.find(
+            (t) =>
+              t.armed &&
+              (t.kind === "instrument" ||
+                t.kind === "midi" ||
+                t.kind === "drum" ||
+                t.kind === "sampler"),
+          );
           if (!note) return;
           recStartStepRef.current = at;
           const tpr = transportRef.current;
-          const to = tpr.punchOut != null && tpr.punchOut > at ? tpr.punchOut : Number.POSITIVE_INFINITY;
-          replacedNoteIdsRef.current = tpr.overdub && !tpr.replace
-            ? new Set()
-            : new Set((note.notes ?? []).filter((n) => n.step >= at && n.step < to).map((n) => n.id));
+          const to =
+            tpr.punchOut != null && tpr.punchOut > at ? tpr.punchOut : Number.POSITIVE_INFINITY;
+          replacedNoteIdsRef.current =
+            tpr.overdub && !tpr.replace
+              ? new Set()
+              : new Set(
+                  (note.notes ?? []).filter((n) => n.step >= at && n.step < to).map((n) => n.id),
+                );
           printPreRollRef.current = false;
           if (synthTake(note)) midiTakeRef.current = { trackId: note.id, passes: 0 };
-          else try {
-            engine.startTrackRecording(note.id);
-          } catch (err) {
-            toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
-            return;
-          }
+          else
+            try {
+              engine.startTrackRecording(note.id);
+            } catch (err) {
+              toast.error("Could not record this channel", {
+                description: err instanceof Error ? err.message : undefined,
+              });
+              return;
+            }
           updateTrack(note.id, { recording: true });
-          setTransportState(s => ({ ...s, recording: true }));
+          setTransportState((s) => ({ ...s, recording: true }));
           return;
         }
         recStartStepRef.current = at;
@@ -2071,14 +2846,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         micPreRollRef.current = false;
         const generation = recordingGenerationRef.current;
         updateTrack(target.id, { recording: true });
-        pendingInputStartRef.current = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
+        pendingInputStartRef.current = engine
+          .startInputRecording(target.id, transportRef.current.monitor ?? false)
           .then(() => {
             if (generation !== recordingGenerationRef.current) return;
             recAudioStartRef.current = transportRef.current.playing ? heardStepPos() : null;
-            setTransportState(t => ({ ...t, recording: true }));
-          }).catch((err: unknown) => {
+            setTransportState((t) => ({ ...t, recording: true }));
+          })
+          .catch((err: unknown) => {
             updateTrack(target.id, { recording: false });
-            toast.error("Microphone unavailable", { description: err instanceof Error ? err.message : undefined });
+            toast.error("Microphone unavailable", {
+              description: err instanceof Error ? err.message : undefined,
+            });
           });
       },
       stop: () => {
@@ -2101,11 +2880,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // a microphone take keeps recording and each pass becomes its own take.
         if (midi) {
           midi.passes += 1;
-          if (midi.passes === 1 && !audio) toast("Overdubbing the next pass", { description: "What you just played keeps playing — add more on top. Press Stop when you're done." });
+          if (midi.passes === 1 && !audio)
+            toast("Overdubbing the next pass", {
+              description:
+                "What you just played keeps playing — add more on top. Press Stop when you're done.",
+            });
         }
         if (audio) {
           loopPassesRef.current += 1;
-          if (loopPassesRef.current === 1) toast("Recording the next pass", { description: "Each time round the loop is kept as its own take. Press Stop when you're done." });
+          if (loopPassesRef.current === 1)
+            toast("Recording the next pass", {
+              description:
+                "Each time round the loop is kept as its own take. Press Stop when you're done.",
+            });
         }
         return;
       }
@@ -2116,7 +2903,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       stopLiveArps();
       releaseLatched();
       void endRecording(lo);
-      toast("Recording stopped at the loop end", { description: "Playback stopped too. Press Play to hear your take." });
+      toast("Recording stopped at the loop end", {
+        description: "Playback stopped too. Press Play to hear your take.",
+      });
     };
   }, [finishRecording, finishTrackRecording, updateTrack, endRecording]);
 
@@ -2131,15 +2920,24 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const track = cloneTrack(src);
     let span: [number, number] | null = null;
     const shown: [number, number] = tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)];
-    if (src.kind === "drum" && !src.printedAudio && src.pads?.some((p) => p.steps.some((v) => v > 0))) {
+    if (
+      src.kind === "drum" &&
+      !src.printedAudio &&
+      src.pads?.some((p) => p.steps.some((v) => v > 0))
+    ) {
       track.patternRegion = drumCopySpan(src, shown);
     } else if (!src.printedAudio && src.notes?.length) {
       const copy = noteCopy(src, shown);
-      if (copy) { track.notes = copy.notes; span = copy.span; }
+      if (copy) {
+        track.notes = copy.notes;
+        span = copy.span;
+      }
     }
     return { trackId: src.id, track, span };
   };
-  const fillClipboard = (entries: { trackId: string; track: Track; span: [number, number] | null }[]) => {
+  const fillClipboard = (
+    entries: { trackId: string; track: Track; span: [number, number] | null }[],
+  ) => {
     const first = entries[0]!;
     clipboardRef.current = first.track;
     clipboardSpanRef.current = first.span;
@@ -2156,7 +2954,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const picked = pickTracks(ids);
     if (!picked.length) return;
     const name = fillClipboard(picked.map(copyEntry));
-    toast("Copied", { description: `${name} on the clipboard — move the playhead and press ⌘V / Ctrl+V to paste.` });
+    toast("Copied", {
+      description: `${name} on the clipboard — move the playhead and press ⌘V / Ctrl+V to paste.`,
+    });
   };
   const cutTracksImpl = (ids: string[]) => {
     const picked = pickTracks(ids);
@@ -2165,15 +2965,26 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const tp = transportRef.current;
     const patches = new Map<string, Partial<Track>>();
     const entries = picked.map((src) => {
-      const { clipboard, patch, span } = cutTrackMaterial(src, tp.bpm, tp.bars, tp.loop ? loopRegion(tp) : undefined, boxSpansRef.current.get(src.id));
+      const { clipboard, patch, span } = cutTrackMaterial(
+        src,
+        tp.bpm,
+        tp.bars,
+        tp.loop ? loopRegion(tp) : undefined,
+        boxSpansRef.current.get(src.id),
+      );
       patches.set(src.id, patch);
-      const noteSpan = span && clipboard.notes?.length && !clipboard.pads?.some((p) => p.steps.some((v) => v > 0)) ? span : null;
+      const noteSpan =
+        span && clipboard.notes?.length && !clipboard.pads?.some((p) => p.steps.some((v) => v > 0))
+          ? span
+          : null;
       return { trackId: src.id, track: clipboard, span: noteSpan };
     });
     const name = fillClipboard(entries);
     for (const src of picked) boxSpansRef.current.delete(src.id);
     setTracks((ts) => ts.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t)));
-    toast("Cut", { description: `${name} — the channels stay; the cut parts are on the clipboard.` });
+    toast("Cut", {
+      description: `${name} — the channels stay; the cut parts are on the clipboard.`,
+    });
   };
   /** Paste every copied track back onto its own channel, all lined up at one spot. */
   const pasteManyImpl = (destinationStep?: number, atEnd = false) => {
@@ -2185,24 +2996,35 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     const stepDur = stepSeconds(tp.bpm);
     // At end: the copies stay lined up as copied, right after the channels' last parts, so the loops stay in time.
     const steps = atEnd
-      ? pasteEndSteps(origins, entries.map((entry) => {
-          const target = tracksRef.current.find((t) => t.id === entry.trackId);
-          return target ? pasteEndStep(target, stepDur, songSteps(tp.bars)) : at;
-        }))
+      ? pasteEndSteps(
+          origins,
+          entries.map((entry) => {
+            const target = tracksRef.current.find((t) => t.id === entry.trackId);
+            return target ? pasteEndStep(target, stepDur, songSteps(tp.bars)) : at;
+          }),
+        )
       : multiPasteSteps(origins, at);
     const pasted = new Map<string, Track>();
     const added: Track[] = [];
     entries.forEach((entry, i) => {
       const target = tracksRef.current.find((t) => t.id === entry.trackId);
       if (target) {
-        pasted.set(target.id, pasteTrackContent(target, entry.track, steps[i] ?? at, stepDur, {
-          shownEnd: songSteps(tp.bars),
-          ...(entry.span ? { origin: entry.span[0], length: entry.span[1] - entry.span[0] } : {}),
-        }));
+        pasted.set(
+          target.id,
+          pasteTrackContent(target, entry.track, steps[i] ?? at, stepDur, {
+            shownEnd: songSteps(tp.bars),
+            ...(entry.span ? { origin: entry.span[0], length: entry.span[1] - entry.span[0] } : {}),
+          }),
+        );
         return;
       }
       // The original channel was deleted: bring it back as a copy.
-      const copy: Track = { ...cloneTrack(entry.track), id: uid(), name: `${entry.track.name} COPY`, recording: false };
+      const copy: Track = {
+        ...cloneTrack(entry.track),
+        id: uid(),
+        name: `${entry.track.name} COPY`,
+        recording: false,
+      };
       if (copy.pads) copy.pads = copy.pads.map((p) => ({ ...p, id: uid() }));
       if (copy.notes) copy.notes = copy.notes.map((n) => ({ ...n, id: uid() }));
       if (copy.clips) copy.clips = copy.clips.map((c) => ({ ...c, id: uid() }));
@@ -2213,7 +3035,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setTracks((ts) => [...ts.map((t) => pasted.get(t.id) ?? t), ...added]);
     const end = Math.max(0, ...[...pasted.values()].map((t) => materialEnd(t, stepDur)));
     setTransportState((s) => ({ ...s, bars: Math.max(s.bars, barsForSteps(end)) }));
-    toast.success(`Pasted ${entries.length} tracks`, { description: atEnd ? `Right after the last part, lined up at bar ${Math.floor(Math.min(...steps) / stepsPerBar()) + 1}.` : `At bar ${Math.floor(at / stepsPerBar()) + 1}, each on its own channel.` });
+    toast.success(`Pasted ${entries.length} tracks`, {
+      description: atEnd
+        ? `Right after the last part, lined up at bar ${Math.floor(Math.min(...steps) / stepsPerBar()) + 1}.`
+        : `At bar ${Math.floor(at / stepsPerBar()) + 1}, each on its own channel.`,
+    });
   };
 
   /** Cut clips under a timeline position (steps). Each half keeps the right audio via offset/length and its own start. */
@@ -2232,50 +3058,88 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const base = unrolled ? unrollNotes(trackNotes, len, total) : trackNotes;
         const { notes: nextNotes, cut: cutNotes } = cutNotesAt(base, posSteps);
         const cuts = addCut(t.cuts, posSteps, total);
-        updateTrack(trackId, { notes: nextNotes, cuts, activeRegion: posSteps, ...(unrolled ? { steps: total } : {}) });
+        updateTrack(trackId, {
+          notes: nextNotes,
+          cuts,
+          activeRegion: posSteps,
+          ...(unrolled ? { steps: total } : {}),
+        });
         const dropRegion = (side: "left" | "right") => {
           const cur = tracksRef.current.find((x) => x.id === trackId);
           if (!cur) return;
-          const region = regionAt(cur.cuts, total, side === "right" ? posSteps : Math.max(0, posSteps - 0.01));
-          updateTrack(trackId, { notes: deleteRegion(cur.notes ?? [], region), activeRegion: undefined });
+          const region = regionAt(
+            cur.cuts,
+            total,
+            side === "right" ? posSteps : Math.max(0, posSteps - 0.01),
+          );
+          updateTrack(trackId, {
+            notes: deleteRegion(cur.notes ?? [], region),
+            activeRegion: undefined,
+          });
           toast.success(`Deleted the ${side} part`);
         };
-        if (!quiet) toast.success(cutNotes ? `Cut ${cutNotes} note${cutNotes > 1 ? "s" : ""}` : "Part cut", {
-          description: "The right part is outlined in white. Tap its bin icon or press Delete to remove it.",
-          duration: 10000,
-          action: { label: "Delete right", onClick: () => dropRegion("right") },
-          cancel: { label: "Delete left", onClick: () => dropRegion("left") },
-        });
+        if (!quiet)
+          toast.success(cutNotes ? `Cut ${cutNotes} note${cutNotes > 1 ? "s" : ""}` : "Part cut", {
+            description:
+              "The right part is outlined in white. Tap its bin icon or press Delete to remove it.",
+            duration: 10000,
+            action: { label: "Delete right", onClick: () => dropRegion("right") },
+            cancel: { label: "Delete left", onClick: () => dropRegion("left") },
+          });
         return true;
       }
 
       // Drum channels: write the looping beat out across the song, then cut it into separate parts.
       const pads = t.pads ?? [];
-      if (!timelineUsesWaveform(t) && t.kind === "drum" && pads.some((p) => p.steps.some((v) => v > 0))) {
+      if (
+        !timelineUsesWaveform(t) &&
+        t.kind === "drum" &&
+        pads.some((p) => p.steps.some((v) => v > 0))
+      ) {
         const total = songSteps(transportRef.current.bars);
         const len = Math.max(1, pads[0]?.steps.length ?? 16);
-        const unrolled = pads.map((p) => (len >= total ? p : { ...p, steps: Array.from({ length: total }, (_, i) => p.steps[i % len] ?? 0) }));
+        const unrolled = pads.map((p) =>
+          len >= total
+            ? p
+            : { ...p, steps: Array.from({ length: total }, (_, i) => p.steps[i % len] ?? 0) },
+        );
         const at = Math.round(posSteps);
         const cuts = addCut(t.cuts, at, total);
-        updateTrack(trackId, { pads: unrolled, steps: Math.max(len, total), cuts, activeRegion: at });
+        updateTrack(trackId, {
+          pads: unrolled,
+          steps: Math.max(len, total),
+          cuts,
+          activeRegion: at,
+        });
         const dropRegion = (side: "left" | "right") => {
           const cur = tracksRef.current.find((x) => x.id === trackId);
           if (!cur) return;
           const [a, b] = regionAt(cur.cuts, total, side === "right" ? at : Math.max(0, at - 0.01));
-          updateTrack(trackId, { pads: (cur.pads ?? []).map((p) => ({ ...p, steps: p.steps.map((v, i) => (i >= a && i < b ? 0 : v)) })), activeRegion: undefined });
+          updateTrack(trackId, {
+            pads: (cur.pads ?? []).map((p) => ({
+              ...p,
+              steps: p.steps.map((v, i) => (i >= a && i < b ? 0 : v)),
+            })),
+            activeRegion: undefined,
+          });
           toast.success(`Deleted the ${side} part`);
         };
-        if (!quiet) toast.success("Beat cut", {
-          description: "The right part is outlined in white. Tap its bin icon or press Delete to remove it.",
-          duration: 10000,
-          action: { label: "Delete right", onClick: () => dropRegion("right") },
-          cancel: { label: "Delete left", onClick: () => dropRegion("left") },
-        });
+        if (!quiet)
+          toast.success("Beat cut", {
+            description:
+              "The right part is outlined in white. Tap its bin icon or press Delete to remove it.",
+            duration: 10000,
+            action: { label: "Delete right", onClick: () => dropRegion("right") },
+            cancel: { label: "Delete left", onClick: () => dropRegion("left") },
+          });
         return true;
       }
 
       if (clips.length === 0) {
-        toast("Nothing to cut", { description: "That channel has no audio or notes yet. Record, import or write something first." });
+        toast("Nothing to cut", {
+          description:
+            "That channel has no audio or notes yet. Record, import or write something first.",
+        });
         return false;
       }
       const stepDur = stepSeconds(transportRef.current.bpm);
@@ -2296,22 +3160,48 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const cutFile = Math.min(fileLen, posIn * stepDur * rate);
         // Both pieces keep the source peaks; the timeline draws each piece's own offset/length window.
         const peaksSpan = peaksSpanOf(c);
-        const first = { ...c, id: `${c.id}-a${stamp}`, name: `${c.name} A`, peaksSpan, length: cutFile, fadeOut: 0 } as AudioClip;
-        const second = { ...c, id: `${c.id}-b${stamp}`, name: `${c.name} B`, peaksSpan, start: start + posIn, offset: offset + cutFile, length: fileLen - cutFile, fadeIn: 0 } as AudioClip;
-        const [a, b2] = c.reverse ? [{ ...first, offset: offset + (fileLen - cutFile) }, { ...second, offset }] : [first, second];
-        leftIds.push(a.id); rightIds.push(b2.id);
+        const first = {
+          ...c,
+          id: `${c.id}-a${stamp}`,
+          name: `${c.name} A`,
+          peaksSpan,
+          length: cutFile,
+          fadeOut: 0,
+        } as AudioClip;
+        const second = {
+          ...c,
+          id: `${c.id}-b${stamp}`,
+          name: `${c.name} B`,
+          peaksSpan,
+          start: start + posIn,
+          offset: offset + cutFile,
+          length: fileLen - cutFile,
+          fadeIn: 0,
+        } as AudioClip;
+        const [a, b2] = c.reverse
+          ? [
+              { ...first, offset: offset + (fileLen - cutFile) },
+              { ...second, offset },
+            ]
+          : [first, second];
+        leftIds.push(a.id);
+        rightIds.push(b2.id);
         newActive = b2.id;
         return [a, b2];
       });
       if (sliced === 0) {
-        if (!quiet) toast("Missed the clip", { description: "Tap inside a clip to cut it exactly there." });
+        if (!quiet)
+          toast("Missed the clip", { description: "Tap inside a clip to cut it exactly there." });
         return false;
       }
       updateTrack(trackId, { clips: next, activeClipId: newActive });
       const dropClips = (ids: string[], keep: string[], label: string) => {
         const cur = tracksRef.current.find((x) => x.id === trackId);
         if (!cur) return;
-        updateTrack(trackId, { clips: (cur.clips ?? []).filter((c) => !ids.includes(c.id)), activeClipId: keep[0] });
+        updateTrack(trackId, {
+          clips: (cur.clips ?? []).filter((c) => !ids.includes(c.id)),
+          activeClipId: keep[0],
+        });
         toast.success(`Deleted the ${label} piece`);
       };
       toast.success(`Cut ${sliced} clip${sliced > 1 ? "s" : ""}`, {
@@ -2327,7 +3217,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
 
   /** Split tool: frac is the position across the whole song lane. */
   const splitClipAtImpl = useCallback(
-    (trackId: string, frac: number) => { razorAtImpl(trackId, frac * songSteps(transportRef.current.bars)); },
+    (trackId: string, frac: number) => {
+      razorAtImpl(trackId, frac * songSteps(transportRef.current.bars));
+    },
     [razorAtImpl],
   );
 
@@ -2335,7 +3227,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     (): CloudSession => ({
       version: 1,
       tracks: structuredClone(tracksRef.current),
-      transport: { ...transportRef.current, playing: false, recording: false, paused: false, step: 0 },
+      transport: {
+        ...transportRef.current,
+        playing: false,
+        recording: false,
+        paused: false,
+        step: 0,
+      },
       buses: structuredClone(buses),
       vcas: structuredClone(vcas),
       auxReturns: structuredClone(auxReturns),
@@ -2354,15 +3252,33 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     getEngine().stopSamples();
     for (const track of tracksRef.current) getEngine().removeChannel(track.id);
     setTracks(structuredClone(session.tracks));
-    setTransportState({ ...session.transport, playing: false, recording: false, paused: false, step: 0 });
+    setTransportState({
+      ...session.transport,
+      playing: false,
+      recording: false,
+      paused: false,
+      step: 0,
+    });
     setBuses(structuredClone(session.buses));
-    setVcas(structuredClone(session.vcas ?? {
-      A: { volume: 1, muted: false }, B: { volume: 1, muted: false },
-      C: { volume: 1, muted: false }, D: { volume: 1, muted: false },
-    }));
-    setAuxReturns(structuredClone(session.auxReturns ?? {
-      reverb: { volume: 1, muted: false }, delay: { volume: 1, muted: false }, chorus: { volume: 1, muted: false },
-    }));
+    setVcas(
+      structuredClone(
+        session.vcas ?? {
+          A: { volume: 1, muted: false },
+          B: { volume: 1, muted: false },
+          C: { volume: 1, muted: false },
+          D: { volume: 1, muted: false },
+        },
+      ),
+    );
+    setAuxReturns(
+      structuredClone(
+        session.auxReturns ?? {
+          reverb: { volume: 1, muted: false },
+          delay: { volume: 1, muted: false },
+          chorus: { volume: 1, muted: false },
+        },
+      ),
+    );
     setFxChains(structuredClone(session.fxChains));
     setInstalledPlugins(structuredClone(session.installedPlugins));
     setUserPresets(structuredClone(session.userPresets));
@@ -2400,9 +3316,27 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     };
     const id = window.setTimeout(commit, 600);
     // Undo pressed straight after an edit commits that edit first, so it is the one undone.
-    pendingHistoryRef.current = () => { window.clearTimeout(id); commit(); };
-    return () => { window.clearTimeout(id); if (pendingHistoryRef.current) pendingHistoryRef.current = null; };
-  }, [tracks, buses, vcas, auxReturns, fxChains, installedPlugins, userPresets, sections, folders, projectNotes, buildSnapshot]);
+    pendingHistoryRef.current = () => {
+      window.clearTimeout(id);
+      commit();
+    };
+    return () => {
+      window.clearTimeout(id);
+      if (pendingHistoryRef.current) pendingHistoryRef.current = null;
+    };
+  }, [
+    tracks,
+    buses,
+    vcas,
+    auxReturns,
+    fxChains,
+    installedPlugins,
+    userPresets,
+    sections,
+    folders,
+    projectNotes,
+    buildSnapshot,
+  ]);
 
   // The Saved timestamp in the status bar only moves on a manual save
   // (File → Save / Save As dispatch "synclab:project-saved" on success).
@@ -2415,7 +3349,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const api: StudioApi = useMemo(() => {
     const selected = tracks.find((t) => t.id === selectedId) ?? null;
     /** Writes a note into the armed recording track without sounding it. */
-    const capture = (trackId: string, midi: number, velocity: number, seconds = PREVIEW_NOTE_SECONDS): MidiNote | null => {
+    const capture = (
+      trackId: string,
+      midi: number,
+      velocity: number,
+      seconds = PREVIEW_NOTE_SECONDS,
+    ): MidiNote | null => {
       const tp = transportRef.current;
       const t = tracksRef.current.find((x) => x.id === trackId);
       if (!t || !tp.recording || !t.recording) return null;
@@ -2425,13 +3364,26 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       const heard = heardStepPos();
       // Snap rec (on by default) puts the note on the nearest grid line, so the take
       // and its waveform start on the beat instead of just before or after it.
-      const stepPos = tp.snapRecording === false ? heard : snapRecordedStep(heard, tp.quantize ?? 1, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)], tp.loop);
+      const stepPos =
+        tp.snapRecording === false
+          ? heard
+          : snapRecordedStep(
+              heard,
+              tp.quantize ?? 1,
+              tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)],
+              tp.loop,
+            );
       // the note keeps the length it sounded live, so playback isn't chopped short (gated)
       const length = heardNoteSteps(seconds, stepSeconds(tp.bpm));
-      const note = capturedNote({ id: uid(), step: Math.max(0, stepPos), length, pitch: midi, velocity }, tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)]);
+      const note = capturedNote(
+        { id: uid(), step: Math.max(0, stepPos), length, pitch: midi, velocity },
+        tp.loop ? loopRegion(tp) : [0, songSteps(tp.bars)],
+      );
       if (!note) return null;
       recordedNoteIdsRef.current.set(note.id, getEngine().ctx?.currentTime ?? 0);
-      setTracks((ts) => ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)));
+      setTracks((ts) =>
+        ts.map((x) => (x.id === t.id ? { ...x, notes: [...(x.notes ?? []), note] } : x)),
+      );
       return note;
     };
     const stepBack = (from: "past" | "future") => {
@@ -2483,7 +3435,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setSections((list) => {
           const sorted = [...list].sort((a, b) => a.start - b.start);
           const last = sorted[sorted.length - 1];
-          const at = start ?? (last ? last.start + last.length : transportRef.current.step ?? 0);
+          const at = start ?? (last ? last.start + last.length : (transportRef.current.step ?? 0));
           const len = Math.max(4, length ?? 32);
           const next: SongSection = {
             id: uid(),
@@ -2507,7 +3459,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       removeSection: (id) =>
         setSections((list) => {
           const gone = list.find((s2) => s2.id === id);
-          if (gone) toast(`${gone.name} marker removed`, { description: "The audio on the timeline was left alone." });
+          if (gone)
+            toast(`${gone.name} marker removed`, {
+              description: "The audio on the timeline was left alone.",
+            });
           return list.filter((s2) => s2.id !== id);
         }),
       duplicateSection: (id) => {
@@ -2549,7 +3504,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 ...lane,
                 points: [
                   ...lane.points.map((pt) => (pt.step >= to ? { ...pt, step: pt.step + len } : pt)),
-                  ...lane.points.filter((pt) => pt.step >= from && pt.step < to).map((pt) => ({ ...pt, step: pt.step + len })),
+                  ...lane.points
+                    .filter((pt) => pt.step >= from && pt.step < to)
+                    .map((pt) => ({ ...pt, step: pt.step + len })),
                 ].sort((a, b) => a.step - b.step),
               }));
             }
@@ -2558,14 +3515,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         );
         setSections((cur) => {
           const copy: SongSection = { ...sec, id: uid(), start: to };
-          return [...cur.map((s2) => (s2.start >= to ? { ...s2, start: s2.start + len } : s2)), copy].sort(
-            (a, b) => a.start - b.start,
-          );
+          return [
+            ...cur.map((s2) => (s2.start >= to ? { ...s2, start: s2.start + len } : s2)),
+            copy,
+          ].sort((a, b) => a.start - b.start);
         });
         const neededBars = barsForSteps(to + len);
-        if (neededBars > (transportRef.current.bars ?? 4)) setTransportState((t) => ({ ...t, bars: Math.min(512, neededBars) }));
+        if (neededBars > (transportRef.current.bars ?? 4))
+          setTransportState((t) => ({ ...t, bars: Math.min(512, neededBars) }));
         toast.success(`${sec.name} duplicated`, {
-          description: copied > 0 ? `${copied} clips and notes copied along with it.` : "The marker was copied — that part of the song was empty.",
+          description:
+            copied > 0
+              ? `${copied} clips and notes copied along with it.`
+              : "The marker was copied — that part of the song was empty.",
         });
       },
       gotoSection: (id) => {
@@ -2596,7 +3558,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           at += len;
         }
         setSections(built);
-        toast.success("Song structure laid out", { description: `${built.length} parts across ${bars} bars — rename or drag any of them.` });
+        toast.success("Song structure laid out", {
+          description: `${built.length} parts across ${bars} bars — rename or drag any of them.`,
+        });
       },
       folders,
       addFolder: (name) => {
@@ -2613,15 +3577,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         return id;
       },
       renameFolder: (id, name) =>
-        setFolders((list) => list.map((f) => (f.id === id ? { ...f, name: name.toUpperCase().slice(0, 18) || f.name } : f))),
+        setFolders((list) =>
+          list.map((f) =>
+            f.id === id ? { ...f, name: name.toUpperCase().slice(0, 18) || f.name } : f,
+          ),
+        ),
       removeFolder: (id) => {
         setFolders((list) => list.filter((f) => f.id !== id));
         setTracks((ts) => ts.map((t) => (t.folderId === id ? { ...t, folderId: undefined } : t)));
       },
       toggleFolderCollapsed: (id) =>
-        setFolders((list) => list.map((f) => (f.id === id ? { ...f, collapsed: !f.collapsed } : f))),
+        setFolders((list) =>
+          list.map((f) => (f.id === id ? { ...f, collapsed: !f.collapsed } : f)),
+        ),
       assignTrackFolder: (trackId, folderId) =>
-        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, folderId: folderId ?? undefined } : t))),
+        setTracks((ts) =>
+          ts.map((t) => (t.id === trackId ? { ...t, folderId: folderId ?? undefined } : t)),
+        ),
       setPanel,
       select: (id) => {
         // Picking one channel (clicking a block, lane or name) replaces any earlier box selection,
@@ -2635,21 +3607,32 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const ids = tracksRef.current.map((t) => t.id);
         setSelectedIds(ids);
         if (ids.length > 0) setSelectedId(ids[ids.length - 1] ?? null);
-        toast("All channels selected", { description: `${ids.length} channels — delete or cut applies to the selection.` });
+        toast("All channels selected", {
+          description: `${ids.length} channels — delete or cut applies to the selection.`,
+        });
       },
       selectBoxed: (picks, add) => {
         if (!picks.length) return;
         const ids = picks.map((p) => p.trackId);
         if (!add) boxSpansRef.current.clear();
         for (const p of picks) {
-          if (!p.span) { boxSpansRef.current.delete(p.trackId); continue; }
+          if (!p.span) {
+            boxSpansRef.current.delete(p.trackId);
+            continue;
+          }
           const was = add ? boxSpansRef.current.get(p.trackId) : undefined;
-          boxSpansRef.current.set(p.trackId, was ? [Math.min(was[0], p.span[0]), Math.max(was[1], p.span[1])] : p.span);
+          boxSpansRef.current.set(
+            p.trackId,
+            was ? [Math.min(was[0], p.span[0]), Math.max(was[1], p.span[1])] : p.span,
+          );
         }
         setSelectedIds((s) => (add ? [...new Set([...s, ...ids])] : ids));
         setSelectedId(ids[ids.length - 1] ?? null);
         const clipFor = new Map(picks.filter((p) => p.clipId).map((p) => [p.trackId, p.clipId]));
-        if (clipFor.size) setTracks((ts) => ts.map((t) => (clipFor.has(t.id) ? { ...t, activeClipId: clipFor.get(t.id) } : t)));
+        if (clipFor.size)
+          setTracks((ts) =>
+            ts.map((t) => (clipFor.has(t.id) ? { ...t, activeClipId: clipFor.get(t.id) } : t)),
+          );
       },
       paintSelectIds: (ids, anchorId) => {
         if (!ids.length) return;
@@ -2661,12 +3644,21 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       clearTimelineSelection: () => {
         boxSpansRef.current.clear();
         const keep = selectedIdRef.current;
-        setSelectedIds((ids) => (ids.length === (keep ? 1 : 0) && (!keep || ids[0] === keep) ? ids : keep ? [keep] : []));
-        if (!tracksRef.current.some((t) => t.activeClipId != null || t.activeRegion != null)) return;
+        setSelectedIds((ids) =>
+          ids.length === (keep ? 1 : 0) && (!keep || ids[0] === keep) ? ids : keep ? [keep] : [],
+        );
+        if (!tracksRef.current.some((t) => t.activeClipId != null || t.activeRegion != null))
+          return;
         // Deselecting is not an edit: land any pending edit in history first, then skip this one.
         pendingHistoryRef.current?.();
         applyingRef.current = true;
-        setTracks((ts) => ts.map((t) => (t.activeClipId != null || t.activeRegion != null ? { ...t, activeClipId: undefined, activeRegion: undefined } : t)));
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.activeClipId != null || t.activeRegion != null
+              ? { ...t, activeClipId: undefined, activeRegion: undefined }
+              : t,
+          ),
+        );
       },
       toggleSelectId: (id) =>
         setSelectedIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])),
@@ -2675,7 +3667,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       splitAtPlayhead: () => {
         const id = selectedIdRef.current;
         if (!id) {
-          toast("Select a channel first", { description: "Click the channel whose clip or notes you want to split." });
+          toast("Select a channel first", {
+            description: "Click the channel whose clip or notes you want to split.",
+          });
           return;
         }
         razorAtImpl(id, transportRef.current.step ?? 0);
@@ -2687,7 +3681,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           // keepPanel callers (pad sampler, tape/sample exports) create channels for content, not recording.
           const autoArm = !opts?.keepPanel;
           const base = newTrack(kind, name ?? `TRACK ${ts.length + 1}`, ts.length, preset);
-          const t = { ...base, id, ...(autoArm ? { armed: true } : {}), ...(isPadSamplerTrack(base) ? { padSampler: true } : {}) };
+          const t = {
+            ...base,
+            id,
+            ...(autoArm ? { armed: true } : {}),
+            ...(isPadSamplerTrack(base) ? { padSampler: true } : {}),
+          };
           setSelectedId(t.id);
           // keepPanel: the pad sampler and phone beat maker create their channel while the
           // user is playing — never navigate them away from what they are doing.
@@ -2699,26 +3698,38 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       updateTrack,
       swapTake: (trackId, clipId, altIndex) => {
         const stepDur = 60 / (transportRef.current.bpm || 120) / 4;
-        setTracks((ts) => ts.map((t) => {
-          if (t.id !== trackId) return t;
-          return { ...t, clips: (t.clips ?? []).map((c) => {
-            if (c.id !== clipId || !c.alts?.[altIndex]) return c;
-            const alt = c.alts[altIndex]!;
-            const start = c.start ?? 0;
-            const regionSec = (c.length ?? c.duration) / clipRate(c);
-            const altRate = clipRate(alt);
-            const into = Math.max(0, (start - (alt.start ?? 0)) * stepDur * altRate);
-            const offset = (alt.offset ?? 0) + into;
-            const length = Math.max(0.02, Math.min(regionSec * altRate, alt.duration - offset));
-            const rest = c.alts.filter((_, i) => i !== altIndex);
+        setTracks((ts) =>
+          ts.map((t) => {
+            if (t.id !== trackId) return t;
             return {
-              ...alt, id: c.id, start, offset, length,
-              fadeIn: Math.min(0.01, length / 4), fadeOut: Math.min(0.01, length / 4),
-              alts: [{ ...c, alts: undefined }, ...rest],
+              ...t,
+              clips: (t.clips ?? []).map((c) => {
+                if (c.id !== clipId || !c.alts?.[altIndex]) return c;
+                const alt = c.alts[altIndex]!;
+                const start = c.start ?? 0;
+                const regionSec = (c.length ?? c.duration) / clipRate(c);
+                const altRate = clipRate(alt);
+                const into = Math.max(0, (start - (alt.start ?? 0)) * stepDur * altRate);
+                const offset = (alt.offset ?? 0) + into;
+                const length = Math.max(0.02, Math.min(regionSec * altRate, alt.duration - offset));
+                const rest = c.alts.filter((_, i) => i !== altIndex);
+                return {
+                  ...alt,
+                  id: c.id,
+                  start,
+                  offset,
+                  length,
+                  fadeIn: Math.min(0.01, length / 4),
+                  fadeOut: Math.min(0.01, length / 4),
+                  alts: [{ ...c, alts: undefined }, ...rest],
+                };
+              }),
             };
-          }) };
-        }));
-        toast.success("Take swapped", { description: "This section now plays the earlier take. Pick again to switch back." });
+          }),
+        );
+        toast.success("Take swapped", {
+          description: "This section now plays the earlier take. Pick again to switch back.",
+        });
       },
       stretchClip: async (trackId, clipId, factor) => {
         if (!Number.isFinite(factor) || factor <= 0) return;
@@ -2727,13 +3738,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         if (!t || !c?.url) return;
         const engine = getEngine();
         const buf = await engine.ensureBuffer(c.url);
-        if (!buf) { toast.error("Couldn't read this clip's audio"); return; }
+        if (!buf) {
+          toast.error("Couldn't read this clip's audio");
+          return;
+        }
         const id = toast.loading(`Stretching ${c.name}…`);
         await new Promise((r) => setTimeout(r, 30));
         const sr = buf.sampleRate;
         const from = Math.floor((c.offset ?? 0) * sr);
         const to = Math.min(buf.length, from + Math.floor((c.length ?? c.duration) * sr));
-        const chan = (i: number) => wsolaStretch(buf.getChannelData(Math.min(i, buf.numberOfChannels - 1)).slice(from, to), clipRate(c) / factor);
+        const chan = (i: number) =>
+          wsolaStretch(
+            buf.getChannelData(Math.min(i, buf.numberOfChannels - 1)).slice(from, to),
+            clipRate(c) / factor,
+          );
         const left = chan(0);
         const right = buf.numberOfChannels > 1 ? chan(1) : left;
         const url = URL.createObjectURL(encodeWav({ left, right, sampleRate: sr }));
@@ -2741,19 +3759,45 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const size = Math.max(1, Math.floor(left.length / 160));
         for (let b = 0; b < 160; b++) {
           let p = 0;
-          for (let i = b * size; i < Math.min(left.length, (b + 1) * size); i++) p = Math.max(p, Math.abs(left[i] ?? 0));
+          for (let i = b * size; i < Math.min(left.length, (b + 1) * size); i++)
+            p = Math.max(p, Math.abs(left[i] ?? 0));
           peaks.push(p);
         }
         const duration = left.length / sr;
-        setTracks((ts) => ts.map((x) => x.id !== trackId ? x : {
-          ...x,
-          clips: (x.clips ?? []).map((k) => k.id !== clipId ? k : {
-            ...k, url, cloudPath: undefined, peaks, duration, offset: 0, length: duration, speed: 1, pitch: 0,
-            fadeIn: Math.min(k.fadeIn ?? 0, duration / 2), fadeOut: Math.min(k.fadeOut ?? 0, duration / 2),
-          }),
+        setTracks((ts) =>
+          ts.map((x) =>
+            x.id !== trackId
+              ? x
+              : {
+                  ...x,
+                  clips: (x.clips ?? []).map((k) =>
+                    k.id !== clipId
+                      ? k
+                      : {
+                          ...k,
+                          url,
+                          cloudPath: undefined,
+                          peaks,
+                          duration,
+                          offset: 0,
+                          length: duration,
+                          speed: 1,
+                          pitch: 0,
+                          fadeIn: Math.min(k.fadeIn ?? 0, duration / 2),
+                          fadeOut: Math.min(k.fadeOut ?? 0, duration / 2),
+                        },
+                  ),
+                },
+          ),
+        );
+        setTransportState((tp) => ({
+          ...tp,
+          bars: Math.max(tp.bars, barsForSteps((c.start ?? 0) + duration / stepSeconds(tp.bpm))),
         }));
-        setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps((c.start ?? 0) + duration / stepSeconds(tp.bpm))) }));
-        toast.success(`Stretched to ${Math.round(factor * 100)}%`, { id, description: `${duration.toFixed(2)}s, pitch unchanged. Undo restores the original.` });
+        toast.success(`Stretched to ${Math.round(factor * 100)}%`, {
+          id,
+          description: `${duration.toFixed(2)}s, pitch unchanged. Undo restores the original.`,
+        });
       },
       clearTrackContent: (id) => {
         const src = tracksRef.current.find((t) => t.id === id);
@@ -2767,7 +3811,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   clips: [],
                   notes: t.notes ? [] : t.notes,
                   pads: t.pads?.map((p) => ({ ...p, steps: p.steps.map(() => 0) })),
-                  drumPatterns: t.drumPatterns?.map((pat) => pat.map((p) => ({ ...p, steps: p.steps.map(() => 0) }))),
+                  drumPatterns: t.drumPatterns?.map((pat) =>
+                    pat.map((p) => ({ ...p, steps: p.steps.map(() => 0) })),
+                  ),
                   activeClipId: undefined,
                   cuts: undefined,
                   activeRegion: undefined,
@@ -2776,7 +3822,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 },
           ),
         );
-        toast.success("Track cleared", { description: `${src.name} kept its channel — clips, notes and drum hits removed.` });
+        toast.success("Track cleared", {
+          description: `${src.name} kept its channel — clips, notes and drum hits removed.`,
+        });
       },
       removeTrack: (id) => {
         getEngine().removeChannel(id);
@@ -2811,7 +3859,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         }),
       moveTrackToIndex: (id, index) => setTracks((ts) => moveTrackToIndexIn(ts, id, index)),
       movePartToTrack: (srcId, destId, a, b, to) => {
-        const r = movePartBetweenTracks(tracksRef.current, srcId, destId, a, b, to, songSteps(transportRef.current.bars));
+        const r = movePartBetweenTracks(
+          tracksRef.current,
+          srcId,
+          destId,
+          a,
+          b,
+          to,
+          songSteps(transportRef.current.bars),
+        );
         if (!r) return null;
         tracksRef.current = r.tracks;
         setTracks(r.tracks);
@@ -2821,7 +3877,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       },
       moveClipToNew: (trackId, clipId, sourceStart) => {
         setTracks((ts) => {
-          const result = moveClipToNewIn(ts, trackId, clipId, sourceStart, stepSeconds(transportRef.current.bpm));
+          const result = moveClipToNewIn(
+            ts,
+            trackId,
+            clipId,
+            sourceStart,
+            stepSeconds(transportRef.current.bpm),
+          );
           if (result.movedId) {
             setSelectedId(result.movedId);
             setSelectedIds([result.movedId]);
@@ -2851,9 +3913,12 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           return;
         }
         const wantedId = targetId ?? selectedIdRef.current;
-        const target = tracksRef.current.find(t => t.id === wantedId);
+        const target = tracksRef.current.find((t) => t.id === wantedId);
         // Pasting drums onto a synth (or vice versa) makes a new matching channel instead of failing.
-        const mismatched = !!target && (src.notes?.length || src.pads?.some(p => p.steps.some(v => v > 0))) && src.kind !== target.kind;
+        const mismatched =
+          !!target &&
+          (src.notes?.length || src.pads?.some((p) => p.steps.some((v) => v > 0))) &&
+          src.kind !== target.kind;
         if (target && !mismatched) {
           const tp = transportRef.current;
           const span = clipboardSpanRef.current;
@@ -2865,11 +3930,19 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             shownEnd: songSteps(tp.bars),
             ...(span ? { origin: span[0], length: span[1] - span[0] } : {}),
           });
-          setTracks(ts => ts.map(t => t.id === target.id ? pasted : t));
-          setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(materialEnd(pasted, stepSeconds(tp.bpm)))) }));
+          setTracks((ts) => ts.map((t) => (t.id === target.id ? pasted : t)));
+          setTransportState((tp) => ({
+            ...tp,
+            bars: Math.max(tp.bars, barsForSteps(materialEnd(pasted, stepSeconds(tp.bpm)))),
+          }));
           return;
         }
-        const copy: Track = { ...cloneTrack(src), id: uid(), name: `${src.name} COPY`, recording: false };
+        const copy: Track = {
+          ...cloneTrack(src),
+          id: uid(),
+          name: `${src.name} COPY`,
+          recording: false,
+        };
         if (copy.pads) copy.pads = copy.pads.map((p) => ({ ...p, id: uid() }));
         if (copy.notes) copy.notes = copy.notes.map((n) => ({ ...n, id: uid() }));
         if (copy.clips) copy.clips = copy.clips.map((c) => ({ ...c, id: uid() }));
@@ -2886,14 +3959,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       },
       clipClipboardName,
       copyClip: (trackId, clipId) => {
-        const clip = tracksRef.current.find((t) => t.id === trackId)?.clips?.find((c) => c.id === clipId);
+        const clip = tracksRef.current
+          .find((t) => t.id === trackId)
+          ?.clips?.find((c) => c.id === clipId);
         if (!clip) return;
         clipClipboardRef.current = structuredClone(clip) as AudioClip;
         clipboardRef.current = null;
         multiClipboardRef.current = null;
         setClipboardName(null);
         setClipClipboardName(clip.name);
-        toast("Clip copied", { description: `${clip.name} — press ⌘V / Ctrl+V to paste it at the playhead.` });
+        toast("Clip copied", {
+          description: `${clip.name} — press ⌘V / Ctrl+V to paste it at the playhead.`,
+        });
       },
       cutClip: (trackId, clipId) => {
         const track = tracksRef.current.find((t) => t.id === trackId);
@@ -2906,53 +3983,107 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         setClipboardName(null);
         // a recorded take takes its notes/hits with it, exactly like Delete, so no MIDI is left behind
         const tp = transportRef.current;
-        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, ...removeTakeAndMaterial(t, clipId, tp.bpm, tp.bars) } : t)));
-        toast("Clip cut", { description: `${clip.name} — paste it at the playhead with ⌘V / Ctrl+V.` });
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId ? { ...t, ...removeTakeAndMaterial(t, clipId, tp.bpm, tp.bars) } : t,
+          ),
+        );
+        toast("Clip cut", {
+          description: `${clip.name} — paste it at the playhead with ⌘V / Ctrl+V.`,
+        });
       },
       pasteClip: (atEnd, targetId, destinationStep) => {
         const src = clipClipboardRef.current;
         if (!src) {
-          toast("Clip clipboard is empty", { description: "Click a clip and press ⌘C / Ctrl+C first." });
+          toast("Clip clipboard is empty", {
+            description: "Click a clip and press ⌘C / Ctrl+C first.",
+          });
           return;
         }
         const target = tracksRef.current.find((t) => t.id === (targetId ?? selectedIdRef.current));
         if (!target) {
-          toast("Select a track first", { description: "Click the track you want the clip on, then paste." });
+          toast("Select a track first", {
+            description: "Click the track you want the clip on, then paste.",
+          });
           return;
         }
         // start is in steps but length is in seconds — convert so the paste
         // lands after the last clip instead of on top of it
         const pasteStepDur = stepSeconds(transportRef.current.bpm);
         const endOf = (t: Track) =>
-          (t.clips ?? []).reduce((m, c) => Math.max(m, (c.start ?? 0) + clipSeconds(c) / pasteStepDur), 0);
+          (t.clips ?? []).reduce(
+            (m, c) => Math.max(m, (c.start ?? 0) + clipSeconds(c) / pasteStepDur),
+            0,
+          );
         const tpNow = transportRef.current;
-        const at = atEnd ? Math.max(0, Math.ceil(endOf(target) - 0.02)) : livePasteStep(tpNow.playing ? getPlayStep() : tpNow.step, !!tpNow.playing, destinationStep);
+        const at = atEnd
+          ? Math.max(0, Math.ceil(endOf(target) - 0.02))
+          : livePasteStep(
+              tpNow.playing ? getPlayStep() : tpNow.step,
+              !!tpNow.playing,
+              destinationStep,
+            );
         const clip: AudioClip = { ...(structuredClone(src) as AudioClip), id: uid(), start: at };
-        const isNotes = target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
+        const isNotes =
+          target.kind === "drum" || target.kind === "instrument" || target.kind === "midi";
         // Paste onto the selected track itself; note tracks switch to WAVE so the audio plays there.
         setTracks((ts) =>
-          ts.map((t) => (t.id === target.id ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id, ...(isNotes ? { printedAudio: true } : {}) } : t)),
+          ts.map((t) =>
+            t.id === target.id
+              ? {
+                  ...t,
+                  clips: [...(t.clips ?? []), clip],
+                  activeClipId: clip.id,
+                  ...(isNotes ? { printedAudio: true } : {}),
+                }
+              : t,
+          ),
         );
-        setTransportState(tp => ({ ...tp, bars: Math.max(tp.bars, barsForSteps(at + clipSeconds(clip) / pasteStepDur)) }));
-        toast.success(`${clip.name} pasted on ${target.name}`, { description: `At step ${at} — drag it anywhere from there.` });
+        setTransportState((tp) => ({
+          ...tp,
+          bars: Math.max(tp.bars, barsForSteps(at + clipSeconds(clip) / pasteStepDur)),
+        }));
+        toast.success(`${clip.name} pasted on ${target.name}`, {
+          description: `At step ${at} — drag it anywhere from there.`,
+        });
       },
       updatePatch: (id, patch) =>
         setTracks((ts) =>
-          ts.map((t) => (t.id === id && t.patch ? liveSound({ ...t, patch: { ...t.patch, ...patch } }) : t)),
+          ts.map((t) =>
+            t.id === id && t.patch ? liveSound({ ...t, patch: { ...t.patch, ...patch } }) : t,
+          ),
         ),
-      editAllDrums: (trackId, edit) => setTracks(ts => ts.map(t => {
-        if (t.id !== trackId || !t.pads) return t;
-        const region = transportRef.current.loop ? loopRegion(transportRef.current) : undefined;
-        const pads = editDrumPads(t.pads, edit, region);
-        const patterns = [...(t.drumPatterns ?? [])];
-        patterns[t.activeDrumPattern ?? 0] = structuredClone(pads);
-        return liveSound({ ...t, pads, drumPatterns: patterns, ...(edit.scope !== 'sounds' ? { patternRegion: region } : {}) });
-      })),
+      editAllDrums: (trackId, edit) =>
+        setTracks((ts) =>
+          ts.map((t) => {
+            if (t.id !== trackId || !t.pads) return t;
+            const region = transportRef.current.loop ? loopRegion(transportRef.current) : undefined;
+            const pads = editDrumPads(t.pads, edit, region);
+            const patterns = [...(t.drumPatterns ?? [])];
+            patterns[t.activeDrumPattern ?? 0] = structuredClone(pads);
+            return liveSound({
+              ...t,
+              pads,
+              drumPatterns: patterns,
+              ...(edit.scope !== "sounds" ? { patternRegion: region } : {}),
+            });
+          }),
+        ),
       updatePad: (trackId, padId, patch) =>
         setTracks((ts) =>
           ts.map((t) =>
             t.id === trackId && t.pads
-              ? liveSound({ ...t, ...(patch.steps ? { patternRegion: transportRef.current.loop ? loopRegion(transportRef.current) : undefined } : {}), pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)) })
+              ? liveSound({
+                  ...t,
+                  ...(patch.steps
+                    ? {
+                        patternRegion: transportRef.current.loop
+                          ? loopRegion(transportRef.current)
+                          : undefined,
+                      }
+                    : {}),
+                  pads: t.pads.map((p) => (p.id === padId ? { ...p, ...patch } : p)),
+                })
               : t,
           ),
         ),
@@ -2981,12 +4112,24 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   pads: (t.pads ?? []).map((p) => ({
                     ...p,
                     steps: Array.from({ length: steps }, (_, i) => p.steps[i] ?? 0),
-                    probability: p.probability ? Array.from({ length: steps }, (_, i) => p.probability?.[i] ?? 1) : undefined,
-                    stepPitch: p.stepPitch ? Array.from({ length: steps }, (_, i) => p.stepPitch?.[i] ?? 0) : undefined,
-                    stepDecay: p.stepDecay ? Array.from({ length: steps }, (_, i) => p.stepDecay?.[i] ?? 1) : undefined,
-                    flam: p.flam ? Array.from({ length: steps }, (_, i) => p.flam?.[i] ?? 0) : undefined,
-                    retrig: p.retrig ? Array.from({ length: steps }, (_, i) => p.retrig?.[i] ?? 1) : undefined,
-                    glitch: p.glitch ? Array.from({ length: steps }, (_, i) => p.glitch?.[i] ?? 0) : undefined,
+                    probability: p.probability
+                      ? Array.from({ length: steps }, (_, i) => p.probability?.[i] ?? 1)
+                      : undefined,
+                    stepPitch: p.stepPitch
+                      ? Array.from({ length: steps }, (_, i) => p.stepPitch?.[i] ?? 0)
+                      : undefined,
+                    stepDecay: p.stepDecay
+                      ? Array.from({ length: steps }, (_, i) => p.stepDecay?.[i] ?? 1)
+                      : undefined,
+                    flam: p.flam
+                      ? Array.from({ length: steps }, (_, i) => p.flam?.[i] ?? 0)
+                      : undefined,
+                    retrig: p.retrig
+                      ? Array.from({ length: steps }, (_, i) => p.retrig?.[i] ?? 1)
+                      : undefined,
+                    glitch: p.glitch
+                      ? Array.from({ length: steps }, (_, i) => p.glitch?.[i] ?? 0)
+                      : undefined,
                   })),
                 }
               : t,
@@ -3016,7 +4159,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.init();
         // Sampler pads play internal audio, so they record like instruments
         // (channel print + editable notes), not like a microphone input.
-        const isNote = (t: Track) => t.kind === "instrument" || t.kind === "midi" || t.kind === "drum" || t.kind === "sampler";
+        const isNote = (t: Track) =>
+          t.kind === "instrument" || t.kind === "midi" || t.kind === "drum" || t.kind === "sampler";
         const isAudio = (t: Track) => t.kind === "audio" || t.kind === "ai-vocal";
         // Pressing REC during a count-in cancels it (and throws away the mic lead-in).
         if (countInTimerRef.current != null) {
@@ -3060,20 +4204,26 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             recAudioStartRef.current = null;
             micPreRollRef.current = !transportRef.current.playing;
             updateTrack(target.id, { recording: true });
-            micReady = engine.startInputRecording(target.id, transportRef.current.monitor ?? false)
-              .then(() => {
-                if (generation !== recordingGenerationRef.current) return false;
-                // Only when the song was already rolling (recording on the fly): place it where it was heard.
-                recAudioStartRef.current = transportRef.current.playing ? heardStepPos() : null;
-                updateTrack(target.id, { recording: true });
-                return true;
-              }, (err: unknown) => {
-                micPreRollRef.current = false;
-                updateTrack(target.id, { recording: false });
-                setTransportState(state => ({ ...state, recording: false }));
-                toast.error("Microphone unavailable", { description: err instanceof Error ? err.message : undefined });
-                return false;
-              });
+            micReady = engine
+              .startInputRecording(target.id, transportRef.current.monitor ?? false)
+              .then(
+                () => {
+                  if (generation !== recordingGenerationRef.current) return false;
+                  // Only when the song was already rolling (recording on the fly): place it where it was heard.
+                  recAudioStartRef.current = transportRef.current.playing ? heardStepPos() : null;
+                  updateTrack(target.id, { recording: true });
+                  return true;
+                },
+                (err: unknown) => {
+                  micPreRollRef.current = false;
+                  updateTrack(target.id, { recording: false });
+                  setTransportState((state) => ({ ...state, recording: false }));
+                  toast.error("Microphone unavailable", {
+                    description: err instanceof Error ? err.message : undefined,
+                  });
+                  return false;
+                },
+              );
             pendingInputStartRef.current = micReady.then(() => undefined);
           }
           const begin = () => {
@@ -3087,20 +4237,33 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               {
                 const tpr = transportRef.current;
                 const from = tpr.loop ? (tpr.loopStart ?? 0) : recStartStepRef.current;
-                const to = tpr.loop && (tpr.loopEnd ?? 0) > from ? (tpr.loopEnd ?? 0) : Number.POSITIVE_INFINITY;
-                replacedNoteIdsRef.current = tpr.overdub && !tpr.replace
-                  ? new Set()
-                  : new Set((armedNote.notes ?? []).filter((n) => n.step >= from && n.step < to).map((n) => n.id));
+                const to =
+                  tpr.loop && (tpr.loopEnd ?? 0) > from
+                    ? (tpr.loopEnd ?? 0)
+                    : Number.POSITIVE_INFINITY;
+                replacedNoteIdsRef.current =
+                  tpr.overdub && !tpr.replace
+                    ? new Set()
+                    : new Set(
+                        (armedNote.notes ?? [])
+                          .filter((n) => n.step >= from && n.step < to)
+                          .map((n) => n.id),
+                      );
               }
               // The printed take is captured after the channel fader, so a muted
               // channel would record silence (a flat line). Unmute it first.
               if (armedNote.muted) {
                 updateTrack(armedNote.id, { muted: false });
-                toast("Unmuted " + armedNote.name, { description: "A muted channel records silence, so it was unmuted for this take." });
+                toast("Unmuted " + armedNote.name, {
+                  description: "A muted channel records silence, so it was unmuted for this take.",
+                });
               }
-              const otherSolo = tracksRef.current.some((t) => t.solo && t.id !== armedNote!.id) && !armedNote.solo;
+              const otherSolo =
+                tracksRef.current.some((t) => t.solo && t.id !== armedNote!.id) && !armedNote.solo;
               if (otherSolo) {
-                toast.warning("Another track is soloed", { description: `${armedNote.name} is silenced by solo and would record a flat line — un-solo the other track.` });
+                toast.warning("Another track is soloed", {
+                  description: `${armedNote.name} is silenced by solo and would record a flat line — un-solo the other track.`,
+                });
               }
               // Printing starts just before the song does; that lead-in is trimmed when the take lands.
               printPreRollRef.current = !transportRef.current.playing;
@@ -3108,14 +4271,26 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               if (notesOnly) {
                 printPreRollRef.current = false;
                 midiTakeRef.current = { trackId: armedNote.id, passes: 0 };
-              } else try {
-                engine.startTrackRecording(armedNote.id);
-              } catch (err) {
-                printPreRollRef.current = false;
-                toast.error("Could not record this channel", { description: err instanceof Error ? err.message : undefined });
-                return;
-              }
-              updateTrack(armedNote.id, { recording: true, ...(armedNote.kind === "drum" ? { patternRegion: transportRef.current.loop ? loopRegion(transportRef.current) : undefined } : {}) });
+              } else
+                try {
+                  engine.startTrackRecording(armedNote.id);
+                } catch (err) {
+                  printPreRollRef.current = false;
+                  toast.error("Could not record this channel", {
+                    description: err instanceof Error ? err.message : undefined,
+                  });
+                  return;
+                }
+              updateTrack(armedNote.id, {
+                recording: true,
+                ...(armedNote.kind === "drum"
+                  ? {
+                      patternRegion: transportRef.current.loop
+                        ? loopRegion(transportRef.current)
+                        : undefined,
+                    }
+                  : {}),
+              });
               toast(notesOnly ? "Recording notes" : "Recording notes and audio", {
                 description: notesOnly
                   ? `Play ${armedNote.name}. Its waveform is drawn from your notes when you stop${transportRef.current.overdub && !transportRef.current.replace ? "; Overdub keeps looping so you can layer passes" : ""}.`
@@ -3151,14 +4326,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             let nextClick = 0;
             const scheduleClicks = (horizon = 0.12) => {
               while (nextClick < total && t0 + nextClick * beatSec < ctx.currentTime + horizon) {
-                if (transportRef.current.countInClick !== false) engine.playClick(nextClick % bpb === 0, t0 + nextClick * beatSec);
+                if (transportRef.current.countInClick !== false)
+                  engine.playClick(nextClick % bpb === 0, t0 + nextClick * beatSec);
                 nextClick += 1;
               }
             };
             scheduleClicks();
             const buzz = (accent: boolean) => {
-              if (transportRef.current.countInHaptics && typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-                try { navigator.vibrate(accent ? 70 : 30); } catch { /* Device may block vibration; visual countdown continues. */ }
+              if (
+                transportRef.current.countInHaptics &&
+                typeof navigator !== "undefined" &&
+                typeof navigator.vibrate === "function"
+              ) {
+                try {
+                  navigator.vibrate(accent ? 70 : 30);
+                } catch {
+                  /* Device may block vibration; visual countdown continues. */
+                }
               }
             };
             buzz(true);
@@ -3176,9 +4360,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 const gen = recordingGenerationRef.current;
                 begin();
                 // the last count number stays up until the downbeat itself
-                window.setTimeout(() => {
-                  if (gen === recordingGenerationRef.current) setTransportState((s) => (s.countInLeft != null ? { ...s, countInLeft: null } : s));
-                }, Math.max(0, ahead * 1000));
+                window.setTimeout(
+                  () => {
+                    if (gen === recordingGenerationRef.current)
+                      setTransportState((s) =>
+                        s.countInLeft != null ? { ...s, countInLeft: null } : s,
+                      );
+                  },
+                  Math.max(0, ahead * 1000),
+                );
                 return;
               }
               const remaining = Math.ceil(ahead / beatSec - 1e-6);
@@ -3204,17 +4394,25 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           void endRecording();
         }
       },
-      stop: () => { stopLiveArps(); releaseLatched(); return endRecording(true); },
+      stop: () => {
+        stopLiveArps();
+        releaseLatched();
+        return endRecording(true);
+      },
       changeInstrument: (trackId, preset) =>
         setTracks((ts) =>
           ts.map((t) =>
-            t.id === trackId ? liveSound({ ...t, instrument: preset, patch: applyPreset(preset) }) : t,
+            t.id === trackId
+              ? liveSound({ ...t, instrument: preset, patch: applyPreset(preset) })
+              : t,
           ),
         ),
       addClip: (trackId, clip) =>
         setTracks((ts) =>
           ts.map((t) =>
-            t.id === trackId ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id } : t,
+            t.id === trackId
+              ? { ...t, clips: [...(t.clips ?? []), clip], activeClipId: clip.id }
+              : t,
           ),
         ),
       updateClip: (trackId, clipId, patch) => {
@@ -3234,7 +4432,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const engine = getEngine();
         void engine.ensureBuffer(c.url).then((buf) => {
           if (!buf) {
-            toast.error("Could not read that audio", { description: "The clip's audio file is no longer available." });
+            toast.error("Could not read that audio", {
+              description: "The clip's audio file is no longer available.",
+            });
             return;
           }
           engine.stopSamples(trackId);
@@ -3279,7 +4479,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           const last = automationLastPushRef.current.get(key);
           const coalesce = !!label && last?.label === label && now - last.at < 700;
           if (!coalesce) {
-            entry.past = [...entry.past, { points: structuredClone(lane.points), label: label ?? "Automation edit" }].slice(-80);
+            entry.past = [
+              ...entry.past,
+              { points: structuredClone(lane.points), label: label ?? "Automation edit" },
+            ].slice(-80);
             entry.future = [];
             automationHistoryRef.current.set(key, entry);
             setAutomationHistoryTick((v) => v + 1);
@@ -3308,9 +4511,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Nothing to undo on this lane");
           return;
         }
-        entry!.future = [...entry!.future, { points: structuredClone(lane.points), label: step.label }].slice(-80);
+        entry!.future = [
+          ...entry!.future,
+          { points: structuredClone(lane.points), label: step.label },
+        ].slice(-80);
         automationLastPushRef.current.delete(key);
-        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, points: step.points } : l)) });
+        updateTrack(trackId, {
+          automation: lanes.map((l) => (l.param === param ? { ...l, points: step.points } : l)),
+        });
         setAutomationHistoryTick((v) => v + 1);
         toast(`Undid ${step.label.toLowerCase()}`);
       },
@@ -3330,9 +4538,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           toast("Nothing to redo on this lane");
           return;
         }
-        entry!.past = [...entry!.past, { points: structuredClone(lane.points), label: step.label }].slice(-80);
+        entry!.past = [
+          ...entry!.past,
+          { points: structuredClone(lane.points), label: step.label },
+        ].slice(-80);
         automationLastPushRef.current.delete(key);
-        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, points: step.points } : l)) });
+        updateTrack(trackId, {
+          automation: lanes.map((l) => (l.param === param ? { ...l, points: step.points } : l)),
+        });
         setAutomationHistoryTick((v) => v + 1);
         toast(`Redid ${step.label.toLowerCase()}`);
       },
@@ -3351,12 +4564,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const lanes = t?.automation ?? [];
         if (lanes.some((l) => l.param === param && l.locked)) return;
-        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, mode } : l)) });
+        updateTrack(trackId, {
+          automation: lanes.map((l) => (l.param === param ? { ...l, mode } : l)),
+        });
       },
       setAutomationLaneLock: (trackId, param, locked) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const lanes = t?.automation ?? [];
-        updateTrack(trackId, { automation: lanes.map((l) => (l.param === param ? { ...l, locked } : l)) });
+        updateTrack(trackId, {
+          automation: lanes.map((l) => (l.param === param ? { ...l, locked } : l)),
+        });
       },
       // hear the value under the finger while an automation point or region is being dragged
       previewAutomation: (trackId, param, value) => {
@@ -3365,7 +4582,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       removeClip: (trackId, clipId) => {
         const tp = transportRef.current;
         // a recorded take takes its notes/hits with it, so no hidden MIDI is left under a deleted block
-        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, ...removeTakeAndMaterial(t, clipId, tp.bpm, tp.bars) } : t)));
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId ? { ...t, ...removeTakeAndMaterial(t, clipId, tp.bpm, tp.bars) } : t,
+          ),
+        );
       },
       savePreset: (name) => {
         const t = tracks.find((x) => x.id === selectedId);
@@ -3375,7 +4596,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const user = userPresets.find((p) => p.name === name);
         setTracks((ts) =>
           ts.map((t) =>
-            t.id === trackId ? liveSound({ ...t, patch: user ? structuredClone(user) : applyPreset(name) }) : t,
+            t.id === trackId
+              ? liveSound({ ...t, patch: user ? structuredClone(user) : applyPreset(name) })
+              : t,
           ),
         );
       },
@@ -3394,7 +4617,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                   const off = i % 2 === 1;
                   switch (p.kind) {
                     case "kick":
-                      if (genre === "Detroit Techno" || genre === "House") return beat ? 1 : hit(0.04 * energy);
+                      if (genre === "Detroit Techno" || genre === "House")
+                        return beat ? 1 : hit(0.04 * energy);
                       if (genre === "Trap" || genre === "Hip-Hop")
                         return i % 8 === 0 ? 1 : hit(0.12 * energy);
                       if (genre === "Breakbeat" || genre === "Detroit Electro")
@@ -3424,7 +4648,13 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             };
           }),
         ),
-      previewNote: (trackId, midi, duration = PREVIEW_NOTE_SECONDS, shouldCapture = true, patch) => {
+      previewNote: (
+        trackId,
+        midi,
+        duration = PREVIEW_NOTE_SECONDS,
+        shouldCapture = true,
+        patch,
+      ) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const engine = getEngine();
         engine.init();
@@ -3432,11 +4662,29 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         // HOLD latches played notes (never preset auditions, which pass capture off or their own patch).
         const holding = !!t && shouldCapture && !patch && holdApplies(t);
         if (t && holding) retriggerHeld(t, midi);
-        if (t) triggerNote(engine, previewTrack(t, patch), midi, holding ? HELD_NOTE_SECONDS : duration, 0.9, undefined, holding ? HELD_NOTE_SECONDS : undefined);
+        if (t)
+          triggerNote(
+            engine,
+            previewTrack(t, patch),
+            midi,
+            holding ? HELD_NOTE_SECONDS : duration,
+            0.9,
+            undefined,
+            holding ? HELD_NOTE_SECONDS : undefined,
+          );
         keyDown(midi, holding ? HELD_NOTE_SECONDS * 1000 : undefined);
         // Notes played on screen are captured while the transport records.
         const note = t && shouldCapture ? capture(t.id, midi, 0.9, duration) : null;
-        if (t && note && holding) heldRef.current.set(`latch:${t.id}:${note.id}`, { ids: [note.id], trackId: t.id, t0: performance.now(), startStep: note.step, pitch: midi, latched: true, base: duration });
+        if (t && note && holding)
+          heldRef.current.set(`latch:${t.id}:${note.id}`, {
+            ids: [note.id],
+            trackId: t.id,
+            t0: performance.now(),
+            startStep: note.step,
+            pitch: midi,
+            latched: true,
+            base: duration,
+          });
       },
       captureNote: (trackId, midi, velocity = 0.9) => {
         capture(trackId, midi, velocity);
@@ -3476,7 +4724,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       },
       updateSampler: (trackId, patch) =>
         setTracks((ts) =>
-          ts.map((t) => (t.id === trackId && t.sampler ? { ...t, sampler: { ...t.sampler, ...patch } } : t)),
+          ts.map((t) =>
+            t.id === trackId && t.sampler ? { ...t, sampler: { ...t.sampler, ...patch } } : t,
+          ),
         ),
       clearSample: (trackId) => {
         getEngine().stopSamples(trackId);
@@ -3488,19 +4738,40 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       uninstallPlugin: (defId) => setInstalledPlugins((ps) => ps.filter((x) => x.id !== defId)),
       addPlugin: (trackId, d, opts) => {
         const inst = instantiate(d);
-        setTracks((ts) => ts.map((t) => (t.id === trackId ? { ...t, plugins: opts?.rig ? insertRigDevice(t.plugins ?? [], inst) : [...(t.plugins ?? []), inst] } : t)));
-        if (!opts?.quiet) toast.success(`${d.name} inserted`, { description: `${d.vendor} · ${d.format}` });
+        setTracks((ts) =>
+          ts.map((t) =>
+            t.id === trackId
+              ? {
+                  ...t,
+                  plugins: opts?.rig
+                    ? insertRigDevice(t.plugins ?? [], inst)
+                    : [...(t.plugins ?? []), inst],
+                }
+              : t,
+          ),
+        );
+        if (!opts?.quiet)
+          toast.success(`${d.name} inserted`, { description: `${d.vendor} · ${d.format}` });
         return inst.id;
       },
       removePlugin: (trackId, instanceId) =>
         setTracks((ts) =>
-          ts.map((t) => (t.id === trackId ? { ...t, plugins: (t.plugins ?? []).filter((p) => p.id !== instanceId) } : t)),
+          ts.map((t) =>
+            t.id === trackId
+              ? { ...t, plugins: (t.plugins ?? []).filter((p) => p.id !== instanceId) }
+              : t,
+          ),
         ),
       togglePluginBypass: (trackId, instanceId) =>
         setTracks((ts) =>
           ts.map((t) =>
             t.id === trackId
-              ? { ...t, plugins: (t.plugins ?? []).map((p) => (p.id === instanceId ? { ...p, bypass: !p.bypass } : p)) }
+              ? {
+                  ...t,
+                  plugins: (t.plugins ?? []).map((p) =>
+                    p.id === instanceId ? { ...p, bypass: !p.bypass } : p,
+                  ),
+                }
               : t,
           ),
         ),
@@ -3533,27 +4804,43 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                       const all = withDefaultParams(p);
                       return all.some((x: PluginParam) => x.id === paramId)
                         ? all.map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x))
-                        : [...all, { id: paramId, name: paramId, value, min: value, max: value, unit: "" }];
+                        : [
+                            ...all,
+                            { id: paramId, name: paramId, value, min: value, max: value, unit: "" },
+                          ];
                     })(),
                   }
                 : p,
             );
             const lane = (t.automation ?? []).find((item) => item.param === automationParam);
-            if (!transportRef.current.playing || !lane || lane.locked || !["write", "touch", "latch"].includes(lane.mode)) return { ...t, plugins };
+            if (
+              !transportRef.current.playing ||
+              !lane ||
+              lane.locked ||
+              !["write", "touch", "latch"].includes(lane.mode)
+            )
+              return { ...t, plugins };
             automationGestureRef.current.set(gestureKey, {
               touchedUntil: performance.now() + 180,
               latched: lane.mode === "latch",
             });
-            const source = plugins.find((plugin) => plugin.id === instanceId)?.params.find((param) => param.id === paramId);
+            const source = plugins
+              .find((plugin) => plugin.id === instanceId)
+              ?.params.find((param) => param.id === paramId);
             if (!source) return { ...t, plugins };
-            const normalized = source.max > source.min ? (value - source.min) / (source.max - source.min) : 0;
+            const normalized =
+              source.max > source.min ? (value - source.min) / (source.max - source.min) : 0;
             const step = transportRef.current.step;
-            const points = [...lane.points.filter((point) => point.step !== step), { step, value: Math.min(1, Math.max(0, normalized)) }]
-              .sort((a, b) => a.step - b.step);
+            const points = [
+              ...lane.points.filter((point) => point.step !== step),
+              { step, value: Math.min(1, Math.max(0, normalized)) },
+            ].sort((a, b) => a.step - b.step);
             return {
               ...t,
               plugins,
-              automation: (t.automation ?? []).map((item) => item.param === automationParam ? { ...item, points } : item),
+              automation: (t.automation ?? []).map((item) =>
+                item.param === automationParam ? { ...item, points } : item,
+              ),
             };
           }),
         );
@@ -3566,13 +4853,16 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       midiLearn,
       startMidiLearn: (t) => {
         setMidiLearn(t);
-        toast("Move a knob or fader", { description: "The next control you touch takes over this one." });
+        toast("Move a knob or fader", {
+          description: "The next control you touch takes over this one.",
+        });
       },
       cancelMidiLearn: () => setMidiLearn(null),
       clearMidiMapping: (t) =>
         setMidiMap((m) => {
           const next: Record<string, MidiTarget> = {};
-          for (const [k, v] of Object.entries(m)) if (!(v.id === t.id && v.param === t.param)) next[k] = v;
+          for (const [k, v] of Object.entries(m))
+            if (!(v.id === t.id && v.param === t.param)) next[k] = v;
           try {
             window.localStorage.setItem(MIDI_MAP_KEY, JSON.stringify(next));
           } catch {
@@ -3591,24 +4881,70 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         });
       },
       removeFxPlugin: (target, instanceId) =>
-        setFxChains((c) => ({ ...c, [target]: (c[target] ?? []).filter((p) => p.id !== instanceId) })),
+        setFxChains((c) => ({
+          ...c,
+          [target]: (c[target] ?? []).filter((p) => p.id !== instanceId),
+        })),
       toggleFxBypass: (target, instanceId) =>
         setFxChains((c) => ({
           ...c,
-          [target]: (c[target] ?? []).map((p) => (p.id === instanceId ? { ...p, bypass: !p.bypass } : p)),
+          [target]: (c[target] ?? []).map((p) =>
+            p.id === instanceId ? { ...p, bypass: !p.bypass } : p,
+          ),
         })),
       setFxParam: (target, instanceId, paramId, value) =>
         setFxChains((c) => ({
           ...c,
           [target]: (c[target] ?? []).map((p) =>
             p.id === instanceId
-              ? { ...p, params: withDefaultParams(p).map((x: PluginParam) => (x.id === paramId ? { ...x, value } : x)) }
+              ? {
+                  ...p,
+                  params: withDefaultParams(p).map((x: PluginParam) =>
+                    x.id === paramId ? { ...x, value } : x,
+                  ),
+                }
               : p,
           ),
         })),
     };
-  }, [tracks, transport, selectedId, selectedIds, editTool, panel, userPresets, buses, vcas, auxReturns, sections, projectNotes, folders, installedPlugins, fxChains, midiInputs, midiOutputs, midiInputId, midiLearning, midiMap, midiLearn, clipboardName, clipClipboardName, enableMidi, setMidiInputPersist, updateTrack, finishRecording, finishTrackRecording, endRecording, splitClipAtImpl, razorAtImpl, buildSnapshot, applySession, historyTick, automationHistoryTick, savedAt]);
-
+  }, [
+    tracks,
+    transport,
+    selectedId,
+    selectedIds,
+    editTool,
+    panel,
+    userPresets,
+    buses,
+    vcas,
+    auxReturns,
+    sections,
+    projectNotes,
+    folders,
+    installedPlugins,
+    fxChains,
+    midiInputs,
+    midiOutputs,
+    midiInputId,
+    midiLearning,
+    midiMap,
+    midiLearn,
+    clipboardName,
+    clipClipboardName,
+    enableMidi,
+    setMidiInputPersist,
+    updateTrack,
+    finishRecording,
+    finishTrackRecording,
+    endRecording,
+    splitClipAtImpl,
+    razorAtImpl,
+    buildSnapshot,
+    applySession,
+    historyTick,
+    automationHistoryTick,
+    savedAt,
+  ]);
 
   apiRef.current = api; // hardware transport buttons call the newest actions
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

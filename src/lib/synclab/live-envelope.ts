@@ -1,12 +1,22 @@
-import type { EnvelopeParams } from './types';
+import type { EnvelopeParams } from "./types";
 
 /** Re-schedule only the remaining portion of a note; an edit never adds a note. */
-export function envelopePoints(env: EnvelopeParams, duration: number, age: number): [number, number][] {
+export function envelopePoints(
+  env: EnvelopeParams,
+  duration: number,
+  age: number,
+): [number, number][] {
   const attack = Math.max(0.001, env.attack);
   const decay = Math.max(0.001, env.decay);
   const releaseAt = Math.max(duration, attack + decay);
   const end = releaseAt + Math.max(0.02, env.release);
-  const points: [number, number][] = [[0, 0], [attack, 1], [attack + decay, env.sustain], [releaseAt, env.sustain], [end, 0]];
+  const points: [number, number][] = [
+    [0, 0],
+    [attack, 1],
+    [attack + decay, env.sustain],
+    [releaseAt, env.sustain],
+    [end, 0],
+  ];
   const elapsed = Math.max(0, age);
   if (elapsed >= end) return [[elapsed, 0]];
   let value = 0;

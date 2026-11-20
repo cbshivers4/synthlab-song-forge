@@ -5,7 +5,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   applyPreset,
   clearPanelWallpaper,
@@ -20,7 +26,13 @@ import {
   type SkinKey,
 } from "@/lib/synclab/skins";
 
-type Props = { skinKey: SkinKey; image?: boolean; padColor?: boolean; keyboard?: boolean; colorLabel?: string };
+type Props = {
+  skinKey: SkinKey;
+  image?: boolean;
+  padColor?: boolean;
+  keyboard?: boolean;
+  colorLabel?: string;
+};
 
 const safe = (fn: () => void) => {
   try {
@@ -42,7 +54,10 @@ function ThemePresets() {
           safe(() => applyPreset(v));
         }}
       >
-        <SelectTrigger className="h-8 w-full min-w-0 sm:w-36 [&>span]:truncate" aria-label="Saved themes">
+        <SelectTrigger
+          className="h-8 w-full min-w-0 sm:w-36 [&>span]:truncate"
+          aria-label="Saved themes"
+        >
           <SelectValue placeholder={presets.length ? "Themes" : "No themes yet"} />
         </SelectTrigger>
         <SelectContent>
@@ -92,7 +107,10 @@ function ThemePresets() {
               Saved themes
             </p>
             {presets.map((p) => (
-              <div key={p.id} className="flex items-center justify-between gap-2 rounded px-1 py-0.5">
+              <div
+                key={p.id}
+                className="flex items-center justify-between gap-2 rounded px-1 py-0.5"
+              >
                 <span className="truncate text-sm">{p.name}</span>
                 <Button
                   size="sm"
@@ -116,7 +134,14 @@ function ThemePresets() {
 }
 
 function ImageFraming({ skinKey, skin }: { skinKey: SkinKey; skin: Skin }) {
-  const row = (label: string, value: number, min: number, max: number, step: number, key: keyof Skin) => (
+  const row = (
+    label: string,
+    value: number,
+    min: number,
+    max: number,
+    step: number,
+    key: keyof Skin,
+  ) => (
     <div className="space-y-1.5">
       <div className="flex justify-between font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
         <span>{label}</span>
@@ -172,7 +197,13 @@ function ImageFraming({ skinKey, skin }: { skinKey: SkinKey; skin: Skin }) {
   );
 }
 
-export function SkinControls({ skinKey, image, padColor, keyboard, colorLabel = "Background" }: Props) {
+export function SkinControls({
+  skinKey,
+  image,
+  padColor,
+  keyboard,
+  colorLabel = "Background",
+}: Props) {
   const skin = useSkin(skinKey);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => startSkinSync(), []);
@@ -201,11 +232,28 @@ export function SkinControls({ skinKey, image, padColor, keyboard, colorLabel = 
           />
         </label>
       )}
-      {keyboard && ([
-        { key: "naturalKeyColor", label: "Natural keys", fallback: "#f2f5f4" },
-        { key: "sharpKeyColor", label: "Sharp keys", fallback: "#15191c" },
-        { key: "activeKeyColor", label: "Played keys", fallback: "#45c8b5" },
-      ] as const).map(({ key, label, fallback }) => <label key={key} className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground">{label}<input type="color" aria-label={`${label} color`} value={skin[key] ?? fallback} onChange={(e) => safe(() => setSkin(skinKey, { [key]: e.target.value }))} className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent" /></label>)}
+      {keyboard &&
+        (
+          [
+            { key: "naturalKeyColor", label: "Natural keys", fallback: "#f2f5f4" },
+            { key: "sharpKeyColor", label: "Sharp keys", fallback: "#15191c" },
+            { key: "activeKeyColor", label: "Played keys", fallback: "#45c8b5" },
+          ] as const
+        ).map(({ key, label, fallback }) => (
+          <label
+            key={key}
+            className="flex items-center gap-1.5 font-mono text-[10px] text-muted-foreground"
+          >
+            {label}
+            <input
+              type="color"
+              aria-label={`${label} color`}
+              value={skin[key] ?? fallback}
+              onChange={(e) => safe(() => setSkin(skinKey, { [key]: e.target.value }))}
+              className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent"
+            />
+          </label>
+        ))}
       {image && (
         <>
           <input
@@ -218,7 +266,12 @@ export function SkinControls({ skinKey, image, padColor, keyboard, colorLabel = 
               e.target.value = "";
               if (!f) return;
               try {
-                setSkin(skinKey, { image: await imageToDataUrl(f), imageZoom: 1, imageX: 50, imageY: 50 });
+                setSkin(skinKey, {
+                  image: await imageToDataUrl(f),
+                  imageZoom: 1,
+                  imageX: 50,
+                  imageY: 50,
+                });
               } catch (err) {
                 toast.error((err as Error).message);
               }
@@ -241,7 +294,17 @@ export function SkinControls({ skinKey, image, padColor, keyboard, colorLabel = 
         title="Remove this panel's picture and colors"
         onClick={() =>
           safe(() => {
-            setSkin(skinKey, { color: undefined, padColor: undefined, ...(keyboard ? { naturalKeyColor: undefined, sharpKeyColor: undefined, activeKeyColor: undefined } : {}) });
+            setSkin(skinKey, {
+              color: undefined,
+              padColor: undefined,
+              ...(keyboard
+                ? {
+                    naturalKeyColor: undefined,
+                    sharpKeyColor: undefined,
+                    activeKeyColor: undefined,
+                  }
+                : {}),
+            });
             clearPanelWallpaper(skinKey);
           })
         }
@@ -274,7 +337,11 @@ export function useImageDrag(skinKey: SkinKey, skin: Skin) {
   return {
     onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
       if (!skin.image || e.target !== e.currentTarget) return;
-      drag.current = { ...canvasPoint(e.clientX, e.clientY), ix: skin.imageX ?? 50, iy: skin.imageY ?? 50 };
+      drag.current = {
+        ...canvasPoint(e.clientX, e.clientY),
+        ix: skin.imageX ?? 50,
+        iy: skin.imageY ?? 50,
+      };
       e.currentTarget.setPointerCapture(e.pointerId);
     },
     onPointerMove: (e: React.PointerEvent<HTMLElement>) => {

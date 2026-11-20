@@ -1,6 +1,12 @@
 import { usePlayStep } from "@/lib/synclab/playhead";
 import { useEffect, useRef, useState } from "react";
-import { stepsPerBar, getBeatsPerBar, songSteps, stepSeconds, positionLabel } from "@/lib/synclab/timebase";
+import {
+  stepsPerBar,
+  getBeatsPerBar,
+  songSteps,
+  stepSeconds,
+  positionLabel,
+} from "@/lib/synclab/timebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Flag, Settings2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -11,7 +17,13 @@ import { TimelineOptionsPanel } from "./EditToolbar";
 /** Density-aware measure numbering for the ruler: keeps bar labels readable
  *  past 100+ bars by numbering every Nth bar (snapped to 1/2/5/10/25/50/100)
  *  based on real pixels per bar, with ticks for the bars in between. */
-function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivElement | null>; bars: number }) {
+function BarNumbering({
+  gridRef,
+  bars,
+}: {
+  gridRef: React.RefObject<HTMLDivElement | null>;
+  bars: number;
+}) {
   const [gridW, setGridW] = useState(0);
   useEffect(() => {
     const el = gridRef.current;
@@ -53,9 +65,9 @@ function BarNumbering({ gridRef, bars }: { gridRef: React.RefObject<HTMLDivEleme
               </span>
             ) : isBar ? (
               <span className="text-muted-foreground/45">{pxPerBar >= 10 ? "·" : ""}</span>
-            ) : (
-              showBeats ? <span className="text-muted-foreground/25">·</span> : null
-            )}
+            ) : showBeats ? (
+              <span className="text-muted-foreground/25">·</span>
+            ) : null}
           </div>
         );
       })}
@@ -76,12 +88,14 @@ export function Ruler() {
   const exLo = exportOn ? Math.min(transport.exportStart!, transport.exportEnd! - 1) : 0;
   const exHi = exportOn ? Math.max(transport.exportEnd!, exLo + 1) : total;
 
-
   const stepFromX = (clientX: number, clientY: number) => {
     const el = gridRef.current;
     if (!el) return 0;
     const r = canvasRect(el);
-    return Math.min(total, Math.max(0, Math.round(((canvasPoint(clientX, clientY).x - r.left) / r.width) * total)));
+    return Math.min(
+      total,
+      Math.max(0, Math.round(((canvasPoint(clientX, clientY).x - r.left) / r.width) * total)),
+    );
   };
 
   // Drag on empty ruler space to draw a loop region. A plain click (no drag)
@@ -116,8 +130,10 @@ export function Ruler() {
     const len = hi - lo;
     const move = (ev: PointerEvent) => {
       const s = stepFromX(ev.clientX, ev.clientY);
-      if (which === "start") setTransport({ loopStart: Math.max(0, Math.min(s, hi - 1)), loop: true });
-      else if (which === "end") setTransport({ loopEnd: Math.min(total, Math.max(s, lo + 1)), loop: true });
+      if (which === "start")
+        setTransport({ loopStart: Math.max(0, Math.min(s, hi - 1)), loop: true });
+      else if (which === "end")
+        setTransport({ loopEnd: Math.min(total, Math.max(s, lo + 1)), loop: true });
       else {
         const shift = s - from;
         const start = Math.max(0, Math.min(total - len, lo + shift));
@@ -131,7 +147,6 @@ export function Ruler() {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
-
 
   const dragFlag = (which: "start" | "end") => (e: React.PointerEvent) => {
     e.preventDefault();
@@ -151,37 +166,42 @@ export function Ruler() {
 
   return (
     <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2/70 backdrop-blur">
-      <div className="relative z-40 flex w-[var(--timeline-header-width)] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
+      <div
+        className="relative z-40 flex w-[var(--timeline-header-width)] shrink-0 flex-col justify-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:px-3"
+        style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}
+      >
         <div className="flex items-center gap-2">
           <span className="font-display text-[11px] font-semibold tracking-[0.2em]">TIMELINE</span>
           <span className="label-xs ml-auto">
             {(transport.timebase ?? "bars") === "seconds"
-              ? (() => { const t = liveStep * stepSeconds(transport.bpm); return `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, "0")}`; })()
+              ? (() => {
+                  const t = liveStep * stepSeconds(transport.bpm);
+                  return `${Math.floor(t / 60)}:${(t % 60).toFixed(2).padStart(5, "0")}`;
+                })()
               : positionLabel(liveStep)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-        {/* song length + export flags: menu on desktop, timeline tools menu on phones */}
-        {(
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                aria-label="Timeline options"
-                title="Song length and export range"
-                className="flex items-center gap-1 rounded-[3px] border border-border bg-background/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
-              >
-                <Settings2 className="size-3" /> {bars} {bars === 1 ? "bar" : "bars"}
-                {exportOn && <Flag className="size-3 text-amber-300" />}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-60 space-y-3 p-3">
-              <div className="label-xs">Timeline options</div>
-              <TimelineOptionsPanel />
-            </PopoverContent>
-          </Popover>
-        )}
-
+          {/* song length + export flags: menu on desktop, timeline tools menu on phones */}
+          {
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Timeline options"
+                  title="Song length and export range"
+                  className="flex items-center gap-1 rounded-[3px] border border-border bg-background/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                >
+                  <Settings2 className="size-3" /> {bars} {bars === 1 ? "bar" : "bars"}
+                  {exportOn && <Flag className="size-3 text-amber-300" />}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-60 space-y-3 p-3">
+                <div className="label-xs">Timeline options</div>
+                <TimelineOptionsPanel />
+              </PopoverContent>
+            </Popover>
+          }
         </div>
       </div>
       <div
@@ -195,12 +215,17 @@ export function Ruler() {
             bar keeps a number (small ticks between) so labels never overlap. */}
         <BarNumbering gridRef={gridRef} bars={bars} />
 
-
         {/* dim outside the loop */}
         {transport.loop && (
           <>
-            <div className="pointer-events-none absolute inset-y-0 left-0 bg-background/60" style={{ width: `${(lo / total) * 100}%` }} />
-            <div className="pointer-events-none absolute inset-y-0 right-0 bg-background/60" style={{ width: `${((total - hi) / total) * 100}%` }} />
+            <div
+              className="pointer-events-none absolute inset-y-0 left-0 bg-background/60"
+              style={{ width: `${(lo / total) * 100}%` }}
+            />
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 bg-background/60"
+              style={{ width: `${((total - hi) / total) * 100}%` }}
+            />
             {/* loop band — drag it to move the whole region */}
             <div
               onPointerDown={dragLoop("band")}
@@ -226,19 +251,29 @@ export function Ruler() {
                     const d = ev.key === "ArrowLeft" ? -1 : ev.key === "ArrowRight" ? 1 : 0;
                     if (!d) return;
                     ev.preventDefault();
-                    if (which === "start") setTransport({ loopStart: Math.max(0, Math.min(lo + d, hi - 1)), loop: true });
-                    else setTransport({ loopEnd: Math.min(total, Math.max(hi + d, lo + 1)), loop: true });
+                    if (which === "start")
+                      setTransport({
+                        loopStart: Math.max(0, Math.min(lo + d, hi - 1)),
+                        loop: true,
+                      });
+                    else
+                      setTransport({
+                        loopEnd: Math.min(total, Math.max(hi + d, lo + 1)),
+                        loop: true,
+                      });
                   }}
                   title={`Loop ${which} — drag or use arrow keys (bar ${Math.floor(p / stepsPerBar()) + 1})`}
                   className="absolute top-0 z-20 flex h-full w-6 cursor-ew-resize touch-none flex-col items-center outline-none focus-visible:ring-1 focus-visible:ring-primary"
                   style={{ left: `calc(${(p / total) * 100}% - 12px)` }}
                 >
-                  <div className="h-0 w-0 border-x-[6px] border-x-transparent" style={{ borderTop: "9px solid var(--primary)" }} />
+                  <div
+                    className="h-0 w-0 border-x-[6px] border-x-transparent"
+                    style={{ borderTop: "9px solid var(--primary)" }}
+                  />
                   <div className="w-[2px] flex-1 bg-primary/80" />
                 </div>
               );
             })}
-
           </>
         )}
 
@@ -247,7 +282,10 @@ export function Ruler() {
           <>
             <div
               className="pointer-events-none absolute inset-y-0 border-x border-amber-400/70 bg-amber-400/10"
-              style={{ left: `${(exLo / total) * 100}%`, width: `${((exHi - exLo) / total) * 100}%` }}
+              style={{
+                left: `${(exLo / total) * 100}%`,
+                width: `${((exHi - exLo) / total) * 100}%`,
+              }}
             />
             {(["start", "end"] as const).map((which) => {
               const p = which === "start" ? exLo : exHi;
@@ -296,7 +334,8 @@ export function Ruler() {
             onPointerDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              const move = (ev: PointerEvent) => setTransport({ step: Math.min(total - 1, stepFromX(ev.clientX, ev.clientY)) });
+              const move = (ev: PointerEvent) =>
+                setTransport({ step: Math.min(total - 1, stepFromX(ev.clientX, ev.clientY)) });
               const up = () => {
                 window.removeEventListener("pointermove", move);
                 window.removeEventListener("pointerup", up);
@@ -405,7 +444,10 @@ export function TimelineOverview({
         {transport.loop && (
           <span
             className="absolute inset-y-0 bg-primary/15"
-            style={{ left: `${loopFrom * 100}%`, width: `${Math.max(1, (loopTo - loopFrom) * 100)}%` }}
+            style={{
+              left: `${loopFrom * 100}%`,
+              width: `${Math.max(1, (loopTo - loopFrom) * 100)}%`,
+            }}
           />
         )}
         {/* playhead */}
@@ -428,7 +470,9 @@ export function TimelineOverview({
         >
           −
         </button>
-        <span className="w-8 text-center font-mono text-[9px] text-muted-foreground">{zoom.toFixed(1)}×</span>
+        <span className="w-8 text-center font-mono text-[9px] text-muted-foreground">
+          {zoom.toFixed(1)}×
+        </span>
         <button
           className="h-5 w-5 rounded-[3px] border border-border font-mono text-[11px] leading-none text-muted-foreground hover:text-foreground"
           onClick={() => setZoom(Math.min(8, Math.round((zoom + 0.5) * 2) / 2))}
@@ -443,12 +487,22 @@ export function TimelineOverview({
 }
 
 /** The white song playhead over the track lanes; only it re-renders on each playback step. */
-export function SongPlayhead({ totalSteps, onDragStart, onMove }: { totalSteps: number; onDragStart: (e: React.PointerEvent<HTMLDivElement>) => void; onMove: (step: number) => void }) {
+export function SongPlayhead({
+  totalSteps,
+  onDragStart,
+  onMove,
+}: {
+  totalSteps: number;
+  onDragStart: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onMove: (step: number) => void;
+}) {
   const step = usePlayStep();
   return (
     <div
       className="pointer-events-none absolute inset-y-0 z-30 -translate-x-1/2"
-      style={{ left: `calc(var(--timeline-header-width) + (100% - var(--timeline-header-width)) * ${(step % totalSteps) / totalSteps})` }}
+      style={{
+        left: `calc(var(--timeline-header-width) + (100% - var(--timeline-header-width)) * ${(step % totalSteps) / totalSteps})`,
+      }}
     >
       <div
         data-timeline-playhead

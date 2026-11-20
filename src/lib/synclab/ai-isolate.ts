@@ -6,7 +6,8 @@ export type DemucsPart = "vocals" | "drums" | "bass" | "other";
 const toBase64 = async (blob: Blob) => {
   const bytes = new Uint8Array(await blob.arrayBuffer());
   let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(bin);
 };
 
@@ -19,8 +20,14 @@ export function partForInstrument(name: string): DemucsPart {
 }
 
 /** Returns the isolated part as an MP3 blob. Throws with the service message (e.g. no credit). */
-export async function isolatePart(blob: Blob, part: DemucsPart, isCancelled?: () => boolean): Promise<Blob> {
-  const started = await startStemSplitFn({ data: { audio: await toBase64(blob), name: "clip.mp3", mime: blob.type || "audio/mpeg" } });
+export async function isolatePart(
+  blob: Blob,
+  part: DemucsPart,
+  isCancelled?: () => boolean,
+): Promise<Blob> {
+  const started = await startStemSplitFn({
+    data: { audio: await toBase64(blob), name: "clip.mp3", mime: blob.type || "audio/mpeg" },
+  });
   if (!started.ok) throw new Error(started.error);
   for (;;) {
     await new Promise((r) => setTimeout(r, 4000));

@@ -23,26 +23,85 @@ import { toast } from "sonner";
 import { LegalFooter } from "@/components/legal/LegalPage";
 import { openHelp } from "@/components/studio/HelpCenter";
 
-
 const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Music2 className="size-4" />, title: "Six Synthesizers", body: "Spec 4, Acid Bass (TD-3 style), Poly Synth, Touch Synth, a patchable Modular Tech rack and the new Granular Synth." },
-  { icon: <Disc3 className="size-4" />, title: "Drum Machine & Drum Roll", body: "24 kits with step sequencing, per-step pitch, chance, flam and choke groups." },
-  { icon: <Grid2x2 className="size-4" />, title: "Pad Sampler & Chopper", body: "64 pads, live mic sampling, slice any MP3 or WAV to pads and keys." },
-  { icon: <Disc3 className="size-4" />, title: "Reel-to-Reel Recorder", body: "16 input channels with analog meters, mute and solo, tape saturation and WAV/MP3 export." },
-  { icon: <SlidersHorizontal className="size-4" />, title: "Pro Mixer & Effects Rack", body: "Buses, sends, VCA groups, aux returns and rack effects with live scopes, plus guitar and bass amps and stompbox pedals." },
-  { icon: <Mic className="size-4" />, title: "Hum to Beat & Convert Voice", body: "Beatbox a rhythm or hum a melody into notes, and restyle recorded vocals with 21 voice templates." },
-  { icon: <Disc3 className="size-4" />, title: "DJ Decks", body: "Two decks with beat-matching Sync, hot cues, loops, EQ, filter and crossfader — record your set to MP3 or WAV." },
-  { icon: <Scissors className="size-4" />, title: "Video Sampler", body: "Chop video to pads, trigger clips from keys or MIDI, and record straight from your camera." },
-  { icon: <Piano className="size-4" />, title: "External MIDI & MIDI Learn", body: "Play your hardware synths and drum machines from your tracks, and map any knob, fader or pad on your controller." },
-  { icon: <Music2 className="size-4" />, title: "Live Drummer & Live Keys", body: "A session drummer in 59 styles and a keyboard player in 51 — jazz, rock, gospel, hip-hop and more — who take fills on cue and print to your song." },
-  { icon: <Download className="size-4" />, title: "Pro Export", body: "Full mix, every track as stems, or one track — WAV, MP3, FLAC up to 96 kHz, plus MIDI files." },
-  { icon: <SlidersHorizontal className="size-4" />, title: "Desktop & Phone", body: "A full desktop DAW with split view, and a touch studio on your phone — the same projects on both." },
+  {
+    icon: <Music2 className="size-4" />,
+    title: "Six Synthesizers",
+    body: "Spec 4, Acid Bass (TD-3 style), Poly Synth, Touch Synth, a patchable Modular Tech rack and the new Granular Synth.",
+  },
+  {
+    icon: <Disc3 className="size-4" />,
+    title: "Drum Machine & Drum Roll",
+    body: "24 kits with step sequencing, per-step pitch, chance, flam and choke groups.",
+  },
+  {
+    icon: <Grid2x2 className="size-4" />,
+    title: "Pad Sampler & Chopper",
+    body: "64 pads, live mic sampling, slice any MP3 or WAV to pads and keys.",
+  },
+  {
+    icon: <Disc3 className="size-4" />,
+    title: "Reel-to-Reel Recorder",
+    body: "16 input channels with analog meters, mute and solo, tape saturation and WAV/MP3 export.",
+  },
+  {
+    icon: <SlidersHorizontal className="size-4" />,
+    title: "Pro Mixer & Effects Rack",
+    body: "Buses, sends, VCA groups, aux returns and rack effects with live scopes, plus guitar and bass amps and stompbox pedals.",
+  },
+  {
+    icon: <Mic className="size-4" />,
+    title: "Hum to Beat & Convert Voice",
+    body: "Beatbox a rhythm or hum a melody into notes, and restyle recorded vocals with 21 voice templates.",
+  },
+  {
+    icon: <Disc3 className="size-4" />,
+    title: "DJ Decks",
+    body: "Two decks with beat-matching Sync, hot cues, loops, EQ, filter and crossfader — record your set to MP3 or WAV.",
+  },
+  {
+    icon: <Scissors className="size-4" />,
+    title: "Video Sampler",
+    body: "Chop video to pads, trigger clips from keys or MIDI, and record straight from your camera.",
+  },
+  {
+    icon: <Piano className="size-4" />,
+    title: "External MIDI & MIDI Learn",
+    body: "Play your hardware synths and drum machines from your tracks, and map any knob, fader or pad on your controller.",
+  },
+  {
+    icon: <Music2 className="size-4" />,
+    title: "Live Drummer & Live Keys",
+    body: "A session drummer in 59 styles and a keyboard player in 51 — jazz, rock, gospel, hip-hop and more — who take fills on cue and print to your song.",
+  },
+  {
+    icon: <Download className="size-4" />,
+    title: "Pro Export",
+    body: "Full mix, every track as stems, or one track — WAV, MP3, FLAC up to 96 kHz, plus MIDI files.",
+  },
+  {
+    icon: <SlidersHorizontal className="size-4" />,
+    title: "Desktop & Phone",
+    body: "A full desktop DAW with split view, and a touch studio on your phone — the same projects on both.",
+  },
 ];
 
 const AI_TOOLS: { icon: React.ReactNode; title: string; body: string }[] = [
-  { icon: <Sparkles className="size-4" />, title: "AI Co-Producer", body: "Ask for chords, basslines, drum patterns, mixing tips or lyrics, then add them to your song." },
-  { icon: <Wand2 className="size-4" />, title: "Generate Stem", body: "Describe a part and get an audio clip in your song's key and tempo." },
-  { icon: <AudioLines className="size-4" />, title: "Separate Stems", body: "Split a song into vocals, drums, bass and music." },
+  {
+    icon: <Sparkles className="size-4" />,
+    title: "AI Co-Producer",
+    body: "Ask for chords, basslines, drum patterns, mixing tips or lyrics, then add them to your song.",
+  },
+  {
+    icon: <Wand2 className="size-4" />,
+    title: "Generate Stem",
+    body: "Describe a part and get an audio clip in your song's key and tempo.",
+  },
+  {
+    icon: <AudioLines className="size-4" />,
+    title: "Separate Stems",
+    body: "Split a song into vocals, drums, bass and music.",
+  },
 ];
 
 // Hidden until real demo tracks, Detroit photo and quotes are chosen.
@@ -62,7 +121,29 @@ const QUOTES = [
 ];
 
 const GOOGLE_ICON = (
-  <svg className="login-google-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+  <svg
+    className="login-google-icon"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path
+      fill="#4285F4"
+      d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"
+    />
+  </svg>
 );
 
 const APPLE_ICON = (
@@ -74,14 +155,18 @@ const APPLE_ICON = (
 /** `next` is a validated same-origin path (an assistant's connect request) to return to after signing in. */
 export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
   const { setStage, setSignedIn } = useApp();
-  const returnUrl = () => (next ? new URL(next, window.location.origin).href : window.location.origin);
+  const returnUrl = () =>
+    next ? new URL(next, window.location.origin).href : window.location.origin;
   const [mode, setMode] = useState<"signin" | "signup" | "forgot" | "magic" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   const enterStudio = () => {
-    if (next) { window.location.assign(next); return; }
+    if (next) {
+      window.location.assign(next);
+      return;
+    }
     setSignedIn(true);
     setStage("start");
   };
@@ -103,11 +188,15 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
 
   const friendlyError = (err: unknown) => {
     const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("Invalid login credentials")) return "Wrong email or password. Try again, or use Forgot password below.";
-    if (msg.includes("Email not confirmed")) return "Confirm your email first — check your inbox for the confirmation link.";
-    if (msg.includes("rate limit") || msg.includes("too many")) return "Too many emails right now. Wait a minute and try again.";
+    if (msg.includes("Invalid login credentials"))
+      return "Wrong email or password. Try again, or use Forgot password below.";
+    if (msg.includes("Email not confirmed"))
+      return "Confirm your email first — check your inbox for the confirmation link.";
+    if (msg.includes("rate limit") || msg.includes("too many"))
+      return "Too many emails right now. Wait a minute and try again.";
     if (msg.includes("at least 6")) return "Password must be at least 6 characters.";
-    if (msg.includes("already registered")) return "That email already has an account — sign in instead.";
+    if (msg.includes("already registered"))
+      return "That email already has an account — sign in instead.";
     if (msg.includes("valid email")) return "Enter a valid email address.";
     return err instanceof Error ? err.message : "Something went wrong. Try again.";
   };
@@ -122,7 +211,10 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
           redirectTo: `${window.location.origin}/reset-password`,
         });
         if (error) throw error;
-        toast.success("Check your email", { description: "We sent you a password-reset link. Open it on this device to set a new password." });
+        toast.success("Check your email", {
+          description:
+            "We sent you a password-reset link. Open it on this device to set a new password.",
+        });
         setMode("signin");
         return;
       }
@@ -132,7 +224,9 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
           options: { emailRedirectTo: returnUrl() },
         });
         if (error) throw error;
-        toast.success("Check your email", { description: "We sent a sign-in link. Open it on this device — no password needed." });
+        toast.success("Check your email", {
+          description: "We sent a sign-in link. Open it on this device — no password needed.",
+        });
         setMode(null);
         return;
       }
@@ -177,7 +271,11 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
       <div className="login-inner mx-auto flex min-h-0 w-full flex-1 flex-col">
         {/* Brand line: the mark, the tagline and where it comes from, all in one row. */}
         <header className="login-head shrink-0">
-          <img src={synclabLogoAsset.url} alt="SYNCLAB" className="login-logo rounded-xl border border-border object-cover" />
+          <img
+            src={synclabLogoAsset.url}
+            alt="SYNCLAB"
+            className="login-logo rounded-xl border border-border object-cover"
+          />
           <div className="login-head-copy min-w-0">
             <h1 className="sr-only">SYNCLAB — CREATE. RECORD. PRODUCE. FINISH.</h1>
             <p className="login-tagline font-display font-extrabold leading-tight tracking-tight">
@@ -225,7 +323,9 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
               <section id="demo" aria-labelledby="demo-title" className="login-soon">
                 <h2 id="demo-title" className="login-soon-title">
                   Hear the demo
-                  <span className="login-soon-note">Made in SYNCLAB — no account needed to listen.</span>
+                  <span className="login-soon-note">
+                    Made in SYNCLAB — no account needed to listen.
+                  </span>
                 </h2>
                 <ul className="login-soon-grid">
                   {DEMOS.map((d) => (
@@ -244,8 +344,9 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
                   Built in <span className="text-primary">Detroit</span>
                 </h2>
                 <p className="login-soon-body">
-                  SYNCLAB is made in Detroit, Michigan — the city that gave the world techno. It’s built by a
-                  producer for producers: the sound of the machines that shaped the city, in a studio that opens in your browser.
+                  SYNCLAB is made in Detroit, Michigan — the city that gave the world techno. It’s
+                  built by a producer for producers: the sound of the machines that shaped the city,
+                  in a studio that opens in your browser.
                 </p>
                 <ul className="login-soon-grid">
                   {QUOTES.map((q, i) => (
@@ -264,22 +365,39 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
             <h2 className="login-auth-title">Your studio awaits.</h2>
             <p className="login-auth-note">Sign in to SYNCLAB</p>
 
-            <Button className="login-btn-primary login-trial w-full" onClick={() => setMode("signup")}>
+            <Button
+              className="login-btn-primary login-trial w-full"
+              onClick={() => setMode("signup")}
+            >
               START FREE TRIAL
             </Button>
-            <p className="login-fine login-trial-note">14-day free trial · card on file · cancel free</p>
-            <p className="login-fine login-browser-note">Works in Chrome, Edge, Safari and Firefox. Best on desktop.</p>
+            <p className="login-fine login-trial-note">
+              14-day free trial · card on file · cancel free
+            </p>
+            <p className="login-fine login-browser-note">
+              Works in Chrome, Edge, Safari and Firefox. Best on desktop.
+            </p>
 
             <div className="login-divider">
-              <span className="rounded-full border border-border bg-background px-3 py-0.5">or secure login</span>
+              <span className="rounded-full border border-border bg-background px-3 py-0.5">
+                or secure login
+              </span>
             </div>
 
             <div className="login-row login-provider-row">
-              <Button variant="outline" className="login-btn-provider login-btn-google" onClick={() => void oauth("google")}>
+              <Button
+                variant="outline"
+                className="login-btn-provider login-btn-google"
+                onClick={() => void oauth("google")}
+              >
                 {GOOGLE_ICON}
                 <span className="login-provider-label">Continue with Google</span>
               </Button>
-              <Button variant="secondary" className="login-btn-provider" onClick={() => void oauth("apple")}>
+              <Button
+                variant="secondary"
+                className="login-btn-provider"
+                onClick={() => void oauth("apple")}
+              >
                 {APPLE_ICON}
                 <span className="login-provider-label">Continue with Apple</span>
               </Button>
@@ -288,7 +406,13 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
             {mode ? (
               <form onSubmit={submit} className="login-form space-y-2 pt-1">
                 <h2 className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {mode === "signup" ? "Create your account" : mode === "forgot" ? "Reset your password" : mode === "magic" ? "Sign in with an email link" : "Sign in"}
+                  {mode === "signup"
+                    ? "Create your account"
+                    : mode === "forgot"
+                      ? "Reset your password"
+                      : mode === "magic"
+                        ? "Sign in with an email link"
+                        : "Sign in"}
                 </h2>
                 <div className="login-form-fields">
                   <Input
@@ -312,30 +436,63 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
                   )}
                 </div>
                 <Button type="submit" className="login-btn-form w-full" disabled={busy}>
-                  {busy ? "WORKING…" : mode === "signup" ? "CREATE ACCOUNT" : mode === "forgot" ? "SEND RESET LINK" : mode === "magic" ? "SEND SIGN-IN LINK" : "SIGN IN"}
+                  {busy
+                    ? "WORKING…"
+                    : mode === "signup"
+                      ? "CREATE ACCOUNT"
+                      : mode === "forgot"
+                        ? "SEND RESET LINK"
+                        : mode === "magic"
+                          ? "SEND SIGN-IN LINK"
+                          : "SIGN IN"}
                 </Button>
                 {mode === "signin" && (
-                  <Button variant="link" type="button" className="login-link" onClick={() => setMode("forgot")}>
+                  <Button
+                    variant="link"
+                    type="button"
+                    className="login-link"
+                    onClick={() => setMode("forgot")}
+                  >
                     Forgot password?
                   </Button>
                 )}
                 {(mode === "forgot" || mode === "magic") && (
-                  <Button variant="link" type="button" className="login-link" onClick={() => setMode("signin")}>
+                  <Button
+                    variant="link"
+                    type="button"
+                    className="login-link"
+                    onClick={() => setMode("signin")}
+                  >
                     Back to sign in
                   </Button>
                 )}
                 {mode !== "forgot" && mode !== "magic" && (
-                  <Button variant="link" type="button" className="login-link" onClick={() => setMode(mode === "signup" ? "signin" : "signup")}>
-                    {mode === "signup" ? "Already have an account? Sign in" : "New here? Create an account"}
+                  <Button
+                    variant="link"
+                    type="button"
+                    className="login-link"
+                    onClick={() => setMode(mode === "signup" ? "signin" : "signup")}
+                  >
+                    {mode === "signup"
+                      ? "Already have an account? Sign in"
+                      : "New here? Create an account"}
                   </Button>
                 )}
               </form>
             ) : (
               <div className="login-row">
-                <Button variant="outline" className="login-btn-oauth" onClick={() => setMode("signin")}>
+                <Button
+                  variant="outline"
+                  className="login-btn-oauth"
+                  onClick={() => setMode("signin")}
+                >
                   SIGN IN
                 </Button>
-                <Button variant="ghost" className="login-btn-oauth" onClick={() => setMode("signup")}>
+                <Button
+                  variant="ghost"
+                  className="login-btn-oauth"
+                  onClick={() => setMode("signup")}
+                >
                   CREATE ACCOUNT
                 </Button>
               </div>

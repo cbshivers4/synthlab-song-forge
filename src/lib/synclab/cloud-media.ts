@@ -5,11 +5,13 @@
  * saved as the path, because it expires and the sample would play silently later.
  */
 export type MediaStorePlan =
-  | { upload: string; cloudPath: string }
-  | { cloudPath: string }
-  | { url: string };
+  { upload: string; cloudPath: string } | { cloudPath: string } | { url: string };
 
-export function mediaStorePlan(url: string | undefined, existingPath: string | undefined, newPath: string): MediaStorePlan {
+export function mediaStorePlan(
+  url: string | undefined,
+  existingPath: string | undefined,
+  newPath: string,
+): MediaStorePlan {
   const path = existingPath && !/^https?:/i.test(existingPath) ? existingPath : undefined;
   if (url?.startsWith("blob:")) return { upload: path ?? newPath, cloudPath: path ?? newPath };
   if (path) return { cloudPath: path };
@@ -31,10 +33,19 @@ export type DrumSamplePlan =
   | { kind: "keep"; cloudPath: string }
   | { kind: "copy"; from: string; cloudPath: string };
 
-export function drumSamplePlan(sampleUrl: string | undefined, existingPath: string | undefined, newPath: string, projectPrefix: string): DrumSamplePlan {
-  const path = existingPath && !/^https?:/i.test(existingPath) && existingPath.startsWith(projectPrefix) ? existingPath : undefined;
+export function drumSamplePlan(
+  sampleUrl: string | undefined,
+  existingPath: string | undefined,
+  newPath: string,
+  projectPrefix: string,
+): DrumSamplePlan {
+  const path =
+    existingPath && !/^https?:/i.test(existingPath) && existingPath.startsWith(projectPrefix)
+      ? existingPath
+      : undefined;
   if (!sampleUrl) return { kind: "none" };
-  if (sampleUrl.startsWith("blob:")) return { kind: "copy", from: sampleUrl, cloudPath: path ?? newPath };
+  if (sampleUrl.startsWith("blob:"))
+    return { kind: "copy", from: sampleUrl, cloudPath: path ?? newPath };
   if (path) return { kind: "keep", cloudPath: path };
   return { kind: "copy", from: sampleUrl, cloudPath: newPath };
 }
@@ -53,7 +64,12 @@ export type OwnedMediaPlan =
   | { kind: "keep"; cloudPath: string }
   | { kind: "copy"; from: string; cloudPath: string; fallbackPath?: string | undefined };
 
-export function ownedMediaPlan(url: string | undefined, existingPath: string | undefined, newPath: string, projectPrefix: string): OwnedMediaPlan {
+export function ownedMediaPlan(
+  url: string | undefined,
+  existingPath: string | undefined,
+  newPath: string,
+  projectPrefix: string,
+): OwnedMediaPlan {
   const stored = existingPath && !/^https?:/i.test(existingPath) ? existingPath : undefined;
   const own = stored?.startsWith(projectPrefix) ? stored : undefined;
   if (url?.startsWith("blob:")) return { kind: "copy", from: url, cloudPath: own ?? newPath };

@@ -4,7 +4,9 @@ import { Knob } from "@/components/studio/Knob";
 import { cn } from "@/lib/utils";
 import { MASTER_DEFAULTS, type MasterSettings } from "@/lib/synclab/mastering";
 
-type NumKey = { [K in keyof MasterSettings]: MasterSettings[K] extends number ? K : never }[keyof MasterSettings];
+type NumKey = {
+  [K in keyof MasterSettings]: MasterSettings[K] extends number ? K : never;
+}[keyof MasterSettings];
 type OnKey = "eqOn" | "mbOn" | "imgOn" | "excOn";
 
 interface Props {
@@ -16,7 +18,8 @@ interface Props {
   reductionDb?: number | undefined;
 }
 
-const hz = (v: number) => (v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 1 : 2)} kHz` : `${Math.round(v)} Hz`);
+const hz = (v: number) =>
+  v >= 1000 ? `${(v / 1000).toFixed(v >= 10000 ? 1 : 2)} kHz` : `${Math.round(v)} Hz`;
 const dbf = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)} dB`;
 const ratio = (v: number) => `${v.toFixed(1)}:1`;
 const ms = (v: number) => `${v.toFixed(v < 10 ? 1 : 0)} ms`;
@@ -58,21 +61,37 @@ function Device({
             aria-label={`${on ? "Turn off" : "Turn on"} ${title}`}
             className={cn(
               "ml-auto flex h-7 items-center gap-1 rounded-sm border px-2 font-mono text-[9px] uppercase tracking-widest",
-              on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface-2 text-muted-foreground",
+              on
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-surface-2 text-muted-foreground",
             )}
           >
             <Power className="size-3" /> {on ? "On" : "Off"}
           </button>
         )}
       </header>
-      <div className={cn("flex flex-wrap justify-center gap-x-2 gap-y-2", on === false && "opacity-60")}>{children}</div>
+      <div
+        className={cn(
+          "flex flex-wrap justify-center gap-x-2 gap-y-2",
+          on === false && "opacity-60",
+        )}
+      >
+        {children}
+      </div>
     </section>
   );
 }
 
 /** Advanced mastering rack — every knob drives real processing in lib/synclab/mastering.ts. */
 export function MasterDevices({ settings, set, commit, reductionDb }: Props) {
-  const knob = (key: NumKey, label: string, min: number, max: number, step: number, format: (v: number) => string) => (
+  const knob = (
+    key: NumKey,
+    label: string,
+    min: number,
+    max: number,
+    step: number,
+    format: (v: number) => string,
+  ) => (
     <Knob
       key={key}
       label={label}
@@ -98,10 +117,18 @@ export function MasterDevices({ settings, set, commit, reductionDb }: Props) {
     <div className="space-y-2">
       <div className="flex items-baseline gap-2">
         <div className="label-xs">Mastering devices</div>
-        <div className="text-[9px] text-muted-foreground">Signal flows left to right, then into the maximizer.</div>
+        <div className="text-[9px] text-muted-foreground">
+          Signal flows left to right, then into the maximizer.
+        </div>
       </div>
       <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-        <Device title="Master EQ" subtitle="4-band · shelves and bells" hue={150} on={settings.eqOn} onToggle={toggle("eqOn")}>
+        <Device
+          title="Master EQ"
+          subtitle="4-band · shelves and bells"
+          hue={150}
+          on={settings.eqOn}
+          onToggle={toggle("eqOn")}
+        >
           {knob("eqLowFreq", "Low", 30, 300, 1, hz)}
           {knob("eqLowGain", "Low gain", -12, 12, 0.25, dbf)}
           {knob("eqLmFreq", "Low-mid", 150, 1500, 5, hz)}
@@ -138,7 +165,13 @@ export function MasterDevices({ settings, set, commit, reductionDb }: Props) {
           </div>
         </Device>
 
-        <Device title="Stereo Imager" subtitle="Width per band · 0 = mono" hue={185} on={settings.imgOn} onToggle={toggle("imgOn")}>
+        <Device
+          title="Stereo Imager"
+          subtitle="Width per band · 0 = mono"
+          hue={185}
+          on={settings.imgOn}
+          onToggle={toggle("imgOn")}
+        >
           {knob("imgLowX", "Low split", 60, 800, 5, hz)}
           {knob("imgHighX", "High split", 1500, 10000, 50, hz)}
           {knob("imgLow", "Low width", 0, 2, 0.05, wid)}
@@ -146,7 +179,13 @@ export function MasterDevices({ settings, set, commit, reductionDb }: Props) {
           {knob("imgHigh", "High width", 0, 2, 0.05, wid)}
         </Device>
 
-        <Device title="Exciter" subtitle="Harmonics on the top end only" hue={30} on={settings.excOn} onToggle={toggle("excOn")}>
+        <Device
+          title="Exciter"
+          subtitle="Harmonics on the top end only"
+          hue={30}
+          on={settings.excOn}
+          onToggle={toggle("excOn")}
+        >
           {knob("excFreq", "Freq", 2000, 12000, 50, hz)}
           {knob("excAmount", "Harmonics", 0, 1, 0.01, pct)}
           {knob("excMix", "Mix", 0, 1, 0.01, pct)}
@@ -158,12 +197,17 @@ export function MasterDevices({ settings, set, commit, reductionDb }: Props) {
           <div className="flex w-16 flex-col items-center justify-center rounded-sm border border-border bg-surface-2 px-1 py-1.5 text-center">
             <div className="label-xs">Reduction</div>
             <div className="font-mono text-xs text-foreground">
-              {reductionDb === undefined ? "—" : reductionDb < 0.05 ? "0.0" : `-${reductionDb.toFixed(1)}`}
+              {reductionDb === undefined
+                ? "—"
+                : reductionDb < 0.05
+                  ? "0.0"
+                  : `-${reductionDb.toFixed(1)}`}
             </div>
             <div className="text-[8px] text-muted-foreground">dB max</div>
           </div>
           <div className="w-full text-center text-[9px] text-muted-foreground">
-            Aims for {settings.targetLufs.toFixed(1)} LUFS, never above {settings.ceilingDb.toFixed(1)} dBTP — set with Loudness and Ceiling above.
+            Aims for {settings.targetLufs.toFixed(1)} LUFS, never above{" "}
+            {settings.ceilingDb.toFixed(1)} dBTP — set with Loudness and Ceiling above.
           </div>
         </Device>
       </div>

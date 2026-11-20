@@ -22,9 +22,7 @@ export function sidewaysSliderValue(o: {
   const height = rect.right - rect.left;
   const x = clientY;
   const y = W - clientX;
-  let frac = o.vertical
-    ? 1 - (y - top) / Math.max(1, height)
-    : (x - left) / Math.max(1, width);
+  let frac = o.vertical ? 1 - (y - top) / Math.max(1, height) : (x - left) / Math.max(1, width);
   if (o.inverted) frac = 1 - frac;
   frac = Math.min(1, Math.max(0, frac));
   const raw = o.min + frac * (o.max - o.min);

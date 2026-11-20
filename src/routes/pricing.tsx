@@ -75,8 +75,9 @@ function PricingRoute() {
         <h1 className="text-4xl font-bold tracking-tight">Simple pricing</h1>
         <p className="mt-3 max-w-xl text-sm text-muted-foreground">
           Try everything free for 14 days. A card is required to start the trial, and if you cancel
-          before day 14 you won't be charged. After that it's $9.95 a month or $119.40 a year. Without
-          a trial or plan you can still make music in the free version, but you can't save projects.
+          before day 14 you won't be charged. After that it's $9.95 a month or $119.40 a year.
+          Without a trial or plan you can still make music in the free version, but you can't save
+          projects.
         </p>
 
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-4">

@@ -1,20 +1,68 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AudioWaveform, Cloud, Copy, Disc3, Drum, FileMusic, Flame, FolderOpen, Guitar, Heart, Home,
-  Import, LayoutTemplate, Loader2, LogOut, Mic, Pencil, Plus, Radio, Search, Square, Star, Trash2, Waves, Zap, ArrowRight, SlidersHorizontal,
+  AudioWaveform,
+  Cloud,
+  Copy,
+  Disc3,
+  Drum,
+  FileMusic,
+  Flame,
+  FolderOpen,
+  Guitar,
+  Heart,
+  Home,
+  Import,
+  LayoutTemplate,
+  Loader2,
+  LogOut,
+  Mic,
+  Pencil,
+  Plus,
+  Radio,
+  Search,
+  Square,
+  Star,
+  Trash2,
+  Waves,
+  Zap,
+  ArrowRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useApp } from "@/lib/synclab/app-state";
 import { KEYS, TEMPLATES, TIME_SIGS, templateById } from "@/lib/synclab/templates";
 import { useStudio } from "@/lib/synclab/store";
 import { toast } from "sonner";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
-import { listUserTemplates, removeUserTemplate, type UserTemplate } from "@/lib/synclab/user-templates";
-import { deleteCloudProject, listCloudProjects, loadCloudProject, renameCloudProject, saveCloudProject, type CloudProject } from "@/lib/synclab/cloud";
+import {
+  listUserTemplates,
+  removeUserTemplate,
+  type UserTemplate,
+} from "@/lib/synclab/user-templates";
+import {
+  deleteCloudProject,
+  listCloudProjects,
+  loadCloudProject,
+  renameCloudProject,
+  saveCloudProject,
+  type CloudProject,
+} from "@/lib/synclab/cloud";
 import { supabase } from "@/integrations/supabase/client";
 import { NameEditDialog } from "./NameEditDialog";
 
@@ -72,17 +120,29 @@ export function StartScreen() {
   const [templates, setTemplates] = useState<UserTemplate[]>([]);
   const [cloudBusy, setCloudBusy] = useState<string | null>(null);
   // Deleting always asks first: a cloud project deletes for good, a device entry only leaves the list.
-  const [confirmDel, setConfirmDel] = useState<{ kind: "cloud"; item: CloudProject } | { kind: "recent"; item: (typeof recents)[number] } | null>(null);
+  const [confirmDel, setConfirmDel] = useState<
+    | { kind: "cloud"; item: CloudProject }
+    | { kind: "recent"; item: (typeof recents)[number] }
+    | null
+  >(null);
   const runDelete = () => {
     const c = confirmDel;
     setConfirmDel(null);
     if (!c) return;
-    if (c.kind === "recent") { removeRecent(c.item); return; }
+    if (c.kind === "recent") {
+      removeRecent(c.item);
+      return;
+    }
     const item = c.item;
     setCloudBusy(item.id);
     void deleteCloudProject(item)
-      .then(() => { setCloud((items) => items.filter((p) => p.id !== item.id)); toast.success("Cloud project deleted"); })
-      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not delete project"))
+      .then(() => {
+        setCloud((items) => items.filter((p) => p.id !== item.id));
+        toast.success("Cloud project deleted");
+      })
+      .catch((error: unknown) =>
+        toast.error(error instanceof Error ? error.message : "Could not delete project"),
+      )
       .finally(() => setCloudBusy(null));
   };
   const [favs, setFavs] = useState<string[]>(loadFavs);
@@ -92,7 +152,11 @@ export function StartScreen() {
   const [bpm, setBpm] = useState(128);
   const [key, setKey] = useState(KEYS[1] as string);
   const [sig, setSig] = useState(TIME_SIGS[0] as string);
-  const [rename, setRename] = useState<{ kind: "cloud"; item: CloudProject } | { kind: "recent"; item: (typeof recents)[number] } | null>(null);
+  const [rename, setRename] = useState<
+    | { kind: "cloud"; item: CloudProject }
+    | { kind: "recent"; item: (typeof recents)[number] }
+    | null
+  >(null);
   const [renameName, setRenameName] = useState("");
   const [renameBusy, setRenameBusy] = useState(false);
   const [projectTab, setProjectTab] = useState<"cloud" | "device" | "saved">("cloud");
@@ -106,19 +170,31 @@ export function StartScreen() {
     update();
     window.addEventListener("online", update);
     window.addEventListener("offline", update);
-    return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); };
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
   }, []);
 
   const toggleFav = (id: string) => {
     setFavs((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      try { localStorage.setItem(FAVS_KEY, JSON.stringify(next)); } catch { /* storage full/blocked */ }
+      try {
+        localStorage.setItem(FAVS_KEY, JSON.stringify(next));
+      } catch {
+        /* storage full/blocked */
+      }
       return next;
     });
   };
 
   const sortedCloud = useMemo(
-    () => [...cloud].sort((a, b) => Number(favs.includes(`cloud:${b.id}`)) - Number(favs.includes(`cloud:${a.id}`)) || b.updatedAt - a.updatedAt),
+    () =>
+      [...cloud].sort(
+        (a, b) =>
+          Number(favs.includes(`cloud:${b.id}`)) - Number(favs.includes(`cloud:${a.id}`)) ||
+          b.updatedAt - a.updatedAt,
+      ),
     [cloud, favs],
   );
 
@@ -153,16 +229,26 @@ export function StartScreen() {
   };
 
   useEffect(() => {
-    void listCloudProjects().then(setCloud).catch(() => setCloud([]));
+    void listCloudProjects()
+      .then(setCloud)
+      .catch(() => setCloud([]));
     setTemplates(listUserTemplates());
     void supabase.auth.getUser().then(({ data }) => setAccountEmail(data.user?.email ?? ""));
   }, []);
 
   const selectedCloud = sortedCloud.find((item) => item.id === selectedCloudId) ?? sortedCloud[0];
-  const matchingCloud = sortedCloud.filter((item) => item.name.toLowerCase().includes(projectSearch.toLowerCase()));
-  const matchingRecents = recents.filter((item) => item.name.toLowerCase().includes(projectSearch.toLowerCase()));
-  const matchingSaved = templates.filter((item) => item.name.toLowerCase().includes(projectSearch.toLowerCase()));
-  const matchingTemplates = TEMPLATES.filter((item) => `${item.name} ${item.description}`.toLowerCase().includes(templateSearch.toLowerCase()));
+  const matchingCloud = sortedCloud.filter((item) =>
+    item.name.toLowerCase().includes(projectSearch.toLowerCase()),
+  );
+  const matchingRecents = recents.filter((item) =>
+    item.name.toLowerCase().includes(projectSearch.toLowerCase()),
+  );
+  const matchingSaved = templates.filter((item) =>
+    item.name.toLowerCase().includes(projectSearch.toLowerCase()),
+  );
+  const matchingTemplates = TEMPLATES.filter((item) =>
+    `${item.name} ${item.description}`.toLowerCase().includes(templateSearch.toLowerCase()),
+  );
 
   const openTemplate = (tpl: UserTemplate) => {
     restore(tpl.session);
@@ -184,7 +270,15 @@ export function StartScreen() {
       const loaded = await loadCloudProject(item.id);
       if (!loaded.session) throw new Error("This project has no saved session.");
       restore(loaded.session);
-      setProject({ id: loaded.id, name: loaded.name, bpm: loaded.bpm, key: loaded.key, timeSig: loaded.timeSig, template: loaded.template, openedAt: Date.now() });
+      setProject({
+        id: loaded.id,
+        name: loaded.name,
+        bpm: loaded.bpm,
+        key: loaded.key,
+        timeSig: loaded.timeSig,
+        template: loaded.template,
+        openedAt: Date.now(),
+      });
       setStage("studio");
       toast.success(`${loaded.name} opened from your cloud`);
     } catch (error) {
@@ -200,7 +294,15 @@ export function StartScreen() {
       const loaded = await loadCloudProject(item.id);
       if (!loaded.session) throw new Error("This project has no saved session.");
       await saveCloudProject(
-        { id: "", name: `${loaded.name} copy`, bpm: loaded.bpm, key: loaded.key, timeSig: loaded.timeSig, template: loaded.template, openedAt: Date.now() },
+        {
+          id: "",
+          name: `${loaded.name} copy`,
+          bpm: loaded.bpm,
+          key: loaded.key,
+          timeSig: loaded.timeSig,
+          template: loaded.template,
+          openedAt: Date.now(),
+        },
         loaded.session,
       );
       setCloud(await listCloudProjects());
@@ -246,188 +348,417 @@ export function StartScreen() {
       <div className="mx-auto w-full max-w-7xl overflow-hidden rounded-md border border-border bg-surface shadow-xl shadow-background">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border bg-surface-2 px-4 py-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <img src={synclabLogoAsset.url} alt="SYNCLAB logo" className="size-11 shrink-0 rounded-sm object-cover" />
+            <img
+              src={synclabLogoAsset.url}
+              alt="SYNCLAB logo"
+              className="size-11 shrink-0 rounded-sm object-cover"
+            />
             <div className="min-w-0">
-              <h1 className="font-display text-lg font-semibold text-foreground sm:text-xl">SYNCLAB</h1>
-              <p className="font-mono text-[10px] text-muted-foreground">CREATE. RECORD. PRODUCE. FINISH.</p>
+              <h1 className="font-display text-lg font-semibold text-foreground sm:text-xl">
+                SYNCLAB
+              </h1>
+              <p className="font-mono text-[10px] text-muted-foreground">
+                CREATE. RECORD. PRODUCE. FINISH.
+              </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="gap-2" onClick={() => void supabase.auth.signOut().then(() => { setSignedIn(false); setStage("welcome"); })}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() =>
+              void supabase.auth.signOut().then(() => {
+                setSignedIn(false);
+                setStage("welcome");
+              })
+            }
+          >
             <LogOut className="size-4" /> Sign out
           </Button>
         </header>
 
-        <nav aria-label="Project actions" className="flex flex-wrap gap-1 border-b border-border bg-surface px-3 py-2 sm:px-5">
+        <nav
+          aria-label="Project actions"
+          className="flex flex-wrap gap-1 border-b border-border bg-surface px-3 py-2 sm:px-5"
+        >
           <Action icon={<Plus />} title="New" onClick={() => openDialog("empty")} />
-          <Action icon={<FolderOpen />} title="Open" onClick={() => { setProjectTab("cloud"); document.getElementById("recent-projects")?.scrollIntoView({ behavior: "smooth" }); }} />
-          <Action icon={<Import />} title="Import audio" onClick={() => importHint("audio", "Use File → Import Audio, or drag a file onto the timeline.")} />
-          <Action icon={<FileMusic />} title="Import MIDI" onClick={() => importHint("MIDI", "Use Tools → Ableton Handoff to import a .mid file onto a track.")} />
+          <Action
+            icon={<FolderOpen />}
+            title="Open"
+            onClick={() => {
+              setProjectTab("cloud");
+              document.getElementById("recent-projects")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
+          <Action
+            icon={<Import />}
+            title="Import audio"
+            onClick={() =>
+              importHint("audio", "Use File → Import Audio, or drag a file onto the timeline.")
+            }
+          />
+          <Action
+            icon={<FileMusic />}
+            title="Import MIDI"
+            onClick={() =>
+              importHint("MIDI", "Use Tools → Ableton Handoff to import a .mid file onto a track.")
+            }
+          />
         </nav>
 
         <div className="grid grid-cols-1 lg:min-h-[650px] lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-        <section id="recent-projects" className="min-w-0 border-b border-border lg:border-b-0 lg:border-r">
-          <div className="flex border-b border-border bg-surface-2/60" role="tablist" aria-label="Project lists">
-            {([ ["cloud", "Recent files"], ["device", "This device"], ["saved", "My templates"] ] as const).map(([id, label]) => (
-              <Button key={id} role="tab" aria-selected={projectTab === id} variant="ghost" onClick={() => setProjectTab(id)}
-                className={`h-10 min-w-0 flex-1 rounded-none px-1 text-[11px] sm:text-xs ${projectTab === id ? "border-b-2 border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}>
-                {label}
-              </Button>
-            ))}
-          </div>
-          <div className="border-b border-border p-3">
-            <div className="relative"><Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input aria-label="Search projects" placeholder="Search projects" value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} className="h-8 bg-background pl-9 text-xs" />
-            </div>
-          </div>
-          <div className="max-h-[570px] min-h-40 overflow-y-auto">
-          {projectTab === "cloud" && (matchingCloud.length === 0 ? (
-            <p className="p-5 text-sm text-muted-foreground">{projectSearch ? "No matching projects." : !online ? "You're offline. Cloud projects appear here again when you reconnect — projects you saved to this computer are under This device." : "No cloud projects yet. Open a session and choose File → Save."}</p>
-          ) : (
-            <div className="divide-y divide-border/60">
-              {matchingCloud.map((item) => {
-                const fav = favs.includes(`cloud:${item.id}`);
-                return (
-                  <div key={item.id} className={`group flex min-h-14 items-center gap-1 px-2 transition-colors ${selectedCloud?.id === item.id ? "bg-primary/10" : "hover:bg-surface-2"}`}>
-                    <Button variant="ghost" className="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent" onPointerUp={(e) => { if (e.pointerType === "touch" || e.pointerType === "pen") { e.preventDefault(); setSelectedCloudId(item.id); void openCloud(item); } }} onClick={(e) => { setSelectedCloudId(item.id); if (window.matchMedia("(pointer: coarse)").matches && e.detail === 0) void openCloud(item); }} onDoubleClick={() => void openCloud(item)} disabled={cloudBusy !== null}>
-                      <span className="flex size-7 shrink-0 items-center justify-center text-primary"><FileMusic className="size-4" /></span>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 truncate font-display text-xs font-semibold">
-                          {cloudBusy === item.id && <Loader2 className="size-3.5 animate-spin" />}{item.name}
-                        </div>
-                        <div className="truncate font-mono text-[10px] text-muted-foreground">{item.bpm} BPM · {item.key} · {relTime(item.updatedAt)}</div>
-                      </div>
-                    </Button>
-                    <div className="flex shrink-0 items-center gap-0.5">
-                      <IconBtn label={`Open ${item.name}`} title="Open project" onClick={() => void openCloud(item)}><ArrowRight className="size-3.5" /></IconBtn>
-                      <IconBtn label={`Favorite ${item.name}`} title={fav ? "Unfavorite" : "Favorite"} onClick={() => toggleFav(`cloud:${item.id}`)} active={fav}>
-                        <Star className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`} />
-                      </IconBtn>
-                      <IconBtn label={`Rename ${item.name}`} title="Rename" onClick={() => openRename({ kind: "cloud", item })}>
-                        <Pencil className="size-3.5" />
-                      </IconBtn>
-                      <IconBtn label={`Duplicate ${item.name}`} title="Duplicate" onClick={() => void duplicateCloud(item)}>
-                        <Copy className="size-3.5" />
-                      </IconBtn>
-                      <IconBtn
-                        label={`Delete ${item.name}`}
-                        title="Delete"
-                        danger
-                        onClick={() => setConfirmDel({ kind: "cloud", item })}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </IconBtn>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-          {projectTab === "device" && (matchingRecents.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No matching sessions on this device.</p> :
-            <div className="divide-y divide-border/60">
-              {matchingRecents.map((r) => {
-                const id = `recent:${r.name}-${r.openedAt}`;
-                const fav = favs.includes(id);
-                return (
-                  <div key={id} className="group flex min-h-14 items-center gap-2 py-2 text-left transition-colors hover:bg-surface-2">
-                    <Button variant="ghost"
-                      onClick={() => { setProject(r); setStage("studio"); }}
-                      className="h-auto min-w-0 flex-1 justify-start px-2 py-2 text-left"
-                    >
-                      <div className="min-w-0"><div className="truncate font-display text-sm font-semibold">{r.name}</div>
-                      <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                        {r.bpm} BPM · {r.key} · {r.timeSig} · opened {relTime(r.openedAt)}
-                      </div></div>
-                    </Button>
-                    <div className="flex shrink-0 gap-1">
-                      <IconBtn label={`Favorite ${r.name}`} title={fav ? "Unfavorite" : "Favorite"} onClick={() => toggleFav(id)} active={fav}>
-                        <Star className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`} />
-                      </IconBtn>
-                      <IconBtn label={`Rename ${r.name}`} title="Rename" onClick={() => openRename({ kind: "recent", item: r })}>
-                        <Pencil className="size-3.5" />
-                      </IconBtn>
-                      <IconBtn label={`Remove ${r.name}`} title="Remove from list" danger onClick={() => setConfirmDel({ kind: "recent", item: r })}>
-                        <Trash2 className="size-3.5" />
-                      </IconBtn>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {projectTab === "saved" && (matchingSaved.length === 0 ? <p className="p-5 text-sm text-muted-foreground">No matching saved templates.</p> :
-            <div className="divide-y divide-border/60">
-              {matchingSaved.map((tpl) => (
-                <div key={tpl.id} className="group flex min-h-14 items-center gap-2 py-2">
-                  <Button variant="ghost" className="min-w-0 flex-1 justify-start text-left h-auto px-2" onClick={() => openTemplate(tpl)}>
-                    <div className="font-display text-sm font-semibold">{tpl.name}</div>
-                    <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-                      {tpl.bpm} BPM · {tpl.trackCount} tracks
-                    </div>
-                  </Button>
-                  <IconBtn
-                    label={`Delete template ${tpl.name}`}
-                    title="Delete template"
-                    danger
-                    className="shrink-0"
-                    onClick={() => {
-                      removeUserTemplate(tpl.id);
-                      setTemplates(listUserTemplates());
-                      toast.success("Template deleted");
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </IconBtn>
-                </div>
+          <section
+            id="recent-projects"
+            className="min-w-0 border-b border-border lg:border-b-0 lg:border-r"
+          >
+            <div
+              className="flex border-b border-border bg-surface-2/60"
+              role="tablist"
+              aria-label="Project lists"
+            >
+              {(
+                [
+                  ["cloud", "Recent files"],
+                  ["device", "This device"],
+                  ["saved", "My templates"],
+                ] as const
+              ).map(([id, label]) => (
+                <Button
+                  key={id}
+                  role="tab"
+                  aria-selected={projectTab === id}
+                  variant="ghost"
+                  onClick={() => setProjectTab(id)}
+                  className={`h-10 min-w-0 flex-1 rounded-none px-1 text-[11px] sm:text-xs ${projectTab === id ? "border-b-2 border-primary bg-primary/10 text-primary" : "text-muted-foreground"}`}
+                >
+                  {label}
+                </Button>
               ))}
             </div>
-          )}
-          </div>
-        </section>
-
-        <section className="order-3 flex min-w-0 flex-col border-b border-border lg:order-2 lg:border-b-0 lg:border-r">
-          <div className="flex h-10 items-center border-b border-border bg-surface-2/60 px-4"><h2 className="font-display text-xs font-semibold text-primary">Project details</h2></div>
-          <div className="flex flex-1 flex-col p-5 sm:p-6">
-            <div className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 text-primary"><AudioWaveform className="size-8" /></div>
-            <h3 className="mt-5 break-words font-display text-xl font-semibold">{selectedCloud?.name ?? "Your studio"}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">{selectedCloud ? `Last edited ${relTime(selectedCloud.updatedAt)}` : "Create a project to get started."}</p>
-            {selectedCloud && <div className="mt-6 grid grid-cols-2 gap-y-4 border-y border-border py-5 text-xs">
-              <div><span className="label-xs block">Tempo</span><strong>{selectedCloud.bpm} BPM</strong></div>
-              <div><span className="label-xs block">Key</span><strong>{selectedCloud.key}</strong></div>
-              <div><span className="label-xs block">Meter</span><strong>{selectedCloud.timeSig}</strong></div>
-              <div><span className="label-xs block">Tracks</span><strong>{selectedCloud.trackCount}</strong></div>
-            </div>}
-            <Button className="mt-6 w-full justify-between" onClick={() => selectedCloud ? void openCloud(selectedCloud) : openDialog("empty")} disabled={cloudBusy !== null}>
-              {selectedCloud ? "Open selected project" : "New project"}<ArrowRight className="size-4" />
-            </Button>
-            <div className="mt-auto border-t border-border pt-6">
-              <div className="flex items-center gap-2 text-primary"><SlidersHorizontal className="size-4" /><span className="label-xs">Studio</span></div>
-              <p className="mt-2 truncate text-xs text-foreground" title={accountEmail}>{accountEmail || "Signed in"}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{cloud.length} saved {cloud.length === 1 ? "project" : "projects"} in your cloud</p>
+            <div className="border-b border-border p-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  aria-label="Search projects"
+                  placeholder="Search projects"
+                  value={projectSearch}
+                  onChange={(e) => setProjectSearch(e.target.value)}
+                  className="h-8 bg-background pl-9 text-xs"
+                />
+              </div>
             </div>
-          </div>
-        </section>
+            <div className="max-h-[570px] min-h-40 overflow-y-auto">
+              {projectTab === "cloud" &&
+                (matchingCloud.length === 0 ? (
+                  <p className="p-5 text-sm text-muted-foreground">
+                    {projectSearch
+                      ? "No matching projects."
+                      : !online
+                        ? "You're offline. Cloud projects appear here again when you reconnect — projects you saved to this computer are under This device."
+                        : "No cloud projects yet. Open a session and choose File → Save."}
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border/60">
+                    {matchingCloud.map((item) => {
+                      const fav = favs.includes(`cloud:${item.id}`);
+                      return (
+                        <div
+                          key={item.id}
+                          className={`group flex min-h-14 items-center gap-1 px-2 transition-colors ${selectedCloud?.id === item.id ? "bg-primary/10" : "hover:bg-surface-2"}`}
+                        >
+                          <Button
+                            variant="ghost"
+                            className="h-auto min-w-0 flex-1 justify-start gap-2 px-1 py-2 text-left hover:bg-transparent"
+                            onPointerUp={(e) => {
+                              if (e.pointerType === "touch" || e.pointerType === "pen") {
+                                e.preventDefault();
+                                setSelectedCloudId(item.id);
+                                void openCloud(item);
+                              }
+                            }}
+                            onClick={(e) => {
+                              setSelectedCloudId(item.id);
+                              if (window.matchMedia("(pointer: coarse)").matches && e.detail === 0)
+                                void openCloud(item);
+                            }}
+                            onDoubleClick={() => void openCloud(item)}
+                            disabled={cloudBusy !== null}
+                          >
+                            <span className="flex size-7 shrink-0 items-center justify-center text-primary">
+                              <FileMusic className="size-4" />
+                            </span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 truncate font-display text-xs font-semibold">
+                                {cloudBusy === item.id && (
+                                  <Loader2 className="size-3.5 animate-spin" />
+                                )}
+                                {item.name}
+                              </div>
+                              <div className="truncate font-mono text-[10px] text-muted-foreground">
+                                {item.bpm} BPM · {item.key} · {relTime(item.updatedAt)}
+                              </div>
+                            </div>
+                          </Button>
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            <IconBtn
+                              label={`Open ${item.name}`}
+                              title="Open project"
+                              onClick={() => void openCloud(item)}
+                            >
+                              <ArrowRight className="size-3.5" />
+                            </IconBtn>
+                            <IconBtn
+                              label={`Favorite ${item.name}`}
+                              title={fav ? "Unfavorite" : "Favorite"}
+                              onClick={() => toggleFav(`cloud:${item.id}`)}
+                              active={fav}
+                            >
+                              <Star
+                                className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`}
+                              />
+                            </IconBtn>
+                            <IconBtn
+                              label={`Rename ${item.name}`}
+                              title="Rename"
+                              onClick={() => openRename({ kind: "cloud", item })}
+                            >
+                              <Pencil className="size-3.5" />
+                            </IconBtn>
+                            <IconBtn
+                              label={`Duplicate ${item.name}`}
+                              title="Duplicate"
+                              onClick={() => void duplicateCloud(item)}
+                            >
+                              <Copy className="size-3.5" />
+                            </IconBtn>
+                            <IconBtn
+                              label={`Delete ${item.name}`}
+                              title="Delete"
+                              danger
+                              onClick={() => setConfirmDel({ kind: "cloud", item })}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </IconBtn>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              {projectTab === "device" &&
+                (matchingRecents.length === 0 ? (
+                  <p className="p-5 text-sm text-muted-foreground">
+                    No matching sessions on this device.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border/60">
+                    {matchingRecents.map((r) => {
+                      const id = `recent:${r.name}-${r.openedAt}`;
+                      const fav = favs.includes(id);
+                      return (
+                        <div
+                          key={id}
+                          className="group flex min-h-14 items-center gap-2 py-2 text-left transition-colors hover:bg-surface-2"
+                        >
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setProject(r);
+                              setStage("studio");
+                            }}
+                            className="h-auto min-w-0 flex-1 justify-start px-2 py-2 text-left"
+                          >
+                            <div className="min-w-0">
+                              <div className="truncate font-display text-sm font-semibold">
+                                {r.name}
+                              </div>
+                              <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                                {r.bpm} BPM · {r.key} · {r.timeSig} · opened {relTime(r.openedAt)}
+                              </div>
+                            </div>
+                          </Button>
+                          <div className="flex shrink-0 gap-1">
+                            <IconBtn
+                              label={`Favorite ${r.name}`}
+                              title={fav ? "Unfavorite" : "Favorite"}
+                              onClick={() => toggleFav(id)}
+                              active={fav}
+                            >
+                              <Star
+                                className={`size-3.5 ${fav ? "fill-primary text-primary" : ""}`}
+                              />
+                            </IconBtn>
+                            <IconBtn
+                              label={`Rename ${r.name}`}
+                              title="Rename"
+                              onClick={() => openRename({ kind: "recent", item: r })}
+                            >
+                              <Pencil className="size-3.5" />
+                            </IconBtn>
+                            <IconBtn
+                              label={`Remove ${r.name}`}
+                              title="Remove from list"
+                              danger
+                              onClick={() => setConfirmDel({ kind: "recent", item: r })}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </IconBtn>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              {projectTab === "saved" &&
+                (matchingSaved.length === 0 ? (
+                  <p className="p-5 text-sm text-muted-foreground">No matching saved templates.</p>
+                ) : (
+                  <div className="divide-y divide-border/60">
+                    {matchingSaved.map((tpl) => (
+                      <div key={tpl.id} className="group flex min-h-14 items-center gap-2 py-2">
+                        <Button
+                          variant="ghost"
+                          className="min-w-0 flex-1 justify-start text-left h-auto px-2"
+                          onClick={() => openTemplate(tpl)}
+                        >
+                          <div className="font-display text-sm font-semibold">{tpl.name}</div>
+                          <div className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
+                            {tpl.bpm} BPM · {tpl.trackCount} tracks
+                          </div>
+                        </Button>
+                        <IconBtn
+                          label={`Delete template ${tpl.name}`}
+                          title="Delete template"
+                          danger
+                          className="shrink-0"
+                          onClick={() => {
+                            removeUserTemplate(tpl.id);
+                            setTemplates(listUserTemplates());
+                            toast.success("Template deleted");
+                          }}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </IconBtn>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+            </div>
+          </section>
 
-        <section id="tpl" className="order-2 min-w-0 lg:order-3">
-          <div className="flex h-10 items-center border-b border-border bg-surface-2/60 px-4"><h2 className="font-display text-xs font-semibold text-primary">Start from a template</h2></div>
-          <div className="border-b border-border p-3"><div className="relative"><Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input aria-label="Search templates" placeholder="Search templates" value={templateSearch} onChange={(e) => setTemplateSearch(e.target.value)} className="h-8 bg-background pl-9 text-xs" />
-          </div></div>
-          <div className="max-h-[570px] overflow-y-auto divide-y divide-border/60">
-            {matchingTemplates.length === 0 && <p className="p-5 text-sm text-muted-foreground">No matching templates.</p>}
-            {matchingTemplates.map((t) => {
-              return (
-                <Button key={t.id} variant="ghost" onClick={() => openDialog(t.id)}
-                  className="flex h-auto min-h-14 w-full items-center justify-start gap-3 rounded-none px-4 py-2 text-left hover:bg-primary/10 hover:text-foreground">
-                  <span className="flex size-7 shrink-0 items-center justify-center text-primary">{TEMPLATE_ICONS[t.id] ?? <LayoutTemplate className="size-5" />}</span>
-                  <span className="min-w-0 flex-1"><span className="block truncate font-display text-xs font-semibold">{t.name}</span><span className="block truncate font-mono text-[10px] text-muted-foreground">{t.bpm} BPM · {t.key} · {t.tracks.length} tracks</span></span>
-                  <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
-                </Button>
-              );
-            })}
-          </div>
-        </section>
+          <section className="order-3 flex min-w-0 flex-col border-b border-border lg:order-2 lg:border-b-0 lg:border-r">
+            <div className="flex h-10 items-center border-b border-border bg-surface-2/60 px-4">
+              <h2 className="font-display text-xs font-semibold text-primary">Project details</h2>
+            </div>
+            <div className="flex flex-1 flex-col p-5 sm:p-6">
+              <div className="flex size-16 items-center justify-center border border-primary/30 bg-primary/10 text-primary">
+                <AudioWaveform className="size-8" />
+              </div>
+              <h3 className="mt-5 break-words font-display text-xl font-semibold">
+                {selectedCloud?.name ?? "Your studio"}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {selectedCloud
+                  ? `Last edited ${relTime(selectedCloud.updatedAt)}`
+                  : "Create a project to get started."}
+              </p>
+              {selectedCloud && (
+                <div className="mt-6 grid grid-cols-2 gap-y-4 border-y border-border py-5 text-xs">
+                  <div>
+                    <span className="label-xs block">Tempo</span>
+                    <strong>{selectedCloud.bpm} BPM</strong>
+                  </div>
+                  <div>
+                    <span className="label-xs block">Key</span>
+                    <strong>{selectedCloud.key}</strong>
+                  </div>
+                  <div>
+                    <span className="label-xs block">Meter</span>
+                    <strong>{selectedCloud.timeSig}</strong>
+                  </div>
+                  <div>
+                    <span className="label-xs block">Tracks</span>
+                    <strong>{selectedCloud.trackCount}</strong>
+                  </div>
+                </div>
+              )}
+              <Button
+                className="mt-6 w-full justify-between"
+                onClick={() =>
+                  selectedCloud ? void openCloud(selectedCloud) : openDialog("empty")
+                }
+                disabled={cloudBusy !== null}
+              >
+                {selectedCloud ? "Open selected project" : "New project"}
+                <ArrowRight className="size-4" />
+              </Button>
+              <div className="mt-auto border-t border-border pt-6">
+                <div className="flex items-center gap-2 text-primary">
+                  <SlidersHorizontal className="size-4" />
+                  <span className="label-xs">Studio</span>
+                </div>
+                <p className="mt-2 truncate text-xs text-foreground" title={accountEmail}>
+                  {accountEmail || "Signed in"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {cloud.length} saved {cloud.length === 1 ? "project" : "projects"} in your cloud
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section id="tpl" className="order-2 min-w-0 lg:order-3">
+            <div className="flex h-10 items-center border-b border-border bg-surface-2/60 px-4">
+              <h2 className="font-display text-xs font-semibold text-primary">
+                Start from a template
+              </h2>
+            </div>
+            <div className="border-b border-border p-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  aria-label="Search templates"
+                  placeholder="Search templates"
+                  value={templateSearch}
+                  onChange={(e) => setTemplateSearch(e.target.value)}
+                  className="h-8 bg-background pl-9 text-xs"
+                />
+              </div>
+            </div>
+            <div className="max-h-[570px] overflow-y-auto divide-y divide-border/60">
+              {matchingTemplates.length === 0 && (
+                <p className="p-5 text-sm text-muted-foreground">No matching templates.</p>
+              )}
+              {matchingTemplates.map((t) => {
+                return (
+                  <Button
+                    key={t.id}
+                    variant="ghost"
+                    onClick={() => openDialog(t.id)}
+                    className="flex h-auto min-h-14 w-full items-center justify-start gap-3 rounded-none px-4 py-2 text-left hover:bg-primary/10 hover:text-foreground"
+                  >
+                    <span className="flex size-7 shrink-0 items-center justify-center text-primary">
+                      {TEMPLATE_ICONS[t.id] ?? <LayoutTemplate className="size-5" />}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-display text-xs font-semibold">
+                        {t.name}
+                      </span>
+                      <span className="block truncate font-mono text-[10px] text-muted-foreground">
+                        {t.bpm} BPM · {t.key} · {t.tracks.length} tracks
+                      </span>
+                    </span>
+                    <ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
+                  </Button>
+                );
+              })}
+            </div>
+          </section>
         </div>
-        <footer className="flex flex-wrap justify-between gap-1 border-t border-border bg-surface-2/60 px-4 py-2 font-mono text-[10px] text-muted-foreground"><span>SYNCLAB · DETROIT, MI</span><span>CREATE. RECORD. PRODUCE. FINISH.</span></footer>
+        <footer className="flex flex-wrap justify-between gap-1 border-t border-border bg-surface-2/60 px-4 py-2 font-mono text-[10px] text-muted-foreground">
+          <span>SYNCLAB · DETROIT, MI</span>
+          <span>CREATE. RECORD. PRODUCE. FINISH.</span>
+        </footer>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -443,45 +774,78 @@ export function StartScreen() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label className="label-xs">BPM</Label>
-                <Input type="number" min={40} max={220} value={bpm} onChange={(e) => setBpm(Number(e.target.value) || 120)} />
+                <Input
+                  type="number"
+                  min={40}
+                  max={220}
+                  value={bpm}
+                  onChange={(e) => setBpm(Number(e.target.value) || 120)}
+                />
               </div>
               <div className="grid gap-1.5">
                 <Label className="label-xs">Key</Label>
                 <Select value={key} onValueChange={setKey}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {KEYS.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                    {KEYS.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {k}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="label-xs">Time signature</Label>
                 <Select value={sig} onValueChange={setSig}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {TIME_SIGS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {TIME_SIGS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5">
                 <Label className="label-xs">Template</Label>
                 <Select value={templateId} onValueChange={setTemplateId}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                    {TEMPLATES.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button className="glow" onClick={create}>OPEN STUDIO</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="glow" onClick={create}>
+              OPEN STUDIO
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={confirmDel !== null} onOpenChange={(v) => { if (!v) setConfirmDel(null); }}>
+      <Dialog
+        open={confirmDel !== null}
+        onOpenChange={(v) => {
+          if (!v) setConfirmDel(null);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display uppercase tracking-widest">
@@ -494,27 +858,60 @@ export function StartScreen() {
               : `“${confirmDel?.item.name ?? ""}” will be removed from your recent sessions on this device.`}
           </p>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setConfirmDel(null)}>Keep it</Button>
-            <Button variant="destructive" onClick={runDelete}>{confirmDel?.kind === "cloud" ? "Delete forever" : "Remove"}</Button>
+            <Button variant="ghost" onClick={() => setConfirmDel(null)}>
+              Keep it
+            </Button>
+            <Button variant="destructive" onClick={runDelete}>
+              {confirmDel?.kind === "cloud" ? "Delete forever" : "Remove"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <NameEditDialog open={rename !== null} title="Rename project" label="Project name" value={renameName}
-        onChange={setRenameName} onClose={() => setRename(null)} onSave={() => void confirmRename()} busy={renameBusy} />
+      <NameEditDialog
+        open={rename !== null}
+        title="Rename project"
+        label="Project name"
+        value={renameName}
+        onChange={setRenameName}
+        onClose={() => setRename(null)}
+        onSave={() => void confirmRename()}
+        busy={renameBusy}
+      />
     </div>
   );
 }
 
-function Action({ icon, title, onClick }: { icon: React.ReactNode; title: string; onClick: () => void }) {
+function Action({
+  icon,
+  title,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  onClick: () => void;
+}) {
   return (
-    <Button variant="ghost" onClick={onClick} className="h-14 min-w-18 flex-col gap-1 rounded-sm px-2 text-[11px] font-normal hover:bg-primary/10 hover:text-foreground sm:min-w-24">
-      <span className="text-primary [&_svg]:size-5">{icon}</span><span>{title}</span>
+    <Button
+      variant="ghost"
+      onClick={onClick}
+      className="h-14 min-w-18 flex-col gap-1 rounded-sm px-2 text-[11px] font-normal hover:bg-primary/10 hover:text-foreground sm:min-w-24"
+    >
+      <span className="text-primary [&_svg]:size-5">{icon}</span>
+      <span>{title}</span>
     </Button>
   );
 }
 
-function IconBtn({ label, title, onClick, danger, active, className = "", children }: {
+function IconBtn({
+  label,
+  title,
+  onClick,
+  danger,
+  active,
+  className = "",
+  children,
+}: {
   label: string;
   title: string;
   onClick: () => void;
@@ -524,12 +921,21 @@ function IconBtn({ label, title, onClick, danger, active, className = "", childr
   children: React.ReactNode;
 }) {
   return (
-    <Button variant="ghost" size="icon"
+    <Button
+      variant="ghost"
+      size="icon"
       aria-label={label}
       title={title}
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       className={`size-7 shrink-0 rounded-sm p-1.5 transition-colors ${
-        danger ? "text-muted-foreground hover:bg-destructive/15 hover:text-destructive" : active ? "text-primary hover:bg-surface-2" : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        danger
+          ? "text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+          : active
+            ? "text-primary hover:bg-surface-2"
+            : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
       } ${className}`}
     >
       {children}

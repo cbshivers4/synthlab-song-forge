@@ -7,7 +7,22 @@ import type { DrumRole, GenreGroup } from "./drummer";
  * its first role through the drummer's own channel. Pure data, shared by the picture and tests.
  */
 export type KitStyle = "band" | "rock" | "jazz" | "electronic" | "pads" | "latin";
-export type PieceShape = "cymbal" | "hat" | "drum" | "kick" | "tower" | "hexpad" | "cympad" | "sqpad" | "beatpad" | "conga" | "bongos" | "cowbell" | "tamb" | "shaker" | "clave";
+export type PieceShape =
+  | "cymbal"
+  | "hat"
+  | "drum"
+  | "kick"
+  | "tower"
+  | "hexpad"
+  | "cympad"
+  | "sqpad"
+  | "beatpad"
+  | "conga"
+  | "bongos"
+  | "cowbell"
+  | "tamb"
+  | "shaker"
+  | "clave";
 
 export interface KitPiece {
   id: string;
@@ -15,18 +30,35 @@ export interface KitPiece {
   shape: PieceShape;
   /** roles this piece plays; the first is what a tap plays */
   roles: DrumRole[];
-  x: number; y: number; w: number; h: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
-export interface KitLayout { style: KitStyle; name: string; pieces: KitPiece[] }
+export interface KitLayout {
+  style: KitStyle;
+  name: string;
+  pieces: KitPiece[];
+}
 
 export const KIT_VIEWBOX = { w: 320, h: 140 } as const;
 
-const p = (id: string, label: string, shape: PieceShape, roles: DrumRole[], x: number, y: number, w: number, h = w): KitPiece => ({ id, label, shape, roles, x, y, w, h });
+const p = (
+  id: string,
+  label: string,
+  shape: PieceShape,
+  roles: DrumRole[],
+  x: number,
+  y: number,
+  w: number,
+  h = w,
+): KitPiece => ({ id, label, shape, roles, x, y, w, h });
 
 // Drawing order is back to front (later pieces sit on top).
 const BAND: KitLayout = {
-  style: "band", name: "Acoustic kit",
+  style: "band",
+  name: "Acoustic kit",
   pieces: [
     p("kick", "Kick", "kick", ["kick"], 155, 98, 76),
     p("crash", "Crash", "cymbal", ["crash"], 62, 22, 80, 18),
@@ -43,7 +75,8 @@ const BAND: KitLayout = {
 
 // Rock kit: bigger kick, two rack toms high over the kick, deep floor tom, crash and ride up high.
 const ROCK: KitLayout = {
-  style: "rock", name: "Rock kit",
+  style: "rock",
+  name: "Rock kit",
   pieces: [
     p("kick", "Kick", "kick", ["kick"], 160, 96, 84),
     p("crash", "Crash", "cymbal", ["crash"], 58, 18, 84, 18),
@@ -60,7 +93,8 @@ const ROCK: KitLayout = {
 
 // Jazz bop kit: small kick, one rack tom, a big ride on the right, on a club stage under a spotlight.
 const JAZZ: KitLayout = {
-  style: "jazz", name: "Bop kit",
+  style: "jazz",
+  name: "Bop kit",
   pieces: [
     p("kick", "Kick", "kick", ["kick"], 158, 104, 62),
     p("crash", "Crash", "cymbal", ["crash"], 64, 26, 70, 16),
@@ -75,7 +109,8 @@ const JAZZ: KitLayout = {
 };
 
 const ELECTRONIC: KitLayout = {
-  style: "electronic", name: "Electronic kit",
+  style: "electronic",
+  name: "Electronic kit",
   pieces: [
     p("crash", "Crash pad", "cympad", ["crash"], 50, 20, 68, 16),
     p("ride", "Ride pad", "cympad", ["ride"], 270, 24, 76, 18),
@@ -91,21 +126,36 @@ const ELECTRONIC: KitLayout = {
 };
 
 const PAD_ROLES: [string, string, DrumRole[]][] = [
-  ["crash", "Crash", ["crash"]], ["ride", "Ride", ["ride"]], ["openhat", "Open hat", ["openhat"]], ["perc", "Perc", ["perc", "clave"]],
-  ["tomHi", "Tom hi", ["tomHi"]], ["tomMid", "Tom mid", ["tomMid"]], ["tomLo", "Tom lo", ["tomLo"]], ["cowbell", "Cowbell", ["cowbell"]],
-  ["hat", "Hat", ["hat"]], ["rim", "Rim", ["rim"]], ["shaker", "Shaker", ["shaker"]], ["conga", "Conga", ["conga", "congaLo"]],
-  ["kick", "Kick", ["kick"]], ["snare", "Snare", ["snare"]], ["clap", "Clap", ["clap"]], ["tamb", "Tamb", ["tamb"]],
+  ["crash", "Crash", ["crash"]],
+  ["ride", "Ride", ["ride"]],
+  ["openhat", "Open hat", ["openhat"]],
+  ["perc", "Perc", ["perc", "clave"]],
+  ["tomHi", "Tom hi", ["tomHi"]],
+  ["tomMid", "Tom mid", ["tomMid"]],
+  ["tomLo", "Tom lo", ["tomLo"]],
+  ["cowbell", "Cowbell", ["cowbell"]],
+  ["hat", "Hat", ["hat"]],
+  ["rim", "Rim", ["rim"]],
+  ["shaker", "Shaker", ["shaker"]],
+  ["conga", "Conga", ["conga", "congaLo"]],
+  ["kick", "Kick", ["kick"]],
+  ["snare", "Snare", ["snare"]],
+  ["clap", "Clap", ["clap"]],
+  ["tamb", "Tamb", ["tamb"]],
 ];
 const PADS: KitLayout = {
-  style: "pads", name: "Beat pad station",
+  style: "pads",
+  name: "Beat pad station",
   pieces: PAD_ROLES.map(([id, label, roles], i) => {
-    const col = i % 4, row = Math.floor(i / 4);
+    const col = i % 4,
+      row = Math.floor(i / 4);
     return p(id, label, "beatpad", roles, 150 + col * 44, 22 + row * 31, 38, 26);
   }),
 };
 
 const LATIN: KitLayout = {
-  style: "latin", name: "Latin percussion",
+  style: "latin",
+  name: "Latin percussion",
   pieces: [
     p("kick", "Kick", "kick", ["kick"], 150, 106, 60),
     p("crash", "Crash", "cymbal", ["crash"], 40, 18, 68, 16),
@@ -122,9 +172,18 @@ const LATIN: KitLayout = {
   ],
 };
 
-const BY_GROUP: Record<GenreGroup, KitLayout> = { Band: BAND, Rock: ROCK, Jazz: JAZZ, Electronic: ELECTRONIC, "Hip-Hop & R&B": PADS, "World & Latin": LATIN };
+const BY_GROUP: Record<GenreGroup, KitLayout> = {
+  Band: BAND,
+  Rock: ROCK,
+  Jazz: JAZZ,
+  Electronic: ELECTRONIC,
+  "Hip-Hop & R&B": PADS,
+  "World & Latin": LATIN,
+};
 
-export function kitLayoutFor(group: GenreGroup): KitLayout { return BY_GROUP[group]; }
+export function kitLayoutFor(group: GenreGroup): KitLayout {
+  return BY_GROUP[group];
+}
 
 /** The piece that shows a role being played (first match in drawing order), or null. */
 export function pieceForRole(layout: KitLayout, role: DrumRole): KitPiece | null {
@@ -134,6 +193,9 @@ export function pieceForRole(layout: KitLayout, role: DrumRole): KitPiece | null
 /** Each style gets its own finish colour (hue 0–359) so every genre's set looks different. */
 export function kitHue(genreId: string): number {
   let h = 2166136261;
-  for (let i = 0; i < genreId.length; i++) { h ^= genreId.charCodeAt(i); h = Math.imul(h, 16777619); }
+  for (let i = 0; i < genreId.length; i++) {
+    h ^= genreId.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
   return (h >>> 0) % 360;
 }

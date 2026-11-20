@@ -1,13 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { createTuneCore, detectPitch, nearestScaleNote, vocalTuneWorkletSource } from "./vocal-tune";
+import {
+  createTuneCore,
+  detectPitch,
+  nearestScaleNote,
+  vocalTuneWorkletSource,
+} from "./vocal-tune";
 
-const tone = (hz: number, sr: number, n: number, offset = 0) => Float32Array.from({ length: n }, (_, i) => 0.5 * Math.sin(2 * Math.PI * hz * (i + offset) / sr) + 0.15 * Math.sin(4 * Math.PI * hz * (i + offset) / sr));
+const tone = (hz: number, sr: number, n: number, offset = 0) =>
+  Float32Array.from(
+    { length: n },
+    (_, i) =>
+      0.5 * Math.sin((2 * Math.PI * hz * (i + offset)) / sr) +
+      0.15 * Math.sin((4 * Math.PI * hz * (i + offset)) / sr),
+  );
 const midiOf = (hz: number) => 69 + 12 * Math.log2(hz / 440);
 
 describe("pitch detection (Tuner and Vocal Tune)", () => {
   it("finds a guitar low E and a sung A within 2 cents", () => {
-    expect(Math.abs(1200 * Math.log2(detectPitch(tone(82.41, 24000, 2048), 24000, 30, 1200) / 82.41))).toBeLessThan(2);
-    expect(Math.abs(1200 * Math.log2(detectPitch(tone(440, 11025, 512), 11025, 70, 1000) / 440))).toBeLessThan(2);
+    expect(
+      Math.abs(1200 * Math.log2(detectPitch(tone(82.41, 24000, 2048), 24000, 30, 1200) / 82.41)),
+    ).toBeLessThan(2);
+    expect(
+      Math.abs(1200 * Math.log2(detectPitch(tone(440, 11025, 512), 11025, 70, 1000) / 440)),
+    ).toBeLessThan(2);
   });
   it("reports no pitch for silence", () => {
     expect(detectPitch(new Float32Array(1024), 24000, 30, 1200)).toBe(0);
@@ -30,7 +45,13 @@ describe("Vocal Tune scale snapping", () => {
 describe("Vocal Tune correction", () => {
   it("pulls a flat 230 Hz voice to A3 (220 Hz) in C major with fast retune", () => {
     const sr = 44100;
-    const core = createTuneCore(sr, detectPitch, nearestScaleNote, { key: 0, scale: 1, speed: 0, amount: 1, humanize: 0 });
+    const core = createTuneCore(sr, detectPitch, nearestScaleNote, {
+      key: 0,
+      scale: 1,
+      speed: 0,
+      amount: 1,
+      humanize: 0,
+    });
     const out: number[] = [];
     for (let b = 0; b < 400; b++) {
       const inp = tone(230, sr, 128, b * 128);
@@ -39,7 +60,12 @@ describe("Vocal Tune correction", () => {
       out.push(...o[0]!);
     }
     const tail = Float32Array.from(out.slice(-4096));
-    const hz = detectPitch(tail.filter((_, i) => i % 2 === 0), sr / 2, 70, 1000);
+    const hz = detectPitch(
+      tail.filter((_, i) => i % 2 === 0),
+      sr / 2,
+      70,
+      1000,
+    );
     expect(Math.abs(1200 * Math.log2(hz / 220))).toBeLessThan(25);
     expect(core.reading().target).toBe(57);
   });
@@ -47,13 +73,29 @@ describe("Vocal Tune correction", () => {
     const sr = 44100;
     const core = createTuneCore(sr, detectPitch, nearestScaleNote, { amount: 0, speed: 0 });
     const out: number[] = [];
-    for (let b = 0; b < 300; b++) { const inp = tone(230, sr, 128, b * 128); const o = [new Float32Array(128), new Float32Array(128)]; core.process([inp, inp], o); out.push(...o[0]!); }
-    const hz = detectPitch(Float32Array.from(out.slice(-4096)).filter((_, i) => i % 2 === 0), sr / 2, 70, 1000);
+    for (let b = 0; b < 300; b++) {
+      const inp = tone(230, sr, 128, b * 128);
+      const o = [new Float32Array(128), new Float32Array(128)];
+      core.process([inp, inp], o);
+      out.push(...o[0]!);
+    }
+    const hz = detectPitch(
+      Float32Array.from(out.slice(-4096)).filter((_, i) => i % 2 === 0),
+      sr / 2,
+      70,
+      1000,
+    );
     expect(Math.abs(1200 * Math.log2(hz / 230))).toBeLessThan(10);
   });
   it("builds a self-contained worklet module", () => {
     const src = vocalTuneWorkletSource();
     expect(src).toContain("registerProcessor");
-    expect(() => new Function("AudioWorkletProcessor", "registerProcessor", "sampleRate", src)(class {}, () => {}, 48000)).not.toThrow();
+    expect(() =>
+      new Function("AudioWorkletProcessor", "registerProcessor", "sampleRate", src)(
+        class {},
+        () => {},
+        48000,
+      ),
+    ).not.toThrow();
   });
 });

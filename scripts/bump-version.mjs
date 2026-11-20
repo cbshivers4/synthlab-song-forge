@@ -22,7 +22,9 @@ if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
 const patch = (path, fn) => writeFileSync(path, fn(readFileSync(path, "utf8")));
 
 patch("electron/app-info.cjs", (s) => s.replace(/version: "[^"]+"/, `version: "${version}"`));
-patch("src/lib/synclab/support.ts", (s) => s.replace(/SYNCLAB_VERSION = "[^"]+"/, `SYNCLAB_VERSION = "${version}"`));
+patch("src/lib/synclab/support.ts", (s) =>
+  s.replace(/SYNCLAB_VERSION = "[^"]+"/, `SYNCLAB_VERSION = "${version}"`),
+);
 
 const appVersion = { version, notes };
 writeFileSync("public/app-version.json", JSON.stringify(appVersion, null, 2) + "\n");
@@ -32,4 +34,6 @@ release.version = version;
 if (notes) release.notes = notes;
 writeFileSync("public/desktop-release.json", JSON.stringify(release, null, 2) + "\n");
 
-console.log(`SYNCLAB is now version ${version}. Publish the app so open tabs and desktop apps get the update notice.`);
+console.log(
+  `SYNCLAB is now version ${version}. Publish the app so open tabs and desktop apps get the update notice.`,
+);

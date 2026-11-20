@@ -11,7 +11,10 @@ describe("AI daily allowance", () => {
 });
 
 describe("Hum to Beat melody shaping", () => {
-  const notes = [{ step: 0, length: 2, pitch: 61, velocity: 0.8 }, { step: 4, length: 2, pitch: 66, velocity: 0.8 }];
+  const notes = [
+    { step: 0, length: 2, pitch: 61, velocity: 0.8 },
+    { step: 4, length: 2, pitch: 66, velocity: 0.8 },
+  ];
   it("transposes every note by the chosen semitones", () => {
     expect(shapeMelody(notes, 12, null).map((n) => n.pitch)).toEqual([73, 78]);
   });
@@ -20,7 +23,12 @@ describe("Hum to Beat melody shaping", () => {
     expect(shapeMelody(notes, 0, { tonic: 9, minor: true }).map((n) => n.pitch)).toEqual([60, 65]);
   });
   it("keeps timing untouched", () => {
-    expect(shapeMelody(notes, 3, { tonic: 0, minor: false }).map((n) => [n.step, n.length])).toEqual([[0, 2], [4, 2]]);
+    expect(
+      shapeMelody(notes, 3, { tonic: 0, minor: false }).map((n) => [n.step, n.length]),
+    ).toEqual([
+      [0, 2],
+      [4, 2],
+    ]);
   });
 });
 
@@ -31,17 +39,22 @@ describe("Bass Generator regenerate", () => {
   });
   it("a new variation differs but keeps each bar's first root note", () => {
     const v = varyBass(base, 3, true, 16);
-    expect(v.map((n) => `${n.step}:${n.pitch}`).join()).not.toEqual(base.map((n) => `${n.step}:${n.pitch}`).join());
+    expect(v.map((n) => `${n.step}:${n.pitch}`).join()).not.toEqual(
+      base.map((n) => `${n.step}:${n.pitch}`).join(),
+    );
     for (let bar = 0; bar < 4; bar++) {
-      const first = (xs: typeof base) => xs.filter((n) => Math.floor(n.step / 16) === bar).sort((a, b) => a.step - b.step)[0]!;
+      const first = (xs: typeof base) =>
+        xs.filter((n) => Math.floor(n.step / 16) === bar).sort((a, b) => a.step - b.step)[0]!;
       expect(first(v).pitch).toBe(first(base).pitch);
     }
   });
   it("the same variation number always gives the same line, and notes never overlap", () => {
-    const a = varyBass(base, 5, true, 16), b = varyBass(base, 5, true, 16);
+    const a = varyBass(base, 5, true, 16),
+      b = varyBass(base, 5, true, 16);
     expect(a.map((n) => [n.step, n.pitch])).toEqual(b.map((n) => [n.step, n.pitch]));
     const sorted = [...a].sort((x, y) => x.step - y.step);
-    for (let i = 1; i < sorted.length; i++) expect(sorted[i]!.step).toBeGreaterThanOrEqual(sorted[i - 1]!.step + sorted[i - 1]!.length);
+    for (let i = 1; i < sorted.length; i++)
+      expect(sorted[i]!.step).toBeGreaterThanOrEqual(sorted[i - 1]!.step + sorted[i - 1]!.length);
   });
 });
 
@@ -51,7 +64,12 @@ import { applyPreset } from "./presets";
 describe("Bass Generator templates and clean sound", () => {
   const line = (id: string) => {
     const t = BASS_TEMPLATES.find((x) => x.id === id)!;
-    const roots = rootsFromKey(t.tonic, t.minor, PROGRESSIONS.find((p) => p.id === t.prog)!.degrees, 4);
+    const roots = rootsFromKey(
+      t.tonic,
+      t.minor,
+      PROGRESSIONS.find((p) => p.id === t.prog)!.degrees,
+      4,
+    );
     return riffBass(roots, t.riff, 16, t.octave);
   };
   it("every template plays a different melody (pitch order relative to its key)", () => {
@@ -64,7 +82,11 @@ describe("Bass Generator templates and clean sound", () => {
   it("each template answers bar 1 with a different bar 2", () => {
     for (const t of BASS_TEMPLATES) {
       const ns = line(t.id);
-      const bar = (b: number) => ns.filter((n) => Math.floor(n.step / 16) === b).map((n) => `${n.step % 16}:${n.pitch}`).join(",");
+      const bar = (b: number) =>
+        ns
+          .filter((n) => Math.floor(n.step / 16) === b)
+          .map((n) => `${n.step % 16}:${n.pitch}`)
+          .join(",");
       expect(bar(1)).not.toBe(bar(0));
     }
   });

@@ -15,7 +15,8 @@ export function readTestFlag(search: string): boolean {
 }
 
 /** Read once at boot (browser only). */
-export const TEST_MODE: boolean = typeof window !== "undefined" && readTestFlag(window.location.search);
+export const TEST_MODE: boolean =
+  typeof window !== "undefined" && readTestFlag(window.location.search);
 
 /** Which screen the studio route shows. Outside test mode this is always the normal stage. */
 export function studioEntry<S extends string>(testMode: boolean, stage: S): S | "test" {
@@ -31,7 +32,8 @@ export function isAllowedRequest(url: string, origin: string): boolean {
     return false;
   }
   if (u.protocol === "blob:" || u.protocol === "data:") return true;
-  const sameSite = u.origin === origin || (u.protocol.startsWith("ws") && u.host === new URL(origin).host);
+  const sameSite =
+    u.origin === origin || (u.protocol.startsWith("ws") && u.host === new URL(origin).host);
   if (!sameSite) return false;
   return !u.pathname.startsWith("/_serverFn") && !u.pathname.startsWith("/api/");
 }
@@ -39,7 +41,8 @@ export function isAllowedRequest(url: string, origin: string): boolean {
 const urlOf = (input: unknown): string => {
   if (typeof input === "string") return input;
   if (input instanceof URL) return input.href;
-  if (input && typeof input === "object" && "url" in input) return String((input as { url: string }).url);
+  if (input && typeof input === "object" && "url" in input)
+    return String((input as { url: string }).url);
   return String(input);
 };
 
@@ -82,7 +85,12 @@ export function installNetworkGuard(win: GuardWindow): { blocked: () => number }
   const XHR = win.XMLHttpRequest;
   if (XHR) {
     const open = XHR.prototype.open;
-    XHR.prototype.open = function (this: XMLHttpRequest, method: string, url: string | URL, ...rest: unknown[]) {
+    XHR.prototype.open = function (
+      this: XMLHttpRequest,
+      method: string,
+      url: string | URL,
+      ...rest: unknown[]
+    ) {
       const href = urlOf(url);
       if (!isAllowedRequest(href, origin)) {
         refuse(href);

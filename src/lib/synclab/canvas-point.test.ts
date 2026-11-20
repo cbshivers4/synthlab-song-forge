@@ -38,7 +38,14 @@ describe("rotateSidewaysRect", () => {
   const box = { left: 100, top: 300, right: 200, bottom: 350 };
 
   it("swaps the axes of the screen box into layout space", () => {
-    expect(rotateSidewaysRect(box, W)).toEqual({ left: 300, top: 200, right: 350, bottom: 300, width: 50, height: 100 });
+    expect(rotateSidewaysRect(box, W)).toEqual({
+      left: 300,
+      top: 200,
+      right: 350,
+      bottom: 300,
+      width: 50,
+      height: 100,
+    });
   });
 
   it("a tap near the element's screen-left edge lands in the bottom part of its layout rect", () => {

@@ -19,8 +19,16 @@ import {
  * double-click to rename, and duplicate to copy the part with its audio.
  */
 export function SectionLane() {
-  const { sections, transport, addSection, updateSection, removeSection, duplicateSection, gotoSection, autoSections } =
-    useStudio();
+  const {
+    sections,
+    transport,
+    addSection,
+    updateSection,
+    removeSection,
+    duplicateSection,
+    gotoSection,
+    autoSections,
+  } = useStudio();
   const gridRef = useRef<HTMLDivElement>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -49,7 +57,9 @@ export function SectionLane() {
       if (mode === "move") {
         updateSection(id, { start: Math.max(0, Math.min(total - sec.length, sec.start + shift)) });
       } else {
-        updateSection(id, { length: Math.max(snap, Math.min(total - sec.start, sec.length + shift)) });
+        updateSection(id, {
+          length: Math.max(snap, Math.min(total - sec.start, sec.length + shift)),
+        });
       }
     };
     const up = () => {
@@ -62,9 +72,14 @@ export function SectionLane() {
 
   return (
     <div className="flex border-b border-border bg-surface-2/40">
-      <div className="song-lane-controls relative z-20 flex w-[var(--timeline-header-width)] shrink-0 items-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:px-3" style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}>
+      <div
+        className="song-lane-controls relative z-20 flex w-[var(--timeline-header-width)] shrink-0 items-center gap-1 border-r border-border bg-surface-2 px-2 py-1 sm:px-3"
+        style={{ transform: "translateX(var(--timeline-scroll-x, 0px))" }}
+      >
         <LayoutList className="size-3 text-muted-foreground" />
-        <span className="font-display text-[10px] font-semibold tracking-[0.18em] text-muted-foreground">SONG</span>
+        <span className="font-display text-[10px] font-semibold tracking-[0.18em] text-muted-foreground">
+          SONG
+        </span>
         <button
           type="button"
           title="Add a song part at the end of the arrangement"
@@ -84,9 +99,15 @@ export function SectionLane() {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-72 overflow-auto">
-            <DropdownMenuLabel className="font-mono text-[10px] uppercase">Add a part</DropdownMenuLabel>
+            <DropdownMenuLabel className="font-mono text-[10px] uppercase">
+              Add a part
+            </DropdownMenuLabel>
             {SECTION_NAMES.map((n) => (
-              <DropdownMenuItem key={n} className="font-mono text-[11px]" onSelect={() => addSection(n)}>
+              <DropdownMenuItem
+                key={n}
+                className="font-mono text-[11px]"
+                onSelect={() => addSection(n)}
+              >
                 {n}
               </DropdownMenuItem>
             ))}
@@ -150,7 +171,10 @@ export function SectionLane() {
                   className="w-full bg-transparent font-mono text-[10px] uppercase text-foreground outline-none"
                 />
               ) : (
-                <span className="truncate font-display text-[10px] font-semibold uppercase tracking-widest" style={{ color: sec.color }}>
+                <span
+                  className="truncate font-display text-[10px] font-semibold uppercase tracking-widest"
+                  style={{ color: sec.color }}
+                >
                   {sec.name}
                 </span>
               )}
@@ -162,7 +186,9 @@ export function SectionLane() {
                   onClick={(e) => {
                     e.stopPropagation();
                     const i = SECTION_COLORS.indexOf(sec.color);
-                    updateSection(sec.id, { color: SECTION_COLORS[(i + 1) % SECTION_COLORS.length] as string });
+                    updateSection(sec.id, {
+                      color: SECTION_COLORS[(i + 1) % SECTION_COLORS.length] as string,
+                    });
                   }}
                   className="size-3 rounded-full border border-background/60"
                   style={{ background: sec.color }}

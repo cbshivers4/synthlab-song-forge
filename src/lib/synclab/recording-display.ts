@@ -13,7 +13,14 @@ export function recordingPosition(step: number, beatsPerBar: number) {
   };
 }
 
-export function recordingFollowScroll(step: number, totalSteps: number, width: number, headerWidth: number, visibleWidth: number, scrollLeft: number) {
+export function recordingFollowScroll(
+  step: number,
+  totalSteps: number,
+  width: number,
+  headerWidth: number,
+  visibleWidth: number,
+  scrollLeft: number,
+) {
   const x = headerWidth + (step / Math.max(1, totalSteps)) * Math.max(1, width - headerWidth);
   const margin = Math.min(80, visibleWidth / 4);
   if (x >= scrollLeft + margin && x <= scrollLeft + visibleWidth - margin) return scrollLeft;

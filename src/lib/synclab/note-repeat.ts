@@ -28,7 +28,12 @@ export function stepAtTime(t: number, clock: SongClock): number {
 }
 
 /** Runs a held-pad roll. Returns stop(). `hit(time, step|null)` is called just ahead of each hit's time. */
-export function startNoteRepeat(ctx: BaseAudioContext, rateSteps: number, stepSeconds: number, hit: (time: number, step: number | null) => void): () => void {
+export function startNoteRepeat(
+  ctx: BaseAudioContext,
+  rateSteps: number,
+  stepSeconds: number,
+  hit: (time: number, step: number | null) => void,
+): () => void {
   const interval = rateSteps * stepSeconds;
   let t = firstRepeatTime(ctx.currentTime, rateSteps, activeSongClock(ctx.currentTime));
   const pump = () => {

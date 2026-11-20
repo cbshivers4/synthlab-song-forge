@@ -57,7 +57,8 @@ export const DRUM_KIND_ORDER: DrumKind[] = [
 
 /** Note name for a MIDI number, e.g. 36 -> "C1". */
 const NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-export const noteName = (note: number) => `${NAMES[((note % 12) + 12) % 12]}${Math.floor(note / 12) - 1}`;
+export const noteName = (note: number) =>
+  `${NAMES[((note % 12) + 12) % 12]}${Math.floor(note / 12) - 1}`;
 
 /**
  * The MIDI note a pad sends. An explicit `pad.note` always wins so a producer
@@ -68,7 +69,10 @@ export function padNote(pad: DrumPad, pads: DrumPad[]): number {
   if (typeof pad.note === "number") return pad.note;
   const base = GM_DRUM_NOTE[pad.kind] ?? 60;
   const sameKind = pads.filter((p) => p.kind === pad.kind);
-  const dup = Math.max(0, sameKind.findIndex((p) => p.id === pad.id));
+  const dup = Math.max(
+    0,
+    sameKind.findIndex((p) => p.id === pad.id),
+  );
   return Math.min(127, base + dup);
 }
 

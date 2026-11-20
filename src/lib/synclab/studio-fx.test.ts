@@ -4,7 +4,25 @@ import { effectCategory } from "./effect-catalog";
 import { effectPresets } from "./effect-presets";
 import { OPEN_AIR_SPACES, STUDIO_DEVICES, openAirImpulse, studioChoice } from "./studio-fx";
 
-const REQUESTED = ["Auto Filter", "Analog Delay", "Channel Strip", "Chorus", "De-Esser", "Expander", "Flanger", "Multiband Dynamics", "Mustang Native", "Phaser", "Splitter", "Vocal Tune", "Voice FX", "VU Meter", "Tuner", "Tone Generator", "Open Air"];
+const REQUESTED = [
+  "Auto Filter",
+  "Analog Delay",
+  "Channel Strip",
+  "Chorus",
+  "De-Esser",
+  "Expander",
+  "Flanger",
+  "Multiband Dynamics",
+  "Mustang Native",
+  "Phaser",
+  "Splitter",
+  "Vocal Tune",
+  "Voice FX",
+  "VU Meter",
+  "Tuner",
+  "Tone Generator",
+  "Open Air",
+];
 
 describe("studio effects pack", () => {
   it("adds every requested device to the effect menus", () => {
@@ -36,12 +54,22 @@ describe("studio effects pack", () => {
     expect(studioChoice("autofilter", "cutoff", 1)).toBeUndefined();
   });
   it("Open Air spaces have different real decay lengths", () => {
-    const fake = { sampleRate: 8000, createBuffer: (ch: number, len: number, sr: number) => { const data = Array.from({ length: ch }, () => new Float32Array(len)); return { length: len, sampleRate: sr, getChannelData: (i: number) => data[i]! }; } } as unknown as BaseAudioContext;
+    const fake = {
+      sampleRate: 8000,
+      createBuffer: (ch: number, len: number, sr: number) => {
+        const data = Array.from({ length: ch }, () => new Float32Array(len));
+        return { length: len, sampleRate: sr, getChannelData: (i: number) => data[i]! };
+      },
+    } as unknown as BaseAudioContext;
     const booth = openAirImpulse(fake, OPEN_AIR_SPACES.indexOf("Vocal Booth"), 1, 0.4).tail;
     const cathedral = openAirImpulse(fake, OPEN_AIR_SPACES.indexOf("Cathedral"), 1, 0.4).tail;
     expect(cathedral.length).toBeGreaterThan(booth.length * 10);
     const tail = cathedral.getChannelData(0);
-    const energy = (a: number, b: number) => { let s = 0; for (let i = a; i < b; i++) s += tail[i]! ** 2; return s; };
+    const energy = (a: number, b: number) => {
+      let s = 0;
+      for (let i = a; i < b; i++) s += tail[i]! ** 2;
+      return s;
+    };
     expect(energy(0, 4000)).toBeGreaterThan(energy(tail.length - 4000, tail.length) * 50);
   });
 });

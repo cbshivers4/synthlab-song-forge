@@ -22,7 +22,13 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import type { Capture } from "@/lib/synclab/bounce";
-import { LISTEN_ROOMS, buildRoomChain, roomById, type ListenRoom, type RoomChain } from "@/lib/synclab/listen-rooms";
+import {
+  LISTEN_ROOMS,
+  buildRoomChain,
+  roomById,
+  type ListenRoom,
+  type RoomChain,
+} from "@/lib/synclab/listen-rooms";
 
 const ICONS: Record<string, LucideIcon> = {
   studio: Speaker,
@@ -59,7 +65,8 @@ const clock = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60))
 function RoomCurve({ room }: { room: ListenRoom }) {
   const [path, setPath] = useState("");
   useEffect(() => {
-    const Ctor = (globalThis as { OfflineAudioContext?: typeof OfflineAudioContext }).OfflineAudioContext;
+    const Ctor = (globalThis as { OfflineAudioContext?: typeof OfflineAudioContext })
+      .OfflineAudioContext;
     if (!Ctor) return;
     const ctx = new Ctor(1, 1, 48000);
     const N = 120;
@@ -70,7 +77,8 @@ function RoomCurve({ room }: { room: ListenRoom }) {
       const mag = new Float32Array(N);
       const ph = new Float32Array(N);
       f.getFrequencyResponse(freqs, mag, ph);
-      for (let i = 0; i < N; i++) total[i] = (total[i] ?? 0) + 20 * Math.log10(Math.max(mag[i] ?? 1, 1e-6));
+      for (let i = 0; i < N; i++)
+        total[i] = (total[i] ?? 0) + 20 * Math.log10(Math.max(mag[i] ?? 1, 1e-6));
     };
     const mk = (type: BiquadFilterType, freq: number, gain = 0, q = Math.SQRT1_2) => {
       const f = ctx.createBiquadFilter();
@@ -93,15 +101,33 @@ function RoomCurve({ room }: { room: ListenRoom }) {
     setPath(pts.join(" "));
   }, [room]);
   return (
-    <svg viewBox="0 0 300 80" className="h-16 w-full rounded-sm border border-border bg-background" aria-label={`${room.name} frequency response`}>
+    <svg
+      viewBox="0 0 300 80"
+      className="h-16 w-full rounded-sm border border-border bg-background"
+      aria-label={`${room.name} frequency response`}
+    >
       {[100, 1000, 10000].map((f) => {
         const x = (Math.log10(f / 20) / 3) * 300;
-        return <line key={f} x1={x} x2={x} y1={0} y2={80} className="stroke-border" strokeWidth={0.5} />;
+        return (
+          <line key={f} x1={x} x2={x} y1={0} y2={80} className="stroke-border" strokeWidth={0.5} />
+        );
       })}
-      <line x1={0} x2={300} y1={50} y2={50} className="stroke-muted-foreground" strokeWidth={0.5} strokeDasharray="2 3" />
+      <line
+        x1={0}
+        x2={300}
+        y1={50}
+        y2={50}
+        className="stroke-muted-foreground"
+        strokeWidth={0.5}
+        strokeDasharray="2 3"
+      />
       <path d={path} className="fill-none stroke-primary" strokeWidth={1.5} />
-      <text x={2} y={78} className="fill-muted-foreground text-[7px]">20 Hz</text>
-      <text x={268} y={78} className="fill-muted-foreground text-[7px]">20 kHz</text>
+      <text x={2} y={78} className="fill-muted-foreground text-[7px]">
+        20 Hz
+      </text>
+      <text x={268} y={78} className="fill-muted-foreground text-[7px]">
+        20 kHz
+      </text>
     </svg>
   );
 }
@@ -111,7 +137,13 @@ function RoomCurve({ room }: { room: ListenRoom }) {
  * system (car, club, Walkman…). Output goes straight to the speakers, never through
  * the SYNCLAB master, so nothing is recaptured or changed.
  */
-export function ListenRooms({ original, mastered }: { original: Capture | null; mastered: Capture | null }) {
+export function ListenRooms({
+  original,
+  mastered,
+}: {
+  original: Capture | null;
+  mastered: Capture | null;
+}) {
   const [roomId, setRoomId] = useState("car");
   const [source, setSource] = useState<Source>("master");
   const [noise, setNoise] = useState(true);
@@ -139,7 +171,9 @@ export function ListenRooms({ original, mastered }: { original: Capture | null; 
     if (!srcRef.current) return pausedAt.current;
     if (!ctx || duration.current <= 0) return 0;
     const t = ctx.currentTime - startedAt.current;
-    return loopRef.current ? ((t % duration.current) + duration.current) % duration.current : Math.min(duration.current, Math.max(0, t));
+    return loopRef.current
+      ? ((t % duration.current) + duration.current) % duration.current
+      : Math.min(duration.current, Math.max(0, t));
   };
 
   const paint = () => {
@@ -149,7 +183,12 @@ export function ListenRooms({ original, mastered }: { original: Capture | null; 
     if (timeRef.current) timeRef.current.textContent = `${clock(p)} / ${clock(duration.current)}`;
   };
 
-  const makeRoute = (ctx: AudioContext, r: ListenRoom, withNoise: boolean, startGain: number): Route => {
+  const makeRoute = (
+    ctx: AudioContext,
+    r: ListenRoom,
+    withNoise: boolean,
+    startGain: number,
+  ): Route => {
     const chain = buildRoomChain(ctx, r, withNoise);
     const fade = ctx.createGain();
     fade.gain.value = startGain;
@@ -272,7 +311,10 @@ export function ListenRooms({ original, mastered }: { original: Capture | null; 
   };
 
   return (
-    <section className="space-y-2 rounded-md border border-border bg-surface-2/50 p-3" aria-label="Sound check">
+    <section
+      className="space-y-2 rounded-md border border-border bg-surface-2/50 p-3"
+      aria-label="Sound check"
+    >
       <div className="flex flex-wrap items-center gap-2">
         <Headphones className="size-4 text-primary" />
         <span className="font-display text-[11px] font-semibold tracking-[0.2em]">SOUND CHECK</span>
@@ -291,11 +333,15 @@ export function ListenRooms({ original, mastered }: { original: Capture | null; 
               onClick={() => pickRoom(r.id)}
               className={cn(
                 "flex flex-col items-center gap-1 rounded-sm border px-1.5 py-2 text-center transition-transform active:scale-95",
-                roomId === r.id ? "border-primary bg-primary/15 text-foreground" : "border-border bg-surface-2 text-muted-foreground",
+                roomId === r.id
+                  ? "border-primary bg-primary/15 text-foreground"
+                  : "border-border bg-surface-2 text-muted-foreground",
               )}
             >
               <Icon className={cn("size-5", roomId === r.id && "text-primary")} />
-              <span className="font-mono text-[9px] uppercase leading-tight tracking-wider">{r.name}</span>
+              <span className="font-mono text-[9px] uppercase leading-tight tracking-wider">
+                {r.name}
+              </span>
             </button>
           );
         })}
@@ -304,7 +350,8 @@ export function ListenRooms({ original, mastered }: { original: Capture | null; 
       <div className="grid gap-2 md:grid-cols-[1fr_minmax(0,300px)]">
         <div className="space-y-2">
           <div className="text-[11px] text-foreground">
-            <span className="font-semibold">{room.name}:</span> <span className="text-muted-foreground">{room.note}</span>
+            <span className="font-semibold">{room.name}:</span>{" "}
+            <span className="text-muted-foreground">{room.note}</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex overflow-hidden rounded-sm border border-border">
@@ -321,7 +368,9 @@ export function ListenRooms({ original, mastered }: { original: Capture | null; 
                   }}
                   className={cn(
                     "px-2 py-1 font-mono text-[10px] uppercase disabled:opacity-40",
-                    source === m ? "bg-primary text-primary-foreground" : "bg-surface-2 text-muted-foreground",
+                    source === m
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface-2 text-muted-foreground",
                   )}
                 >
                   {m}
@@ -366,12 +415,17 @@ export function ListenRooms({ original, mastered }: { original: Capture | null; 
             aria-valuemax={100}
             tabIndex={-1}
             onPointerDown={seek}
-            className={cn("relative h-3 overflow-hidden rounded-sm border border-border bg-background", available ? "cursor-pointer" : "opacity-50")}
+            className={cn(
+              "relative h-3 overflow-hidden rounded-sm border border-border bg-background",
+              available ? "cursor-pointer" : "opacity-50",
+            )}
           >
             <div ref={barRef} className="absolute inset-y-0 left-0 w-0 bg-primary/60" />
           </div>
           <div className="flex justify-between text-[9px] text-muted-foreground">
-            <span ref={timeRef} className="font-mono">0:00 / 0:00</span>
+            <span ref={timeRef} className="font-mono">
+              0:00 / 0:00
+            </span>
             {!available && <span>Bounce &amp; master first, then pick a place to hear it.</span>}
           </div>
         </div>
@@ -382,8 +436,9 @@ export function ListenRooms({ original, mastered }: { original: Capture | null; 
       </div>
 
       <p className="text-[9px] leading-relaxed text-muted-foreground">
-        These are modelled systems built from typical speaker ranges, EQ, imaging and room reverb — a quick way to catch problems, not a
-        measurement of any real car or club. Background noise is added on purpose and is never part of your file.
+        These are modelled systems built from typical speaker ranges, EQ, imaging and room reverb —
+        a quick way to catch problems, not a measurement of any real car or club. Background noise
+        is added on purpose and is never part of your file.
       </p>
     </section>
   );

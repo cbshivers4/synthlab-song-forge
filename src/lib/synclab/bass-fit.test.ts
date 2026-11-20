@@ -3,12 +3,48 @@ import { fitBassline, songContentBars } from "./bass-fit";
 import { pasteEndStep, drumCopySpan } from "./arrangement-edit";
 import type { MidiNote, Track } from "./types";
 
-const base: Track = { id: "t", name: "T", kind: "drum", color: "red", volume: 1, pan: 0, muted: false, solo: false, armed: false, frozen: false, hidden: false, input: "Internal", bus: "drums", steps: 16 };
+const base: Track = {
+  id: "t",
+  name: "T",
+  kind: "drum",
+  color: "red",
+  volume: 1,
+  pan: 0,
+  muted: false,
+  solo: false,
+  armed: false,
+  frozen: false,
+  hidden: false,
+  input: "Internal",
+  bus: "drums",
+  steps: 16,
+};
 const snare = (region: [number, number]): Track => ({
-  ...base, id: "snare", patternRegion: region,
-  pads: [{ id: "s", name: "SNARE", kind: "snare", volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: Array.from({ length: 16 }, (_, i) => (i === 4 || i === 12 ? 1 : 0)) }],
+  ...base,
+  id: "snare",
+  patternRegion: region,
+  pads: [
+    {
+      id: "s",
+      name: "SNARE",
+      kind: "snare",
+      volume: 1,
+      pan: 0,
+      pitch: 0,
+      decay: 0.5,
+      muted: false,
+      solo: false,
+      steps: Array.from({ length: 16 }, (_, i) => (i === 4 || i === 12 ? 1 : 0)),
+    },
+  ],
 });
-const note = (step: number, length = 2): MidiNote => ({ id: `n${step}`, pitch: 36, step, length, velocity: 0.9 });
+const note = (step: number, length = 2): MidiNote => ({
+  id: `n${step}`,
+  pitch: 36,
+  step,
+  length,
+  velocity: 0.9,
+});
 
 describe("bassline fills only the song's bars", () => {
   it("an 8-bar song gets 8 bars of bass in a 16-bar timeline", () => {
@@ -23,7 +59,9 @@ describe("bassline fills only the song's bars", () => {
     expect(fitBassline([note(0)], 64, 16, 16, 16).cuts).toEqual([]);
   });
   it("never runs past the song end", () => {
-    expect(fitBassline([note(0)], 64, 32, 16, 16).notes!.every((n) => n.step + n.length <= 256)).toBe(true);
+    expect(
+      fitBassline([note(0)], 64, 32, 16, 16).notes!.every((n) => n.step + n.length <= 256),
+    ).toBe(true);
   });
 });
 

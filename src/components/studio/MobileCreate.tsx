@@ -1,14 +1,36 @@
-import { Disc3, FolderOpen, Grid2x2, Radio, Scissors, Waves, AudioLines, MoreHorizontal } from "lucide-react";
+import {
+  Disc3,
+  FolderOpen,
+  Grid2x2,
+  Radio,
+  Scissors,
+  Waves,
+  AudioLines,
+  MoreHorizontal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
 
-type Tile = { label: string; hint: string; icon: React.ReactNode; panel?: PanelId; run?: () => void; big?: boolean };
+type Tile = {
+  label: string;
+  hint: string;
+  icon: React.ReactNode;
+  panel?: PanelId;
+  run?: () => void;
+  big?: boolean;
+};
 
 /**
  * Phone portrait CREATE screen: large tiles that open the real studio tools
  * (same project and engine as desktop) so a beat can start within seconds.
  */
-export function MobileCreate({ onBeatMode, onMore }: { onBeatMode: () => void; onMore: () => void }) {
+export function MobileCreate({
+  onBeatMode,
+  onMore,
+}: {
+  onBeatMode: () => void;
+  onMore: () => void;
+}) {
   const { setPanel, transport, tracks } = useStudio();
   const armed = tracks.filter((t) => t.armed).map((t) => t.name);
 
@@ -24,11 +46,16 @@ export function MobileCreate({ onBeatMode, onMore }: { onBeatMode: () => void; o
   ];
 
   return (
-    <section aria-label="Create" className="absolute inset-0 z-30 overflow-y-auto bg-background p-3 pb-6">
+    <section
+      aria-label="Create"
+      className="absolute inset-0 z-30 overflow-y-auto bg-background p-3 pb-6"
+    >
       <p className="mb-3 flex items-center gap-2 rounded-md border border-border bg-surface-1 px-3 py-2 text-sm text-muted-foreground">
         <AudioLines className="size-4 shrink-0 text-primary" />
         <span className="min-w-0 truncate">
-          {armed.length ? `Armed: ${armed.join(", ")}` : "No track armed — recording uses the selected track"}
+          {armed.length
+            ? `Armed: ${armed.join(", ")}`
+            : "No track armed — recording uses the selected track"}
           {transport.monitor ? " · Monitoring on" : ""}
         </span>
       </p>

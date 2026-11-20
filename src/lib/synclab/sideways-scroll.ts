@@ -7,7 +7,8 @@ import { sidewaysCanvas } from "./canvas-point";
  * the window never scrolls. Swipes that start inside an open window or menu stop at <body>
  * before reaching that handler, so the browser scrolls them natively (in the turned layout).
  */
-const POPUP = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-radix-popper-content-wrapper]';
+const POPUP =
+  '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-radix-popper-content-wrapper]';
 
 export function shouldFreeSidewaysTouch(target: EventTarget | null, sideways: boolean): boolean {
   if (!sideways) return false;

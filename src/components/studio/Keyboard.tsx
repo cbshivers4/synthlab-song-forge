@@ -1,12 +1,24 @@
 import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { Keyboard as ComputerKeyboard, Lock, Minus, Music2, Plus, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { useStudio } from "@/lib/synclab/store";
 import { keysSnapshot, subscribeKeys } from "@/lib/synclab/active-keys";
 import type { Track } from "@/lib/synclab/types";
-import { QWERTY_MAP, qwertyEnabled, qwertyOctave, setQwertyEnabled, setQwertyOctave } from "@/lib/synclab/qwerty";
+import {
+  QWERTY_MAP,
+  qwertyEnabled,
+  qwertyOctave,
+  setQwertyEnabled,
+  setQwertyOctave,
+} from "@/lib/synclab/qwerty";
 
 import { SkinControls, skinBackground, useImageDrop } from "./SkinControls";
 import { useSkin, type SkinKey } from "@/lib/synclab/skins";
@@ -39,7 +51,19 @@ const CHORDS = [
   { name: "DIM", intervals: [0, 3, 6] },
 ] as const;
 
-export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard", mappedPads }: { track?: Track; onPlay?: (midi: number, velocity: number) => void; disabled?: boolean; skinKey?: SkinKey; mappedPads?: { count: number; active: number | null; keys: string } } = {}) {
+export function Keyboard({
+  track,
+  onPlay,
+  disabled = false,
+  skinKey = "keyboard",
+  mappedPads,
+}: {
+  track?: Track;
+  onPlay?: (midi: number, velocity: number) => void;
+  disabled?: boolean;
+  skinKey?: SkinKey;
+  mappedPads?: { count: number; active: number | null; keys: string };
+} = {}) {
   const skin = useSkin(skinKey);
   const imageDrop = useImageDrop(skinKey);
   const keyboardStyle = {
@@ -60,7 +84,10 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
   const [typing, setTyping] = useState(false);
   const [typingOctave, setTypingOctave] = useState(4);
   useEffect(() => {
-    const sync = () => { setTyping(qwertyEnabled()); setTypingOctave(qwertyOctave()); };
+    const sync = () => {
+      setTyping(qwertyEnabled());
+      setTypingOctave(qwertyOctave());
+    };
     sync();
     window.addEventListener("synclab:qwerty", sync);
     return () => window.removeEventListener("synclab:qwerty", sync);
@@ -98,7 +125,7 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
     if (BLACK.has(s % 12)) blackKeys.push({ midi: LOW + s, pos: whiteKeys.length });
     else whiteKeys.push(LOW + s);
   }
-  const shiftPct = ((octave - 1) * 7 / whiteCount) * 100;
+  const shiftPct = (((octave - 1) * 7) / whiteCount) * 100;
 
   const scale = SCALES[scaleName] ?? SCALES["Minor"] ?? [];
   const inScale = (midi: number) => scale.includes((((midi - root) % 12) + 12) % 12);
@@ -123,14 +150,25 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
   };
 
   const play = (midi: number) => playNotes([midi]);
-  const playChord = (intervals: readonly number[]) => playNotes(intervals.map((interval) => base + root + interval));
+  const playChord = (intervals: readonly number[]) =>
+    playNotes(intervals.map((interval) => base + root + interval));
 
   // Embedded keyboards claim typing once; never add a second global note path.
   useEffect(() => {
     if (mappedPads || (!track && !onPlay)) return;
     const down = (event: KeyboardEvent) => {
       const el = event.target as HTMLElement | null;
-      if (disabled || !qwertyEnabled() || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey || el?.isContentEditable || (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      if (
+        disabled ||
+        !qwertyEnabled() ||
+        event.defaultPrevented ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        el?.isContentEditable ||
+        (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
+      )
+        return;
       const key = event.key.toLowerCase();
       const offset = QWERTY_MAP[key];
       if (offset === undefined && key !== "z" && key !== "x") return;
@@ -151,29 +189,90 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
   if (mappedPads) {
     const notes = Array.from({ length: 16 }, (_, i) => 60 + i);
     const naturals = notes.filter((note) => !BLACK.has(note % 12));
-    return <div className="instrument-keyboard space-y-2 border-t border-border bg-surface p-3" aria-label="Video chop keyboard" data-keyboard-skin={skinKey} style={keyboardStyle} {...imageDrop}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-mono text-muted-foreground">CHOP KEYS · C4–D♯5</span>
-        <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" aria-label="Video keyboard appearance"><Palette className="size-4" />Keyboard colors & wallpaper</Button></PopoverTrigger><PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto"><SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" /></PopoverContent></Popover>
-      </div>
-      <div className="overflow-x-auto">
-        <div className="relative h-36 min-w-[360px] select-none overflow-hidden rounded border border-border" data-keyboard-keys>
-          <div className="flex h-full gap-px bg-border">{naturals.map((note) => {
-            const index = note - 60;
-            return <Button key={note} variant="ghost" disabled={disabled || index >= mappedPads.count} onClick={() => onPlay?.(note, 1)} aria-label={`${label(note)} · Video chop ${index + 1}`} aria-pressed={mappedPads.active === index} data-active={mappedPads.active === index} data-pad-color={index % 4} className="keyboard-key keyboard-natural video-chop-key relative h-full min-w-0 flex-1 rounded-none p-0">
-              <span className="absolute bottom-2 flex flex-col items-center font-mono text-[10px]"><span>{index + 1} · {mappedPads.keys[index]?.toUpperCase()}</span><span>{label(note)}</span></span>
-            </Button>;
-          })}</div>
-          {notes.filter((note) => BLACK.has(note % 12)).map((note) => {
-            const index = note - 60;
-            const pos = naturals.filter((natural) => natural < note).length;
-            return <Button key={note} variant="ghost" disabled={disabled || index >= mappedPads.count} onClick={() => onPlay?.(note, 1)} aria-label={`${label(note)} · Video chop ${index + 1}`} aria-pressed={mappedPads.active === index} data-active={mappedPads.active === index} data-pad-color={index % 4} className="keyboard-key keyboard-sharp video-chop-key absolute top-0 z-10 h-[58%] min-w-0 rounded-b p-0" style={{ left: `${(pos - 0.31) / naturals.length * 100}%`, width: `${0.62 / naturals.length * 100}%` }}>
-              <span className="absolute bottom-2 flex flex-col items-center font-mono text-[10px]"><span>{index + 1}</span><span>{mappedPads.keys[index]?.toUpperCase()}</span></span>
-            </Button>;
-          })}
+    return (
+      <div
+        className="instrument-keyboard space-y-2 border-t border-border bg-surface p-3"
+        aria-label="Video chop keyboard"
+        data-keyboard-skin={skinKey}
+        style={keyboardStyle}
+        {...imageDrop}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs font-mono text-muted-foreground">CHOP KEYS · C4–D♯5</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" aria-label="Video keyboard appearance">
+                <Palette className="size-4" />
+                Keyboard colors & wallpaper
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto">
+              <SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="overflow-x-auto">
+          <div
+            className="relative h-36 min-w-[360px] select-none overflow-hidden rounded border border-border"
+            data-keyboard-keys
+          >
+            <div className="flex h-full gap-px bg-border">
+              {naturals.map((note) => {
+                const index = note - 60;
+                return (
+                  <Button
+                    key={note}
+                    variant="ghost"
+                    disabled={disabled || index >= mappedPads.count}
+                    onClick={() => onPlay?.(note, 1)}
+                    aria-label={`${label(note)} · Video chop ${index + 1}`}
+                    aria-pressed={mappedPads.active === index}
+                    data-active={mappedPads.active === index}
+                    data-pad-color={index % 4}
+                    className="keyboard-key keyboard-natural video-chop-key relative h-full min-w-0 flex-1 rounded-none p-0"
+                  >
+                    <span className="absolute bottom-2 flex flex-col items-center font-mono text-[10px]">
+                      <span>
+                        {index + 1} · {mappedPads.keys[index]?.toUpperCase()}
+                      </span>
+                      <span>{label(note)}</span>
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+            {notes
+              .filter((note) => BLACK.has(note % 12))
+              .map((note) => {
+                const index = note - 60;
+                const pos = naturals.filter((natural) => natural < note).length;
+                return (
+                  <Button
+                    key={note}
+                    variant="ghost"
+                    disabled={disabled || index >= mappedPads.count}
+                    onClick={() => onPlay?.(note, 1)}
+                    aria-label={`${label(note)} · Video chop ${index + 1}`}
+                    aria-pressed={mappedPads.active === index}
+                    data-active={mappedPads.active === index}
+                    data-pad-color={index % 4}
+                    className="keyboard-key keyboard-sharp video-chop-key absolute top-0 z-10 h-[58%] min-w-0 rounded-b p-0"
+                    style={{
+                      left: `${((pos - 0.31) / naturals.length) * 100}%`,
+                      width: `${(0.62 / naturals.length) * 100}%`,
+                    }}
+                  >
+                    <span className="absolute bottom-2 flex flex-col items-center font-mono text-[10px]">
+                      <span>{index + 1}</span>
+                      <span>{mappedPads.keys[index]?.toUpperCase()}</span>
+                    </span>
+                  </Button>
+                );
+              })}
+          </div>
         </div>
       </div>
-    </div>;
+    );
   }
 
   if (!onPlay && (!selected || !selected.patch))
@@ -184,19 +283,45 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
     );
 
   return (
-    <div className="instrument-keyboard space-y-2 rounded-md border border-border bg-surface p-3" data-keyboard-skin={skinKey} style={keyboardStyle} {...imageDrop}>
+    <div
+      className="instrument-keyboard space-y-2 rounded-md border border-border bg-surface p-3"
+      data-keyboard-skin={skinKey}
+      style={keyboardStyle}
+      {...imageDrop}
+    >
       <div className="flex flex-wrap items-center gap-2">
-        <Popover><PopoverTrigger asChild><Button variant="outline" size="sm" aria-label="Keyboard appearance"><Palette className="size-4" /> Keyboard colors & wallpaper</Button></PopoverTrigger><PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto"><SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" /></PopoverContent></Popover>
-        <Button size="sm" variant={typing ? "secondary" : "outline"} aria-pressed={typing} disabled={disabled}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" aria-label="Keyboard appearance">
+              <Palette className="size-4" /> Keyboard colors & wallpaper
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto">
+            <SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" />
+          </PopoverContent>
+        </Popover>
+        <Button
+          size="sm"
+          variant={typing ? "secondary" : "outline"}
+          aria-pressed={typing}
+          disabled={disabled}
           title="A W S E D F T G Y H U J K O L play notes; Z / X change octave"
-          onClick={() => { setQwertyEnabled(!typing); if (!typing) setQwertyOctave(octave); }}>
+          onClick={() => {
+            setQwertyEnabled(!typing);
+            if (!typing) setQwertyOctave(octave);
+          }}
+        >
           <ComputerKeyboard className="size-4" /> Computer keys {typing ? "ON" : "OFF"}
         </Button>
-        {typing && <span className="font-mono text-xs text-muted-foreground">C{typingOctave} · Z / X</span>}
+        {typing && (
+          <span className="font-mono text-xs text-muted-foreground">C{typingOctave} · Z / X</span>
+        )}
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3">
         <span className="label-xs">
-          {onPlay ? "Selected sample" : `Playing ${selected?.name} · ${selected?.instrument ?? "SYNTH"}`}
+          {onPlay
+            ? "Selected sample"
+            : `Playing ${selected?.name} · ${selected?.instrument ?? "SYNTH"}`}
         </span>
         <div className="flex shrink-0 items-center gap-1 sm:ml-auto">
           <span className="label-xs mr-1">OCTAVE</span>
@@ -228,7 +353,9 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
             aria-label={locked ? "Unlock keyboard range" : "Lock keyboard range"}
             onClick={() => setLocked((l) => !l)}
             className={`h-6 gap-1 px-2 font-mono text-[10px] tracking-wider ${
-              locked ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]" : "text-muted-foreground"
+              locked
+                ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]"
+                : "text-muted-foreground"
             }`}
           >
             {locked ? <Lock className="size-3" /> : <Unlock className="size-3" />}
@@ -290,107 +417,142 @@ export function Keyboard({ track, onPlay, disabled = false, skinKey = "keyboard"
 
       <div className="overflow-x-auto rounded-[3px] border border-border bg-surface/60 p-1.5">
         <div className="flex min-w-max items-center gap-1.5">
-        <Music2 className="size-3.5 text-primary" />
-        <span className="label-xs px-1">SCALE</span>
-        <Select value={String(root)} onValueChange={(value) => setRoot(Number(value))}>
-          <SelectTrigger className="h-7 w-16 text-[10px]" aria-label="Scale root">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {NOTE_NAMES.map((note, index) => (
-              <SelectItem key={note} value={String(index)}>{note}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={scaleName} onValueChange={setScaleName}>
-          <SelectTrigger className="h-7 w-28 text-[10px]" aria-label="Scale type">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.keys(SCALES).map((name) => (
-              <SelectItem key={name} value={name}>{name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          size="sm"
-          variant={scaleLock ? "default" : "outline"}
-          className="h-7 px-2 font-mono text-[10px] tracking-wider"
-          aria-pressed={scaleLock}
-          onClick={() => setScaleLock((value) => !value)}
-        >
-          SCALE LOCK
-        </Button>
-        <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
-        <span className="label-xs px-1">CHORDS</span>
-        {CHORDS.map((chord) => (
+          <Music2 className="size-3.5 text-primary" />
+          <span className="label-xs px-1">SCALE</span>
+          <Select value={String(root)} onValueChange={(value) => setRoot(Number(value))}>
+            <SelectTrigger className="h-7 w-16 text-[10px]" aria-label="Scale root">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {NOTE_NAMES.map((note, index) => (
+                <SelectItem key={note} value={String(index)}>
+                  {note}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={scaleName} onValueChange={setScaleName}>
+            <SelectTrigger className="h-7 w-28 text-[10px]" aria-label="Scale type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(SCALES).map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
-            key={chord.name}
             size="sm"
-            variant="ghost"
+            variant={scaleLock ? "default" : "outline"}
             className="h-7 px-2 font-mono text-[10px] tracking-wider"
-            onClick={() => playChord(chord.intervals)}
+            aria-pressed={scaleLock}
+            onClick={() => setScaleLock((value) => !value)}
           >
-            {NOTE_NAMES[root]} {chord.name}
+            SCALE LOCK
           </Button>
-        ))}
+          <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
+          <span className="label-xs px-1">CHORDS</span>
+          {CHORDS.map((chord) => (
+            <Button
+              key={chord.name}
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 font-mono text-[10px] tracking-wider"
+              onClick={() => playChord(chord.intervals)}
+            >
+              {NOTE_NAMES[root]} {chord.name}
+            </Button>
+          ))}
         </div>
       </div>
 
       <div
         onWheel={(e) => slideTo(octave + (e.deltaY > 0 ? -1 : 1))}
-         className="keyboard-keybed relative h-48 w-full min-w-0 select-none overflow-hidden rounded-[3px] border border-border bg-background"
+        className="keyboard-keybed relative h-48 w-full min-w-0 select-none overflow-hidden rounded-[3px] border border-border bg-background"
         style={{ touchAction: "none" }}
         data-keyboard-keys
       >
         <div
           className="absolute inset-y-0 left-0 transition-transform duration-300 ease-out"
-          style={{ width: `${(whiteCount / visibleWhite) * 100}%`, transform: `translateX(-${shiftPct}%)` }}
+          style={{
+            width: `${(whiteCount / visibleWhite) * 100}%`,
+            transform: `translateX(-${shiftPct}%)`,
+          }}
         >
-        {/* white keys */}
-        <div className="flex h-full gap-px bg-border">
-          {whiteKeys.map((midi) => (
+          {/* white keys */}
+          <div className="flex h-full gap-px bg-border">
+            {whiteKeys.map((midi) => (
+              <Button
+                key={midi}
+                disabled={disabled}
+                onPointerDown={() => play(midi)}
+                variant="ghost"
+                data-in-scale={inScale(midi)}
+                data-active={litKeys.has(midi)}
+                className="keyboard-key keyboard-natural relative h-full min-w-0 flex-1 rounded-b-[3px] p-0 transition-colors"
+                aria-label={label(midi)}
+              >
+                {typing &&
+                  Object.entries(QWERTY_MAP).map(([key, offset]) =>
+                    (typingOctave + 1) * 12 + offset === midi ? (
+                      <span
+                        key={key}
+                        className="keyboard-natural-letter absolute left-1/2 -translate-x-1/2 font-mono keyboard-key-label"
+                      >
+                        {key.toUpperCase()}
+                      </span>
+                    ) : null,
+                  )}
+                <span
+                  aria-hidden
+                  className="keyboard-note-name keyboard-natural-name absolute left-1/2 -translate-x-1/2 whitespace-nowrap leading-none keyboard-key-label"
+                >
+                  {NOTE_NAMES[midi % 12]}
+                </span>
+              </Button>
+            ))}
+          </div>
+          {/* black keys */}
+          {blackKeys.map(({ midi, pos }) => (
             <Button
               key={midi}
-               disabled={disabled}
+              disabled={disabled}
               onPointerDown={() => play(midi)}
               variant="ghost"
               data-in-scale={inScale(midi)}
               data-active={litKeys.has(midi)}
-              className="keyboard-key keyboard-natural relative h-full min-w-0 flex-1 rounded-b-[3px] p-0 transition-colors"
+              className="keyboard-key keyboard-sharp absolute top-0 z-10 h-[58%] min-w-0 rounded-b-[3px] p-0 transition-colors"
+              // Centred on the line between the two white keys it sits between (C♯ over C|D), like a real piano.
+              style={{
+                left: `${((pos - 0.33) / whiteCount) * 100}%`,
+                width: `${(100 / whiteCount) * 0.66}%`,
+              }}
               aria-label={label(midi)}
             >
-              {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-natural-letter absolute left-1/2 -translate-x-1/2 font-mono keyboard-key-label">{key.toUpperCase()}</span> : null)}
-              <span aria-hidden className="keyboard-note-name keyboard-natural-name absolute left-1/2 -translate-x-1/2 whitespace-nowrap leading-none keyboard-key-label">
-                {NOTE_NAMES[midi % 12]}
+              {typing &&
+                Object.entries(QWERTY_MAP).map(([key, offset]) =>
+                  (typingOctave + 1) * 12 + offset === midi ? (
+                    <span
+                      key={key}
+                      className="keyboard-sharp-letter absolute left-1/2 -translate-x-1/2 font-mono keyboard-key-label"
+                    >
+                      {key.toUpperCase()}
+                    </span>
+                  ) : null,
+                )}
+              <span
+                aria-hidden
+                className="keyboard-note-name keyboard-sharp-name absolute left-1/2 flex -translate-x-1/2 flex-col items-center whitespace-nowrap leading-none keyboard-key-label"
+              >
+                <span>{FLAT_NAMES[midi % 12]}</span>
+                <span>{NOTE_NAMES[midi % 12]?.replace("#", "♯")}</span>
               </span>
             </Button>
           ))}
         </div>
-        {/* black keys */}
-        {blackKeys.map(({ midi, pos }) => (
-          <Button
-            key={midi}
-             disabled={disabled}
-            onPointerDown={() => play(midi)}
-            variant="ghost"
-            data-in-scale={inScale(midi)}
-            data-active={litKeys.has(midi)}
-            className="keyboard-key keyboard-sharp absolute top-0 z-10 h-[58%] min-w-0 rounded-b-[3px] p-0 transition-colors"
-            // Centred on the line between the two white keys it sits between (C♯ over C|D), like a real piano.
-            style={{ left: `${((pos - 0.33) / whiteCount) * 100}%`, width: `${(100 / whiteCount) * 0.66}%` }}
-            aria-label={label(midi)}
-          >
-            {typing && Object.entries(QWERTY_MAP).map(([key, offset]) => (typingOctave + 1) * 12 + offset === midi ? <span key={key} className="keyboard-sharp-letter absolute left-1/2 -translate-x-1/2 font-mono keyboard-key-label">{key.toUpperCase()}</span> : null)}
-            <span aria-hidden className="keyboard-note-name keyboard-sharp-name absolute left-1/2 flex -translate-x-1/2 flex-col items-center whitespace-nowrap leading-none keyboard-key-label">
-              <span>{FLAT_NAMES[midi % 12]}</span>
-              <span>{NOTE_NAMES[midi % 12]?.replace("#", "♯")}</span>
-            </span>
-          </Button>
-        ))}
-        </div>
       </div>
-
     </div>
   );
 }

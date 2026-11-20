@@ -6,7 +6,8 @@
 export type StripParam = "volume" | "pan" | "solo" | "mute" | "arm" | "select";
 export type AutoMapHit = { strip: number; param: StripParam };
 /** Transport and bank buttons a controller's factory layout sends (pressed = value ≥ 64). */
-export type RemoteButton = "play" | "stop" | "record" | "start" | "rewind" | "forward" | "loop" | "bank-prev" | "bank-next";
+export type RemoteButton =
+  "play" | "stop" | "record" | "start" | "rewind" | "forward" | "loop" | "bank-prev" | "bank-next";
 
 export type DeviceLook = {
   /** Number of faders, knobs, pads and piano keys drawn in the illustration. */
@@ -43,9 +44,19 @@ const seq = (from: number, n = 8) => Array.from({ length: n }, (_, i) => from + 
 
 export const CONTROLLERS: ControllerProfile[] = [
   {
-    id: "korg-nanokontrol-studio", maker: "Korg", model: "nanoKONTROL Studio",
+    id: "korg-nanokontrol-studio",
+    maker: "Korg",
+    model: "nanoKONTROL Studio",
     port: /nano\s*kontrol\s*studio/i,
-    look: { faders: 8, knobs: 8, pads: 0, keys: 0, buttons: 32, body: "#1b1c1f", accent: "#e8e8e8" },
+    look: {
+      faders: 8,
+      knobs: 8,
+      pads: 0,
+      keys: 0,
+      buttons: 32,
+      body: "#1b1c1f",
+      accent: "#e8e8e8",
+    },
     map: {
       ...range([2, 3, 4, 5, 6, 8, 9, 12], "volume"),
       ...range(seq(13), "pan"),
@@ -55,103 +66,284 @@ export const CONTROLLERS: ControllerProfile[] = [
       ...range(seq(46), "select"),
     },
     // Korg's factory scene 1 (Assignable mode) transport section.
-    buttons: { 80: "play", 63: "stop", 81: "record", 62: "start", 58: "rewind", 59: "forward", 54: "loop", 60: "bank-prev", 61: "bank-next" },
+    buttons: {
+      80: "play",
+      63: "stop",
+      81: "record",
+      62: "start",
+      58: "rewind",
+      59: "forward",
+      54: "loop",
+      60: "bank-prev",
+      61: "bank-next",
+    },
     mackie: true,
     jog: 86,
-    summary: "Works in Assignable mode (factory scene 1) and in Korg's DAW modes (Studio One, Cubase, Live, SONAR, Digital Performer — Mackie Control), detected automatically: faders = volume, knobs = pan, M / S / R = mute, solo, record-arm and SELECT picks the channel for tracks 1–8. PLAY, STOP, REC, |◀ (go to start), ◀◀ / ▶▶ (one bar back / forward) and CYCLE (loop) run the transport — STOP once stops where you are, again goes back to the start; the jog wheel moves the playhead by beats; TRACK ◀ / ▶ switch to tracks 9–16 and back. Pro Tools (HUI) mode is not supported. Your own MIDI Learn assignments win over these.",
+    summary:
+      "Works in Assignable mode (factory scene 1) and in Korg's DAW modes (Studio One, Cubase, Live, SONAR, Digital Performer — Mackie Control), detected automatically: faders = volume, knobs = pan, M / S / R = mute, solo, record-arm and SELECT picks the channel for tracks 1–8. PLAY, STOP, REC, |◀ (go to start), ◀◀ / ▶▶ (one bar back / forward) and CYCLE (loop) run the transport — STOP once stops where you are, again goes back to the start; the jog wheel moves the playhead by beats; TRACK ◀ / ▶ switch to tracks 9–16 and back. Pro Tools (HUI) mode is not supported. Your own MIDI Learn assignments win over these.",
   },
   {
-    id: "korg-nanokey-studio", maker: "Korg", model: "nanoKEY Studio",
+    id: "korg-nanokey-studio",
+    maker: "Korg",
+    model: "nanoKEY Studio",
     port: /nano\s*key\s*studio/i,
-    look: { faders: 0, knobs: 8, pads: 8, keys: 25, buttons: 6, body: "#1b1c1f", accent: "#ff4fa0" },
+    look: {
+      faders: 0,
+      knobs: 8,
+      pads: 8,
+      keys: 25,
+      buttons: 6,
+      body: "#1b1c1f",
+      accent: "#ff4fa0",
+    },
     map: null,
-    summary: "Keys play the armed instrument. Knobs, X-Y pad and buttons: use MIDI Learn on any synth knob, mixer control or Live View X-Y. Pads: use pad MIDI Learn in Sampler, Pad Sampler, Video Sampler or Live Looper.",
+    summary:
+      "Keys play the armed instrument. Knobs, X-Y pad and buttons: use MIDI Learn on any synth knob, mixer control or Live View X-Y. Pads: use pad MIDI Learn in Sampler, Pad Sampler, Video Sampler or Live Looper.",
   },
   {
-    id: "korg-nanokontrol2", maker: "Korg", model: "nanoKONTROL2",
+    id: "korg-nanokontrol2",
+    maker: "Korg",
+    model: "nanoKONTROL2",
     port: /nano\s*kontrol\s*2/i,
-    look: { faders: 8, knobs: 8, pads: 0, keys: 0, buttons: 24, body: "#1b1c1f", accent: "#e8e8e8" },
-    map: { ...range(seq(0), "volume"), ...range(seq(16), "pan"), ...range(seq(32), "solo"), ...range(seq(48), "mute"), ...range(seq(64), "arm") },
-    buttons: { 41: "play", 42: "stop", 45: "record", 43: "rewind", 44: "forward", 46: "loop", 58: "bank-prev", 59: "bank-next" },
+    look: {
+      faders: 8,
+      knobs: 8,
+      pads: 0,
+      keys: 0,
+      buttons: 24,
+      body: "#1b1c1f",
+      accent: "#e8e8e8",
+    },
+    map: {
+      ...range(seq(0), "volume"),
+      ...range(seq(16), "pan"),
+      ...range(seq(32), "solo"),
+      ...range(seq(48), "mute"),
+      ...range(seq(64), "arm"),
+    },
+    buttons: {
+      41: "play",
+      42: "stop",
+      45: "record",
+      43: "rewind",
+      44: "forward",
+      46: "loop",
+      58: "bank-prev",
+      59: "bank-next",
+    },
     mackie: true,
-    summary: "Faders = volume, knobs = pan, S / M / R = solo, mute, arm for tracks 1–8; transport buttons play, stop, record, move a bar and loop; TRACK ◀ / ▶ switch banks of 8.",
+    summary:
+      "Faders = volume, knobs = pan, S / M / R = solo, mute, arm for tracks 1–8; transport buttons play, stop, record, move a bar and loop; TRACK ◀ / ▶ switch banks of 8.",
   },
   {
-    id: "korg-nanokontrol", maker: "Korg", model: "nanoKONTROL (original)",
+    id: "korg-nanokontrol",
+    maker: "Korg",
+    model: "nanoKONTROL (original)",
     port: /nano\s*kontrol(?!\s*2)/i,
-    look: { faders: 9, knobs: 9, pads: 0, keys: 0, buttons: 18, body: "#2a2b2f", accent: "#d0d0d0" },
-    map: { ...range([2, 3, 4, 5, 6, 8, 9, 12, 13], "volume"), ...range([14, 15, 16, 17, 18, 19, 20, 21, 22], "pan") },
+    look: {
+      faders: 9,
+      knobs: 9,
+      pads: 0,
+      keys: 0,
+      buttons: 18,
+      body: "#2a2b2f",
+      accent: "#d0d0d0",
+    },
+    map: {
+      ...range([2, 3, 4, 5, 6, 8, 9, 12, 13], "volume"),
+      ...range([14, 15, 16, 17, 18, 19, 20, 21, 22], "pan"),
+    },
     summary: "Scene 1: faders = volume, knobs = pan for tracks 1–9.",
   },
   {
-    id: "korg-nanokey", maker: "Korg", model: "nanoKEY2 / microKEY",
+    id: "korg-nanokey",
+    maker: "Korg",
+    model: "nanoKEY2 / microKEY",
     port: /nano\s*key|micro\s*key/i,
-    look: { faders: 0, knobs: 0, pads: 0, keys: 25, buttons: 4, body: "#1b1c1f", accent: "#ffffff" },
-    map: null, summary: "Keys play the armed instrument. Assign extras with MIDI Learn.",
+    look: {
+      faders: 0,
+      knobs: 0,
+      pads: 0,
+      keys: 25,
+      buttons: 4,
+      body: "#1b1c1f",
+      accent: "#ffffff",
+    },
+    map: null,
+    summary: "Keys play the armed instrument. Assign extras with MIDI Learn.",
   },
   {
-    id: "akai-midimix", maker: "Akai Professional", model: "MIDImix",
+    id: "akai-midimix",
+    maker: "Akai Professional",
+    model: "MIDImix",
     port: /midi\s*mix/i,
-    look: { faders: 9, knobs: 24, pads: 0, keys: 0, buttons: 16, body: "#26272b", accent: "#e23a3a" },
-    map: { ...range([19, 23, 27, 31, 49, 53, 57, 61], "volume"), ...range([16, 20, 24, 28, 46, 50, 54, 58], "pan") },
+    look: {
+      faders: 9,
+      knobs: 24,
+      pads: 0,
+      keys: 0,
+      buttons: 16,
+      body: "#26272b",
+      accent: "#e23a3a",
+    },
+    map: {
+      ...range([19, 23, 27, 31, 49, 53, 57, 61], "volume"),
+      ...range([16, 20, 24, 28, 46, 50, 54, 58], "pan"),
+    },
     summary: "Faders = volume, top knob row = pan for tracks 1–8.",
   },
   {
-    id: "akai-mpk-mini", maker: "Akai Professional", model: "MPK Mini (mk3)",
+    id: "akai-mpk-mini",
+    maker: "Akai Professional",
+    model: "MPK Mini (mk3)",
     port: /mpk\s*mini/i,
-    look: { faders: 0, knobs: 8, pads: 8, keys: 25, buttons: 6, body: "#1c1c1e", accent: "#e23a3a" },
+    look: {
+      faders: 0,
+      knobs: 8,
+      pads: 8,
+      keys: 25,
+      buttons: 6,
+      body: "#1c1c1e",
+      accent: "#e23a3a",
+    },
     map: range(seq(70), "volume"),
     summary: "Factory program: knobs 1–8 = volume for tracks 1–8; keys play the armed instrument.",
   },
   {
-    id: "akai-apc-key", maker: "Akai Professional", model: "APC / MPD series",
+    id: "akai-apc-key",
+    maker: "Akai Professional",
+    model: "APC / MPD series",
     port: /apc|mpd/i,
-    look: { faders: 0, knobs: 8, pads: 16, keys: 0, buttons: 8, body: "#1c1c1e", accent: "#e23a3a" },
-    map: null, summary: "Pads play notes. Assign knobs with MIDI Learn.",
+    look: {
+      faders: 0,
+      knobs: 8,
+      pads: 16,
+      keys: 0,
+      buttons: 8,
+      body: "#1c1c1e",
+      accent: "#e23a3a",
+    },
+    map: null,
+    summary: "Pads play notes. Assign knobs with MIDI Learn.",
   },
   {
-    id: "novation-lcxl", maker: "Novation", model: "Launch Control XL",
+    id: "novation-lcxl",
+    maker: "Novation",
+    model: "Launch Control XL",
     port: /launch\s*control\s*xl/i,
-    look: { faders: 8, knobs: 24, pads: 0, keys: 0, buttons: 16, body: "#121214", accent: "#ff8a00" },
+    look: {
+      faders: 8,
+      knobs: 24,
+      pads: 0,
+      keys: 0,
+      buttons: 16,
+      body: "#121214",
+      accent: "#ff8a00",
+    },
     map: { ...range(seq(77), "volume"), ...range(seq(49), "pan") },
     summary: "Factory template 1: faders = volume, bottom knob row = pan for tracks 1–8.",
   },
   {
-    id: "novation-launchkey", maker: "Novation", model: "Launchkey",
+    id: "novation-launchkey",
+    maker: "Novation",
+    model: "Launchkey",
     port: /launchkey/i,
-    look: { faders: 9, knobs: 8, pads: 16, keys: 49, buttons: 8, body: "#121214", accent: "#ff8a00" },
-    map: null, summary: "Keys and pads play notes. Assign knobs and faders with MIDI Learn.",
+    look: {
+      faders: 9,
+      knobs: 8,
+      pads: 16,
+      keys: 49,
+      buttons: 8,
+      body: "#121214",
+      accent: "#ff8a00",
+    },
+    map: null,
+    summary: "Keys and pads play notes. Assign knobs and faders with MIDI Learn.",
   },
   {
-    id: "behringer-xtouch-mini", maker: "Behringer", model: "X-Touch Mini",
+    id: "behringer-xtouch-mini",
+    maker: "Behringer",
+    model: "X-Touch Mini",
     port: /x-?touch\s*mini/i,
-    look: { faders: 1, knobs: 8, pads: 0, keys: 0, buttons: 16, body: "#202124", accent: "#f2c200" },
+    look: {
+      faders: 1,
+      knobs: 8,
+      pads: 0,
+      keys: 0,
+      buttons: 16,
+      body: "#202124",
+      accent: "#f2c200",
+    },
     map: range(seq(1), "volume"),
     summary: "Layer A (MC mode off): knobs 1–8 = volume for tracks 1–8.",
   },
   {
-    id: "arturia-keylab", maker: "Arturia", model: "KeyLab / MiniLab",
+    id: "arturia-keylab",
+    maker: "Arturia",
+    model: "KeyLab / MiniLab",
     port: /keylab|minilab|beatstep/i,
-    look: { faders: 0, knobs: 8, pads: 8, keys: 25, buttons: 4, body: "#ececec", accent: "#1a1a1a" },
-    map: null, summary: "Keys and pads play notes. Assign knobs with MIDI Learn.",
+    look: {
+      faders: 0,
+      knobs: 8,
+      pads: 8,
+      keys: 25,
+      buttons: 4,
+      body: "#ececec",
+      accent: "#1a1a1a",
+    },
+    map: null,
+    summary: "Keys and pads play notes. Assign knobs with MIDI Learn.",
   },
   {
-    id: "ni-komplete", maker: "Native Instruments", model: "Komplete Kontrol / Maschine",
+    id: "ni-komplete",
+    maker: "Native Instruments",
+    model: "Komplete Kontrol / Maschine",
     port: /komplete|maschine|kontrol\s*s/i,
-    look: { faders: 0, knobs: 8, pads: 0, keys: 49, buttons: 8, body: "#151517", accent: "#cfcfcf" },
-    map: null, summary: "Keys play notes in MIDI mode. Assign knobs with MIDI Learn.",
+    look: {
+      faders: 0,
+      knobs: 8,
+      pads: 0,
+      keys: 49,
+      buttons: 8,
+      body: "#151517",
+      accent: "#cfcfcf",
+    },
+    map: null,
+    summary: "Keys play notes in MIDI mode. Assign knobs with MIDI Learn.",
   },
   {
-    id: "maudio-oxygen", maker: "M-Audio", model: "Oxygen / Keystation",
+    id: "maudio-oxygen",
+    maker: "M-Audio",
+    model: "Oxygen / Keystation",
     port: /oxygen|keystation/i,
-    look: { faders: 9, knobs: 8, pads: 8, keys: 49, buttons: 6, body: "#1d1d20", accent: "#3aa0ff" },
-    map: null, summary: "Keys play notes. Assign faders and knobs with MIDI Learn.",
+    look: {
+      faders: 9,
+      knobs: 8,
+      pads: 8,
+      keys: 49,
+      buttons: 6,
+      body: "#1d1d20",
+      accent: "#3aa0ff",
+    },
+    map: null,
+    summary: "Keys play notes. Assign faders and knobs with MIDI Learn.",
   },
   {
-    id: "generic", maker: "Other / Generic", model: "Any class-compliant MIDI device",
+    id: "generic",
+    maker: "Other / Generic",
+    model: "Any class-compliant MIDI device",
     port: /$^/,
-    look: { faders: 4, knobs: 4, pads: 0, keys: 25, buttons: 2, body: "#222327", accent: "#8a8f98" },
-    map: null, summary: "Keys play notes. Assign any knob or fader with MIDI Learn.",
+    look: {
+      faders: 4,
+      knobs: 4,
+      pads: 0,
+      keys: 25,
+      buttons: 2,
+      body: "#222327",
+      accent: "#8a8f98",
+    },
+    map: null,
+    summary: "Keys play notes. Assign any knob or fader with MIDI Learn.",
   },
 ];
 
@@ -166,21 +358,28 @@ export function chosenControllerId(): string {
   return window.localStorage.getItem(KEY) ?? AUTO;
 }
 export function setChosenControllerId(id: string) {
-  try { window.localStorage.setItem(KEY, id); } catch { /* storage unavailable */ }
+  try {
+    window.localStorage.setItem(KEY, id);
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 export function resolveController(portName: string | undefined): ControllerProfile | null {
   const id = chosenControllerId();
   if (id === "off") return null;
   if (id !== AUTO) return CONTROLLERS.find((c) => c.id === id) ?? null;
-  return portName ? CONTROLLERS.find((c) => c.port.test(portName)) ?? null : null;
+  return portName ? (CONTROLLERS.find((c) => c.port.test(portName)) ?? null) : null;
 }
 
 export function controllerAutoMap(portName: string | undefined, cc: number): AutoMapHit | null {
   return resolveController(portName)?.map?.[cc] ?? null;
 }
 
-export function controllerAutoButton(portName: string | undefined, cc: number): RemoteButton | null {
+export function controllerAutoButton(
+  portName: string | undefined,
+  cc: number,
+): RemoteButton | null {
   return resolveController(portName)?.buttons?.[cc] ?? null;
 }
 
@@ -197,23 +396,35 @@ export function shiftStripBank(dir: 1 | -1, trackCount: number): number {
 export const stripTrackIndex = (strip: number) => stripBank * 8 + strip;
 
 /** Whether this port's controller can be in a Mackie Control DAW mode. */
-export const controllerSpeaksMackie = (portName: string | undefined) => !!resolveController(portName)?.mackie;
+export const controllerSpeaksMackie = (portName: string | undefined) =>
+  !!resolveController(portName)?.mackie;
 
 /** A known mixer surface (one with a factory layout) by port name, ignoring the manual profile choice. */
-export const isKnownSurface = (portName: string) => CONTROLLERS.some((c) => !!c.map && c.port.test(portName));
+export const isKnownSurface = (portName: string) =>
+  CONTROLLERS.some((c) => !!c.map && c.port.test(portName));
 
 /**
  * Turn on newly connected mixer surfaces (e.g. a nanoKONTROL plugged in after choosing only a
  * keyboard) unless the user switched that device off. "All devices" and "none" stay as chosen.
  * Returns the selection unchanged when nothing needs adding.
  */
-export function withKnownSurfaces(selection: string | null, ports: { id: string; name: string }[], switchedOff: string[]): string | null {
+export function withKnownSurfaces(
+  selection: string | null,
+  ports: { id: string; name: string }[],
+  switchedOff: string[],
+): string | null {
   if (selection === null || selection === "all") return selection;
   let ids: string[];
   try {
     const parsed: unknown = JSON.parse(selection);
-    ids = Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [selection];
-  } catch { ids = [selection]; }
-  const add = ports.filter((p) => !ids.includes(p.id) && isKnownSurface(p.name) && !switchedOff.includes(p.name));
+    ids = Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === "string")
+      : [selection];
+  } catch {
+    ids = [selection];
+  }
+  const add = ports.filter(
+    (p) => !ids.includes(p.id) && isKnownSurface(p.name) && !switchedOff.includes(p.name),
+  );
   return add.length ? JSON.stringify([...ids, ...add.map((p) => p.id)]) : selection;
 }

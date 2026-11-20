@@ -10,7 +10,10 @@ describe("synth preset categories", () => {
     it(`${style} lists at least 5 presets in every standard category`, () => {
       const list = menu(style);
       for (const cat of STANDARD_CATEGORIES) {
-        expect(list.filter((p) => presetCategoryLabel(p.category) === cat).length, `${style} ${cat}`).toBeGreaterThanOrEqual(5);
+        expect(
+          list.filter((p) => presetCategoryLabel(p.category) === cat).length,
+          `${style} ${cat}`,
+        ).toBeGreaterThanOrEqual(5);
       }
     });
   }
@@ -24,8 +27,18 @@ describe("synth preset categories", () => {
     expect(menu("poly").every((p) => p.name.startsWith("Poly "))).toBe(true);
   });
   it("menu groups follow the standard order with My Presets last", () => {
-    const order = orderPresetGroups([{ category: "My Presets" }, { category: "Detroit Techno" }, { category: "Woodwind" }, { category: "Arpeggio" }]);
-    expect(order.map((g) => g.category)).toEqual(["Arpeggio", "Woodwind", "Detroit Techno", "My Presets"]);
+    const order = orderPresetGroups([
+      { category: "My Presets" },
+      { category: "Detroit Techno" },
+      { category: "Woodwind" },
+      { category: "Arpeggio" },
+    ]);
+    expect(order.map((g) => g.category)).toEqual([
+      "Arpeggio",
+      "Woodwind",
+      "Detroit Techno",
+      "My Presets",
+    ]);
   });
   it("sequence and arpeggio presets run the synced arpeggiator; templates start dry", () => {
     for (const p of menu("poly").concat(menu("spec4"))) {

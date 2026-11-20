@@ -2,7 +2,11 @@
  * The song scheduler's latest step and its audio-clock time, so tools outside the timeline
  * (Live Looper) can line up with the song's bars while it plays.
  */
-export interface SongClock { step: number; time: number; dur: number }
+export interface SongClock {
+  step: number;
+  time: number;
+  dur: number;
+}
 let clock: SongClock | null = null;
 
 export function setSongClock(next: SongClock) {

@@ -7,7 +7,15 @@ import { thumbGeometry, scrollTopForThumb } from "./vscroll-math";
  * scrollbars (or ignore styling), so this draws a finger-sized bar beside the tracks: drag the
  * thumb, or tap the bar to jump there. It only moves the timeline's own scroll position.
  */
-export function TimelineVScrollbar({ scrollRef, controls = "timeline-scroll", label = "Scroll tracks up and down" }: { scrollRef: RefObject<HTMLDivElement | null>; controls?: string; label?: string }) {
+export function TimelineVScrollbar({
+  scrollRef,
+  controls = "timeline-scroll",
+  label = "Scroll tracks up and down",
+}: {
+  scrollRef: RefObject<HTMLDivElement | null>;
+  controls?: string;
+  label?: string;
+}) {
   const barRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; top: number } | null>(null);
@@ -35,7 +43,11 @@ export function TimelineVScrollbar({ scrollRef, controls = "timeline-scroll", la
     const ro = new ResizeObserver(sync);
     ro.observe(el);
     if (el.firstElementChild) ro.observe(el.firstElementChild);
-    return () => { cancelAnimationFrame(frame); el.removeEventListener("scroll", sync); ro.disconnect(); };
+    return () => {
+      cancelAnimationFrame(frame);
+      el.removeEventListener("scroll", sync);
+      ro.disconnect();
+    };
   }, [scrollRef]);
 
   const scrollTo = (thumbOffset: number) => {
@@ -68,15 +80,22 @@ export function TimelineVScrollbar({ scrollRef, controls = "timeline-scroll", la
         const local = y - barTop;
         // Tap outside the thumb: centre the thumb under the finger, then keep dragging from there.
         if (local < g.offset || local > g.offset + g.height) scrollTo(local - g.height / 2);
-        drag.current = { y, top: thumbGeometry(el.scrollTop, el.scrollHeight, el.clientHeight).offset };
+        drag.current = {
+          y,
+          top: thumbGeometry(el.scrollTop, el.scrollHeight, el.clientHeight).offset,
+        };
       }}
       onPointerMove={(e) => {
         if (!drag.current) return;
         const y = canvasPoint(e.clientX, e.clientY).y;
         scrollTo(drag.current.top + (y - drag.current.y));
       }}
-      onPointerUp={() => { drag.current = null; }}
-      onPointerCancel={() => { drag.current = null; }}
+      onPointerUp={() => {
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+      }}
     >
       <div ref={thumbRef} className="timeline-vscroll-thumb" />
     </div>

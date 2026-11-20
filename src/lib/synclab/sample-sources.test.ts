@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { systemAudioSupport, recordingExt, type SystemEnv } from "./sample-sources";
 
-const desktop: SystemEnv = { hasDisplayMedia: true, apple: false, android: false, touchOnly: false, framed: false };
+const desktop: SystemEnv = {
+  hasDisplayMedia: true,
+  apple: false,
+  android: false,
+  touchOnly: false,
+  framed: false,
+};
 
 describe("computer sound sampling support", () => {
   it("is offered on a Windows computer with screen sharing, ticking system audio", () => {

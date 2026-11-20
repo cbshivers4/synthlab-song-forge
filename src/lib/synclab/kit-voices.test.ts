@@ -5,7 +5,9 @@ import { renderVintageDrum } from "./vintage-drums";
 describe("kit extra pads", () => {
   it("latin kit adds congas and bongos", () => {
     const names = defaultPads(16, "latin").map((p) => p.name);
-    expect(names).toEqual(expect.arrayContaining(["HIGH CONGA OPEN", "TUMBA", "BONGO HIGH", "QUINTO"]));
+    expect(names).toEqual(
+      expect.arrayContaining(["HIGH CONGA OPEN", "TUMBA", "BONGO HIGH", "QUINTO"]),
+    );
   });
   it("jazz kit adds brush toms", () => {
     expect(defaultPads(16, "jazz").map((p) => p.name)).toContain("BRUSH FLOOR TOM");

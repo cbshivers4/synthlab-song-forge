@@ -28,7 +28,19 @@ import { listUserTemplates, type UserTemplate } from "@/lib/synclab/user-templat
 import { TEMPLATES, templateById } from "@/lib/synclab/templates";
 import type { DrumKitId, DrumPad } from "@/lib/synclab/types";
 import { toast } from "sonner";
-import { clipFromLocalFile, pickFolder, playPreview, stopPreview, onPreviewChange, getLocalFile, getPreviewAnalyser, getLocalFolders, addLocalFolder, removeLocalFolder, onFoldersChange } from "@/lib/synclab/local-files";
+import {
+  clipFromLocalFile,
+  pickFolder,
+  playPreview,
+  stopPreview,
+  onPreviewChange,
+  getLocalFile,
+  getPreviewAnalyser,
+  getLocalFolders,
+  addLocalFolder,
+  removeLocalFolder,
+  onFoldersChange,
+} from "@/lib/synclab/local-files";
 import { LibraryPanel } from "./LibraryPanel";
 import { availableEffects, effectBrand, groupByCategory } from "@/lib/synclab/effect-catalog";
 
@@ -85,7 +97,11 @@ function PreviewPlayer({ playingFile }: { playingFile: string | null }) {
       </button>
       <div className="min-w-0 flex-1">
         <p className="truncate font-mono text-[10px] text-primary">{file?.name ?? "Preview"}</p>
-        <canvas ref={canvasRef} className="h-8 w-full text-primary" aria-label="Waveform scope of the playing file" />
+        <canvas
+          ref={canvasRef}
+          className="h-8 w-full text-primary"
+          aria-label="Waveform scope of the playing file"
+        />
       </div>
     </div>
   );
@@ -215,7 +231,9 @@ export function Browser() {
       addClip(target, clip);
       toast.success(`${name} on the timeline`, { description: "Placed at the playhead" });
     } catch (err) {
-      toast.error("Could not read that audio file", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Could not read that audio file", {
+        description: err instanceof Error ? err.message : undefined,
+      });
     }
   };
   const openComputerFolder = async () => {
@@ -223,14 +241,18 @@ export function Browser() {
       const f = await pickFolder();
       if (!f) return;
       if (f.files.length === 0) {
-        toast("No audio files in that folder", { description: "Looking for WAV, MP3, AIFF, FLAC, OGG and M4A." });
+        toast("No audio files in that folder", {
+          description: "Looking for WAV, MP3, AIFF, FLAC, OGG and M4A.",
+        });
         return;
       }
       addLocalFolder(f);
       setOpen((o) => ({ ...o, computer: true, [`cf:${f.id}`]: true }));
       toast.success(`${f.name}: ${f.files.length} audio file${f.files.length === 1 ? "" : "s"}`);
     } catch (err) {
-      toast.error("Couldn't open that folder", { description: err instanceof Error ? err.message : undefined });
+      toast.error("Couldn't open that folder", {
+        description: err instanceof Error ? err.message : undefined,
+      });
     }
   };
   const {
@@ -253,12 +275,15 @@ export function Browser() {
   const { setProject } = useApp();
 
   useEffect(() => {
-    void listCloudProjects().then(setCloud).catch(() => setCloud([]));
+    void listCloudProjects()
+      .then(setCloud)
+      .catch(() => setCloud([]));
     setUserTemplates(listUserTemplates());
   }, []);
 
   const query = q.trim().toLowerCase();
-  const match = (...fields: (string | undefined)[]) => !query || fields.some((f) => f?.toLowerCase().includes(query));
+  const match = (...fields: (string | undefined)[]) =>
+    !query || fields.some((f) => f?.toLowerCase().includes(query));
   const searching = query.length > 0;
 
   const isOpen = (id: string, hasMatch: boolean) => (searching ? hasMatch : (open[id] ?? false));
@@ -266,7 +291,9 @@ export function Browser() {
 
   const toggleFav = (fav: Fav) => {
     setFavs((cur) => {
-      const next = cur.some((f) => f.key === fav.key) ? cur.filter((f) => f.key !== fav.key) : [...cur, fav];
+      const next = cur.some((f) => f.key === fav.key)
+        ? cur.filter((f) => f.key !== fav.key)
+        : [...cur, fav];
       try {
         window.localStorage.setItem(FAVS_KEY, JSON.stringify(next));
       } catch {
@@ -350,7 +377,9 @@ export function Browser() {
     if (!id) return;
     // replace the default pads with this kit's voices
     updateTrack(id, { pads: defaultPads(16, kit) });
-    toast.success(`${def?.name ?? kit} kit added`, { description: "New drum channel on the timeline." });
+    toast.success(`${def?.name ?? kit} kit added`, {
+      description: "New drum channel on the timeline.",
+    });
     setPanel("drums");
   };
 
@@ -371,7 +400,9 @@ export function Browser() {
   const insertEffect = (name: string, fx: string) => {
     const target = selected?.patch ? selected : tracks.find((t) => t.patch);
     if (!target?.patch) {
-      toast("Select an instrument track first", { description: "Effects insert on the selected instrument channel." });
+      toast("Select an instrument track first", {
+        description: "Effects insert on the selected instrument channel.",
+      });
       return;
     }
     const cur = target.patch.fx as Record<string, number | undefined>;
@@ -380,13 +411,22 @@ export function Browser() {
     const patchFx: Record<string, number> = { ...target.patch.fx, [fx]: next };
     if (fx === "delay" && next > 0) patchFx["delayFeedback"] = 0.35;
     updatePatch(target.id, { fx: { ...target.patch.fx, ...patchFx } });
-    toast.success(next > 0 ? `${name} inserted` : `${name} bypassed`, { description: `on ${target.name}` });
+    toast.success(next > 0 ? `${name} inserted` : `${name} bypassed`, {
+      description: `on ${target.name}`,
+    });
     setPanel("synth");
   };
 
   const openUserTemplate = (tpl: UserTemplate) => {
     restore(tpl.session);
-    setProject({ name: `${tpl.name} copy`, bpm: tpl.bpm, key: "A Minor", timeSig: "4/4", template: tpl.id, openedAt: Date.now() });
+    setProject({
+      name: `${tpl.name} copy`,
+      bpm: tpl.bpm,
+      key: "A Minor",
+      timeSig: "4/4",
+      template: tpl.id,
+      openedAt: Date.now(),
+    });
     toast.success(`Started from “${tpl.name}”`);
     setPanel(null);
   };
@@ -397,7 +437,15 @@ export function Browser() {
       const loaded = await loadCloudProject(item.id);
       if (!loaded.session) throw new Error("This project has no saved session.");
       restore(loaded.session);
-      setProject({ id: loaded.id, name: loaded.name, bpm: loaded.bpm, key: loaded.key, timeSig: loaded.timeSig, template: loaded.template, openedAt: Date.now() });
+      setProject({
+        id: loaded.id,
+        name: loaded.name,
+        bpm: loaded.bpm,
+        key: loaded.key,
+        timeSig: loaded.timeSig,
+        template: loaded.template,
+        openedAt: Date.now(),
+      });
       toast.success(`${loaded.name} opened from your cloud`);
       setPanel(null);
     } catch (error) {
@@ -413,8 +461,17 @@ export function Browser() {
     for (const t of tracks) removeTrack(t.id);
     for (const t of tpl.tracks) addTrack(t.kind, t.name, t.preset);
     setTransport({ bpm: tpl.bpm, playing: false, recording: false, step: 0 });
-    setProject({ name: tpl.id === "empty" ? "Untitled Project" : tpl.name, bpm: tpl.bpm, key: tpl.key, timeSig: "4/4", template: tpl.id, openedAt: Date.now() });
-    toast.success(`${tpl.name} is open`, { description: `${tpl.bpm} BPM · ${tpl.key} · ${tpl.tracks.length} tracks` });
+    setProject({
+      name: tpl.id === "empty" ? "Untitled Project" : tpl.name,
+      bpm: tpl.bpm,
+      key: tpl.key,
+      timeSig: "4/4",
+      template: tpl.id,
+      openedAt: Date.now(),
+    });
+    toast.success(`${tpl.name} is open`, {
+      description: `${tpl.bpm} BPM · ${tpl.key} · ${tpl.tracks.length} tracks`,
+    });
     setPanel(null);
   };
 
@@ -431,7 +488,9 @@ export function Browser() {
   const StarButton = ({ fav }: { fav: Fav }) => (
     <button
       type="button"
-      aria-label={isFav(fav.key) ? `Remove ${fav.label} from favorites` : `Add ${fav.label} to favorites`}
+      aria-label={
+        isFav(fav.key) ? `Remove ${fav.label} from favorites` : `Add ${fav.label} to favorites`
+      }
       aria-pressed={isFav(fav.key)}
       onClick={(e) => {
         e.stopPropagation();
@@ -467,8 +526,16 @@ export function Browser() {
         data-folder={id}
         className={`flex w-full items-center gap-1.5 border border-border bg-surface-2/60 px-2 py-1.5 text-left hover:border-primary/40 ${nested ? "ml-3 border-l-2" : ""}`}
       >
-        {expanded ? <ChevronDown className="size-3.5 text-primary" /> : <ChevronRight className="size-3.5 text-muted-foreground" />}
-        {expanded ? <FolderOpen className="size-3.5 text-primary" /> : <Folder className="size-3.5 text-muted-foreground" />}
+        {expanded ? (
+          <ChevronDown className="size-3.5 text-primary" />
+        ) : (
+          <ChevronRight className="size-3.5 text-muted-foreground" />
+        )}
+        {expanded ? (
+          <FolderOpen className="size-3.5 text-primary" />
+        ) : (
+          <Folder className="size-3.5 text-muted-foreground" />
+        )}
         {icon}
         <span className="font-display text-[10px] font-semibold tracking-[0.15em]">{label}</span>
         <span className="ml-auto font-mono text-[9px] text-muted-foreground">{count}</span>
@@ -480,9 +547,10 @@ export function Browser() {
 
   const filteredPacks = useMemo(
     () =>
-      SAMPLE_PACKS.map((p) => ({ ...p, samples: p.samples.filter((s) => match(s.name, s.kind, p.pack)) })).filter(
-        (p) => p.samples.length > 0,
-      ),
+      SAMPLE_PACKS.map((p) => ({
+        ...p,
+        samples: p.samples.filter((s) => match(s.name, s.kind, p.pack)),
+      })).filter((p) => p.samples.length > 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [query],
   );
@@ -521,19 +589,56 @@ export function Browser() {
           </button>
         )}
       </div>
-      <p className="label-xs">Folders stay closed until you open them. Click a row to use it; press ▶ to hear it first.</p>
+      <p className="label-xs">
+        Folders stay closed until you open them. Click a row to use it; press ▶ to hear it first.
+      </p>
 
       {/* HOME — quick cards that open a folder */}
       {!searching && (
         <div className="grid grid-cols-2 gap-1.5">
           {[
-            { id: "library", label: "My Library", sub: "Saved & uploaded files", icon: <Save className="size-4" /> },
-            { id: "instruments", label: "Instruments", sub: "Synths and sounds", icon: <Music2 className="size-4" /> },
-            { id: "plugins", label: "Effects", sub: "Built-in effects", icon: <Waves className="size-4" /> },
-            { id: "samples", label: "Loops & samples", sub: "Sample packs", icon: <AudioLines className="size-4" /> },
-            { id: "drums", label: "Drum kits", sub: "Kits for the drum machine", icon: <Drum className="size-4" /> },
-            { id: "computer", label: "Files", sub: "Folders on your computer", icon: <FolderOpen className="size-4" /> },
-            { id: "pool", label: "Pool", sub: "Audio used in this song", icon: <Library className="size-4" /> },
+            {
+              id: "library",
+              label: "My Library",
+              sub: "Saved & uploaded files",
+              icon: <Save className="size-4" />,
+            },
+            {
+              id: "instruments",
+              label: "Instruments",
+              sub: "Synths and sounds",
+              icon: <Music2 className="size-4" />,
+            },
+            {
+              id: "plugins",
+              label: "Effects",
+              sub: "Built-in effects",
+              icon: <Waves className="size-4" />,
+            },
+            {
+              id: "samples",
+              label: "Loops & samples",
+              sub: "Sample packs",
+              icon: <AudioLines className="size-4" />,
+            },
+            {
+              id: "drums",
+              label: "Drum kits",
+              sub: "Kits for the drum machine",
+              icon: <Drum className="size-4" />,
+            },
+            {
+              id: "computer",
+              label: "Files",
+              sub: "Folders on your computer",
+              icon: <FolderOpen className="size-4" />,
+            },
+            {
+              id: "pool",
+              label: "Pool",
+              sub: "Audio used in this song",
+              icon: <Library className="size-4" />,
+            },
           ].map((c) => (
             <button
               key={c.id}
@@ -541,7 +646,9 @@ export function Browser() {
               onClick={() => {
                 setOpen((o) => ({ ...o, [c.id]: true }));
                 requestAnimationFrame(() =>
-                  document.querySelector(`[data-folder="${c.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                  document
+                    .querySelector(`[data-folder="${c.id}"]`)
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" }),
                 );
               }}
               className="flex items-center gap-2 rounded-[3px] border border-border bg-surface-2/60 p-2 text-left hover:border-primary/50"
@@ -549,7 +656,9 @@ export function Browser() {
               <span className="text-primary">{c.icon}</span>
               <span className="min-w-0">
                 <span className="block truncate text-[11px] font-semibold">{c.label}</span>
-                <span className="block truncate font-mono text-[9px] text-muted-foreground">{c.sub}</span>
+                <span className="block truncate font-mono text-[9px] text-muted-foreground">
+                  {c.sub}
+                </span>
               </span>
             </button>
           ))}
@@ -558,29 +667,56 @@ export function Browser() {
 
       {/* MY LIBRARY — saved samples, synth sounds, drum kits and notes in custom folders */}
       <div>
-        <FolderHeader id="library" icon={<Save className="size-3 text-primary" />} label="MY LIBRARY" count={0} hasMatch={false} />
-        {isOpen("library", false) && <div className="ml-3 border-l-2 border-border"><LibraryPanel /></div>}
+        <FolderHeader
+          id="library"
+          icon={<Save className="size-3 text-primary" />}
+          label="MY LIBRARY"
+          count={0}
+          hasMatch={false}
+        />
+        {isOpen("library", false) && (
+          <div className="ml-3 border-l-2 border-border">
+            <LibraryPanel />
+          </div>
+        )}
       </div>
       {/* POOL — every audio clip in this session */}
       {(() => {
-        const pool = tracks.flatMap((t) => (t.clips ?? []).map((c) => ({ t, c }))).filter(({ c }) => match(c.name));
+        const pool = tracks
+          .flatMap((t) => (t.clips ?? []).map((c) => ({ t, c })))
+          .filter(({ c }) => match(c.name));
         return (
           <div>
-            <FolderHeader id="pool" icon={<Library className="size-3 text-primary" />} label="POOL" count={pool.length} hasMatch={pool.length > 0} />
+            <FolderHeader
+              id="pool"
+              icon={<Library className="size-3 text-primary" />}
+              label="POOL"
+              count={pool.length}
+              hasMatch={pool.length > 0}
+            />
             {isOpen("pool", pool.length > 0) && (
               <div className="ml-3 border-l border-border pl-1">
-                {pool.length === 0 && <p className="px-2 py-1.5 font-mono text-[10px] text-muted-foreground">No audio in this song yet.</p>}
+                {pool.length === 0 && (
+                  <p className="px-2 py-1.5 font-mono text-[10px] text-muted-foreground">
+                    No audio in this song yet.
+                  </p>
+                )}
                 {pool.map(({ t, c }) => (
                   <button
                     key={`${t.id}:${c.id}`}
                     type="button"
-                    onClick={() => { select(t.id); setTransport({ step: Math.floor(c.start ?? 0) }); }}
+                    onClick={() => {
+                      select(t.id);
+                      setTransport({ step: Math.floor(c.start ?? 0) });
+                    }}
                     title="Select this track and move the playhead to the clip"
                     className="flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-surface-2"
                   >
                     <AudioLines className="size-3 shrink-0" style={{ color: t.color }} />
                     <span className="truncate font-mono text-[10px]">{c.name}</span>
-                    <span className="ml-auto shrink-0 font-mono text-[9px] text-muted-foreground">{t.name} · {c.duration.toFixed(1)}s</span>
+                    <span className="ml-auto shrink-0 font-mono text-[9px] text-muted-foreground">
+                      {t.name} · {c.duration.toFixed(1)}s
+                    </span>
                   </button>
                 ))}
               </div>
@@ -592,7 +728,13 @@ export function Browser() {
       {/* FAVORITES */}
       {(filteredFavs.length > 0 || (!searching && favs.length > 0)) && (
         <div>
-          <FolderHeader id="favs" icon={<Star className="size-3 text-amber-400" />} label="FAVORITES" count={favs.length} hasMatch={filteredFavs.length > 0} />
+          <FolderHeader
+            id="favs"
+            icon={<Star className="size-3 text-amber-400" />}
+            label="FAVORITES"
+            count={favs.length}
+            hasMatch={filteredFavs.length > 0}
+          />
           {isOpen("favs", filteredFavs.length > 0) && (
             <div className="ml-3 border-l-2 border-border">
               {filteredFavs.map((f) => (
@@ -601,7 +743,9 @@ export function Browser() {
                   onClick={() => runFav(f)}
                   className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10"
                 >
-                  <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">{f.type}</span>
+                  <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">
+                    {f.type}
+                  </span>
                   <span className="flex-1 truncate font-mono text-[11px]">{f.label}</span>
                   <span className="truncate text-[9px] text-muted-foreground">{f.sub}</span>
                   <StarButton fav={f} />
@@ -614,26 +758,59 @@ export function Browser() {
 
       {/* COMPUTER — real audio files from a folder the user picks */}
       <div>
-        <FolderHeader id="computer" icon={<FolderOpen className="size-3 text-primary" />} label="COMPUTER" count={folders.reduce((n, f) => n + f.files.length, 0)} hasMatch={folders.some((f) => f.files.some((x) => match(x.name)))} />
-        {isOpen("computer", folders.some((f) => f.files.some((x) => match(x.name)))) && (
+        <FolderHeader
+          id="computer"
+          icon={<FolderOpen className="size-3 text-primary" />}
+          label="COMPUTER"
+          count={folders.reduce((n, f) => n + f.files.length, 0)}
+          hasMatch={folders.some((f) => f.files.some((x) => match(x.name)))}
+        />
+        {isOpen(
+          "computer",
+          folders.some((f) => f.files.some((x) => match(x.name))),
+        ) && (
           <div className="ml-3 border-l-2 border-border">
-            <button type="button" onClick={() => void openComputerFolder()} className="flex w-full items-center gap-2 px-2 py-1.5 text-left font-mono text-[11px] text-primary hover:bg-primary/10">
+            <button
+              type="button"
+              onClick={() => void openComputerFolder()}
+              className="flex w-full items-center gap-2 px-2 py-1.5 text-left font-mono text-[11px] text-primary hover:bg-primary/10"
+            >
               <Plus className="size-3" /> Open a folder on this computer…
             </button>
-            {folders.length === 0 && <p className="px-2 pb-1.5 text-[9px] text-muted-foreground">Files are read on your device only and stay open until you reload.</p>}
+            {folders.length === 0 && (
+              <p className="px-2 pb-1.5 text-[9px] text-muted-foreground">
+                Files are read on your device only and stay open until you reload.
+              </p>
+            )}
             {folders.map((f) => {
               const files = f.files.filter((x) => match(x.name, x.path));
               const key = `cf:${f.id}`;
               return (
                 <div key={f.id}>
                   <div className="flex items-center">
-                    <button type="button" onClick={() => toggle(key)} className="flex flex-1 items-center gap-1.5 px-2 py-1 text-left font-mono text-[11px] hover:bg-primary/10" aria-expanded={isOpen(key, files.length > 0)}>
-                      {isOpen(key, files.length > 0) ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
+                    <button
+                      type="button"
+                      onClick={() => toggle(key)}
+                      className="flex flex-1 items-center gap-1.5 px-2 py-1 text-left font-mono text-[11px] hover:bg-primary/10"
+                      aria-expanded={isOpen(key, files.length > 0)}
+                    >
+                      {isOpen(key, files.length > 0) ? (
+                        <ChevronDown className="size-3" />
+                      ) : (
+                        <ChevronRight className="size-3" />
+                      )}
                       <FolderOpen className="size-3 text-amber-400" />
                       <span className="flex-1 truncate">{f.name}</span>
                       <span className="text-[9px] text-muted-foreground">{f.files.length}</span>
                     </button>
-                    <button type="button" aria-label={`Close folder ${f.name}`} onClick={() => removeLocalFolder(f.id)} className="px-1.5 text-muted-foreground hover:text-foreground"><X className="size-3" /></button>
+                    <button
+                      type="button"
+                      aria-label={`Close folder ${f.name}`}
+                      onClick={() => removeLocalFolder(f.id)}
+                      className="px-1.5 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="size-3" />
+                    </button>
                   </div>
                   {isOpen(key, files.length > 0) && (
                     <div className="ml-3 border-l border-border/70">
@@ -644,7 +821,11 @@ export function Browser() {
                             key={x.id}
                             draggable
                             onDragStart={(e) => {
-                              const payload = JSON.stringify({ type: "localfile", id: x.id, name: x.name });
+                              const payload = JSON.stringify({
+                                type: "localfile",
+                                id: x.id,
+                                name: x.name,
+                              });
                               e.dataTransfer.setData("application/synclab", payload);
                               e.dataTransfer.setData("text/plain", payload);
                               e.dataTransfer.effectAllowed = "copy";
@@ -655,18 +836,42 @@ export function Browser() {
                             <button
                               type="button"
                               aria-label={playing ? `Stop ${x.name}` : `Play ${x.name}`}
-                              onClick={() => (playing ? stopPreview() : void playPreview(x.id).catch(() => toast.error(`Can't play ${x.name}`, { description: "This browser can't decode that file type." })))}
+                              onClick={() =>
+                                playing
+                                  ? stopPreview()
+                                  : void playPreview(x.id).catch(() =>
+                                      toast.error(`Can't play ${x.name}`, {
+                                        description: "This browser can't decode that file type.",
+                                      }),
+                                    )
+                              }
                               className="grid size-5 shrink-0 place-items-center rounded-sm border border-border text-primary hover:border-primary"
                             >
-                              {playing ? <Square className="size-2.5 fill-current" /> : <Play className="size-2.5 fill-current" />}
+                              {playing ? (
+                                <Square className="size-2.5 fill-current" />
+                              ) : (
+                                <Play className="size-2.5 fill-current" />
+                              )}
                             </button>
                             <span className="flex-1 truncate font-mono text-[11px]">{x.path}</span>
-                            <span className="text-[9px] text-muted-foreground">{(x.size / 1048576).toFixed(1)} MB</span>
-                            <button type="button" aria-label={`Add ${x.name} to the timeline`} title="Add at the playhead" onClick={() => void addLocalFile(x.id, x.name)} className="grid size-5 shrink-0 place-items-center text-muted-foreground hover:text-primary"><Plus className="size-3" /></button>
+                            <span className="text-[9px] text-muted-foreground">
+                              {(x.size / 1048576).toFixed(1)} MB
+                            </span>
+                            <button
+                              type="button"
+                              aria-label={`Add ${x.name} to the timeline`}
+                              title="Add at the playhead"
+                              onClick={() => void addLocalFile(x.id, x.name)}
+                              className="grid size-5 shrink-0 place-items-center text-muted-foreground hover:text-primary"
+                            >
+                              <Plus className="size-3" />
+                            </button>
                           </div>
                         );
                       })}
-                      {files.length === 0 && <p className="px-2 py-1 text-[10px] text-muted-foreground">No matches.</p>}
+                      {files.length === 0 && (
+                        <p className="px-2 py-1 text-[10px] text-muted-foreground">No matches.</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -678,17 +883,31 @@ export function Browser() {
 
       {/* MY FILES */}
       <div>
-        <FolderHeader id="myfiles" icon={<Save className="size-3 text-primary" />} label="MY FILES" count={userTemplates.length} hasMatch={filteredUserTemplates.length > 0} />
+        <FolderHeader
+          id="myfiles"
+          icon={<Save className="size-3 text-primary" />}
+          label="MY FILES"
+          count={userTemplates.length}
+          hasMatch={filteredUserTemplates.length > 0}
+        />
         {isOpen("myfiles", filteredUserTemplates.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
             {filteredUserTemplates.length === 0 && (
               <p className="px-2 py-1.5 text-[10px] text-muted-foreground">
-                {searching ? "No matches." : "Nothing saved yet — use File → Save as template to keep a session here."}
+                {searching
+                  ? "No matches."
+                  : "Nothing saved yet — use File → Save as template to keep a session here."}
               </p>
             )}
             {filteredUserTemplates.map((t) => (
-              <button key={t.id} onClick={() => openUserTemplate(t)} className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10">
-                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">SESSION</span>
+              <button
+                key={t.id}
+                onClick={() => openUserTemplate(t)}
+                className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10"
+              >
+                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">
+                  SESSION
+                </span>
                 <span className="flex-1 truncate font-mono text-[11px]">{t.name}</span>
                 <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
               </button>
@@ -699,18 +918,41 @@ export function Browser() {
 
       {/* SAMPLES */}
       <div>
-        <FolderHeader id="samples" icon={<AudioLines className="size-3 text-primary" />} label="SAMPLES" count={samplesCount} hasMatch={filteredPacks.length > 0} />
+        <FolderHeader
+          id="samples"
+          icon={<AudioLines className="size-3 text-primary" />}
+          label="SAMPLES"
+          count={samplesCount}
+          hasMatch={filteredPacks.length > 0}
+        />
         {isOpen("samples", filteredPacks.length > 0) && (
           <div className="space-y-1 pt-1">
             {filteredPacks.map((p) => (
               <div key={p.pack}>
-                <FolderHeader id={`pack:${p.pack}`} icon={<AudioLines className="size-3 text-primary" />} label={p.pack} count={p.samples.length} hasMatch nested />
+                <FolderHeader
+                  id={`pack:${p.pack}`}
+                  icon={<AudioLines className="size-3 text-primary" />}
+                  label={p.pack}
+                  count={p.samples.length}
+                  hasMatch
+                  nested
+                />
                 {isOpen(`pack:${p.pack}`, true) && (
                   <div className="ml-6 border-l-2 border-border">
                     {p.samples.map((s) => {
-                      const fav: Fav = { key: `sample:${p.pack}:${s.name}`, type: "sample", label: s.name, sub: p.pack, sample: s.name, pack: p.pack };
+                      const fav: Fav = {
+                        key: `sample:${p.pack}:${s.name}`,
+                        type: "sample",
+                        label: s.name,
+                        sub: p.pack,
+                        sample: s.name,
+                        pack: p.pack,
+                      };
                       return (
-                        <div key={s.name} className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10">
+                        <div
+                          key={s.name}
+                          className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10"
+                        >
                           <button
                             type="button"
                             aria-label={`Preview ${s.name}`}
@@ -720,8 +962,14 @@ export function Browser() {
                           >
                             <Play className="size-3" />
                           </button>
-                          <button type="button" onClick={() => addSampleToTimeline(s.name, p.pack)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                            <span className="w-12 shrink-0 font-mono text-[9px] tracking-wider text-primary">{s.kind}</span>
+                          <button
+                            type="button"
+                            onClick={() => addSampleToTimeline(s.name, p.pack)}
+                            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                          >
+                            <span className="w-12 shrink-0 font-mono text-[9px] tracking-wider text-primary">
+                              {s.kind}
+                            </span>
                             <span className="flex-1 truncate font-mono text-[11px]">{s.name}</span>
                             <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
                           </button>
@@ -733,20 +981,37 @@ export function Browser() {
                 )}
               </div>
             ))}
-            {filteredPacks.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No samples match.</p>}
+            {filteredPacks.length === 0 && (
+              <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No samples match.</p>
+            )}
           </div>
         )}
       </div>
 
       {/* DRUMS */}
       <div>
-        <FolderHeader id="drums" icon={<Drum className="size-3 text-primary" />} label="DRUMS" count={DRUM_KITS.length} hasMatch={filteredKits.length > 0} />
+        <FolderHeader
+          id="drums"
+          icon={<Drum className="size-3 text-primary" />}
+          label="DRUMS"
+          count={DRUM_KITS.length}
+          hasMatch={filteredKits.length > 0}
+        />
         {isOpen("drums", filteredKits.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
             {filteredKits.map((k) => {
-              const fav: Fav = { key: `kit:${k.id}`, type: "kit", label: k.name, sub: k.category, kit: k.id };
+              const fav: Fav = {
+                key: `kit:${k.id}`,
+                type: "kit",
+                label: k.name,
+                sub: k.category,
+                kit: k.id,
+              };
               return (
-                <div key={k.id} className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10">
+                <div
+                  key={k.id}
+                  className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10"
+                >
                   <button
                     type="button"
                     aria-label={`Preview ${k.name} kit`}
@@ -756,7 +1021,11 @@ export function Browser() {
                   >
                     <Play className="size-3" />
                   </button>
-                  <button type="button" onClick={() => addKitTrack(k.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                  <button
+                    type="button"
+                    onClick={() => addKitTrack(k.id)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
                     <span className="flex-1 truncate font-mono text-[11px]">{k.name}</span>
                     <span className="truncate text-[9px] text-muted-foreground">{k.category}</span>
                     <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -765,32 +1034,56 @@ export function Browser() {
                 </div>
               );
             })}
-            {filteredKits.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No kits match.</p>}
+            {filteredKits.length === 0 && (
+              <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No kits match.</p>
+            )}
           </div>
         )}
       </div>
 
       {/* INSTRUMENTS */}
       <div>
-        <FolderHeader id="instruments" icon={<Music2 className="size-3 text-primary" />} label="INSTRUMENTS" count={SYNTH_PRESETS.length} hasMatch={filteredPresets.length > 0} />
+        <FolderHeader
+          id="instruments"
+          icon={<Music2 className="size-3 text-primary" />}
+          label="INSTRUMENTS"
+          count={SYNTH_PRESETS.length}
+          hasMatch={filteredPresets.length > 0}
+        />
         {isOpen("instruments", filteredPresets.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
-            <p className="px-2 py-1 text-[9px] text-muted-foreground">Drag onto the timeline or click to add a channel.</p>
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">
+              Drag onto the timeline or click to add a channel.
+            </p>
             {filteredPresets.map((p) => {
-              const fav: Fav = { key: `instrument:${p.name}`, type: "instrument", label: p.name, sub: p.category, preset: p.name };
+              const fav: Fav = {
+                key: `instrument:${p.name}`,
+                type: "instrument",
+                label: p.name,
+                sub: p.category,
+                preset: p.name,
+              };
               return (
                 <div
                   key={p.name}
                   draggable
                   onDragStart={(e) => {
-                    const payload = JSON.stringify({ type: "instrument", name: p.name, preset: p.name });
+                    const payload = JSON.stringify({
+                      type: "instrument",
+                      name: p.name,
+                      preset: p.name,
+                    });
                     e.dataTransfer.setData("application/synclab", payload);
                     e.dataTransfer.setData("text/plain", payload);
                     e.dataTransfer.effectAllowed = "copy";
                   }}
                   className="group flex w-full cursor-grab items-center gap-2 px-2 py-1 hover:bg-primary/10 active:cursor-grabbing"
                 >
-                  <button type="button" onClick={() => addTrack("instrument", p.name.toUpperCase(), p.name)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                  <button
+                    type="button"
+                    onClick={() => addTrack("instrument", p.name.toUpperCase(), p.name)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
                     <span className="flex-1 truncate font-mono text-[11px]">{p.name}</span>
                     <span className="truncate text-[9px] text-muted-foreground">{p.category}</span>
                     <Plus className="size-3 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -799,20 +1092,32 @@ export function Browser() {
                 </div>
               );
             })}
-            {filteredPresets.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No instruments match.</p>}
+            {filteredPresets.length === 0 && (
+              <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No instruments match.</p>
+            )}
           </div>
         )}
       </div>
 
       {/* RACK EFFECTS — drag onto a timeline track */}
       <div>
-        <FolderHeader id="effects" icon={<Waves className="size-3 text-primary" />} label="EFFECTS" count={effects.length} hasMatch={filteredRack.length > 0} />
+        <FolderHeader
+          id="effects"
+          icon={<Waves className="size-3 text-primary" />}
+          label="EFFECTS"
+          count={effects.length}
+          hasMatch={filteredRack.length > 0}
+        />
         {isOpen("effects", filteredRack.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
-            <p className="px-2 py-1 text-[9px] text-muted-foreground">Drag onto a timeline track, or click to add to the selected channel.</p>
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">
+              Drag onto a timeline track, or click to add to the selected channel.
+            </p>
             {groupByCategory(filteredRack).map(([category, defs]) => (
               <div key={category} role="group" aria-label={category}>
-                <p className="px-2 pt-1.5 font-mono text-[8px] tracking-widest text-muted-foreground">{category.toUpperCase()}</p>
+                <p className="px-2 pt-1.5 font-mono text-[8px] tracking-widest text-muted-foreground">
+                  {category.toUpperCase()}
+                </p>
                 {defs.map((d) => (
                   <button
                     key={d.id}
@@ -827,13 +1132,18 @@ export function Browser() {
                     }}
                     onClick={() => {
                       const target = selected ?? tracks[0];
-                      if (!target) { toast("Add a track first"); return; }
+                      if (!target) {
+                        toast("Add a track first");
+                        return;
+                      }
                       addPlugin(target.id, d);
                     }}
                     className="flex w-full cursor-grab items-center gap-2 px-2 py-1 text-left hover:bg-primary/10 active:cursor-grabbing"
                   >
                     <span className="flex-1 truncate font-mono text-[11px]">{effectBrand(d)}</span>
-                    <span className="truncate text-[9px] text-muted-foreground">{d.format === "Built-in" ? d.name : d.format}</span>
+                    <span className="truncate text-[9px] text-muted-foreground">
+                      {d.format === "Built-in" ? d.name : d.format}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -844,15 +1154,36 @@ export function Browser() {
 
       {/* PLUGINS */}
       <div>
-        <FolderHeader id="plugins" icon={<Waves className="size-3 text-primary" />} label="SYNTH FX" count={EFFECT_PLUGINS.length} hasMatch={filteredPlugins.length > 0} />
+        <FolderHeader
+          id="plugins"
+          icon={<Waves className="size-3 text-primary" />}
+          label="SYNTH FX"
+          count={EFFECT_PLUGINS.length}
+          hasMatch={filteredPlugins.length > 0}
+        />
         {isOpen("plugins", filteredPlugins.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
-            <p className="px-2 py-1 text-[9px] text-muted-foreground">Click to insert on the selected instrument channel.</p>
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">
+              Click to insert on the selected instrument channel.
+            </p>
             {filteredPlugins.map((e) => {
-              const fav: Fav = { key: `plugin:${e.fx}`, type: "plugin", label: e.name, sub: e.desc, fx: e.fx };
+              const fav: Fav = {
+                key: `plugin:${e.fx}`,
+                type: "plugin",
+                label: e.name,
+                sub: e.desc,
+                fx: e.fx,
+              };
               return (
-                <div key={e.name} className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10">
-                  <button type="button" onClick={() => insertEffect(e.name, e.fx)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                <div
+                  key={e.name}
+                  className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10"
+                >
+                  <button
+                    type="button"
+                    onClick={() => insertEffect(e.name, e.fx)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
                     <span className="flex-1 truncate font-mono text-[11px]">{e.name}</span>
                     <span className="truncate text-[9px] text-muted-foreground">{e.desc}</span>
                   </button>
@@ -860,22 +1191,45 @@ export function Browser() {
                 </div>
               );
             })}
-            {filteredPlugins.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No plugins match.</p>}
+            {filteredPlugins.length === 0 && (
+              <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No plugins match.</p>
+            )}
           </div>
         )}
       </div>
 
       {/* PRESETS */}
       <div>
-        <FolderHeader id="presets" icon={<Sparkles className="size-3 text-primary" />} label="PRESETS" count={SYNTH_PRESETS.length} hasMatch={filteredPresets.length > 0} />
+        <FolderHeader
+          id="presets"
+          icon={<Sparkles className="size-3 text-primary" />}
+          label="PRESETS"
+          count={SYNTH_PRESETS.length}
+          hasMatch={filteredPresets.length > 0}
+        />
         {isOpen("presets", filteredPresets.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
-            <p className="px-2 py-1 text-[9px] text-muted-foreground">Click to load on the selected instrument.</p>
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">
+              Click to load on the selected instrument.
+            </p>
             {filteredPresets.map((p) => {
-              const fav: Fav = { key: `preset:${p.name}`, type: "preset", label: p.name, sub: p.category, preset: p.name };
+              const fav: Fav = {
+                key: `preset:${p.name}`,
+                type: "preset",
+                label: p.name,
+                sub: p.category,
+                preset: p.name,
+              };
               return (
-                <div key={p.name} className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10">
-                  <button type="button" onClick={() => loadPresetOnto(p.name)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                <div
+                  key={p.name}
+                  className="group flex w-full items-center gap-2 px-2 py-1 hover:bg-primary/10"
+                >
+                  <button
+                    type="button"
+                    onClick={() => loadPresetOnto(p.name)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
                     <span className="flex-1 truncate font-mono text-[11px]">{p.name}</span>
                     <span className="truncate text-[9px] text-muted-foreground">{p.category}</span>
                   </button>
@@ -883,17 +1237,27 @@ export function Browser() {
                 </div>
               );
             })}
-            {filteredPresets.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No presets match.</p>}
+            {filteredPresets.length === 0 && (
+              <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No presets match.</p>
+            )}
           </div>
         )}
       </div>
 
       {/* PROJECTS */}
       <div>
-        <FolderHeader id="projects" icon={<FolderOpen className="size-3 text-primary" />} label="PROJECTS" count={cloud.length + TEMPLATES.length} hasMatch={filteredCloud.length + filteredTemplates.length > 0} />
+        <FolderHeader
+          id="projects"
+          icon={<FolderOpen className="size-3 text-primary" />}
+          label="PROJECTS"
+          count={cloud.length + TEMPLATES.length}
+          hasMatch={filteredCloud.length + filteredTemplates.length > 0}
+        />
         {isOpen("projects", filteredCloud.length + filteredTemplates.length > 0) && (
           <div className="ml-3 border-l-2 border-border">
-            {filteredCloud.length > 0 && <p className="px-2 py-1 text-[9px] text-muted-foreground">YOUR CLOUD PROJECTS</p>}
+            {filteredCloud.length > 0 && (
+              <p className="px-2 py-1 text-[9px] text-muted-foreground">YOUR CLOUD PROJECTS</p>
+            )}
             {filteredCloud.map((c) => (
               <button
                 key={c.id}
@@ -901,20 +1265,36 @@ export function Browser() {
                 disabled={busyProject === c.id}
                 className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10 disabled:opacity-50"
               >
-                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">CLOUD</span>
+                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">
+                  CLOUD
+                </span>
                 <span className="flex-1 truncate font-mono text-[11px]">{c.name}</span>
-                <span className="truncate text-[9px] text-muted-foreground">{busyProject === c.id ? "opening…" : `${c.bpm} BPM`}</span>
+                <span className="truncate text-[9px] text-muted-foreground">
+                  {busyProject === c.id ? "opening…" : `${c.bpm} BPM`}
+                </span>
               </button>
             ))}
-            <p className="px-2 py-1 text-[9px] text-muted-foreground">STARTER TEMPLATES — replaces the current song</p>
+            <p className="px-2 py-1 text-[9px] text-muted-foreground">
+              STARTER TEMPLATES — replaces the current song
+            </p>
             {filteredTemplates.map((t) => (
-              <button key={t.id} onClick={() => startFromTemplate(t.id)} className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10">
-                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">TEMPLATE</span>
+              <button
+                key={t.id}
+                onClick={() => startFromTemplate(t.id)}
+                className="group flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-primary/10"
+              >
+                <span className="w-16 shrink-0 font-mono text-[9px] uppercase tracking-wider text-primary">
+                  TEMPLATE
+                </span>
                 <span className="flex-1 truncate font-mono text-[11px]">{t.name}</span>
-                <span className="truncate text-[9px] text-muted-foreground">{t.bpm} BPM · {t.key}</span>
+                <span className="truncate text-[9px] text-muted-foreground">
+                  {t.bpm} BPM · {t.key}
+                </span>
               </button>
             ))}
-            {filteredCloud.length + filteredTemplates.length === 0 && <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No projects match.</p>}
+            {filteredCloud.length + filteredTemplates.length === 0 && (
+              <p className="px-2 py-1.5 text-[10px] text-muted-foreground">No projects match.</p>
+            )}
           </div>
         )}
       </div>

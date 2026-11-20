@@ -4,29 +4,60 @@ import { useStudio, type MidiTarget } from "@/lib/synclab/store";
 import { Button } from "@/components/ui/button";
 
 /** Display label for a mapping key: CC numbers for knobs/faders, BTN for note buttons. */
-const mapLabel = (key: string) => (key.startsWith("n:") ? `BTN ${key.split(":")[2]}` : `CC ${key.split(":")[1]}`);
+const mapLabel = (key: string) =>
+  key.startsWith("n:") ? `BTN ${key.split(":")[2]}` : `CC ${key.split(":")[1]}`;
 
 /** Small assign/clear control beside any continuous parameter. */
 export function MidiLearnButton({ id, param, label }: MidiTarget & { label: string }) {
-  const { midiMap, midiLearn, startMidiLearn, cancelMidiLearn, clearMidiMapping, midiInputId, enableMidi } = useStudio();
+  const {
+    midiMap,
+    midiLearn,
+    startMidiLearn,
+    cancelMidiLearn,
+    clearMidiMapping,
+    midiInputId,
+    enableMidi,
+  } = useStudio();
   const target = { id, param };
   const assigned = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === param);
   const learning = midiLearn?.id === id && midiLearn.param === param;
   return (
     <span className="inline-flex items-center gap-0.5">
-      <Button type="button" size="sm" variant={learning || assigned ? "secondary" : "ghost"}
-        className="h-6 min-w-8 px-1 font-mono text-[9px]" aria-label={`${learning ? "Cancel learning" : "MIDI Learn"} ${label}`}
-        title={learning ? `Move a knob/fader or press a button for ${label}` : assigned ? `${label}: ${mapLabel(assigned[0])}` : `MIDI Learn ${label}`}
+      <Button
+        type="button"
+        size="sm"
+        variant={learning || assigned ? "secondary" : "ghost"}
+        className="h-6 min-w-8 px-1 font-mono text-[9px]"
+        aria-label={`${learning ? "Cancel learning" : "MIDI Learn"} ${label}`}
+        title={
+          learning
+            ? `Move a knob/fader or press a button for ${label}`
+            : assigned
+              ? `${label}: ${mapLabel(assigned[0])}`
+              : `MIDI Learn ${label}`
+        }
         onClick={() => {
           if (learning) cancelMidiLearn();
           else {
             startMidiLearn(target);
             if (!midiInputId) enableMidi();
           }
-        }}>
+        }}
+      >
         {learning ? "MOVE" : assigned ? mapLabel(assigned[0]) : "LEARN"}
       </Button>
-      {assigned && <Button type="button" size="icon" variant="ghost" className="size-6" aria-label={`Clear ${label} MIDI mapping`} onClick={() => clearMidiMapping(target)}><X className="size-3" /></Button>}
+      {assigned && (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-6"
+          aria-label={`Clear ${label} MIDI mapping`}
+          onClick={() => clearMidiMapping(target)}
+        >
+          <X className="size-3" />
+        </Button>
+      )}
     </span>
   );
 }
@@ -41,7 +72,15 @@ export function MidiLearnBlock({
   params?: MidiTarget["param"][];
   title?: string;
 }) {
-  const { midiMap, midiLearn, startMidiLearn, cancelMidiLearn, clearMidiMapping, midiInputId, enableMidi } = useStudio();
+  const {
+    midiMap,
+    midiLearn,
+    startMidiLearn,
+    cancelMidiLearn,
+    clearMidiMapping,
+    midiInputId,
+    enableMidi,
+  } = useStudio();
   const list = params ?? (["gain", "volume", "pan", "mute", "solo"] as MidiTarget["param"][]);
   const ccFor = (p: MidiTarget["param"]) => {
     const hit = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === p);
@@ -97,7 +136,15 @@ export function MidiLearnBlock({
 
 /** Compact one-row MIDI learn strip for editor toolbars. */
 export function MidiLearnStrip({ id, label }: { id: string; label?: string }) {
-  const { midiMap, midiLearn, startMidiLearn, cancelMidiLearn, clearMidiMapping, midiInputId, enableMidi } = useStudio();
+  const {
+    midiMap,
+    midiLearn,
+    startMidiLearn,
+    cancelMidiLearn,
+    clearMidiMapping,
+    midiInputId,
+    enableMidi,
+  } = useStudio();
   const params: MidiTarget["param"][] = ["volume", "pan", "mute", "solo"];
   const ccFor = (p: MidiTarget["param"]) => {
     const hit = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === p);
@@ -129,7 +176,11 @@ export function MidiLearnStrip({ id, label }: { id: string; label?: string }) {
                     ? "border-primary/40 bg-surface text-primary"
                     : "border-border bg-surface text-muted-foreground hover:text-foreground",
               )}
-              title={cc ? `${p} follows CC ${cc}` : `Press, then move a knob or fader — or press a controller button — to control ${p}`}
+              title={
+                cc
+                  ? `${p} follows CC ${cc}`
+                  : `Press, then move a knob or fader — or press a controller button — to control ${p}`
+              }
             >
               {learning ? "MOVE OR PRESS…" : `${p}${cc ? ` · ${cc}` : ""}`}
             </button>

@@ -12,7 +12,11 @@ const E: LibraryEntry[] = [
 
 describe("library search", () => {
   it("ranks the exact name first and shorter names before longer ones", () => {
-    expect(searchLibrary(E, "reverb").map((e) => e.id).slice(0, 2)).toEqual(["2", "1"]);
+    expect(
+      searchLibrary(E, "reverb")
+        .map((e) => e.id)
+        .slice(0, 2),
+    ).toEqual(["2", "1"]);
   });
   it("requires every typed word to match", () => {
     expect(searchLibrary(E, "reverb cathedral").map((e) => e.id)).toEqual(["1"]);
@@ -27,7 +31,12 @@ describe("library search", () => {
     expect(searchLibrary(E, "grnd").map((e) => e.id)).toEqual(["3"]);
   });
   it("doesn't let loose letter matches flood results", () => {
-    expect(searchLibrary([...E, { id: "7", kind: "preset", title: "Modular Tech Seq Bass Rolling" }], "dub verb")).toEqual([]);
+    expect(
+      searchLibrary(
+        [...E, { id: "7", kind: "preset", title: "Modular Tech Seq Bass Rolling" }],
+        "dub verb",
+      ),
+    ).toEqual([]);
   });
   it("filters by category and counts matches per category", () => {
     expect(searchLibrary(E, "", "preset").map((e) => e.id)).toEqual(["3", "4"]);

@@ -1,6 +1,10 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { KeyboardEvent, PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
+import type {
+  KeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+  WheelEvent as ReactWheelEvent,
+} from "react";
 import { Play, Redo2, RotateCcw, Square, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -30,12 +34,23 @@ type LoopSnapMode = "off" | "beat" | "bar" | "zero";
  * the recorded file is never rewritten, only the clip's playback settings change,
  * and REVERT puts everything back.
  */
-export function ClipEditor({ track, clip, onClose }: { track: Track; clip: AudioClip; onClose: () => void }) {
+export function ClipEditor({
+  track,
+  clip,
+  onClose,
+}: {
+  track: Track;
+  clip: AudioClip;
+  onClose: () => void;
+}) {
   const { updateClip, undo, redo, canUndo, canRedo, transport } = useStudio();
   const originalRef = useRef<AudioClip>({ ...clip, peaks: [...clip.peaks] });
   const [compareSide, setCompareSide] = useState<"original" | "edited">("edited");
   const [loopAudition, setLoopAudition] = useState(false);
-  const [loopRange, setLoopRange] = useState<[number, number]>([0, Math.max(0.05, clip.length ?? clip.duration)]);
+  const [loopRange, setLoopRange] = useState<[number, number]>([
+    0,
+    Math.max(0.05, clip.length ?? clip.duration),
+  ]);
   const [loopSnap, setLoopSnap] = useState<LoopSnapMode>("off");
   const [loopCrossfade, setLoopCrossfade] = useState(0.012);
   const zeroCrossData = useRef<{ samples: Float32Array; sampleRate: number } | null>(null);
@@ -56,11 +71,16 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
     let cancelled = false;
     zeroCrossData.current = null;
     if (!clip.url) return;
-    void getEngine().ensureBuffer(clip.url).then((buffer) => {
-      if (!cancelled && buffer && buffer.numberOfChannels > 0) {
-        zeroCrossData.current = { samples: buffer.getChannelData(0), sampleRate: buffer.sampleRate };
-      }
-    });
+    void getEngine()
+      .ensureBuffer(clip.url)
+      .then((buffer) => {
+        if (!cancelled && buffer && buffer.numberOfChannels > 0) {
+          zeroCrossData.current = {
+            samples: buffer.getChannelData(0),
+            sampleRate: buffer.sampleRate,
+          };
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -70,11 +90,16 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
   const bpb = transport.beatsPerBar ?? 4;
   const grid = transport.quantize ?? 4;
   const clipStart = clip.start ?? 0;
-  const lines = useMemo(() => beatLines(clipStart, length, rate, transport.bpm, bpb), [clipStart, length, rate, transport.bpm, bpb]);
+  const lines = useMemo(
+    () => beatLines(clipStart, length, rate, transport.bpm, bpb),
+    [clipStart, length, rate, transport.bpm, bpb],
+  );
   const snapStart = () => {
     const next = snapSteps(clipStart, grid);
     set({ start: next });
-    toast.success("Clip start on the grid", { description: `Moved to bar ${Math.floor(next / (bpb * 4)) + 1}, beat ${Math.floor((next % (bpb * 4)) / 4) + 1}.` });
+    toast.success("Clip start on the grid", {
+      description: `Moved to bar ${Math.floor(next / (bpb * 4)) + 1}, beat ${Math.floor((next % (bpb * 4)) / 4) + 1}.`,
+    });
   };
   const hitOnBeat = () => {
     const audio = zeroCrossData.current;
@@ -84,18 +109,24 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
     }
     const hit = firstTransient(audio.samples, audio.sampleRate, offset, offset + length);
     if (hit == null) {
-      toast("No clear hit found", { description: "This clip is too quiet to find its first beat." });
+      toast("No clear hit found", {
+        description: "This clip is too quiet to find its first beat.",
+      });
       return;
     }
     const nextLength = Math.max(0.05, offset + length - hit);
     const next = snapSteps(clipStart, grid);
     set({ offset: hit, length: nextLength, start: next, fadeIn: Math.min(fadeIn, 0.004) });
-    toast.success("First hit lined up with the beat", { description: `Trimmed ${((hit - offset) * 1000).toFixed(0)} ms before the first hit and snapped the clip to the grid.` });
+    toast.success("First hit lined up with the beat", {
+      description: `Trimmed ${((hit - offset) * 1000).toFixed(0)} ms before the first hit and snapped the clip to the grid.`,
+    });
   };
   const fitBars = () => {
     const r = fitSpeedToBars(length, rate, speed, transport.bpm, bpb);
     set({ speed: r.speed });
-    toast.success(`Fitted to ${r.bars} bar${r.bars === 1 ? "" : "s"}`, { description: `Speed ${r.speed.toFixed(3)}×. In the browser this also shifts pitch slightly.` });
+    toast.success(`Fitted to ${r.bars} bar${r.bars === 1 ? "" : "s"}`, {
+      description: `Speed ${r.speed.toFixed(3)}×. In the browser this also shifts pitch slightly.`,
+    });
   };
 
   const peaks = clip.peaks.length > 1 ? clip.peaks : [0, 0];
@@ -153,7 +184,10 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
     setLoopRange(([start, end]) => {
       const nextStart = snapLoopTime(start, mode);
       const nextEnd = snapLoopTime(end, mode);
-      return [Math.min(nextStart, length - 0.01), Math.max(Math.min(length, nextEnd), nextStart + 0.01)];
+      return [
+        Math.min(nextStart, length - 0.01),
+        Math.max(Math.min(length, nextEnd), nextStart + 0.01),
+      ];
     });
   };
 
@@ -167,14 +201,19 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
     const engine = getEngine();
     void engine.ensureBuffer(candidate.url).then((buffer) => {
       if (!buffer) {
-        toast.error("Could not read that audio", { description: "The original audio file is no longer available." });
+        toast.error("Could not read that audio", {
+          description: "The original audio file is no longer available.",
+        });
         return;
       }
       engine.stopSamples(track.id);
       const baseOffset = candidate.offset ?? 0;
       const baseLength = candidate.length ?? candidate.duration;
       const loopStart = Math.min(loopRange[0], Math.max(0, baseLength - 0.01));
-      const loopLength = Math.max(0.01, Math.min(loopRange[1] - loopRange[0], baseLength - loopStart));
+      const loopLength = Math.max(
+        0.01,
+        Math.min(loopRange[1] - loopRange[0], baseLength - loopStart),
+      );
       engine.playClip(track.id, {
         url: candidate.url as string,
         offset: baseOffset + loopStart,
@@ -201,7 +240,8 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
         <DialogHeader>
           <DialogTitle className="font-display tracking-wide">AUDIO CLIP EDITOR</DialogTitle>
           <DialogDescription>
-            Nothing here changes your recording — the original file is kept and every edit can be reverted.
+            Nothing here changes your recording — the original file is kept and every edit can be
+            reverted.
           </DialogDescription>
         </DialogHeader>
 
@@ -216,18 +256,48 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             {length.toFixed(2)}s source · {(length / rate).toFixed(2)}s on the timeline
           </span>
           <div className="flex items-center gap-1" role="group" aria-label="Clip colour">
-            <button type="button" onClick={() => set({ color: undefined })} title="Use the track colour" aria-label="Use the track colour" aria-pressed={!clip.color}
-              className={`h-6 rounded-sm border px-1.5 font-mono text-[9px] ${!clip.color ? "border-foreground" : "border-border text-muted-foreground"}`}>TRACK</button>
+            <button
+              type="button"
+              onClick={() => set({ color: undefined })}
+              title="Use the track colour"
+              aria-label="Use the track colour"
+              aria-pressed={!clip.color}
+              className={`h-6 rounded-sm border px-1.5 font-mono text-[9px] ${!clip.color ? "border-foreground" : "border-border text-muted-foreground"}`}
+            >
+              TRACK
+            </button>
             {TRACK_PALETTE.slice(0, 8).map((c) => (
-              <button key={c.id} type="button" onClick={() => set({ color: c.value })} title={`${c.name} clip`} aria-label={`${c.name} clip colour`} aria-pressed={clip.color === c.value}
-                className={`size-6 rounded-full border ${clip.color === c.value ? "ring-2 ring-foreground/70" : "border-foreground/20"}`} style={{ backgroundColor: c.value }} />
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => set({ color: c.value })}
+                title={`${c.name} clip`}
+                aria-label={`${c.name} clip colour`}
+                aria-pressed={clip.color === c.value}
+                className={`size-6 rounded-full border ${clip.color === c.value ? "ring-2 ring-foreground/70" : "border-foreground/20"}`}
+                style={{ backgroundColor: c.value }}
+              />
             ))}
           </div>
           <div className="ml-auto flex items-center gap-1">
-            <Button size="icon" variant="ghost" aria-label="Undo clip edit" title="Undo clip edit" disabled={!canUndo} onClick={undo}>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Undo clip edit"
+              title="Undo clip edit"
+              disabled={!canUndo}
+              onClick={undo}
+            >
               <Undo2 className="size-3.5" />
             </Button>
-            <Button size="icon" variant="ghost" aria-label="Redo clip edit" title="Redo clip edit" disabled={!canRedo} onClick={redo}>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Redo clip edit"
+              title="Redo clip edit"
+              disabled={!canRedo}
+              onClick={redo}
+            >
               <Redo2 className="size-3.5" />
             </Button>
             <Button size="sm" variant="secondary" onClick={() => audition(compareSide)}>
@@ -253,16 +323,53 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
           onChange={set}
         />
 
-        <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-primary/50 bg-surface-2 px-2 py-2" role="group" aria-label="Quantize to beat">
-          <span className="font-mono text-[10px] font-bold tracking-wider text-primary">QUANTIZE TO BEAT</span>
-          <Button size="sm" variant="secondary" className="h-7 font-mono text-[10px]" onClick={hitOnBeat} title="Trim the silence before the first hit and put the clip on the grid">FIRST HIT ON BEAT</Button>
-          <Button size="sm" variant="secondary" className="h-7 font-mono text-[10px]" onClick={snapStart} title="Move the clip start to the nearest grid line">SNAP START TO GRID</Button>
-          <Button size="sm" variant="secondary" className="h-7 font-mono text-[10px]" onClick={fitBars} title="Change speed so the clip lasts whole bars at the song tempo">FIT TO BARS</Button>
-          <span className="font-mono text-[9px] text-muted-foreground">{transport.bpm} BPM · grid {grid >= 16 ? `${grid / 16} bar` : `1/${16 / grid}`} · lines on the waveform are the song's beats</span>
+        <div
+          className="flex flex-wrap items-center gap-2 rounded-[3px] border border-primary/50 bg-surface-2 px-2 py-2"
+          role="group"
+          aria-label="Quantize to beat"
+        >
+          <span className="font-mono text-[10px] font-bold tracking-wider text-primary">
+            QUANTIZE TO BEAT
+          </span>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 font-mono text-[10px]"
+            onClick={hitOnBeat}
+            title="Trim the silence before the first hit and put the clip on the grid"
+          >
+            FIRST HIT ON BEAT
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 font-mono text-[10px]"
+            onClick={snapStart}
+            title="Move the clip start to the nearest grid line"
+          >
+            SNAP START TO GRID
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-7 font-mono text-[10px]"
+            onClick={fitBars}
+            title="Change speed so the clip lasts whole bars at the song tempo"
+          >
+            FIT TO BARS
+          </Button>
+          <span className="font-mono text-[9px] text-muted-foreground">
+            {transport.bpm} BPM · grid {grid >= 16 ? `${grid / 16} bar` : `1/${16 / grid}`} · lines
+            on the waveform are the song's beats
+          </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded-[3px] border border-border bg-surface-2 px-2 py-2">
-          <Toggle on={loopAudition} onClick={() => setLoopAudition((value) => !value)} label="LOOP AUDITION" />
+          <Toggle
+            on={loopAudition}
+            onClick={() => setLoopAudition((value) => !value)}
+            label="LOOP AUDITION"
+          />
           <span className="font-mono text-[9px] text-muted-foreground">SNAP</span>
           {(["off", "beat", "bar", "zero"] as const).map((mode) => (
             <Button
@@ -287,11 +394,16 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             onValueChange={(value) => {
               const start = snapLoopTime(value[0] ?? 0);
               const end = snapLoopTime(value[1] ?? length);
-              setLoopRange([Math.min(start, length - 0.01), Math.max(start + 0.01, Math.min(length, end))]);
+              setLoopRange([
+                Math.min(start, length - 0.01),
+                Math.max(start + 0.01, Math.min(length, end)),
+              ]);
             }}
             className="min-w-40 flex-1"
           />
-          <span className="w-32 text-right font-mono text-[9px] text-foreground">{loopRange[0].toFixed(2)}s — {loopRange[1].toFixed(2)}s</span>
+          <span className="w-32 text-right font-mono text-[9px] text-foreground">
+            {loopRange[0].toFixed(2)}s — {loopRange[1].toFixed(2)}s
+          </span>
           <span className="font-mono text-[9px] text-muted-foreground">CROSSFADE</span>
           <Slider
             aria-label="Loop boundary crossfade"
@@ -302,7 +414,9 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             onValueChange={(value) => setLoopCrossfade(value[0] ?? 0)}
             className="min-w-28 flex-1"
           />
-          <span className="w-14 text-right font-mono text-[9px] text-primary">{Math.round(loopCrossfade * 1000)} ms</span>
+          <span className="w-14 text-right font-mono text-[9px] text-primary">
+            {Math.round(loopCrossfade * 1000)} ms
+          </span>
         </div>
 
         <div className="grid grid-cols-2 gap-2" aria-label="A/B waveform comparison">
@@ -329,9 +443,21 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
         </div>
 
         <div className="flex flex-wrap items-center gap-1">
-          <Toggle on={zoomTrim} onClick={() => setZoomTrim((z) => !z)} label={zoomTrim ? "ZOOM: TRIM" : "ZOOM: FULL"} />
-          <Toggle on={Boolean(clip.reverse)} onClick={() => set({ reverse: !clip.reverse })} label="REVERSE" />
-          <Toggle on={Boolean(clip.loopClip)} onClick={() => set({ loopClip: !clip.loopClip })} label="LOOP" />
+          <Toggle
+            on={zoomTrim}
+            onClick={() => setZoomTrim((z) => !z)}
+            label={zoomTrim ? "ZOOM: TRIM" : "ZOOM: FULL"}
+          />
+          <Toggle
+            on={Boolean(clip.reverse)}
+            onClick={() => set({ reverse: !clip.reverse })}
+            label="REVERSE"
+          />
+          <Toggle
+            on={Boolean(clip.loopClip)}
+            onClick={() => set({ loopClip: !clip.loopClip })}
+            label="LOOP"
+          />
           <Button
             size="sm"
             variant="ghost"
@@ -339,7 +465,9 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             onClick={() => {
               const g = Math.min(2, 0.98 / trimPeak);
               set({ gain: g });
-              toast.success("Normalised", { description: `Clip gain set to ${g.toFixed(2)}× so the loudest peak sits just under 0 dB.` });
+              toast.success("Normalised", {
+                description: `Clip gain set to ${g.toFixed(2)}× so the loudest peak sits just under 0 dB.`,
+              });
             }}
           >
             NORMALIZE
@@ -349,7 +477,16 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
             variant="ghost"
             className="h-7 font-mono text-[10px] tracking-wider"
             onClick={() => {
-              set({ offset: 0, length: dur, gain: 1, pitch: 0, speed: 1, reverse: false, fadeIn: 0.004, fadeOut: 0.01 });
+              set({
+                offset: 0,
+                length: dur,
+                gain: 1,
+                pitch: 0,
+                speed: 1,
+                reverse: false,
+                fadeIn: 0.004,
+                fadeOut: 0.01,
+              });
               toast("Back to the original", { description: "All clip edits cleared." });
             }}
           >
@@ -403,13 +540,38 @@ export function ClipEditor({ track, clip, onClose }: { track: Track; clip: Audio
 
         {/* knobs = sound shaping */}
         <div className="flex flex-wrap items-start gap-3 rounded-[3px] border border-border bg-surface-2 p-3">
-          <Knob label="GAIN" value={gain} min={0} max={2} step={0.01} unit="×" onChange={(v) => set({ gain: v })} />
-          <Knob label="PITCH" value={pitch} min={-24} max={24} step={1} unit=" st" onChange={(v) => set({ pitch: v })} />
-          <Knob label="SPEED" value={speed} min={0.25} max={4} step={0.01} unit="×" onChange={(v) => set({ speed: v })} />
+          <Knob
+            label="GAIN"
+            value={gain}
+            min={0}
+            max={2}
+            step={0.01}
+            unit="×"
+            onChange={(v) => set({ gain: v })}
+          />
+          <Knob
+            label="PITCH"
+            value={pitch}
+            min={-24}
+            max={24}
+            step={1}
+            unit=" st"
+            onChange={(v) => set({ pitch: v })}
+          />
+          <Knob
+            label="SPEED"
+            value={speed}
+            min={0.25}
+            max={4}
+            step={0.01}
+            unit="×"
+            onChange={(v) => set({ speed: v })}
+          />
           <div className="flex-1 self-center text-[11px] leading-relaxed text-muted-foreground">
-            In the browser, pitch and speed share one playback rate — raising the pitch also shortens the clip
-            ({rate.toFixed(2)}× right now). Independent time stretching that keeps the length needs the SYNCLAB desktop
-            companion, so it isn't offered here rather than faked.
+            In the browser, pitch and speed share one playback rate — raising the pitch also
+            shortens the clip ({rate.toFixed(2)}× right now). Independent time stretching that keeps
+            the length needs the SYNCLAB desktop companion, so it isn't offered here rather than
+            faked.
             <button
               type="button"
               className="ml-2 inline-flex items-center gap-1 text-primary hover:underline"
@@ -449,15 +611,24 @@ function ComparisonWaveform({
       aria-pressed={active}
       onClick={onSelect}
       className={`group overflow-hidden rounded-[3px] border text-left transition-colors ${
-        active ? "border-primary bg-primary/10" : "border-border bg-surface-2 hover:border-muted-foreground"
+        active
+          ? "border-primary bg-primary/10"
+          : "border-border bg-surface-2 hover:border-muted-foreground"
       }`}
     >
       <span className="flex items-center justify-between border-b border-border px-2 py-1 font-mono text-[9px]">
         <span className={active ? "text-primary" : "text-muted-foreground"}>{label}</span>
-        <span className="flex items-center gap-1 text-muted-foreground"><Play className="size-3" /> {detail}</span>
+        <span className="flex items-center gap-1 text-muted-foreground">
+          <Play className="size-3" /> {detail}
+        </span>
       </span>
       <span className="relative block h-14">
-        <WaveformView peaks={peaks.length > 1 ? peaks : [0, 0]} gain={gain} color={active ? "var(--primary)" : "var(--muted-foreground)"} label={`${label} waveform`} />
+        <WaveformView
+          peaks={peaks.length > 1 ? peaks : [0, 0]}
+          gain={gain}
+          color={active ? "var(--primary)" : "var(--muted-foreground)"}
+          label={`${label} waveform`}
+        />
         <span
           className="pointer-events-none absolute inset-y-0 border-x border-primary bg-primary/15"
           style={{
@@ -543,7 +714,8 @@ function InteractiveWaveform({
     requestAnimationFrame(() => {
       const nextViewport = viewportRef.current;
       if (!nextViewport) return;
-      nextViewport.scrollLeft = previousPct * Math.max(0, nextViewport.scrollWidth - nextViewport.clientWidth);
+      nextViewport.scrollLeft =
+        previousPct * Math.max(0, nextViewport.scrollWidth - nextViewport.clientWidth);
       syncScroll();
     });
   };
@@ -554,7 +726,11 @@ function InteractiveWaveform({
     changeZoom(zoom + (e.deltaY < 0 ? 0.5 : -0.5));
   };
 
-  const applyAt = (kind: WaveHandle, seconds: number, start = { offset, length, fadeIn, fadeOut }) => {
+  const applyAt = (
+    kind: WaveHandle,
+    seconds: number,
+    start = { offset, length, fadeIn, fadeOut },
+  ) => {
     const minimum = Math.min(0.05, dur);
     if (kind === "trim-start") {
       const nextOffset = Math.max(0, Math.min(seconds, start.offset + start.length - minimum));
@@ -662,10 +838,15 @@ function InteractiveWaveform({
             <div
               key={i}
               className={`pointer-events-none absolute inset-y-0 w-px ${b.bar ? "bg-primary/70" : "bg-foreground/25"}`}
-              style={{ left: `${leftPct + (b.at / visibleDuration) * (zoomTrim ? 100 : (visibleDuration / dur) * 100)}%` }}
+              style={{
+                left: `${leftPct + (b.at / visibleDuration) * (zoomTrim ? 100 : (visibleDuration / dur) * 100)}%`,
+              }}
             />
           ))}
-          <div className="pointer-events-none absolute inset-y-0 left-0 bg-surface-2/75" style={{ width: `${leftPct}%` }} />
+          <div
+            className="pointer-events-none absolute inset-y-0 left-0 bg-surface-2/75"
+            style={{ width: `${leftPct}%` }}
+          />
           <div
             className="pointer-events-none absolute inset-y-0 bg-surface-2/75"
             style={{ left: `${leftPct + widthPct}%`, right: 0 }}
@@ -675,19 +856,40 @@ function InteractiveWaveform({
             style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
           />
 
-          <svg className="pointer-events-none absolute inset-0 size-full" preserveAspectRatio="none" viewBox="0 0 100 100" aria-hidden="true">
+          <svg
+            className="pointer-events-none absolute inset-0 size-full"
+            preserveAspectRatio="none"
+            viewBox="0 0 100 100"
+            aria-hidden="true"
+          >
             <path
               d={`M ${leftPct} 0 L ${leftPct + fadeInPct} 100 L ${leftPct} 100 Z`}
               fill="var(--clip-audio)"
               fillOpacity="0.14"
             />
-            <line x1={leftPct} y1="0" x2={leftPct + fadeInPct} y2="100" stroke="var(--clip-audio)" strokeOpacity="0.9" vectorEffect="non-scaling-stroke" />
+            <line
+              x1={leftPct}
+              y1="0"
+              x2={leftPct + fadeInPct}
+              y2="100"
+              stroke="var(--clip-audio)"
+              strokeOpacity="0.9"
+              vectorEffect="non-scaling-stroke"
+            />
             <path
               d={`M ${leftPct + widthPct - fadeOutPct} 100 L ${leftPct + widthPct} 0 L ${leftPct + widthPct} 100 Z`}
               fill="var(--primary)"
               fillOpacity="0.14"
             />
-            <line x1={leftPct + widthPct - fadeOutPct} y1="100" x2={leftPct + widthPct} y2="0" stroke="var(--primary)" strokeOpacity="0.9" vectorEffect="non-scaling-stroke" />
+            <line
+              x1={leftPct + widthPct - fadeOutPct}
+              y1="100"
+              x2={leftPct + widthPct}
+              y2="0"
+              stroke="var(--primary)"
+              strokeOpacity="0.9"
+              vectorEffect="non-scaling-stroke"
+            />
           </svg>
 
           <div
@@ -696,7 +898,9 @@ function InteractiveWaveform({
             style={{ left: `${leftPct}%` }}
             title={`Trim start ${offset.toFixed(2)}s`}
           >
-            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-[2px] bg-background/90 px-1 font-mono text-[8px] text-clip-audio">{offset.toFixed(2)}s</span>
+            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-[2px] bg-background/90 px-1 font-mono text-[8px] text-clip-audio">
+              {offset.toFixed(2)}s
+            </span>
           </div>
           <div
             {...handleProps("trim-end", offset + length, dur)}
@@ -704,26 +908,76 @@ function InteractiveWaveform({
             style={{ left: `${leftPct + widthPct}%` }}
             title={`Trim end ${(offset + length).toFixed(2)}s`}
           >
-            <span className="absolute right-1 bottom-1 rounded-[2px] bg-background/90 px-1 font-mono text-[8px] text-clip-audio">{(offset + length).toFixed(2)}s</span>
+            <span className="absolute right-1 bottom-1 rounded-[2px] bg-background/90 px-1 font-mono text-[8px] text-clip-audio">
+              {(offset + length).toFixed(2)}s
+            </span>
           </div>
 
-          <div {...handleProps("fade-in", fadeIn, length / 2)} className="absolute top-2 z-30 size-4 -translate-x-1/2 cursor-ew-resize rounded-full border-2 border-background bg-clip-audio shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ left: `${leftPct + fadeInPct}%` }} title={`Fade in ${fadeIn.toFixed(3)}s`} />
-          <div {...handleProps("fade-out", fadeOut, length / 2)} className="absolute top-2 z-30 size-4 -translate-x-1/2 cursor-ew-resize rounded-full border-2 border-background bg-primary shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" style={{ left: `${leftPct + widthPct - fadeOutPct}%` }} title={`Fade out ${fadeOut.toFixed(3)}s`} />
+          <div
+            {...handleProps("fade-in", fadeIn, length / 2)}
+            className="absolute top-2 z-30 size-4 -translate-x-1/2 cursor-ew-resize rounded-full border-2 border-background bg-clip-audio shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ left: `${leftPct + fadeInPct}%` }}
+            title={`Fade in ${fadeIn.toFixed(3)}s`}
+          />
+          <div
+            {...handleProps("fade-out", fadeOut, length / 2)}
+            className="absolute top-2 z-30 size-4 -translate-x-1/2 cursor-ew-resize rounded-full border-2 border-background bg-primary shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={{ left: `${leftPct + widthPct - fadeOutPct}%` }}
+            title={`Fade out ${fadeOut.toFixed(3)}s`}
+          />
 
-          <div className="pointer-events-none absolute top-1 left-2 font-mono text-[8px] tracking-wider text-clip-audio">TRIM / FADE IN</div>
-          <div className="pointer-events-none absolute top-1 right-2 font-mono text-[8px] tracking-wider text-primary">FADE OUT / TRIM</div>
+          <div className="pointer-events-none absolute top-1 left-2 font-mono text-[8px] tracking-wider text-clip-audio">
+            TRIM / FADE IN
+          </div>
+          <div className="pointer-events-none absolute top-1 right-2 font-mono text-[8px] tracking-wider text-primary">
+            FADE OUT / TRIM
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-2 rounded-[3px] border border-border bg-surface-2 px-2 py-1.5">
-        <Button size="icon" variant="ghost" className="size-7" aria-label="Zoom waveform out" title="Zoom out" onClick={() => changeZoom(zoom - 0.5)} disabled={zoom <= 1}>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label="Zoom waveform out"
+          title="Zoom out"
+          onClick={() => changeZoom(zoom - 0.5)}
+          disabled={zoom <= 1}
+        >
           <ZoomOut className="size-3.5" />
         </Button>
-        <Slider aria-label="Waveform zoom" value={[zoom]} min={1} max={16} step={0.25} onValueChange={([value]) => changeZoom(value ?? 1)} className="w-32" />
-        <Button size="icon" variant="ghost" className="size-7" aria-label="Zoom waveform in" title="Zoom in" onClick={() => changeZoom(zoom + 0.5)} disabled={zoom >= 16}>
+        <Slider
+          aria-label="Waveform zoom"
+          value={[zoom]}
+          min={1}
+          max={16}
+          step={0.25}
+          onValueChange={([value]) => changeZoom(value ?? 1)}
+          className="w-32"
+        />
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-7"
+          aria-label="Zoom waveform in"
+          title="Zoom in"
+          onClick={() => changeZoom(zoom + 0.5)}
+          disabled={zoom >= 16}
+        >
           <ZoomIn className="size-3.5" />
         </Button>
         <span className="w-10 font-mono text-[9px] text-foreground">{zoom.toFixed(2)}×</span>
-        <Button size="sm" variant="ghost" className="h-7 px-2 font-mono text-[9px]" onClick={() => { onZoomChange(1); const viewport = viewportRef.current; if (viewport) viewport.scrollLeft = 0; setScrollPct(0); }}>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 font-mono text-[9px]"
+          onClick={() => {
+            onZoomChange(1);
+            const viewport = viewportRef.current;
+            if (viewport) viewport.scrollLeft = 0;
+            setScrollPct(0);
+          }}
+        >
           FIT
         </Button>
         <span className="ml-1 font-mono text-[8px] text-muted-foreground">SCROLL</span>
@@ -737,14 +991,16 @@ function InteractiveWaveform({
           onValueChange={([value]) => {
             const viewport = viewportRef.current;
             if (!viewport) return;
-            viewport.scrollLeft = ((value ?? 0) / 100) * Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+            viewport.scrollLeft =
+              ((value ?? 0) / 100) * Math.max(0, viewport.scrollWidth - viewport.clientWidth);
             setScrollPct(value ?? 0);
           }}
           className="min-w-24 flex-1"
         />
       </div>
       <p className="font-mono text-[9px] text-muted-foreground">
-        Zoom up to 16×, scroll horizontally, then drag the handles. Ctrl/⌘ + wheel zooms; Shift + arrow keys makes 1 ms adjustments.
+        Zoom up to 16×, scroll horizontally, then drag the handles. Ctrl/⌘ + wheel zooms; Shift +
+        arrow keys makes 1 ms adjustments.
       </p>
     </div>
   );
@@ -758,7 +1014,9 @@ function Toggle({ on, onClick, label }: { on: boolean; onClick: () => void; labe
       aria-pressed={on}
       onClick={onClick}
       className={`h-7 gap-1 px-2 font-mono text-[10px] tracking-wider ${
-        on ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]" : "text-muted-foreground"
+        on
+          ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]"
+          : "text-muted-foreground"
       }`}
     >
       <span className={`size-1.5 rounded-full ${on ? "bg-primary" : "bg-border"}`} />

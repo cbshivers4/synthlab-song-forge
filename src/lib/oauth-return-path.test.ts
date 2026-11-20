@@ -3,7 +3,9 @@ import { oauthReturnPath } from "./oauth-return-path";
 
 describe("oauthReturnPath", () => {
   it("keeps a same-origin consent path with its query", () => {
-    expect(oauthReturnPath("/.lovable/oauth/consent?authorization_id=abc")).toBe("/.lovable/oauth/consent?authorization_id=abc");
+    expect(oauthReturnPath("/.lovable/oauth/consent?authorization_id=abc")).toBe(
+      "/.lovable/oauth/consent?authorization_id=abc",
+    );
   });
   it("rejects other sites and tricks", () => {
     expect(oauthReturnPath("https://evil.example/x")).toBe("/");

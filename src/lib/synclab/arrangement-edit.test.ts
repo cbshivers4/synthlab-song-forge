@@ -1,35 +1,91 @@
-import { describe, expect, it } from 'vitest';
-import { materialEnd, pasteEndStep, pasteEndSteps, pasteTrackContent, rightEdgeEdit, timelinePasteStep } from './arrangement-edit';
-import type { Track } from './types';
+import { describe, expect, it } from "vitest";
+import {
+  materialEnd,
+  pasteEndStep,
+  pasteEndSteps,
+  pasteTrackContent,
+  rightEdgeEdit,
+  timelinePasteStep,
+} from "./arrangement-edit";
+import type { Track } from "./types";
 
-const track: Track = { id: 'audio', name: 'Take', kind: 'audio', color: 'grey', volume: 0.7, pan: 0.2, muted: false, solo: false, armed: false, frozen: false, hidden: false, input: 'none', bus: 'master', steps: 16, clips: [{ id: 'clip', name: 'Take', duration: 2, length: 2, peaks: [1], start: 0 }] };
-describe('arrangement paste', () => {
-  it('pastes at the clicked location without substituting the playhead', () => {
+const track: Track = {
+  id: "audio",
+  name: "Take",
+  kind: "audio",
+  color: "grey",
+  volume: 0.7,
+  pan: 0.2,
+  muted: false,
+  solo: false,
+  armed: false,
+  frozen: false,
+  hidden: false,
+  input: "none",
+  bus: "master",
+  steps: 16,
+  clips: [{ id: "clip", name: "Take", duration: 2, length: 2, peaks: [1], start: 0 }],
+};
+describe("arrangement paste", () => {
+  it("pastes at the clicked location without substituting the playhead", () => {
     expect(timelinePasteStep(8, 32)).toBe(32);
-    expect(pasteTrackContent(track, track, timelinePasteStep(8, 32), 0.125).clips?.[1]?.start).toBe(32);
+    expect(pasteTrackContent(track, track, timelinePasteStep(8, 32), 0.125).clips?.[1]?.start).toBe(
+      32,
+    );
   });
-  it('pastes at the playhead when no area is specified', () => {
+  it("pastes at the playhead when no area is specified", () => {
     expect(timelinePasteStep(24)).toBe(24);
-    expect(pasteTrackContent(track, track, timelinePasteStep(24), 0.125).clips?.[1]?.start).toBe(24);
+    expect(pasteTrackContent(track, track, timelinePasteStep(24), 0.125).clips?.[1]?.start).toBe(
+      24,
+    );
   });
-  it('pastes on the same channel at its end/playhead without replacing its settings', () => {
+  it("pastes on the same channel at its end/playhead without replacing its settings", () => {
     const next = pasteTrackContent(track, track, 16, 0.125);
-    expect(next.id).toBe('audio');
+    expect(next.id).toBe("audio");
     expect(next.volume).toBe(0.7);
-    expect(next.clips?.map(c => c.start)).toEqual([0, 16]);
-    expect(next.clips?.[1]?.id).not.toBe('clip');
+    expect(next.clips?.map((c) => c.start)).toEqual([0, 16]);
+    expect(next.clips?.[1]?.id).not.toBe("clip");
     expect(materialEnd(next, 0.125)).toBe(32);
   });
-  it('appends drum hits at the end of the drum track instead of overwriting the start', () => {
-    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };
-    const drums: Track = { ...track, kind: 'drum', clips: [], steps: 4, pads: [pad] };
+  it("appends drum hits at the end of the drum track instead of overwriting the start", () => {
+    const pad = {
+      id: "k",
+      name: "Kick",
+      kind: "kick" as const,
+      volume: 1,
+      pan: 0,
+      pitch: 0,
+      decay: 0.5,
+      muted: false,
+      solo: false,
+      steps: [1, 0, 0, 0],
+    };
+    const drums: Track = { ...track, kind: "drum", clips: [], steps: 4, pads: [pad] };
     const next = pasteTrackContent(drums, drums, materialEnd(drums, 0.125), 0.125);
     expect(next.steps).toBe(8);
     expect(next.pads?.[0]?.steps).toEqual([1, 0, 0, 0, 1, 0, 0, 0]);
   });
-  it('widens a drum pattern region so a beat pasted at the end can be seen and heard', () => {
-    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0] };
-    const drums: Track = { ...track, kind: 'drum', clips: [], steps: 16, pads: [pad], patternRegion: [0, 4] };
+  it("widens a drum pattern region so a beat pasted at the end can be seen and heard", () => {
+    const pad = {
+      id: "k",
+      name: "Kick",
+      kind: "kick" as const,
+      volume: 1,
+      pan: 0,
+      pitch: 0,
+      decay: 0.5,
+      muted: false,
+      solo: false,
+      steps: [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+    };
+    const drums: Track = {
+      ...track,
+      kind: "drum",
+      clips: [],
+      steps: 16,
+      pads: [pad],
+      patternRegion: [0, 4],
+    };
     expect(materialEnd(drums, 0.125)).toBe(4);
     const next = pasteTrackContent(drums, drums, materialEnd(drums, 0.125), 0.125);
     expect(next.patternRegion).toEqual([0, 8]);
@@ -37,74 +93,155 @@ describe('arrangement paste', () => {
     expect(next.pads?.[0]?.steps[8]).toBe(0);
     expect(next.cuts).toEqual([4, 8]);
   });
-  it('pastes a printed drum track right after its last audio clip', () => {
-    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };
-    const drums: Track = { ...track, kind: 'drum', steps: 4, pads: [pad], printedAudio: true };
+  it("pastes a printed drum track right after its last audio clip", () => {
+    const pad = {
+      id: "k",
+      name: "Kick",
+      kind: "kick" as const,
+      volume: 1,
+      pan: 0,
+      pitch: 0,
+      decay: 0.5,
+      muted: false,
+      solo: false,
+      steps: [1, 0, 0, 0],
+    };
+    const drums: Track = { ...track, kind: "drum", steps: 4, pads: [pad], printedAudio: true };
     const at = materialEnd(drums, 0.125, 128);
     expect(at).toBe(16);
-    expect(pasteTrackContent(drums, drums, at, 0.125).clips?.map(c => c.start)).toEqual([0, 16]);
+    expect(pasteTrackContent(drums, drums, at, 0.125).clips?.map((c) => c.start)).toEqual([0, 16]);
   });
-  it('pastes a looping drum pattern after the end the timeline shows', () => {
-    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0] };
-    const drums: Track = { ...track, kind: 'drum', clips: [], steps: 4, pads: [pad] };
+  it("pastes a looping drum pattern after the end the timeline shows", () => {
+    const pad = {
+      id: "k",
+      name: "Kick",
+      kind: "kick" as const,
+      volume: 1,
+      pan: 0,
+      pitch: 0,
+      decay: 0.5,
+      muted: false,
+      solo: false,
+      steps: [1, 0, 0, 0],
+    };
+    const drums: Track = { ...track, kind: "drum", clips: [], steps: 4, pads: [pad] };
     const at = materialEnd(drums, 0.125, 16);
     expect(at).toBe(16);
     const next = pasteTrackContent(drums, drums, at, 0.125);
     expect(next.patternRegion).toEqual([0, 20]);
     expect(next.pads?.[0]?.steps[16]).toBe(1);
   });
-  it('places note content at the playhead once rather than repeating it before that position', () => {
-    const source = { ...track, kind: 'instrument' as const, clips: [], notes: [{ id: 'n', step: 0, length: 4, pitch: 60, velocity: 1 }] };
+  it("places note content at the playhead once rather than repeating it before that position", () => {
+    const source = {
+      ...track,
+      kind: "instrument" as const,
+      clips: [],
+      notes: [{ id: "n", step: 0, length: 4, pitch: 60, velocity: 1 }],
+    };
     const next = pasteTrackContent(source, source, 32, 0.125);
     expect(next.notes?.[1]).toMatchObject({ step: 32, recordedEnd: 48 });
     expect(next.notes?.[0]?.step).toBe(0);
   });
 });
-describe('clip right edge', () => {
-  const clip = { id: 'c', name: 'Take', duration: 2, peaks: [1] };
-  it('stretches a full two-second take to four seconds instead of capping its edge', () => {
+describe("clip right edge", () => {
+  const clip = { id: "c", name: "Take", duration: 2, peaks: [1] };
+  it("stretches a full two-second take to four seconds instead of capping its edge", () => {
     expect(rightEdgeEdit(clip, 2, 2, false)).toEqual({ seconds: 4, length: 2, stretch: 2 });
   });
-  it('reveals available source before stretching and respects offset', () => {
-    expect(rightEdgeEdit({ ...clip, duration: 6, offset: 2, length: 2 }, 2, 2, false).stretch).toBeNull();
-    expect(rightEdgeEdit({ ...clip, duration: 6, offset: 2, length: 2 }, 4, 2, false).stretch).toBe(3);
+  it("reveals available source before stretching and respects offset", () => {
+    expect(
+      rightEdgeEdit({ ...clip, duration: 6, offset: 2, length: 2 }, 2, 2, false).stretch,
+    ).toBeNull();
+    expect(rightEdgeEdit({ ...clip, duration: 6, offset: 2, length: 2 }, 4, 2, false).stretch).toBe(
+      3,
+    );
   });
-  it('converts a rate-adjusted clip into timeline seconds', () => {
-    expect(rightEdgeEdit({ ...clip, speed: 2 }, 3, 2, false)).toEqual({ seconds: 4, length: 2, stretch: 4 });
+  it("converts a rate-adjusted clip into timeline seconds", () => {
+    expect(rightEdgeEdit({ ...clip, speed: 2 }, 3, 2, false)).toEqual({
+      seconds: 4,
+      length: 2,
+      stretch: 4,
+    });
   });
-});describe('drum part move', () => {
-  it('moves a pasted beat part next to the previous part without touching it', async () => {
-    const { moveDrumPart } = await import('./arrangement-edit');
-    const pad = { id: 'k', name: 'Kick', kind: 'kick' as const, volume: 1, pan: 0, pitch: 0, decay: 0.5, muted: false, solo: false, steps: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0] };
-    const drums: Track = { ...track, kind: 'drum', clips: [], steps: 14, pads: [pad], patternRegion: [0, 14], cuts: [4, 10, 14] };
+});
+describe("drum part move", () => {
+  it("moves a pasted beat part next to the previous part without touching it", async () => {
+    const { moveDrumPart } = await import("./arrangement-edit");
+    const pad = {
+      id: "k",
+      name: "Kick",
+      kind: "kick" as const,
+      volume: 1,
+      pan: 0,
+      pitch: 0,
+      decay: 0.5,
+      muted: false,
+      solo: false,
+      steps: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+    };
+    const drums: Track = {
+      ...track,
+      kind: "drum",
+      clips: [],
+      steps: 14,
+      pads: [pad],
+      patternRegion: [0, 14],
+      cuts: [4, 10, 14],
+    };
     const next = moveDrumPart(drums, 10, 14, 4);
     expect(next.pads?.[0]?.steps.slice(0, 14)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
     expect(next.activeRegion).toBe(4);
   });
 });
 
-describe('paste at end of track', () => {
+describe("paste at end of track", () => {
   const beat = (len: number, region: [number, number], cuts: number[]): Track => ({
-    ...track, id: 'hh', kind: 'drum', clips: [], steps: len, patternRegion: region, cuts,
-    pads: [{ id: 'p', name: 'HI-HAT', sample: 'hat', steps: Array.from({ length: len }, (_, s) => (s < 128 && s % 2 === 0 ? 1 : 0)) } as never],
+    ...track,
+    id: "hh",
+    kind: "drum",
+    clips: [],
+    steps: len,
+    patternRegion: region,
+    cuts,
+    pads: [
+      {
+        id: "p",
+        name: "HI-HAT",
+        sample: "hat",
+        steps: Array.from({ length: len }, (_, s) => (s < 128 && s % 2 === 0 ? 1 : 0)),
+      } as never,
+    ],
   });
-  it('ignores an empty one-step sliver after the last beat part', () => {
-    expect(pasteEndStep(beat(129, [0, 129], [16, 32, 48, 64, 80, 96, 112, 128, 129]), 0.125, 256)).toBe(128);
+  it("ignores an empty one-step sliver after the last beat part", () => {
+    expect(
+      pasteEndStep(beat(129, [0, 129], [16, 32, 48, 64, 80, 96, 112, 128, 129]), 0.125, 256),
+    ).toBe(128);
   });
-  it('lands right after the last part on a clean beat', () => {
-    expect(pasteEndStep(beat(128, [0, 128], [16, 32, 48, 64, 80, 96, 112, 128]), 0.125, 256)).toBe(128);
+  it("lands right after the last part on a clean beat", () => {
+    expect(pasteEndStep(beat(128, [0, 128], [16, 32, 48, 64, 80, 96, 112, 128]), 0.125, 256)).toBe(
+      128,
+    );
   });
-  it('keeps several pasted channels lined up after the latest end', () => {
+  it("keeps several pasted channels lined up after the latest end", () => {
     expect(pasteEndSteps([0, 0, 0, 0], [128, 128, 128, 128])).toEqual([128, 128, 128, 128]);
     expect(pasteEndSteps([0, 0], [128, 112])).toEqual([128, 128]);
     expect(pasteEndSteps([0, 64], [64, 128])).toEqual([64, 128]);
   });
-  it('never lands a clip copy a fraction of a step late', () => {
-    expect(pasteEndStep({ ...track, clips: [{ ...track.clips![0]!, duration: 15.99999, length: 15.99999 }] }, 0.125)).toBe(128);
+  it("never lands a clip copy a fraction of a step late", () => {
+    expect(
+      pasteEndStep(
+        { ...track, clips: [{ ...track.clips![0]!, duration: 15.99999, length: 15.99999 }] },
+        0.125,
+      ),
+    ).toBe(128);
   });
-  it('a pasted beat drops the old cut marks inside the bars it covers', () => {
+  it("a pasted beat drops the old cut marks inside the bars it covers", () => {
     const hh = beat(129, [0, 129], [16, 32, 48, 64, 80, 96, 112, 128, 129]);
-    const copy = { ...hh, patternRegion: [0, 128] as [number, number], cuts: [16, 32, 48, 64, 80, 96, 112] };
+    const copy = {
+      ...hh,
+      patternRegion: [0, 128] as [number, number],
+      cuts: [16, 32, 48, 64, 80, 96, 112],
+    };
     const next = pasteTrackContent(hh, copy, 128, 0.125, { origin: 0, length: 128 });
     expect(next.cuts).not.toContain(129);
     expect(next.cuts).toContain(144);

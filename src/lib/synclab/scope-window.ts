@@ -4,7 +4,12 @@ import type { Track } from "./types";
 /** Which signal the expanded scope window watches. `modular` taps only carry a waveform. */
 export type ScopeSource = { id: string; label: string; kind?: "engine" | "modular" };
 export type ScopeView = "spectrum" | "wave";
-export type ScopeWindowState = { open: boolean; source: ScopeSource; view: ScopeView; follow: boolean };
+export type ScopeWindowState = {
+  open: boolean;
+  source: ScopeSource;
+  view: ScopeView;
+  follow: boolean;
+};
 
 export const MASTER_SOURCE: ScopeSource = { id: "master", label: "Master Section" };
 export const SCOPE_BUS_IDS = ["drums", "vocals", "instruments", "synths", "fx"] as const;
@@ -15,7 +20,9 @@ export const SCOPE_VCA_IDS = ["A", "B", "C", "D"] as const;
 export const SPECTRUM_MIN_HZ = 20;
 export const SPECTRUM_MAX_HZ = 20000;
 export const SPECTRUM_FREQ_MARKS = [20, 80, 320, 1300, 5100, 20000] as const;
-export const SPECTRUM_MINOR_MARKS = [30, 40, 50, 60, 100, 200, 500, 700, 2000, 3000, 8000, 10000, 15000] as const;
+export const SPECTRUM_MINOR_MARKS = [
+  30, 40, 50, 60, 100, 200, 500, 700, 2000, 3000, 8000, 10000, 15000,
+] as const;
 /** Real dBFS range of the analyzer; levels are never boosted for display. */
 export const SPECTRUM_DB_TOP = 0;
 export const SPECTRUM_DB_BOTTOM = -96;
@@ -62,13 +69,30 @@ export function triggerIndex(data: ArrayLike<number>, span: number): number {
 export function scopeSourceGroups(tracks: Track[]): { label: string; sources: ScopeSource[] }[] {
   return [
     { label: "Main", sources: [MASTER_SOURCE] },
-    { label: "Buses", sources: SCOPE_BUS_IDS.map((id) => ({ id: `bus:${id}`, label: `${id[0]!.toUpperCase()}${id.slice(1)} bus` })) },
-    { label: "Returns", sources: SCOPE_AUX_IDS.map((id) => ({ id: `aux:${id}`, label: `${id[0]!.toUpperCase()}${id.slice(1)} return` })) },
-    { label: "VCAs", sources: SCOPE_VCA_IDS.map((id) => ({ id: `vca:${id}`, label: `VCA ${id}` })) },
+    {
+      label: "Buses",
+      sources: SCOPE_BUS_IDS.map((id) => ({
+        id: `bus:${id}`,
+        label: `${id[0]!.toUpperCase()}${id.slice(1)} bus`,
+      })),
+    },
+    {
+      label: "Returns",
+      sources: SCOPE_AUX_IDS.map((id) => ({
+        id: `aux:${id}`,
+        label: `${id[0]!.toUpperCase()}${id.slice(1)} return`,
+      })),
+    },
+    {
+      label: "VCAs",
+      sources: SCOPE_VCA_IDS.map((id) => ({ id: `vca:${id}`, label: `VCA ${id}` })),
+    },
     { label: "Channels", sources: tracks.map((t) => ({ id: `ch:${t.id}`, label: t.name })) },
     {
       label: "Effects",
-      sources: tracks.flatMap((t) => (t.plugins ?? []).map((p) => ({ id: p.id, label: `${t.name} · ${p.name}` }))),
+      sources: tracks.flatMap((t) =>
+        (t.plugins ?? []).map((p) => ({ id: p.id, label: `${t.name} · ${p.name}` })),
+      ),
     },
   ].filter((g) => g.sources.length > 0);
 }
@@ -76,7 +100,9 @@ export function scopeSourceGroups(tracks: Track[]): { label: string; sources: Sc
 /** Name a small scope's tap for the window title; bypassed scopes point at their effect. */
 export function scopeSourceFor(scopeId: string, tracks: Track[]): ScopeSource {
   const id = scopeId.startsWith("bypassed:") ? scopeId.slice("bypassed:".length) : scopeId;
-  const found = scopeSourceGroups(tracks).flatMap((g) => g.sources).find((s) => s.id === id);
+  const found = scopeSourceGroups(tracks)
+    .flatMap((g) => g.sources)
+    .find((s) => s.id === id);
   if (found) return found;
   if (id === "bus:master") return MASTER_SOURCE;
   return { id, label: id.startsWith("bus:") ? `${id.slice(4)} bus` : "Scope" };
@@ -94,12 +120,17 @@ export function bypassedEffect(sourceId: string, tracks: Track[]): boolean {
 }
 
 // ---- tiny shared store: one window per layout, opened from any small scope ----
-let state: ScopeWindowState = { open: false, source: MASTER_SOURCE, view: "spectrum", follow: false };
+let state: ScopeWindowState = {
+  open: false,
+  source: MASTER_SOURCE,
+  view: "spectrum",
+  follow: false,
+};
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
 export function openScopeWindow(source: ScopeSource, view?: ScopeView) {
-  const nextView: ScopeView = source.kind === "modular" ? "wave" : view ?? state.view;
+  const nextView: ScopeView = source.kind === "modular" ? "wave" : (view ?? state.view);
   state = { open: true, source, view: nextView, follow: false };
   emit();
 }
@@ -121,7 +152,10 @@ export function getScopeWindow(): ScopeWindowState {
 
 export function useScopeWindow(): ScopeWindowState {
   return useSyncExternalStore(
-    (l) => { listeners.add(l); return () => listeners.delete(l); },
+    (l) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
     () => state,
     () => state,
   );

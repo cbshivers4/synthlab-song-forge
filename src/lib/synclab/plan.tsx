@@ -1,14 +1,41 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { Crown, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { getPaddleEnvironment, getPaddlePriceId, initializePaddle, onPaddleCheckoutCompleted } from "@/lib/paddle";
+import {
+  getPaddleEnvironment,
+  getPaddlePriceId,
+  initializePaddle,
+  onPaddleCheckoutCompleted,
+} from "@/lib/paddle";
 import { changePlan, createPortalLink } from "@/utils/payments.functions";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
-import { PLAN_PRICES, TRIAL_DAYS, canSave, planTier, subscriptionIsActive, type SubscriptionRow, type Tier } from "./plan-tier";
+import {
+  PLAN_PRICES,
+  TRIAL_DAYS,
+  canSave,
+  planTier,
+  subscriptionIsActive,
+  type SubscriptionRow,
+  type Tier,
+} from "./plan-tier";
 
 const PRO_KEY = "synclab.pro"; // optimistic unlock right after checkout, until the payment record lands
 const RECEIPT_MS = 2 * 60 * 60 * 1000;
@@ -59,7 +86,10 @@ const SUB_CACHE_KEY = "synclab.plan.lastSeen";
 /** Last plan row the server returned for this account, used only while offline. */
 function readCachedSubscription(uid: string): SubscriptionRow | null {
   try {
-    const raw = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || "null") as { uid: string; sub: SubscriptionRow | null } | null;
+    const raw = JSON.parse(localStorage.getItem(SUB_CACHE_KEY) || "null") as {
+      uid: string;
+      sub: SubscriptionRow | null;
+    } | null;
     return raw && raw.uid === uid ? raw.sub : null;
   } catch {
     return null;
@@ -103,25 +133,30 @@ export function PlanProvider({ children }: { children: ReactNode }) {
 
   const env = getPaddleEnvironment();
 
-  const loadSubscription = useCallback(async (uid: string) => {
-    const { data, error } = await supabase
-      .from("subscriptions")
-      .select("paddle_subscription_id, price_id, status, current_period_end, cancel_at_period_end")
-      .eq("user_id", uid)
-      .eq("environment", env)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) {
-      // No connection: use the last plan this device saw for this account.
-      setSubscription(readCachedSubscription(uid));
+  const loadSubscription = useCallback(
+    async (uid: string) => {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select(
+          "paddle_subscription_id, price_id, status, current_period_end, cancel_at_period_end",
+        )
+        .eq("user_id", uid)
+        .eq("environment", env)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        // No connection: use the last plan this device saw for this account.
+        setSubscription(readCachedSubscription(uid));
+        setLoadedFor(uid);
+        return;
+      }
+      setSubscription((data as SubscriptionRow | null) ?? null);
+      writeCachedSubscription(uid, (data as SubscriptionRow | null) ?? null);
       setLoadedFor(uid);
-      return;
-    }
-    setSubscription((data as SubscriptionRow | null) ?? null);
-    writeCachedSubscription(uid, (data as SubscriptionRow | null) ?? null);
-    setLoadedFor(uid);
-  }, [env]);
+    },
+    [env],
+  );
 
   useEffect(() => {
     if (!userId) {
@@ -135,7 +170,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "subscriptions", filter: `user_id=eq.${userId}` },
-        () => void loadSubscription(userId)
+        () => void loadSubscription(userId),
       )
       .subscribe();
     return () => {
@@ -149,7 +184,10 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       markProPaid();
       setReceipt(true);
       setUpgradeOpen(false);
-      toast.success("Your 14-day free trial has started", { description: "Saving, export and mastering are unlocked. You won't be charged if you cancel before day 14." });
+      toast.success("Your 14-day free trial has started", {
+        description:
+          "Saving, export and mastering are unlocked. You won't be charged if you cancel before day 14.",
+      });
       if (userId) void loadSubscription(userId);
     });
   }, [userId, loadSubscription]);
@@ -161,7 +199,10 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     if (url.searchParams.get("upgraded") === "1") {
       markProPaid();
       setReceipt(true);
-      toast.success("Your 14-day free trial has started", { description: "Saving, export and mastering are unlocked. You won't be charged if you cancel before day 14." });
+      toast.success("Your 14-day free trial has started", {
+        description:
+          "Saving, export and mastering are unlocked. You won't be charged if you cancel before day 14.",
+      });
       if (userId) void loadSubscription(userId);
       url.searchParams.delete("upgraded");
       window.history.replaceState(null, "", url.toString());
@@ -170,7 +211,10 @@ export function PlanProvider({ children }: { children: ReactNode }) {
 
   const subActive = subscriptionIsActive(subscription);
 
-  const { tier, trialDaysLeft } = useMemo(() => planTier(email, subscription, receipt), [email, subscription, receipt]);
+  const { tier, trialDaysLeft } = useMemo(
+    () => planTier(email, subscription, receipt),
+    [email, subscription, receipt],
+  );
 
   const isPro = canSave(tier);
 
@@ -198,7 +242,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       openUpgrade(featureLabel);
       return false;
     },
-    [isPro, openUpgrade]
+    [isPro, openUpgrade],
   );
 
   const subscribe = async (plan: "monthly" | "yearly") => {
@@ -213,14 +257,17 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         }
         await changePlan({ data: { priceId, environment: env } });
         toast.success("Plan switched", {
-          description: "Unused time was credited automatically. Your next bill reflects the new plan.",
+          description:
+            "Unused time was credited automatically. Your next bill reflects the new plan.",
         });
         if (userId) await loadSubscription(userId);
         setUpgradeOpen(false);
         return;
       }
       if (!userId) {
-        toast("Sign in first", { description: "You need an account so the purchase can be linked to you." });
+        toast("Sign in first", {
+          description: "You need an account so the purchase can be linked to you.",
+        });
         return;
       }
       await initializePaddle();
@@ -256,7 +303,15 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value: PlanState = { tier, email, trialDaysLeft, isPro, subscription, requirePro, openUpgrade };
+  const value: PlanState = {
+    tier,
+    email,
+    trialDaysLeft,
+    isPro,
+    subscription,
+    requirePro,
+    openUpgrade,
+  };
 
   return (
     <PlanContext.Provider value={value}>
@@ -266,7 +321,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-display uppercase tracking-widest">
-              <Crown className="size-4 text-amber-400" /> {subActive ? "Your SYNCLAB plan" : "Try SYNCLAB free for 14 days"}
+              <Crown className="size-4 text-amber-400" />{" "}
+              {subActive ? "Your SYNCLAB plan" : "Try SYNCLAB free for 14 days"}
             </DialogTitle>
             <DialogDescription>
               {blockedFeature && !isPro ? `${blockedFeature} needs the free trial or a plan. ` : ""}
@@ -276,12 +332,20 @@ export function PlanProvider({ children }: { children: ReactNode }) {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 sm:grid-cols-2">
-            {(
-              [
-                { id: "monthly" as const, name: "Monthly", price: PLAN_PRICES.monthly.label, per: subActive ? "per month" : "per month after 14 free days" },
-                { id: "yearly" as const, name: "Yearly", price: PLAN_PRICES.yearly.label, per: subActive ? "per year" : "per year after 14 free days" },
-              ]
-            ).map((p) => (
+            {[
+              {
+                id: "monthly" as const,
+                name: "Monthly",
+                price: PLAN_PRICES.monthly.label,
+                per: subActive ? "per month" : "per month after 14 free days",
+              },
+              {
+                id: "yearly" as const,
+                name: "Yearly",
+                price: PLAN_PRICES.yearly.label,
+                per: subActive ? "per year" : "per year after 14 free days",
+              },
+            ].map((p) => (
               <button
                 key={p.id}
                 disabled={checkoutBusy}
@@ -290,10 +354,12 @@ export function PlanProvider({ children }: { children: ReactNode }) {
                   "rounded-sm border px-3 py-3 text-left transition-colors disabled:opacity-50",
                   p.id === "yearly"
                     ? "border-primary bg-primary/15 hover:bg-primary/25"
-                    : "border-border bg-surface-2 hover:bg-surface-3"
+                    : "border-border bg-surface-2 hover:bg-surface-3",
                 )}
               >
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{p.name}</div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {p.name}
+                </div>
                 <div className="mt-1 font-display text-xl">{p.price}</div>
                 <div className="mt-0.5 font-mono text-[9px] text-muted-foreground">{p.per}</div>
               </button>
@@ -303,17 +369,26 @@ export function PlanProvider({ children }: { children: ReactNode }) {
             <li>· Save your projects to your account</li>
             <li>· Export &amp; share finished WAV / MP3 files</li>
             <li>· Mastering with loudness-matched presets</li>
-            <li>· {TRIAL_DAYS} days free, then billed automatically — cancel before day {TRIAL_DAYS} to pay nothing</li>
+            <li>
+              · {TRIAL_DAYS} days free, then billed automatically — cancel before day {TRIAL_DAYS}{" "}
+              to pay nothing
+            </li>
             <li>· Taxes handled for you worldwide by our payment partner</li>
           </ul>
           {!subActive && (
-            <Button onClick={() => void subscribe("monthly")} disabled={checkoutBusy} className="w-full">
+            <Button
+              onClick={() => void subscribe("monthly")}
+              disabled={checkoutBusy}
+              className="w-full"
+            >
               <Sparkles className="size-4" /> Start 14-day free trial
             </Button>
           )}
           {subscription && subActive && (
             <Button variant="outline" onClick={() => void manageBilling()} className="w-full">
-              {subscription?.status === "trialing" ? "Manage billing / cancel trial" : "Manage billing / cancel"}
+              {subscription?.status === "trialing"
+                ? "Manage billing / cancel trial"
+                : "Manage billing / cancel"}
             </Button>
           )}
           <p className="text-center font-mono text-[9px] text-muted-foreground">
@@ -360,7 +435,11 @@ export function PlanBadge() {
       <button
         onClick={() => openUpgrade()}
         className="rounded-sm border border-border bg-surface-2 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
-        title={subscription?.cancel_at_period_end ? "Trial cancelled — you won't be charged" : "Free trial — billing starts when it ends"}
+        title={
+          subscription?.cancel_at_period_end
+            ? "Trial cancelled — you won't be charged"
+            : "Free trial — billing starts when it ends"
+        }
       >
         Trial · {trialDaysLeft}d left
       </button>
@@ -381,17 +460,23 @@ export function PlanBadge() {
  * Local features (export to a file, mastering) work; cloud saving is refused.
  */
 export function TestPlanProvider({ children }: { children: ReactNode }) {
-  const value = useMemo<PlanState>(() => ({
-    tier: "trial",
-    email: null,
-    trialDaysLeft: TRIAL_DAYS,
-    isPro: true,
-    subscription: null,
-    requirePro: (feature) => {
-      if (/cloud/i.test(feature)) { toast("Not available in test mode — nothing is saved or sent."); return false; }
-      return true;
-    },
-    openUpgrade: () => toast("Not available in test mode — nothing is saved or sent."),
-  }), []);
+  const value = useMemo<PlanState>(
+    () => ({
+      tier: "trial",
+      email: null,
+      trialDaysLeft: TRIAL_DAYS,
+      isPro: true,
+      subscription: null,
+      requirePro: (feature) => {
+        if (/cloud/i.test(feature)) {
+          toast("Not available in test mode — nothing is saved or sent.");
+          return false;
+        }
+        return true;
+      },
+      openUpgrade: () => toast("Not available in test mode — nothing is saved or sent."),
+    }),
+    [],
+  );
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;
 }

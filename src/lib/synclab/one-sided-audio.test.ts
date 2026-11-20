@@ -27,6 +27,8 @@ describe("one-sided interface recordings", () => {
 
   it("leaves silence and mono buffers alone", () => {
     expect(centerOneSided(buf([0, 0], [0, 0]))).toBeNull();
-    expect(centerOneSided({ numberOfChannels: 1, getChannelData: () => new Float32Array(2) })).toBeNull();
+    expect(
+      centerOneSided({ numberOfChannels: 1, getChannelData: () => new Float32Array(2) }),
+    ).toBeNull();
   });
 });

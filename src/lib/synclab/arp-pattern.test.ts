@@ -5,7 +5,14 @@ import { ARP_DESIGNS } from "./sound-designs";
 import { scheduleStep, OFFLINE_LIVE } from "./schedule-step";
 import type { SynthPatch } from "./types";
 
-const arp = (o: Partial<SynthPatch["arp"]>): SynthPatch["arp"] => ({ on: true, rate: 1, gate: 0.5, direction: "up", octaves: 1, ...o });
+const arp = (o: Partial<SynthPatch["arp"]>): SynthPatch["arp"] => ({
+  on: true,
+  rate: 1,
+  gate: 0.5,
+  direction: "up",
+  octaves: 1,
+  ...o,
+});
 
 describe("arp rhythm and note patterns", () => {
   it("rests play nothing and don't move the note walk on", () => {
@@ -21,7 +28,9 @@ describe("arp rhythm and note patterns", () => {
   });
   it("a note pattern turns one held key into a riff", () => {
     const a = arp({ notes: [0, 12, 7, 3] });
-    expect([0, 1, 2, 3, 4].map((t) => arpHit(a, [48], t)?.pitches[0])).toEqual([48, 60, 55, 51, 48]);
+    expect([0, 1, 2, 3, 4].map((t) => arpHit(a, [48], t)?.pitches[0])).toEqual([
+      48, 60, 55, 51, 48,
+    ]);
   });
   it("chord mode plays every held key on each hit, climbing octaves", () => {
     const a = arp({ direction: "chord", octaves: 2 });
@@ -43,18 +52,52 @@ describe("arp presets", () => {
       if (!a.on) continue;
       expect(ARP_DESIGNS[def.name], def.name).toBeDefined();
       const sig = JSON.stringify([a.rate, a.direction, a.octaves, a.rhythm ?? "", a.notes ?? []]);
-      expect(seen.get(sig), `${def.name} plays the same pattern as ${seen.get(sig)}`).toBeUndefined();
+      expect(
+        seen.get(sig),
+        `${def.name} plays the same pattern as ${seen.get(sig)}`,
+      ).toBeUndefined();
       seen.set(sig, def.name);
     }
     expect(seen.size).toBeGreaterThanOrEqual(45);
   });
   it("song playback arpeggiates a held chord instead of repeating it", () => {
     const played: number[] = [];
-    const engine = { tempo: 120, playNote: (_t: string, _p: unknown, m: number) => played.push(m), setPitchBend() {}, setModWheel() {}, playClick() {} };
+    const engine = {
+      tempo: 120,
+      playNote: (_t: string, _p: unknown, m: number) => played.push(m),
+      setPitchBend() {},
+      setModWheel() {},
+      playClick() {},
+    };
     const patch = { ...applyPreset("Night Arp"), arp: arp({ octaves: 1 }) };
-    const track = { id: "a", kind: "instrument", steps: 16, muted: false, solo: false, patch, notes: [60, 64, 67].map((pitch, i) => ({ id: `n${i}`, step: 0, length: 4, pitch, velocity: 0.8 })) };
-    const tp = { bpm: 120, swing: 0, bars: 1, metronome: false, recording: false, playing: true, step: 0, countIn: false, loop: false };
-    for (let n = 0; n < 4; n++) scheduleStep(engine as never, [track] as never, tp as never, n, n * 0.125, OFFLINE_LIVE);
+    const track = {
+      id: "a",
+      kind: "instrument",
+      steps: 16,
+      muted: false,
+      solo: false,
+      patch,
+      notes: [60, 64, 67].map((pitch, i) => ({
+        id: `n${i}`,
+        step: 0,
+        length: 4,
+        pitch,
+        velocity: 0.8,
+      })),
+    };
+    const tp = {
+      bpm: 120,
+      swing: 0,
+      bars: 1,
+      metronome: false,
+      recording: false,
+      playing: true,
+      step: 0,
+      countIn: false,
+      loop: false,
+    };
+    for (let n = 0; n < 4; n++)
+      scheduleStep(engine as never, [track] as never, tp as never, n, n * 0.125, OFFLINE_LIVE);
     expect(played).toEqual([60, 64, 67, 60]);
   });
 });

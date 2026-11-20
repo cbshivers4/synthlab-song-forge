@@ -1,18 +1,44 @@
 /** Rule-based bassline generator (music theory, not AI). Steps are sixteenth notes. */
 import type { MidiNote, Track } from "./types";
 
-export type BassStyle = "roots" | "octave" | "walking" | "808" | "funk" | "detroit" | "electro" | "house" | "trance" | "ghettotech";
+export type BassStyle =
+  | "roots"
+  | "octave"
+  | "walking"
+  | "808"
+  | "funk"
+  | "detroit"
+  | "electro"
+  | "house"
+  | "trance"
+  | "ghettotech";
 export const BASS_STYLES: { id: BassStyle; label: string; hint: string }[] = [
   { id: "roots", label: "Roots", hint: "One long root note per chord." },
   { id: "octave", label: "Octave bounce", hint: "Disco/house root–octave eighths." },
   { id: "walking", label: "Walking", hint: "Quarter notes stepping toward the next chord." },
   { id: "808", label: "808 trap", hint: "Long subs with syncopated re-hits." },
   { id: "funk", label: "Funk", hint: "Syncopated sixteenths with fifths and octaves." },
-  { id: "detroit", label: "Detroit techno", hint: "Rolling off-beat sixteenths that sit between the kicks." },
-  { id: "electro", label: "Electro", hint: "Syncopated 808-style line with octave and seventh jumps." },
-  { id: "house", label: "House", hint: "Off-beat bass on the 'and' of every beat with a fifth pickup." },
+  {
+    id: "detroit",
+    label: "Detroit techno",
+    hint: "Rolling off-beat sixteenths that sit between the kicks.",
+  },
+  {
+    id: "electro",
+    label: "Electro",
+    hint: "Syncopated 808-style line with octave and seventh jumps.",
+  },
+  {
+    id: "house",
+    label: "House",
+    hint: "Off-beat bass on the 'and' of every beat with a fifth pickup.",
+  },
   { id: "trance", label: "Trance", hint: "Galloping 16ths on the three off-steps of each beat." },
-  { id: "ghettotech", label: "Ghetto tech", hint: "Fast booty-bass bounce with long subs and quick re-hits." },
+  {
+    id: "ghettotech",
+    label: "Ghetto tech",
+    hint: "Fast booty-bass bounce with long subs and quick re-hits.",
+  },
 ];
 
 /** Genre starting points: pattern, sound, key, progression and the usual tempo. */
@@ -23,26 +49,191 @@ export type RiffNote = [number, number, number, number];
  * Genre starting points. Each has its own two-bar riff (bar A, then answer bar B) so every
  * template plays a different bass melody, not just a different rhythm. Intervals follow the key.
  */
-export const BASS_TEMPLATES: { id: string; label: string; style: BassStyle; sound: string; octave: number; tonic: number; minor: boolean; prog: string; bpm: number; riff: [RiffNote[], RiffNote[]] }[] = [
-  { id: "detroit-techno", label: "Detroit Techno", style: "detroit", sound: "Techno Drone Bass", octave: 1, tonic: 5, minor: true, prog: "1-1-1-1", bpm: 132,
-    riff: [[[2, 1, 0, 0.9], [3, 1, 12, 0.7], [6, 1, 0, 0.9], [7, 1, 10, 0.7], [10, 1, 0, 0.9], [11, 1, 12, 0.7], [14, 1, 7, 0.85], [15, 1, 3, 0.7]],
-           [[2, 1, 0, 0.9], [3, 1, 12, 0.7], [6, 1, 3, 0.9], [7, 1, 5, 0.75], [10, 1, 7, 0.9], [11, 1, 10, 0.75], [14, 2, 12, 0.85]]] },
-  { id: "electro", label: "Electro", style: "electro", sound: "Sub Bass", octave: 1, tonic: 0, minor: true, prog: "1-6-4-5", bpm: 126,
-    riff: [[[0, 3, 0, 1], [3, 1, 0, 0.75], [4, 2, 12, 0.85], [7, 1, 10, 0.7], [10, 2, 7, 0.85], [13, 1, 5, 0.7], [14, 2, 3, 0.8]],
-           [[0, 3, 0, 1], [3, 1, 0, 0.75], [6, 2, 3, 0.85], [8, 2, 5, 0.85], [10, 1, 7, 0.75], [12, 4, 10, 0.85]]] },
-  { id: "house", label: "House", style: "house", sound: "Round Bass", octave: 1, tonic: 9, minor: true, prog: "1-6-4-5", bpm: 124,
-    riff: [[[2, 2, 0, 0.9], [6, 2, 0, 0.85], [9, 1, 12, 0.7], [10, 2, 0, 0.9], [14, 2, 7, 0.85]],
-           [[2, 2, 0, 0.9], [6, 2, 3, 0.85], [10, 2, 5, 0.9], [13, 1, 7, 0.7], [14, 2, 10, 0.85]]] },
-  { id: "trance", label: "Trance", style: "trance", sound: "Reese Bass", octave: 1, tonic: 9, minor: true, prog: "6-4-1-5", bpm: 138,
-    riff: [[[1, 1, 0, 0.8], [2, 1, 0, 0.7], [3, 1, 12, 0.75], [5, 1, 0, 0.8], [6, 1, 0, 0.7], [7, 1, 12, 0.75], [9, 1, 0, 0.8], [10, 1, 0, 0.7], [11, 1, 12, 0.75], [13, 1, 7, 0.8], [14, 1, 7, 0.7], [15, 1, 12, 0.75]],
-           [[1, 1, 0, 0.8], [2, 1, 0, 0.7], [3, 1, 12, 0.75], [5, 1, 3, 0.8], [6, 1, 3, 0.7], [7, 1, 15, 0.75], [9, 1, 5, 0.8], [10, 1, 5, 0.7], [11, 1, 17, 0.75], [13, 1, 7, 0.8], [14, 1, 7, 0.7], [15, 1, 19, 0.75]]] },
-  { id: "ghetto-tech", label: "Ghetto Tech", style: "ghettotech", sound: "Ghetto Tech Bass", octave: 1, tonic: 7, minor: true, prog: "1-1-1-1", bpm: 150,
-    riff: [[[0, 3, 0, 1], [3, 1, 0, 0.8], [4, 1, 12, 0.85], [6, 2, 0, 0.9], [8, 3, 0, 1], [11, 1, 0, 0.8], [12, 2, 10, 0.85], [14, 2, 12, 0.85]],
-           [[0, 3, 0, 1], [3, 1, 3, 0.8], [4, 2, 5, 0.85], [6, 2, 7, 0.9], [8, 3, 0, 1], [11, 1, 7, 0.8], [12, 1, 10, 0.85], [13, 1, 12, 0.8], [14, 2, 15, 0.85]]] },
+export const BASS_TEMPLATES: {
+  id: string;
+  label: string;
+  style: BassStyle;
+  sound: string;
+  octave: number;
+  tonic: number;
+  minor: boolean;
+  prog: string;
+  bpm: number;
+  riff: [RiffNote[], RiffNote[]];
+}[] = [
+  {
+    id: "detroit-techno",
+    label: "Detroit Techno",
+    style: "detroit",
+    sound: "Techno Drone Bass",
+    octave: 1,
+    tonic: 5,
+    minor: true,
+    prog: "1-1-1-1",
+    bpm: 132,
+    riff: [
+      [
+        [2, 1, 0, 0.9],
+        [3, 1, 12, 0.7],
+        [6, 1, 0, 0.9],
+        [7, 1, 10, 0.7],
+        [10, 1, 0, 0.9],
+        [11, 1, 12, 0.7],
+        [14, 1, 7, 0.85],
+        [15, 1, 3, 0.7],
+      ],
+      [
+        [2, 1, 0, 0.9],
+        [3, 1, 12, 0.7],
+        [6, 1, 3, 0.9],
+        [7, 1, 5, 0.75],
+        [10, 1, 7, 0.9],
+        [11, 1, 10, 0.75],
+        [14, 2, 12, 0.85],
+      ],
+    ],
+  },
+  {
+    id: "electro",
+    label: "Electro",
+    style: "electro",
+    sound: "Sub Bass",
+    octave: 1,
+    tonic: 0,
+    minor: true,
+    prog: "1-6-4-5",
+    bpm: 126,
+    riff: [
+      [
+        [0, 3, 0, 1],
+        [3, 1, 0, 0.75],
+        [4, 2, 12, 0.85],
+        [7, 1, 10, 0.7],
+        [10, 2, 7, 0.85],
+        [13, 1, 5, 0.7],
+        [14, 2, 3, 0.8],
+      ],
+      [
+        [0, 3, 0, 1],
+        [3, 1, 0, 0.75],
+        [6, 2, 3, 0.85],
+        [8, 2, 5, 0.85],
+        [10, 1, 7, 0.75],
+        [12, 4, 10, 0.85],
+      ],
+    ],
+  },
+  {
+    id: "house",
+    label: "House",
+    style: "house",
+    sound: "Round Bass",
+    octave: 1,
+    tonic: 9,
+    minor: true,
+    prog: "1-6-4-5",
+    bpm: 124,
+    riff: [
+      [
+        [2, 2, 0, 0.9],
+        [6, 2, 0, 0.85],
+        [9, 1, 12, 0.7],
+        [10, 2, 0, 0.9],
+        [14, 2, 7, 0.85],
+      ],
+      [
+        [2, 2, 0, 0.9],
+        [6, 2, 3, 0.85],
+        [10, 2, 5, 0.9],
+        [13, 1, 7, 0.7],
+        [14, 2, 10, 0.85],
+      ],
+    ],
+  },
+  {
+    id: "trance",
+    label: "Trance",
+    style: "trance",
+    sound: "Reese Bass",
+    octave: 1,
+    tonic: 9,
+    minor: true,
+    prog: "6-4-1-5",
+    bpm: 138,
+    riff: [
+      [
+        [1, 1, 0, 0.8],
+        [2, 1, 0, 0.7],
+        [3, 1, 12, 0.75],
+        [5, 1, 0, 0.8],
+        [6, 1, 0, 0.7],
+        [7, 1, 12, 0.75],
+        [9, 1, 0, 0.8],
+        [10, 1, 0, 0.7],
+        [11, 1, 12, 0.75],
+        [13, 1, 7, 0.8],
+        [14, 1, 7, 0.7],
+        [15, 1, 12, 0.75],
+      ],
+      [
+        [1, 1, 0, 0.8],
+        [2, 1, 0, 0.7],
+        [3, 1, 12, 0.75],
+        [5, 1, 3, 0.8],
+        [6, 1, 3, 0.7],
+        [7, 1, 15, 0.75],
+        [9, 1, 5, 0.8],
+        [10, 1, 5, 0.7],
+        [11, 1, 17, 0.75],
+        [13, 1, 7, 0.8],
+        [14, 1, 7, 0.7],
+        [15, 1, 19, 0.75],
+      ],
+    ],
+  },
+  {
+    id: "ghetto-tech",
+    label: "Ghetto Tech",
+    style: "ghettotech",
+    sound: "Ghetto Tech Bass",
+    octave: 1,
+    tonic: 7,
+    minor: true,
+    prog: "1-1-1-1",
+    bpm: 150,
+    riff: [
+      [
+        [0, 3, 0, 1],
+        [3, 1, 0, 0.8],
+        [4, 1, 12, 0.85],
+        [6, 2, 0, 0.9],
+        [8, 3, 0, 1],
+        [11, 1, 0, 0.8],
+        [12, 2, 10, 0.85],
+        [14, 2, 12, 0.85],
+      ],
+      [
+        [0, 3, 0, 1],
+        [3, 1, 3, 0.8],
+        [4, 2, 5, 0.85],
+        [6, 2, 7, 0.9],
+        [8, 3, 0, 1],
+        [11, 1, 7, 0.8],
+        [12, 1, 10, 0.85],
+        [13, 1, 12, 0.8],
+        [14, 2, 15, 0.85],
+      ],
+    ],
+  },
 ];
 
 /** A template's riff over the chord roots: bar A on even bars, answer bar B on odd bars, fitted to the bar length. */
-export function riffBass(roots: number[], riff: [RiffNote[], RiffNote[]], barSteps: number, octave = 1): MidiNote[] {
+export function riffBass(
+  roots: number[],
+  riff: [RiffNote[], RiffNote[]],
+  barSteps: number,
+  octave = 1,
+): MidiNote[] {
   const base = 12 * (octave + 1);
   const out: MidiNote[] = [];
   let k = 0;
@@ -50,7 +241,13 @@ export function riffBass(roots: number[], riff: [RiffNote[], RiffNote[]], barSte
     const s0 = b * barSteps;
     for (const [s, l, iv, v] of riff[b % 2]!) {
       if (s >= barSteps) continue;
-      out.push({ id: `bass-${Date.now()}-${k++}`, step: s0 + s, length: Math.min(l, barSteps - s), pitch: base + pc + iv, velocity: v });
+      out.push({
+        id: `bass-${Date.now()}-${k++}`,
+        step: s0 + s,
+        length: Math.min(l, barSteps - s),
+        pitch: base + pc + iv,
+        velocity: v,
+      });
     }
   });
   return out;
@@ -70,11 +267,18 @@ export const PROGRESSIONS: { id: string; label: string; degrees: number[] }[] = 
 /** Root pitch class for each bar from progression in a key. */
 export function rootsFromKey(tonic: number, minor: boolean, degrees: number[], bars: number) {
   const scale = minor ? MINOR : MAJOR;
-  return Array.from({ length: bars }, (_, b) => (tonic + scale[degrees[b % degrees.length]!]!) % 12);
+  return Array.from(
+    { length: bars },
+    (_, b) => (tonic + scale[degrees[b % degrees.length]!]!) % 12,
+  );
 }
 
 /** Root per bar from the lowest note sounding in each bar of the song's note tracks. */
-export function rootsFromTracks(tracks: Track[], bars: number, barSteps: number): (number | null)[] {
+export function rootsFromTracks(
+  tracks: Track[],
+  bars: number,
+  barSteps: number,
+): (number | null)[] {
   return Array.from({ length: bars }, (_, b) => {
     let low: number | null = null;
     for (const t of tracks) {
@@ -84,7 +288,12 @@ export function rootsFromTracks(tracks: Track[], bars: number, barSteps: number)
         const s = n.step % len;
         for (let rep = 0; rep * len < bars * barSteps; rep++) {
           const at = s + rep * len;
-          if (at < (b + 1) * barSteps && at + n.length > b * barSteps && (low === null || n.pitch < low)) low = n.pitch;
+          if (
+            at < (b + 1) * barSteps &&
+            at + n.length > b * barSteps &&
+            (low === null || n.pitch < low)
+          )
+            low = n.pitch;
         }
       }
     }
@@ -92,7 +301,12 @@ export function rootsFromTracks(tracks: Track[], bars: number, barSteps: number)
   });
 }
 
-export function generateBass(roots: number[], style: BassStyle, barSteps: number, octave = 1): MidiNote[] {
+export function generateBass(
+  roots: number[],
+  style: BassStyle,
+  barSteps: number,
+  octave = 1,
+): MidiNote[] {
   const base = 12 * (octave + 1); // octave 1 → C1 = 24
   const out: MidiNote[] = [];
   let k = 0;
@@ -103,35 +317,78 @@ export function generateBass(roots: number[], style: BassStyle, barSteps: number
     const s0 = b * barSteps;
     const next = base + roots[(b + 1) % roots.length]!;
     if (style === "roots") add(s0, barSteps, r);
-    if (style === "octave") for (let s = 0; s < barSteps; s += 2) add(s0 + s, 2, s % 4 === 0 ? r : r + 12, s % 4 === 0 ? 0.9 : 0.7);
+    if (style === "octave")
+      for (let s = 0; s < barSteps; s += 2)
+        add(s0 + s, 2, s % 4 === 0 ? r : r + 12, s % 4 === 0 ? 0.9 : 0.7);
     if (style === "walking") {
       const beats = Math.max(1, Math.round(barSteps / 4));
       const pts = [r, r + 4, r + 7, next > r ? next - 1 : next + 1];
-      for (let i = 0; i < beats; i++) add(s0 + i * 4, 4, pts[Math.min(i, 3)]!, i === 0 ? 0.9 : 0.75);
+      for (let i = 0; i < beats; i++)
+        add(s0 + i * 4, 4, pts[Math.min(i, 3)]!, i === 0 ? 0.9 : 0.75);
     }
     if (style === "808") {
       add(s0, 6, r, 1);
       add(s0 + 7, 3, r, 0.8);
-      if (barSteps >= 16) { add(s0 + 10, 6, b % 2 ? r + 12 : r, 0.9); }
+      if (barSteps >= 16) {
+        add(s0 + 10, 6, b % 2 ? r + 12 : r, 0.9);
+      }
     }
     const groove = (pat: [number, number, number, number?][]) =>
-      pat.filter(([s]) => s < barSteps).forEach(([s, l, iv, v]) => add(s0 + s, Math.min(l, barSteps - s), r + iv, v ?? 0.8));
+      pat
+        .filter(([s]) => s < barSteps)
+        .forEach(([s, l, iv, v]) => add(s0 + s, Math.min(l, barSteps - s), r + iv, v ?? 0.8));
     if (style === "detroit") {
       const pat: [number, number, number, number?][] = [];
-      for (let beat = 0; beat * 4 < barSteps; beat++) pat.push([beat * 4 + 2, 1, 0, 0.9], [beat * 4 + 3, 1, beat === 3 ? 12 : 0, 0.7]);
+      for (let beat = 0; beat * 4 < barSteps; beat++)
+        pat.push([beat * 4 + 2, 1, 0, 0.9], [beat * 4 + 3, 1, beat === 3 ? 12 : 0, 0.7]);
       groove(pat);
     }
-    if (style === "electro") groove([[0, 2, 0, 1], [3, 1, 0, 0.75], [6, 1, 12, 0.85], [8, 2, 0, 0.9], [10, 1, 10, 0.75], [12, 1, 7, 0.8], [14, 2, 12, 0.85]]);
-    if (style === "house") groove([[2, 2, 0, 0.9], [6, 2, 0, 0.85], [10, 2, 0, 0.9], [13, 1, 12, 0.7], [14, 2, 7, 0.8]]);
+    if (style === "electro")
+      groove([
+        [0, 2, 0, 1],
+        [3, 1, 0, 0.75],
+        [6, 1, 12, 0.85],
+        [8, 2, 0, 0.9],
+        [10, 1, 10, 0.75],
+        [12, 1, 7, 0.8],
+        [14, 2, 12, 0.85],
+      ]);
+    if (style === "house")
+      groove([
+        [2, 2, 0, 0.9],
+        [6, 2, 0, 0.85],
+        [10, 2, 0, 0.9],
+        [13, 1, 12, 0.7],
+        [14, 2, 7, 0.8],
+      ]);
     if (style === "trance") {
       const pat: [number, number, number, number?][] = [];
-      for (let beat = 0; beat * 4 < barSteps; beat++) pat.push([beat * 4 + 1, 1, 0, 0.75], [beat * 4 + 2, 1, 0, 0.9], [beat * 4 + 3, 1, 0, 0.75]);
+      for (let beat = 0; beat * 4 < barSteps; beat++)
+        pat.push([beat * 4 + 1, 1, 0, 0.75], [beat * 4 + 2, 1, 0, 0.9], [beat * 4 + 3, 1, 0, 0.75]);
       groove(pat);
     }
-    if (style === "ghettotech") groove([[0, 3, 0, 1], [3, 1, 0, 0.8], [6, 2, 0, 0.9], [10, 1, 12, 0.8], [11, 1, 0, 0.85], [14, 2, 10, 0.8]]);
+    if (style === "ghettotech")
+      groove([
+        [0, 3, 0, 1],
+        [3, 1, 0, 0.8],
+        [6, 2, 0, 0.9],
+        [10, 1, 12, 0.8],
+        [11, 1, 0, 0.85],
+        [14, 2, 10, 0.8],
+      ]);
     if (style === "funk") {
-      const pat: [number, number, number][] = [[0, 2, 0], [3, 1, 12], [6, 2, 7], [8, 1, 0], [10, 1, 0], [11, 2, 12], [14, 2, 10]];
-      pat.filter(([s]) => s < barSteps).forEach(([s, l, iv], i) => add(s0 + s, l, r + iv, i === 0 ? 0.95 : 0.75));
+      const pat: [number, number, number][] = [
+        [0, 2, 0],
+        [3, 1, 12],
+        [6, 2, 7],
+        [8, 1, 0],
+        [10, 1, 0],
+        [11, 2, 12],
+        [14, 2, 10],
+      ];
+      pat
+        .filter(([s]) => s < barSteps)
+        .forEach(([s, l, iv], i) => add(s0 + s, l, r + iv, i === 0 ? 0.95 : 0.75));
     }
   });
   return out;
@@ -154,20 +411,37 @@ export function cleanBassPatch(p: import("./types").SynthPatch): import("./types
   const bright = q.oscillators.some((o) => o.on && (o.wave === "sawtooth" || o.wave === "square"));
   q.cutoff = Math.min(q.cutoff, bright ? 650 : 1200);
   q.filterEnv = { ...q.filterEnv, amount: Math.min(q.filterEnv.amount, bright ? 300 : 600) }; // Hz of sweep
-  q.lfos = q.lfos.map((l) => (l.destination === "pitch" || l.destination === "filter" ? { ...l, amount: l.amount * 0.3 } : l));
+  q.lfos = q.lfos.map((l) =>
+    l.destination === "pitch" || l.destination === "filter" ? { ...l, amount: l.amount * 0.3 } : l,
+  );
   q.analog = Math.min(q.analog ?? 0, 0.05);
   q.noise = 0;
   q.unison = { ...q.unison, voices: 1, detune: 0 };
   q.voiceMode = "mono";
-  q.fx = { ...q.fx, distortion: 0, saturation: 0, bitcrush: 0, chorus: 0, flanger: 0, phaser: 0, delay: 0, reverb: Math.min(q.fx.reverb, 0.05) };
-  q.amp = { ...q.amp, attack: Math.max(0.003, q.amp.attack), release: Math.max(0.03, q.amp.release) };
+  q.fx = {
+    ...q.fx,
+    distortion: 0,
+    saturation: 0,
+    bitcrush: 0,
+    chorus: 0,
+    flanger: 0,
+    phaser: 0,
+    delay: 0,
+    reverb: Math.min(q.fx.reverb, 0.05),
+  };
+  q.amp = {
+    ...q.amp,
+    attack: Math.max(0.003, q.amp.attack),
+    release: Math.max(0.03, q.amp.release),
+  };
   const on = q.oscillators.filter((o) => o.on);
   // The generator already writes notes in the bass register its Octave menu names, so lift the
   // preset's own sub-octave offset (keeping the oscillators' spacing) to sound at that pitch.
   const lowest = on.length ? Math.min(...on.map((o) => o.octave)) : 0;
   if (lowest < 0) q.oscillators = q.oscillators.map((o) => ({ ...o, octave: o.octave - lowest }));
   const sum = on.reduce((s, o) => s + o.level, 0);
-  if (sum > 0.7) q.oscillators = q.oscillators.map((o) => (o.on ? { ...o, level: (o.level * 0.7) / sum } : o));
+  if (sum > 0.7)
+    q.oscillators = q.oscillators.map((o) => (o.on ? { ...o, level: (o.level * 0.7) / sum } : o));
   return q;
 }
 
@@ -184,7 +458,16 @@ function seeded(seed: number) {
 }
 
 /** Rhythm cells (in 16th steps) used to break long held notes into a new groove. */
-const RHYTHM_CELLS: number[][] = [[4, 4, 4, 4], [6, 2, 6, 2], [3, 3, 2, 3, 3, 2], [8, 4, 4], [2, 2, 4, 2, 2, 4], [4, 2, 2, 4, 4], [6, 6, 4], [3, 1, 2, 2, 3, 1, 4]];
+const RHYTHM_CELLS: number[][] = [
+  [4, 4, 4, 4],
+  [6, 2, 6, 2],
+  [3, 3, 2, 3, 3, 2],
+  [8, 4, 4],
+  [2, 2, 4, 2, 2, 4],
+  [4, 2, 2, 4, 4],
+  [6, 6, 4],
+  [3, 1, 2, 2, 3, 1, 4],
+];
 
 const shape = (list: MidiNote[]) => list.map((n) => `${n.step}:${n.length}:${n.pitch}`).join(",");
 
@@ -195,36 +478,67 @@ const shape = (list: MidiNote[]) => list.map((n) => `${n.step}:${n.length}:${n.p
  * may move to the octave, fifth or the key's third, and short ghost notes can fill one-step gaps.
  * Notes never leave their bar or overlap.
  */
-export function varyBass(notes: MidiNote[], variation: number, minor: boolean, barSteps: number): MidiNote[] {
+export function varyBass(
+  notes: MidiNote[],
+  variation: number,
+  minor: boolean,
+  barSteps: number,
+): MidiNote[] {
   if (!variation || notes.length === 0) return notes;
   const rnd = seeded(variation);
   const third = minor ? 3 : 4;
   const moves = [0, 7, 12, third, minor ? 10 : 9];
   const sorted = [...notes].sort((a, b) => a.step - b.step);
   const rootOf = new Map<number, number>();
-  for (const n of sorted) { const bar = Math.floor(n.step / barSteps); if (!rootOf.has(bar)) rootOf.set(bar, n.pitch); }
+  for (const n of sorted) {
+    const bar = Math.floor(n.step / barSteps);
+    if (!rootOf.has(bar)) rootOf.set(bar, n.pitch);
+  }
   const bars = Math.max(1, rootOf.size);
   // Sparse lines (one held note per bar) always get a new rhythm, otherwise most held notes do.
   const splitChance = sorted.length <= bars ? 1 : 0.6;
   let k = 0;
   const split: MidiNote[] = [];
   for (const n of sorted) {
-    if (n.length < 4 || rnd() >= splitChance) { split.push({ ...n }); continue; }
+    if (n.length < 4 || rnd() >= splitChance) {
+      split.push({ ...n });
+      continue;
+    }
     const root = rootOf.get(Math.floor(n.step / barSteps))!;
     const cell = RHYTHM_CELLS[Math.floor(rnd() * RHYTHM_CELLS.length)]!;
     let at = 0;
     for (let i = 0; at < n.length; i = (i + 1) % cell.length) {
       const len = Math.min(cell[i]!, n.length - at);
-      const pitch = at === 0 ? n.pitch : rnd() < 0.5 ? root + moves[Math.floor(rnd() * moves.length)]! : n.pitch;
-      split.push({ id: `${n.id}-v${variation}-${k++}`, step: n.step + at, length: len, pitch, velocity: at === 0 ? n.velocity : 0.7 + rnd() * 0.15 });
+      const pitch =
+        at === 0
+          ? n.pitch
+          : rnd() < 0.5
+            ? root + moves[Math.floor(rnd() * moves.length)]!
+            : n.pitch;
+      split.push({
+        id: `${n.id}-v${variation}-${k++}`,
+        step: n.step + at,
+        length: len,
+        pitch,
+        velocity: at === 0 ? n.velocity : 0.7 + rnd() * 0.15,
+      });
       at += len;
     }
   }
   const out: MidiNote[] = split.map((n) => {
     const bar = Math.floor(n.step / barSteps);
     const root = rootOf.get(bar)!;
-    if (n.step === bar * barSteps || n.step === split.find((m) => Math.floor(m.step / barSteps) === bar)!.step) return n;
-    if (rnd() < 0.4) return { ...n, pitch: root + moves[Math.floor(rnd() * moves.length)]!, velocity: Math.min(1, Math.max(0.5, n.velocity + (rnd() - 0.5) * 0.2)) };
+    if (
+      n.step === bar * barSteps ||
+      n.step === split.find((m) => Math.floor(m.step / barSteps) === bar)!.step
+    )
+      return n;
+    if (rnd() < 0.4)
+      return {
+        ...n,
+        pitch: root + moves[Math.floor(rnd() * moves.length)]!,
+        velocity: Math.min(1, Math.max(0.5, n.velocity + (rnd() - 0.5) * 0.2)),
+      };
     return n;
   });
   const taken = new Set<number>();
@@ -234,12 +548,23 @@ export function varyBass(notes: MidiNote[], variation: number, minor: boolean, b
     const bar = Math.floor(n.step / barSteps);
     if (Math.floor(s / barSteps) !== bar || taken.has(s) || rnd() >= 0.2) continue;
     taken.add(s);
-    out.push({ id: `${n.id}-ghost-${variation}-${k++}`, step: s, length: 1, pitch: rootOf.get(bar)!, velocity: 0.55 });
+    out.push({
+      id: `${n.id}-ghost-${variation}-${k++}`,
+      step: s,
+      length: 1,
+      pitch: rootOf.get(bar)!,
+      velocity: 0.55,
+    });
   }
   out.sort((a, b) => a.step - b.step);
   // Never hand back the same line: nudge one later note to another chord tone.
   if (shape(out) === shape(sorted)) {
-    const later = out.filter((n) => n.step % barSteps !== 0 && n.step !== out.find((m) => Math.floor(m.step / barSteps) === Math.floor(n.step / barSteps))!.step);
+    const later = out.filter(
+      (n) =>
+        n.step % barSteps !== 0 &&
+        n.step !==
+          out.find((m) => Math.floor(m.step / barSteps) === Math.floor(n.step / barSteps))!.step,
+    );
     const pick = later[variation % Math.max(1, later.length)];
     if (pick) {
       const root = rootOf.get(Math.floor(pick.step / barSteps))!;
@@ -250,7 +575,13 @@ export function varyBass(notes: MidiNote[], variation: number, minor: boolean, b
       if (longest.length >= 2) {
         const half = Math.floor(longest.length / 2);
         longest.length -= half;
-        out.push({ id: `${longest.id}-v${variation}-${k++}`, step: longest.step + longest.length, length: half, pitch: longest.pitch + 7, velocity: 0.7 });
+        out.push({
+          id: `${longest.id}-v${variation}-${k++}`,
+          step: longest.step + longest.length,
+          length: half,
+          pitch: longest.pitch + 7,
+          velocity: 0.7,
+        });
         out.sort((a, b) => a.step - b.step);
       }
     }

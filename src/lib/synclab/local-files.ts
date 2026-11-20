@@ -18,7 +18,8 @@ const emitFolders = () => folderListeners.forEach((l) => l());
 export const getLocalFolders = () => folders;
 export function addLocalFolder(f: LocalFolder) {
   void import("./media-library").then(({ retainMediaInBackground }) => {
-    for (const item of f.files) if (/\.mp3$/i.test(item.name)) retainMediaInBackground(item.file, item.name);
+    for (const item of f.files)
+      if (/\.mp3$/i.test(item.name)) retainMediaInBackground(item.file, item.name);
   });
   folders = [f, ...folders.filter((x) => x.id !== f.id)];
   if (f.handle) void rememberHandle(f.id, f.name, f.handle);
@@ -41,7 +42,10 @@ function db(): Promise<IDBDatabase | null> {
     req.onerror = () => resolve(null);
   });
 }
-async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T | undefined> {
+async function tx<T>(
+  mode: IDBTransactionMode,
+  fn: (s: IDBObjectStore) => IDBRequest<T>,
+): Promise<T | undefined> {
   const d = await db();
   if (!d) return undefined;
   return new Promise((resolve) => {
@@ -49,23 +53,45 @@ async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBReq
       const r = fn(d.transaction("handles", mode).objectStore("handles"));
       r.onsuccess = () => resolve(r.result);
       r.onerror = () => resolve(undefined);
-    } catch { resolve(undefined); }
+    } catch {
+      resolve(undefined);
+    }
   });
 }
-async function rememberHandle(id: string, name: string, handle: DirHandle) { await tx("readwrite", (s) => s.put({ id, name, handle }, id)); }
-async function forgetHandle(id: string) { await tx("readwrite", (s) => s.delete(id)); }
+async function rememberHandle(id: string, name: string, handle: DirHandle) {
+  await tx("readwrite", (s) => s.put({ id, name, handle }, id));
+}
+async function forgetHandle(id: string) {
+  await tx("readwrite", (s) => s.delete(id));
+}
 export type RememberedFolder = { id: string; name: string };
 /** Folders opened before a reload that are not open now; reopening needs one click to re-allow access. */
 export async function rememberedFolders(): Promise<RememberedFolder[]> {
-  const all = (await tx("readonly", (s) => s.getAll() as IDBRequest<{ id: string; name: string }[]>)) ?? [];
-  return all.filter((r) => !folders.some((f) => f.id === r.id)).map((r) => ({ id: r.id, name: r.name }));
+  const all =
+    (await tx("readonly", (s) => s.getAll() as IDBRequest<{ id: string; name: string }[]>)) ?? [];
+  return all
+    .filter((r) => !folders.some((f) => f.id === r.id))
+    .map((r) => ({ id: r.id, name: r.name }));
 }
-export async function forgetRememberedFolder(id: string) { await forgetHandle(id); }
+export async function forgetRememberedFolder(id: string) {
+  await forgetHandle(id);
+}
 /** Silently reloads remembered folders the browser still allows reading (no prompt), so they just appear. */
 let restoring: Promise<void> | null = null;
 export function restoreGrantedFolders(): Promise<void> {
   restoring ??= (async () => {
-    const all = (await tx("readonly", (s) => s.getAll() as IDBRequest<{ id: string; name: string; handle: DirHandle & { queryPermission?: (o: { mode: string }) => Promise<string> } }[]>)) ?? [];
+    const all =
+      (await tx(
+        "readonly",
+        (s) =>
+          s.getAll() as IDBRequest<
+            {
+              id: string;
+              name: string;
+              handle: DirHandle & { queryPermission?: (o: { mode: string }) => Promise<string> };
+            }[]
+          >,
+      )) ?? [];
     for (const rec of all) {
       if (folders.some((f) => f.id === rec.id)) continue;
       try {
@@ -73,14 +99,27 @@ export function restoreGrantedFolders(): Promise<void> {
         const out: { file: File; path: string }[] = [];
         await walk(rec.handle, "", out, 0);
         addLocalFolder({ ...toFolder(rec.name, out), id: rec.id, handle: rec.handle });
-      } catch { /* stays as a one-click Reopen entry */ }
+      } catch {
+        /* stays as a one-click Reopen entry */
+      }
     }
   })();
   return restoring;
 }
 /** Must run from a click: the browser asks to allow reading the folder again. */
 export async function reconnectFolder(id: string): Promise<LocalFolder | null> {
-  const rec = await tx("readonly", (s) => s.get(id) as IDBRequest<{ id: string; name: string; handle: DirHandle & { requestPermission?: (o: { mode: string }) => Promise<string> } } | undefined>);
+  const rec = await tx(
+    "readonly",
+    (s) =>
+      s.get(id) as IDBRequest<
+        | {
+            id: string;
+            name: string;
+            handle: DirHandle & { requestPermission?: (o: { mode: string }) => Promise<string> };
+          }
+        | undefined
+      >,
+  );
   if (!rec) return null;
   const perm = await rec.handle.requestPermission?.({ mode: "read" });
   if (perm && perm !== "granted") throw new Error("Access to that folder was not allowed.");
@@ -100,7 +139,14 @@ export function pickFiles(): Promise<LocalFolder | null> {
     input.accept = "audio/*,.wav,.mp3,.aif,.aiff,.flac,.ogg,.m4a";
     input.onchange = () => {
       const list = Array.from(input.files ?? []);
-      resolve(list.length ? toFolder(list.length === 1 ? list[0]!.name : `${list.length} files`, list.map((f) => ({ file: f, path: f.name }))) : null);
+      resolve(
+        list.length
+          ? toFolder(
+              list.length === 1 ? list[0]!.name : `${list.length} files`,
+              list.map((f) => ({ file: f, path: f.name })),
+            )
+          : null,
+      );
     };
     input.click();
   });
@@ -115,19 +161,38 @@ function toFolder(name: string, entries: { file: File; path: string }[]): LocalF
     .filter((e) => AUDIO_EXT.test(e.file.name))
     .sort((a, b) => a.path.localeCompare(b.path))
     .map((e) => {
-      const f: LocalFile = { id: uid(), name: e.file.name, path: e.path, size: e.file.size, file: e.file };
+      const f: LocalFile = {
+        id: uid(),
+        name: e.file.name,
+        path: e.path,
+        size: e.file.size,
+        file: e.file,
+      };
       registry.set(f.id, f);
       return f;
     });
   return { id: uid(), name, files };
 }
 
-type DirHandle = { name: string; kind: string; values(): AsyncIterable<{ kind: string; name: string; getFile?: () => Promise<File> } & DirHandle> };
+type DirHandle = {
+  name: string;
+  kind: string;
+  values(): AsyncIterable<
+    { kind: string; name: string; getFile?: () => Promise<File> } & DirHandle
+  >;
+};
 
-async function walk(dir: DirHandle, prefix: string, out: { file: File; path: string }[], depth: number) {
+async function walk(
+  dir: DirHandle,
+  prefix: string,
+  out: { file: File; path: string }[],
+  depth: number,
+) {
   for await (const h of dir.values()) {
-    if (h.kind === "file" && AUDIO_EXT.test(h.name) && h.getFile) out.push({ file: await h.getFile(), path: prefix + h.name });
-    else if (h.kind === "directory" && depth < 4) await walk(h, `${prefix}${h.name}/`, out, depth + 1);
+    if (h.kind === "file" && AUDIO_EXT.test(h.name) && h.getFile)
+      out.push({ file: await h.getFile(), path: prefix + h.name });
+    else if (h.kind === "directory" && depth < 4)
+      await walk(h, `${prefix}${h.name}/`, out, depth + 1);
   }
 }
 
@@ -153,9 +218,15 @@ export async function pickFolder(): Promise<LocalFolder | null> {
     input.onchange = () => {
       const list = Array.from(input.files ?? []);
       if (!list.length) return resolve(null);
-      const rel = (f: File) => (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
+      const rel = (f: File) =>
+        (f as File & { webkitRelativePath?: string }).webkitRelativePath || f.name;
       const root = rel(list[0]!).split("/")[0] || "Folder";
-      resolve(toFolder(root, list.map((f) => ({ file: f, path: rel(f).split("/").slice(1).join("/") || f.name }))));
+      resolve(
+        toFolder(
+          root,
+          list.map((f) => ({ file: f, path: rel(f).split("/").slice(1).join("/") || f.name })),
+        ),
+      );
     };
     input.click();
   });
@@ -175,7 +246,11 @@ export const onPreviewChange = (fn: (id: string | null) => void) => {
 };
 
 export function stopPreview() {
-  try { current?.stop(); } catch { /* already stopped */ }
+  try {
+    current?.stop();
+  } catch {
+    /* already stopped */
+  }
   current = null;
   currentId = null;
   emit();
@@ -198,7 +273,11 @@ export async function playPreview(id: string) {
   src.connect(analyser);
   analyser.connect(engine.master ?? ctx.destination);
   src.onended = () => {
-    if (current === src) { current = null; currentId = null; emit(); }
+    if (current === src) {
+      current = null;
+      currentId = null;
+      emit();
+    }
   };
   src.start();
   current = src;
@@ -217,7 +296,20 @@ export async function clipFromLocalFile(id: string, start: number): Promise<Clip
 export async function clipFromFile(file: File, start: number): Promise<Clip> {
   const engine = getEngine();
   await engine.init();
-  const name = file.name.replace(/\.[^.]+$/, "").toUpperCase().slice(0, 18);
+  const name = file.name
+    .replace(/\.[^.]+$/, "")
+    .toUpperCase()
+    .slice(0, 18);
   const loaded = await engine.loadSampleFile(file, name);
-  return { id: uid(), name, peaks: loaded.peaks, duration: loaded.duration, url: loaded.url, start, offset: 0, length: loaded.duration, gain: 1 };
+  return {
+    id: uid(),
+    name,
+    peaks: loaded.peaks,
+    duration: loaded.duration,
+    url: loaded.url,
+    start,
+    offset: 0,
+    length: loaded.duration,
+    gain: 1,
+  };
 }

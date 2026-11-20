@@ -37,7 +37,10 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     ],
   }),
   beforeLoad: async ({ search, location }) => {
-    if (!search.authorization_id) throw new Error("This connect link is missing its request ID. Start connecting again from your assistant.");
+    if (!search.authorization_id)
+      throw new Error(
+        "This connect link is missing its request ID. Start connecting again from your assistant.",
+      );
     const { data } = await supabase.auth.getSession();
     const next = location.pathname + location.searchStr;
     if (!data.session) throw redirect({ to: "/login", search: { next } });
@@ -55,8 +58,12 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     <main className="grid min-h-[100dvh] place-items-center bg-background p-6 text-foreground">
       <div className="max-w-md space-y-2 rounded-lg border border-border bg-card p-6 text-center">
         <h1 className="font-display text-lg font-semibold">Could not load this connect request</h1>
-        <p className="text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p>
-        <p className="text-xs text-muted-foreground">Connect links expire after a few minutes. Start again from your assistant.</p>
+        <p className="text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : String(error)}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Connect links expire after a few minutes. Start again from your assistant.
+        </p>
       </div>
     </main>
   ),
@@ -73,10 +80,13 @@ function Consent() {
     setBusy(true);
     setError(null);
     try {
-      const { data, error } = approve ? await oauth().approveAuthorization(authorization_id) : await oauth().denyAuthorization(authorization_id);
+      const { data, error } = approve
+        ? await oauth().approveAuthorization(authorization_id)
+        : await oauth().denyAuthorization(authorization_id);
       if (error) throw new Error(error.message);
       const target = data?.redirect_url ?? data?.redirect_to;
-      if (!target) throw new Error("The sign-in service did not say where to go next. Try connecting again.");
+      if (!target)
+        throw new Error("The sign-in service did not say where to go next. Try connecting again.");
       window.location.href = target;
     } catch (e) {
       setBusy(false);
@@ -100,12 +110,29 @@ function Consent() {
             <li>See your media library and your plan</li>
             <li>Search the SYNCLAB help articles</li>
           </ul>
-          <p className="flex items-start gap-2 text-xs text-muted-foreground"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />It can't delete anything, pay, or see other people's work. You can only approve this while signed in.</p>
+          <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+            It can't delete anything, pay, or see other people's work. You can only approve this
+            while signed in.
+          </p>
         </div>
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
         <div className="flex gap-2">
-          <Button className="flex-1" disabled={busy} onClick={() => void decide(true)}>Allow</Button>
-          <Button className="flex-1" variant="outline" disabled={busy} onClick={() => void decide(false)}>Deny</Button>
+          <Button className="flex-1" disabled={busy} onClick={() => void decide(true)}>
+            Allow
+          </Button>
+          <Button
+            className="flex-1"
+            variant="outline"
+            disabled={busy}
+            onClick={() => void decide(false)}
+          >
+            Deny
+          </Button>
         </div>
       </div>
     </main>

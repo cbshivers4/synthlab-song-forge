@@ -108,7 +108,14 @@ export function DetachedWindow({
     // Forward typing keys so the computer keyboard still plays notes while the popup is focused.
     const forward = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (
+        t &&
+        (t.tagName === "INPUT" ||
+          t.tagName === "TEXTAREA" ||
+          t.tagName === "SELECT" ||
+          t.isContentEditable)
+      )
+        return;
       window.dispatchEvent(new KeyboardEvent(e.type, e));
     };
     win.addEventListener("keydown", forward);

@@ -15,7 +15,11 @@ export function barsLabel(steps: number, barSteps: number): string {
  * Lengths the drum-roll menu offers: whole bars up to the song length (never past it, unless the
  * pattern is already longer), plus the pattern's current length when it is not a whole bar count.
  */
-export function drumLengthOptions(current: number, songBars: number, barSteps: number): { steps: number; label: string }[] {
+export function drumLengthOptions(
+  current: number,
+  songBars: number,
+  barSteps: number,
+): { steps: number; label: string }[] {
   const maxBars = Math.max(1, songBars);
   const bars = [1, 2, 4, 8, 16, 32].filter((b) => b <= maxBars);
   if (!bars.includes(maxBars) && maxBars <= 32) bars.push(maxBars);
@@ -34,7 +38,7 @@ export function trimSilentDrumOverhang(track: Track, barSteps: number): Partial<
   const total = Math.max(1, track.steps || 16);
   const [, end] = tidyDrumSpan(track, [0, total], barSteps);
   if (end >= total) return null;
-  const cut = <T,>(a?: T[]) => (a && a.length > end ? a.slice(0, end) : a);
+  const cut = <T>(a?: T[]) => (a && a.length > end ? a.slice(0, end) : a);
   return {
     steps: end,
     pads: (track.pads ?? []).map((p) => ({
@@ -48,7 +52,13 @@ export function trimSilentDrumOverhang(track: Track, barSteps: number): Partial<
       glitch: cut(p.glitch),
     })),
     // A block edge on the stray step moves back onto the bar line.
-    ...(track.cuts?.length ? { cuts: [...new Set(track.cuts.map((c) => (c > end && c <= total ? end : c)))].sort((a, b) => a - b) } : {}),
+    ...(track.cuts?.length
+      ? {
+          cuts: [...new Set(track.cuts.map((c) => (c > end && c <= total ? end : c)))].sort(
+            (a, b) => a - b,
+          ),
+        }
+      : {}),
   };
 }
 
@@ -65,9 +75,12 @@ export function dropHitsOutsideBlock(track: Track): Partial<Track> | null {
   // A pattern shorter than its block repeats inside it, so every step plays somewhere.
   if (hi > total || hi <= lo) return null;
   const end = hi;
-  const hidden = (track.pads ?? []).some((p) => p.steps.some((v, i) => v > 0 && (i < lo || i >= end)));
+  const hidden = (track.pads ?? []).some((p) =>
+    p.steps.some((v, i) => v > 0 && (i < lo || i >= end)),
+  );
   if (!hidden && total === end) return null;
-  const fit = <T,>(a: T[] | undefined, empty: T) => (a ? Array.from({ length: end }, (_, i) => (i < lo ? empty : (a[i] ?? empty))) : a);
+  const fit = <T>(a: T[] | undefined, empty: T) =>
+    a ? Array.from({ length: end }, (_, i) => (i < lo ? empty : (a[i] ?? empty))) : a;
   return {
     steps: end,
     pads: (track.pads ?? []).map((p) => ({
@@ -87,8 +100,14 @@ export function dropHitsOutsideBlock(track: Track): Partial<Track> | null {
 export function clearAllHits(track: Track): Partial<Track> {
   return {
     pads: (track.pads ?? []).map((p) => ({
-      ...p, steps: p.steps.map(() => 0),
-      probability: undefined, stepPitch: undefined, stepDecay: undefined, flam: undefined, retrig: undefined, glitch: undefined,
+      ...p,
+      steps: p.steps.map(() => 0),
+      probability: undefined,
+      stepPitch: undefined,
+      stepDecay: undefined,
+      flam: undefined,
+      retrig: undefined,
+      glitch: undefined,
     })),
   };
 }

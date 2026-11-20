@@ -1,12 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { angleDelta, armFraction, beatPhase, crossfade, djSilenceReason, DEG_PER_SEC, scrubBoost, scrubTo, scratchRate, detectBpm, eqDb, filterFor, phaseShift, phonesBlend, phonesRoute, snapToBeat, speedFactor, syncRate, wavFromPcm16 } from "./dj";
+import {
+  angleDelta,
+  armFraction,
+  beatPhase,
+  crossfade,
+  djSilenceReason,
+  DEG_PER_SEC,
+  scrubBoost,
+  scrubTo,
+  scratchRate,
+  detectBpm,
+  eqDb,
+  filterFor,
+  phaseShift,
+  phonesBlend,
+  phonesRoute,
+  snapToBeat,
+  speedFactor,
+  syncRate,
+  wavFromPcm16,
+} from "./dj";
 
 function clickTrack(bpm: number, seconds: number, sr = 22050, offset = 0.1) {
   const out = new Float32Array(Math.floor(seconds * sr));
   const beat = 60 / bpm;
   for (let t = offset; t < seconds; t += beat) {
     const at = Math.floor(t * sr);
-    for (let i = 0; i < 2000 && at + i < out.length; i++) out[at + i] = Math.sin((2 * Math.PI * 60 * i) / sr) * Math.exp(-i / 400);
+    for (let i = 0; i < 2000 && at + i < out.length; i++)
+      out[at + i] = Math.sin((2 * Math.PI * 60 * i) / sr) * Math.exp(-i / 400);
   }
   return out;
 }
@@ -15,7 +36,10 @@ describe("DJ tempo detection", () => {
   it.each([90, 124, 128, 140, 174])("finds %i BPM on a kick pattern", (bpm) => {
     const r = detectBpm(clickTrack(bpm, 20), 22050);
     // 174 folds to 87 for half-time; either reading lines up a mix
-    const ok = Math.abs(r.bpm - bpm) < 1.2 || Math.abs(r.bpm * 2 - bpm) < 1.5 || Math.abs(r.bpm / 2 - bpm) < 1.5;
+    const ok =
+      Math.abs(r.bpm - bpm) < 1.2 ||
+      Math.abs(r.bpm * 2 - bpm) < 1.5 ||
+      Math.abs(r.bpm / 2 - bpm) < 1.5;
     expect(ok, `${r.bpm}`).toBe(true);
   });
 
@@ -67,13 +91,16 @@ describe("DJ sync and mixing maths", () => {
 describe("DJ headphone cue", () => {
   it("MIXING fully left is only the cued decks, fully right only the master", () => {
     const [c0, m0] = phonesBlend(0);
-    expect(c0).toBeCloseTo(1); expect(m0).toBeCloseTo(0);
+    expect(c0).toBeCloseTo(1);
+    expect(m0).toBeCloseTo(0);
     const [c1, m1] = phonesBlend(1);
-    expect(c1).toBeCloseTo(0); expect(m1).toBeCloseTo(1);
+    expect(c1).toBeCloseTo(0);
+    expect(m1).toBeCloseTo(1);
   });
   it("MIXING in the middle keeps both at equal power", () => {
     const [c, m] = phonesBlend(0.5);
-    expect(c).toBeCloseTo(Math.SQRT1_2); expect(m).toBeCloseTo(Math.SQRT1_2);
+    expect(c).toBeCloseTo(Math.SQRT1_2);
+    expect(m).toBeCloseTo(Math.SQRT1_2);
   });
   it("a second output is only used when the browser can pick one and one is chosen", () => {
     expect(phonesRoute("device", true, "usb-phones")).toBe("device");
@@ -135,10 +162,24 @@ describe("tone arm and scratching", () => {
 });
 
 describe("why a playing deck is silent", () => {
-  const ok = { deck: "A" as const, gain: 1, fader: 0.85, filter: 0.5, eq: { high: 0.5, mid: 0.5, low: 0.5 }, crossfader: 0, master: 0.9 };
-  it("default controls let the sound through", () => { expect(djSilenceReason(ok)).toBeNull(); });
-  it("names the GAIN knob when it is all the way down", () => { expect(djSilenceReason({ ...ok, gain: 0 })).toMatch(/GAIN/); });
-  it("names the volume fader when it is all the way down", () => { expect(djSilenceReason({ ...ok, fader: 0 })).toMatch(/volume fader/); });
+  const ok = {
+    deck: "A" as const,
+    gain: 1,
+    fader: 0.85,
+    filter: 0.5,
+    eq: { high: 0.5, mid: 0.5, low: 0.5 },
+    crossfader: 0,
+    master: 0.9,
+  };
+  it("default controls let the sound through", () => {
+    expect(djSilenceReason(ok)).toBeNull();
+  });
+  it("names the GAIN knob when it is all the way down", () => {
+    expect(djSilenceReason({ ...ok, gain: 0 })).toMatch(/GAIN/);
+  });
+  it("names the volume fader when it is all the way down", () => {
+    expect(djSilenceReason({ ...ok, fader: 0 })).toMatch(/volume fader/);
+  });
   it("crossfader fully on B silences deck A but not deck B", () => {
     expect(djSilenceReason({ ...ok, crossfader: 1 })).toMatch(/crossfader.*deck B/);
     expect(djSilenceReason({ ...ok, deck: "B", crossfader: 1 })).toBeNull();

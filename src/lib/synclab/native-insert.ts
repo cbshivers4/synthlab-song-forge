@@ -41,7 +41,8 @@ export class NativeInsertCore {
   /** Writes up to `frames` frames from planar channels; returns frames written (drops on overflow). */
   static write(sab: SharedArrayBuffer, channels: Float32Array[], frames: number): number {
     const head = new Int32Array(sab, 0, 4);
-    const cap = head[2]!, ch = head[3]!;
+    const cap = head[2]!,
+      ch = head[3]!;
     const data = new Float32Array(sab, 4 * 4, cap * ch);
     const n = Math.min(frames, NativeInsertCore.writable(sab));
     let w = Atomics.load(head, 0);
@@ -56,7 +57,8 @@ export class NativeInsertCore {
   /** Reads up to `frames` frames into planar channels; returns frames read. */
   static read(sab: SharedArrayBuffer, out: Float32Array[], frames: number): number {
     const head = new Int32Array(sab, 0, 4);
-    const cap = head[2]!, ch = head[3]!;
+    const cap = head[2]!,
+      ch = head[3]!;
     const data = new Float32Array(sab, 4 * 4, cap * ch);
     const n = Math.min(frames, NativeInsertCore.readable(sab));
     let r = Atomics.load(head, 1);
@@ -92,7 +94,8 @@ export class NativeInsertCore {
   process(input: Float32Array[], output: Float32Array[]): "processed" | "dry" {
     const frames = output[0]?.length ?? 0;
     const dry = () => {
-      for (let c = 0; c < output.length; c++) output[c]!.set(input[c] ?? input[0] ?? new Float32Array(frames));
+      for (let c = 0; c < output.length; c++)
+        output[c]!.set(input[c] ?? input[0] ?? new Float32Array(frames));
       return "dry" as const;
     };
     if (!this.toHost || !this.fromHost) return dry();
@@ -140,7 +143,15 @@ registerProcessor("${NATIVE_INSERT_PROCESSOR}", SynclabNativeInsert);`;
 
 /** Control messages between the studio and the native host for one insert (JSON over the existing local link). */
 export type NativeInsertMessage =
-  | { type: "insert-attach"; insertId: string; uid: string; sampleRate: number; channels: number; blockSize: number; state?: string | undefined }
+  | {
+      type: "insert-attach";
+      insertId: string;
+      uid: string;
+      sampleRate: number;
+      channels: number;
+      blockSize: number;
+      state?: string | undefined;
+    }
   | { type: "insert-detach"; insertId: string }
   | { type: "insert-state-get"; insertId: string }
   | { type: "insert-state"; insertId: string; state: string }
@@ -148,7 +159,10 @@ export type NativeInsertMessage =
   | { type: "insert-crashed"; insertId: string; message: string };
 
 /** How a saved insert runs right now: through the native host, or passed through untouched. */
-export function nativeInsertMode(plugin: { native?: unknown }, hostAvailable: boolean): "builtin" | "host" | "passthrough" {
+export function nativeInsertMode(
+  plugin: { native?: unknown },
+  hostAvailable: boolean,
+): "builtin" | "host" | "passthrough" {
   if (!plugin.native) return "builtin";
   return hostAvailable ? "host" : "passthrough";
 }
@@ -158,11 +172,19 @@ export function nativeInsertMode(plugin: { native?: unknown }, hostAvailable: bo
  * gain, writes `fromHost`. The real host does the same with a VST3 / AU / CLAP process call.
  */
 export class FakeNativeHost {
-  constructor(private toHost: SharedArrayBuffer, private fromHost: SharedArrayBuffer, private gain = 1) {}
+  constructor(
+    private toHost: SharedArrayBuffer,
+    private fromHost: SharedArrayBuffer,
+    private gain = 1,
+  ) {}
   pump(maxFrames = 1 << 16) {
     const head = new Int32Array(this.toHost, 0, HEADER_INTS);
     const ch = head[3]!;
-    const n = Math.min(maxFrames, NativeInsertCore.readable(this.toHost), NativeInsertCore.writable(this.fromHost));
+    const n = Math.min(
+      maxFrames,
+      NativeInsertCore.readable(this.toHost),
+      NativeInsertCore.writable(this.fromHost),
+    );
     if (n <= 0) return 0;
     const buf = Array.from({ length: ch }, () => new Float32Array(n));
     NativeInsertCore.read(this.toHost, buf, n);
@@ -174,5 +196,8 @@ export class FakeNativeHost {
 
 /** Shared memory needs a cross-origin-isolated page (the desktop window must send COOP/COEP headers). */
 export function nativeLinkSupported(): boolean {
-  return typeof SharedArrayBuffer !== "undefined" && (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated === true;
+  return (
+    typeof SharedArrayBuffer !== "undefined" &&
+    (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated === true
+  );
 }

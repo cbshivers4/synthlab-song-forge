@@ -3,7 +3,14 @@ import { VIDEO_PAD_KEYS, videoPadForNote, assignVideoPadNote } from "./video-pad
 
 describe("video pad keyboard mapping", () => {
   it("reassigns duplicate notes without affecting other MIDI channels", () => {
-    const notes = assignVideoPadNote([{ pitch: 48, channel: 0 }, { pitch: 48, channel: 1 }], 2, { pitch: 48, channel: 0 });
+    const notes = assignVideoPadNote(
+      [
+        { pitch: 48, channel: 0 },
+        { pitch: 48, channel: 1 },
+      ],
+      2,
+      { pitch: 48, channel: 0 },
+    );
     expect(notes[0]).toBeNull();
     expect(notes[1]).toEqual({ pitch: 48, channel: 1 });
     expect(notes[2]).toEqual({ pitch: 48, channel: 0 });

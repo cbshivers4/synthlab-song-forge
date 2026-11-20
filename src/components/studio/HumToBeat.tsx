@@ -10,10 +10,21 @@ import { GeneratedWaveform } from "./GeneratedWaveform";
 import { PatternWaveform } from "./PatternWaveform";
 import { useStudio } from "@/lib/synclab/store";
 import { openMic, preferredRecordingMime, releaseMic } from "@/lib/synclab/mic";
-import { alignToStart, analyseBeatbox, analyseMelody, shapeMelody, type BeatHit, type HumNote } from "@/lib/synclab/hum-to-beat";
+import {
+  alignToStart,
+  analyseBeatbox,
+  analyseMelody,
+  shapeMelody,
+  type BeatHit,
+  type HumNote,
+} from "@/lib/synclab/hum-to-beat";
 import { SYNTH_PRESETS } from "@/lib/synclab/presets";
 
-const MELODY_SOUNDS = SYNTH_PRESETS.filter((p) => /lead|key|pluck|bell|pad|brass|string|arp|organ|woodwind|percussive/i.test(p.category)).map((p) => p.name).slice(0, 24);
+const MELODY_SOUNDS = SYNTH_PRESETS.filter((p) =>
+  /lead|key|pluck|bell|pad|brass|string|arp|organ|woodwind|percussive/i.test(p.category),
+)
+  .map((p) => p.name)
+  .slice(0, 24);
 import { stepsPerBar } from "@/lib/synclab/timebase";
 
 type Mode = "beat" | "melody";
@@ -29,14 +40,25 @@ export function HumToBeat() {
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [seconds, setSeconds] = useState(0);
-  const [result, setResult] = useState<{ mode: Mode; hits: BeatHit[]; notes: HumNote[] } | null>(null);
+  const [result, setResult] = useState<{ mode: Mode; hits: BeatHit[]; notes: HumNote[] } | null>(
+    null,
+  );
   const [recordedBuffer, setRecordedBuffer] = useState<AudioBuffer | null>(null);
   const [transpose, setTranspose] = useState(0);
   const [keyTonic, setKeyTonic] = useState<number | null>(null);
   const [keyMinor, setKeyMinor] = useState(true);
-  const [sound, setSound] = useState(MELODY_SOUNDS.includes("Metro Pluck") ? "Metro Pluck" : (MELODY_SOUNDS[0] ?? ""));
+  const [sound, setSound] = useState(
+    MELODY_SOUNDS.includes("Metro Pluck") ? "Metro Pluck" : (MELODY_SOUNDS[0] ?? ""),
+  );
   // The hummed notes after your transpose / key choices — this is what previews and goes on the timeline.
-  const melody = result?.mode === "melody" ? shapeMelody(result.notes, transpose, keyTonic === null ? null : { tonic: keyTonic, minor: keyMinor }) : [];
+  const melody =
+    result?.mode === "melody"
+      ? shapeMelody(
+          result.notes,
+          transpose,
+          keyTonic === null ? null : { tonic: keyTonic, minor: keyMinor },
+        )
+      : [];
   const recRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -48,7 +70,13 @@ export function HumToBeat() {
     releaseMic(streamRef.current);
     streamRef.current = null;
   };
-  useEffect(() => () => { recRef.current?.state === "recording" && recRef.current.stop(); stopAll(); }, []);
+  useEffect(
+    () => () => {
+      if (recRef.current?.state === "recording") recRef.current.stop();
+      stopAll();
+    },
+    [],
+  );
 
   // Drum tracks are created with default pads; fill their steps once the track exists.
   useEffect(() => {
@@ -59,15 +87,23 @@ export function HumToBeat() {
     pending.current = null;
     const pads = t.pads.map((pad) => {
       const steps = new Array(p.steps).fill(0);
-      p.hits.filter((h) => h.kind === pad.kind && h.step < p.steps).forEach((h) => (steps[h.step] = h.velocity));
+      p.hits
+        .filter((h) => h.kind === pad.kind && h.step < p.steps)
+        .forEach((h) => (steps[h.step] = h.velocity));
       return { ...pad, steps };
     });
     updateTrack(p.id, { pads, steps: p.steps });
   }, [tracks, updateTrack]);
 
   const start = async () => {
-    const r = await openMic({ echoCancellation: false, noiseSuppression: false, autoGainControl: false }, "hum-to-beat");
-    if (!("stream" in r)) { toast.error("Microphone unavailable", { description: r.error }); return; }
+    const r = await openMic(
+      { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      "hum-to-beat",
+    );
+    if (!("stream" in r)) {
+      toast.error("Microphone unavailable", { description: r.error });
+      return;
+    }
     streamRef.current = r.stream;
     const mime = preferredRecordingMime();
     const rec = new MediaRecorder(r.stream, mime ? { mimeType: mime } : undefined);
@@ -79,21 +115,35 @@ export function HumToBeat() {
       setBusy(true);
       try {
         const ctx = new AudioContext();
-        const buf = await ctx.decodeAudioData(await new Blob(chunks, { type: rec.mimeType }).arrayBuffer());
+        const buf = await ctx.decodeAudioData(
+          await new Blob(chunks, { type: rec.mimeType }).arrayBuffer(),
+        );
         void ctx.close();
         const data = new Float32Array(buf.length);
-        for (let c = 0; c < buf.numberOfChannels; c++) { const ch = buf.getChannelData(c); for (let i = 0; i < data.length; i++) data[i] = data[i]! + ch[i]! / buf.numberOfChannels; }
+        for (let c = 0; c < buf.numberOfChannels; c++) {
+          const ch = buf.getChannelData(c);
+          for (let i = 0; i < data.length; i++) data[i] = data[i]! + ch[i]! / buf.numberOfChannels;
+        }
         setRecordedBuffer(buf);
         const bpm = transport.bpm || 120;
         if (mode === "beat") {
           const hits = alignToStart(analyseBeatbox(data, buf.sampleRate, bpm));
           setResult({ mode, hits, notes: [] });
-          if (!hits.length) toast("No hits heard", { description: "Beatbox louder and closer to the mic." });
+          if (!hits.length)
+            toast("No hits heard", { description: "Beatbox louder and closer to the mic." });
         } else {
           const notes = alignToStart(analyseMelody(data, buf.sampleRate, bpm));
           setResult({ mode, hits: [], notes });
-          if (notes.length) toast.success(`Heard ${notes.length} notes`, { description: "Check the waveform and notes, then preview or add them to the timeline." });
-          if (!notes.length) toast("No notes heard", { description: "Hum steady \"ooo\" or \"mmm\" notes for at least a quarter second each, with short gaps between them." });
+          if (notes.length)
+            toast.success(`Heard ${notes.length} notes`, {
+              description:
+                "Check the waveform and notes, then preview or add them to the timeline.",
+            });
+          if (!notes.length)
+            toast("No notes heard", {
+              description:
+                'Hum steady "ooo" or "mmm" notes for at least a quarter second each, with short gaps between them.',
+            });
         }
       } catch {
         toast.error("Couldn't read that recording");
@@ -111,7 +161,7 @@ export function HumToBeat() {
     timerRef.current = window.setInterval(() => {
       const s = (Date.now() - t0) / 1000;
       setSeconds(s);
-      if (s >= MAX_SEC) rec.state === "recording" && rec.stop();
+      if (s >= MAX_SEC && rec.state === "recording") rec.stop();
     }, 200);
   };
 
@@ -134,7 +184,10 @@ export function HumToBeat() {
     }
     const steps = lengthSteps(Math.max(...melody.map((n) => n.step + n.length - 1)));
     const id = addTrack("instrument", name, sound || undefined, { keepPanel: true });
-    updateTrack(id, { steps, notes: melody.map((n, i) => ({ id: `hum-${Date.now()}-${i}`, ...n })) });
+    updateTrack(id, {
+      steps,
+      notes: melody.map((n, i) => ({ id: `hum-${Date.now()}-${i}`, ...n })),
+    });
     return id;
   };
   const preview = () => pv.start((n) => build(n(finalName())));
@@ -142,21 +195,33 @@ export function HumToBeat() {
     if (!result) return;
     if (!pv.keep(finalName())) build(finalName());
     toast.success(result.mode === "beat" ? "Beat track added" : "Melody track added", {
-      description: result.mode === "beat" ? `${result.hits.length} hits on kick, snare and hat.` : `${melody.length} notes — edit them in the piano roll.`,
+      description:
+        result.mode === "beat"
+          ? `${result.hits.length} hits on kick, snare and hat.`
+          : `${melody.length} notes — edit them in the piano roll.`,
     });
     setResult(null);
   };
 
-  const counts = result?.hits.reduce<Record<string, number>>((a, h) => ((a[h.kind] = (a[h.kind] ?? 0) + 1), a), {});
+  const counts = result?.hits.reduce<Record<string, number>>(
+    (a, h) => ((a[h.kind] = (a[h.kind] ?? 0) + 1), a),
+    {},
+  );
 
   return (
-    <section className={`rounded-md border border-border bg-surface-1 p-4 space-y-4${skinned ? " studio-wallpaper" : ""}`} data-skin-panel="hum" style={skinBackground(skin)} {...skinDrop}>
+    <section
+      className={`rounded-md border border-border bg-surface-1 p-4 space-y-4${skinned ? " studio-wallpaper" : ""}`}
+      data-skin-panel="hum"
+      style={skinBackground(skin)}
+      {...skinDrop}
+    >
       <SkinControls skinKey="hum" image />
       <header>
         <h2 className="font-mono text-sm font-bold tracking-[0.18em]">HUM TO BEAT</h2>
         <p className="text-xs text-muted-foreground">
-          Beatbox a rhythm or hum a melody. SYNCLAB listens to your recording and writes it as drum hits or notes at {transport.bpm} BPM.
-          This is signal analysis on your device, not AI — clear, separated sounds work best.
+          Beatbox a rhythm or hum a melody. SYNCLAB listens to your recording and writes it as drum
+          hits or notes at {transport.bpm} BPM. This is signal analysis on your device, not AI —
+          clear, separated sounds work best.
         </p>
       </header>
 
@@ -166,7 +231,10 @@ export function HumToBeat() {
             key={m}
             type="button"
             disabled={recording || busy}
-            onClick={() => { setMode(m); setResult(null); }}
+            onClick={() => {
+              setMode(m);
+              setResult(null);
+            }}
             className={`flex min-h-12 items-center justify-center gap-2 rounded-md border text-sm font-medium ${mode === m ? "border-primary bg-primary/15 text-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
           >
             {m === "beat" ? <Disc3 className="size-4" /> : <Music2 className="size-4" />}
@@ -198,55 +266,131 @@ export function HumToBeat() {
 
       {result?.mode === "melody" && result.notes.length > 0 && (
         <div className="space-y-3 rounded-md border border-border bg-surface-2 p-3">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Shape the melody before adding it — preview again to hear changes</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            Shape the melody before adding it — preview again to hear changes
+          </p>
           <div className="flex flex-wrap items-center gap-2">
             <span className="w-20 text-xs text-muted-foreground">Transpose</span>
             {[-12, -1, 1, 12].map((d) => (
-              <Button key={d} size="sm" variant="secondary" className="min-h-11 min-w-11" onClick={() => setTranspose((v) => Math.max(-24, Math.min(24, v + d)))} aria-label={`Transpose ${d > 0 ? "up" : "down"} ${Math.abs(d) === 12 ? "an octave" : "a semitone"}`}>
-                {d > 0 ? "+" : "−"}{Math.abs(d) === 12 ? "Oct" : "1"}
+              <Button
+                key={d}
+                size="sm"
+                variant="secondary"
+                className="min-h-11 min-w-11"
+                onClick={() => setTranspose((v) => Math.max(-24, Math.min(24, v + d)))}
+                aria-label={`Transpose ${d > 0 ? "up" : "down"} ${Math.abs(d) === 12 ? "an octave" : "a semitone"}`}
+              >
+                {d > 0 ? "+" : "−"}
+                {Math.abs(d) === 12 ? "Oct" : "1"}
               </Button>
             ))}
-            <span className="min-w-16 font-mono text-sm" aria-live="polite">{transpose > 0 ? "+" : ""}{transpose} st</span>
+            <span className="min-w-16 font-mono text-sm" aria-live="polite">
+              {transpose > 0 ? "+" : ""}
+              {transpose} st
+            </span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="hum-key" className="w-20 text-xs text-muted-foreground">Snap to key</label>
-            <select id="hum-key" className="min-h-11 rounded-md border border-border bg-background px-2 text-sm" value={keyTonic ?? ""} onChange={(e) => setKeyTonic(e.target.value === "" ? null : Number(e.target.value))}>
+            <label htmlFor="hum-key" className="w-20 text-xs text-muted-foreground">
+              Snap to key
+            </label>
+            <select
+              id="hum-key"
+              className="min-h-11 rounded-md border border-border bg-background px-2 text-sm"
+              value={keyTonic ?? ""}
+              onChange={(e) => setKeyTonic(e.target.value === "" ? null : Number(e.target.value))}
+            >
               <option value="">Off — keep exact notes</option>
-              {NOTE_NAMES.map((n, i) => <option key={n} value={i}>{n}</option>)}
+              {NOTE_NAMES.map((n, i) => (
+                <option key={n} value={i}>
+                  {n}
+                </option>
+              ))}
             </select>
-            <select aria-label="Scale" disabled={keyTonic === null} className="min-h-11 rounded-md border border-border bg-background px-2 text-sm disabled:opacity-50" value={keyMinor ? "minor" : "major"} onChange={(e) => setKeyMinor(e.target.value === "minor")}>
-              <option value="minor">Minor</option><option value="major">Major</option>
+            <select
+              aria-label="Scale"
+              disabled={keyTonic === null}
+              className="min-h-11 rounded-md border border-border bg-background px-2 text-sm disabled:opacity-50"
+              value={keyMinor ? "minor" : "major"}
+              onChange={(e) => setKeyMinor(e.target.value === "minor")}
+            >
+              <option value="minor">Minor</option>
+              <option value="major">Major</option>
             </select>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="hum-sound" className="w-20 text-xs text-muted-foreground">Instrument</label>
-            <select id="hum-sound" className="min-h-11 rounded-md border border-border bg-background px-2 text-sm" value={sound} onChange={(e) => setSound(e.target.value)}>
-              {MELODY_SOUNDS.map((s) => <option key={s} value={s}>{s}</option>)}
+            <label htmlFor="hum-sound" className="w-20 text-xs text-muted-foreground">
+              Instrument
+            </label>
+            <select
+              id="hum-sound"
+              className="min-h-11 rounded-md border border-border bg-background px-2 text-sm"
+              value={sound}
+              onChange={(e) => setSound(e.target.value)}
+            >
+              {MELODY_SOUNDS.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label htmlFor="hum-bpm" className="w-20 text-xs text-muted-foreground">Song tempo</label>
-            <input id="hum-bpm" type="number" min={40} max={240} className="min-h-11 w-24 rounded-md border border-border bg-background px-2 font-mono text-sm" value={transport.bpm}
-              onChange={(e) => { const v = Number(e.target.value); if (v >= 40 && v <= 240) setTransport({ bpm: v }); }} />
-            <span className="text-xs text-muted-foreground">BPM — the notes keep their place in the bar and play faster or slower.</span>
+            <label htmlFor="hum-bpm" className="w-20 text-xs text-muted-foreground">
+              Song tempo
+            </label>
+            <input
+              id="hum-bpm"
+              type="number"
+              min={40}
+              max={240}
+              className="min-h-11 w-24 rounded-md border border-border bg-background px-2 font-mono text-sm"
+              value={transport.bpm}
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                if (v >= 40 && v <= 240) setTransport({ bpm: v });
+              }}
+            />
+            <span className="text-xs text-muted-foreground">
+              BPM — the notes keep their place in the bar and play faster or slower.
+            </span>
           </div>
         </div>
       )}
-      {recordedBuffer && <GeneratedWaveform buffer={recordedBuffer} label="Recorded hum / beatbox waveform" />}
+      {recordedBuffer && (
+        <GeneratedWaveform buffer={recordedBuffer} label="Recorded hum / beatbox waveform" />
+      )}
       {result && (
         <div className="rounded-md border border-border bg-surface-2 p-3 font-mono text-xs">
           {result.mode === "beat"
-            ? `Heard ${result.hits.length} hits — kick ${counts?.['kick'] ?? 0}, snare ${counts?.['snare'] ?? 0}, hat ${counts?.['hat'] ?? 0}`
-            : `Heard ${melody.length} notes${melody.length ? ` — ${melody.slice(0, 16).map((n) => NOTE_NAMES[n.pitch % 12]! + (Math.floor(n.pitch / 12) - 1)).join(" ")}${melody.length > 16 ? " …" : ""}` : ""}`}
+            ? `Heard ${result.hits.length} hits — kick ${counts?.["kick"] ?? 0}, snare ${counts?.["snare"] ?? 0}, hat ${counts?.["hat"] ?? 0}`
+            : `Heard ${melody.length} notes${
+                melody.length
+                  ? ` — ${melody
+                      .slice(0, 16)
+                      .map((n) => NOTE_NAMES[n.pitch % 12]! + (Math.floor(n.pitch / 12) - 1))
+                      .join(" ")}${melody.length > 16 ? " …" : ""}`
+                  : ""
+              }`}
         </div>
       )}
       {result && (result.hits.length > 0 || result.notes.length > 0) && (
         <PatternWaveform
           bpm={transport.bpm}
-          label={result.mode === "beat" ? "Generated drum beat waveform" : "Generated melody waveform"}
-          pattern={result.mode === "beat"
-            ? { hits: result.hits, steps: lengthSteps(Math.max(...result.hits.map((h) => h.step))) }
-            : { notes: melody, instrument: sound || "Metro Pluck", steps: lengthSteps(Math.max(...melody.map((n) => n.step + n.length - 1))) }}
+          label={
+            result.mode === "beat" ? "Generated drum beat waveform" : "Generated melody waveform"
+          }
+          pattern={
+            result.mode === "beat"
+              ? {
+                  hits: result.hits,
+                  steps: lengthSteps(Math.max(...result.hits.map((h) => h.step))),
+                }
+              : {
+                  notes: melody,
+                  instrument: sound || "Metro Pluck",
+                  steps: lengthSteps(Math.max(...melody.map((n) => n.step + n.length - 1))),
+                }
+          }
         />
       )}
     </section>

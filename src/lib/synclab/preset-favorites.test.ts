@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { FAVORITE_SLOTS, assignSlot, clearSlot, firstEmptySlot, normalizeSlots } from "./preset-favorites";
+import {
+  FAVORITE_SLOTS,
+  assignSlot,
+  clearSlot,
+  firstEmptySlot,
+  normalizeSlots,
+} from "./preset-favorites";
 
 describe("synth favorite preset keys", () => {
   it("always has eight keys", () => {
@@ -8,8 +14,21 @@ describe("synth favorite preset keys", () => {
     expect(normalizeSlots(["A", "B", "C", "D", "E", "F", "G", "H", "I"])).toHaveLength(8);
   });
   it("storing a preset on a key replaces only that key", () => {
-    const slots = assignSlot(assignSlot(normalizeSlots([]), 0, "Poly Synth Brass"), 2, "Poly Synth Pad");
-    expect(assignSlot(slots, 0, "Poly Synth Keys")).toEqual(["Poly Synth Keys", null, "Poly Synth Pad", null, null, null, null, null]);
+    const slots = assignSlot(
+      assignSlot(normalizeSlots([]), 0, "Poly Synth Brass"),
+      2,
+      "Poly Synth Pad",
+    );
+    expect(assignSlot(slots, 0, "Poly Synth Keys")).toEqual([
+      "Poly Synth Keys",
+      null,
+      "Poly Synth Pad",
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
   });
   it("clearing a key empties it and leaves the others", () => {
     const slots = normalizeSlots(["A", "B", "C"]);

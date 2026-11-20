@@ -129,7 +129,11 @@ class BridgeClient {
 
   async connect(url = savedBridgeUrl()) {
     this.disconnect();
-    if (typeof window !== "undefined" && window.synclab?.pluginBridgeInfo && url === DEFAULT_BRIDGE_URL) {
+    if (
+      typeof window !== "undefined" &&
+      window.synclab?.pluginBridgeInfo &&
+      url === DEFAULT_BRIDGE_URL
+    ) {
       try {
         const info = await window.synclab.pluginBridgeInfo();
         if (info.ok) url = info.url;
@@ -219,12 +223,14 @@ class BridgeClient {
       return;
     }
     switch (msg["t"]) {
-      case "hello":
+      case "hello": {
         const formats = Array.isArray(msg["formats"])
           ? msg["formats"].filter((value): value is BridgeFormat => FORMATS.includes(String(value)))
           : [];
         const capabilities = Array.isArray(msg["capabilities"])
-          ? msg["capabilities"].filter((value): value is "scan" | "host" => value === "scan" || value === "host")
+          ? msg["capabilities"].filter(
+              (value): value is "scan" | "host" => value === "scan" || value === "host",
+            )
           : [];
         this.set({
           host: `${String(msg["name"] ?? "Audio Bridge")} ${String(msg["version"] ?? "")}`.trim(),
@@ -233,11 +239,23 @@ class BridgeClient {
           capabilities,
         });
         break;
+      }
       case "plugins":
-        this.set({ plugins: validPlugins(msg["list"]), folders: validFolders(msg["folders"]), scanning: false, progress: undefined });
+        this.set({
+          plugins: validPlugins(msg["list"]),
+          folders: validFolders(msg["folders"]),
+          scanning: false,
+          progress: undefined,
+        });
         break;
       case "progress":
-        this.set({ progress: { done: Number(msg["done"]) || 0, total: Number(msg["total"]) || 0, current: String(msg["current"] ?? "") } });
+        this.set({
+          progress: {
+            done: Number(msg["done"]) || 0,
+            total: Number(msg["total"]) || 0,
+            current: String(msg["current"] ?? ""),
+          },
+        });
         break;
       case "plugin": {
         const [one] = validPlugins([msg["plugin"]]);
@@ -268,7 +286,10 @@ class BridgeClient {
         const editor = this.state.editors[id];
         if (!editor) break;
         this.set({
-          editors: { ...this.state.editors, [id]: { ...editor, params: (msg["params"] as BridgeParam[]) ?? [] } },
+          editors: {
+            ...this.state.editors,
+            [id]: { ...editor, params: (msg["params"] as BridgeParam[]) ?? [] },
+          },
         });
         break;
       }
@@ -315,7 +336,10 @@ class BridgeClient {
 
   open(uid: string) {
     if (!this.state.capabilities.includes("host")) {
-      this.set({ message: "This bridge can discover plugins, but native loading and audio are not included in this build yet." });
+      this.set({
+        message:
+          "This bridge can discover plugins, but native loading and audio are not included in this build yet.",
+      });
       return false;
     }
     return this.send({ t: "open", uid });
@@ -333,7 +357,18 @@ class BridgeClient {
     return this.send({ t: "wheel", id, x, y, dy });
   }
 
-  key(id: string, kind: "down" | "up", e: { key: string; code: string; shiftKey: boolean; ctrlKey: boolean; altKey: boolean; metaKey: boolean }) {
+  key(
+    id: string,
+    kind: "down" | "up",
+    e: {
+      key: string;
+      code: string;
+      shiftKey: boolean;
+      ctrlKey: boolean;
+      altKey: boolean;
+      metaKey: boolean;
+    },
+  ) {
     return this.send({
       t: "key",
       id,
@@ -361,19 +396,32 @@ function validPlugins(input: unknown): BridgePlugin[] {
     if (!value || typeof value !== "object") return [];
     const item = value as Record<string, unknown>;
     const format = String(item["format"] ?? "");
-    if (typeof item["uid"] !== "string" || typeof item["name"] !== "string" || !FORMATS.includes(format)) return [];
-    return [{
-      uid: item["uid"],
-      name: item["name"],
-      vendor: typeof item["vendor"] === "string" ? item["vendor"] : "UNKNOWN VENDOR",
-      format: format as BridgeFormat,
-      path: typeof item["path"] === "string" ? item["path"] : "",
-      ...(typeof item["isInstrument"] === "boolean" ? { isInstrument: item["isInstrument"] } : {}),
-      ...(typeof item["version"] === "string" ? { version: item["version"] } : {}),
-      ...(typeof item["category"] === "string" ? { category: item["category"] } : {}),
-      ...(item["status"] === "ok" || item["status"] === "failed" || item["status"] === "unsupported" ? { status: item["status"] } : {}),
-      ...(typeof item["error"] === "string" ? { error: item["error"] } : {}),
-    }];
+    if (
+      typeof item["uid"] !== "string" ||
+      typeof item["name"] !== "string" ||
+      !FORMATS.includes(format)
+    )
+      return [];
+    return [
+      {
+        uid: item["uid"],
+        name: item["name"],
+        vendor: typeof item["vendor"] === "string" ? item["vendor"] : "UNKNOWN VENDOR",
+        format: format as BridgeFormat,
+        path: typeof item["path"] === "string" ? item["path"] : "",
+        ...(typeof item["isInstrument"] === "boolean"
+          ? { isInstrument: item["isInstrument"] }
+          : {}),
+        ...(typeof item["version"] === "string" ? { version: item["version"] } : {}),
+        ...(typeof item["category"] === "string" ? { category: item["category"] } : {}),
+        ...(item["status"] === "ok" ||
+        item["status"] === "failed" ||
+        item["status"] === "unsupported"
+          ? { status: item["status"] }
+          : {}),
+        ...(typeof item["error"] === "string" ? { error: item["error"] } : {}),
+      },
+    ];
   });
 }
 
@@ -382,7 +430,14 @@ function validFolders(input: unknown): BridgeFolder[] {
   return input.flatMap((v) => {
     if (!v || typeof v !== "object" || typeof (v as BridgeFolder).path !== "string") return [];
     const f = v as BridgeFolder;
-    return [{ path: f.path, exists: Boolean(f.exists), count: Number(f.count) || 0, custom: Boolean(f.custom) }];
+    return [
+      {
+        path: f.path,
+        exists: Boolean(f.exists),
+        count: Number(f.count) || 0,
+        custom: Boolean(f.custom),
+      },
+    ];
   });
 }
 

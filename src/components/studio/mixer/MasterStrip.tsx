@@ -1,5 +1,12 @@
 import { faderGain, faderPosition } from "@/lib/synclab/fader-taper";
-import { TRIM_MAX_DB, TRIM_MIN_DB, trimDb, trimGain, trimKnobText, trimText } from "@/lib/synclab/trim-gain";
+import {
+  TRIM_MAX_DB,
+  TRIM_MIN_DB,
+  trimDb,
+  trimGain,
+  trimKnobText,
+  trimText,
+} from "@/lib/synclab/trim-gain";
 import { availableEffects } from "@/lib/synclab/effect-catalog";
 import { EffectPicker } from "../EffectPicker";
 import { useEffect, useRef, type CSSProperties } from "react";
@@ -17,7 +24,18 @@ import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/c
 import { Scope } from "../Scope";
 import { FxMenu } from "./BusStrips";
 import { EqCurve } from "./ChannelEq";
-import { BUS_COLOR, ClipLed, FADER_CAP, FaderScale, Meter, PANEL, ROW, Screw, fracToDb, toDb } from "./shared";
+import {
+  BUS_COLOR,
+  ClipLed,
+  FADER_CAP,
+  FaderScale,
+  Meter,
+  PANEL,
+  ROW,
+  Screw,
+  fracToDb,
+  toDb,
+} from "./shared";
 
 /** Master insert chain with one-tap mastering effects (limiter first). */
 function MasterChain({ color, className }: { color: string; className?: string }) {
@@ -30,11 +48,18 @@ function MasterChain({ color, className }: { color: string; className?: string }
     ["width", "Width"],
   ];
   const add = (kind: string) => {
-    const def = installedPlugins.find((d) => d.kind === kind) ?? BUILT_IN_PLUGINS.find((d) => d.kind === kind);
+    const def =
+      installedPlugins.find((d) => d.kind === kind) ??
+      BUILT_IN_PLUGINS.find((d) => d.kind === kind);
     if (def) addFxPlugin("bus:master", def);
   };
   return (
-    <div className={cn(className ?? ROW.eq, "space-y-0.5 overflow-y-auto border-b border-border/60 px-1 py-1")}>
+    <div
+      className={cn(
+        className ?? ROW.eq,
+        "space-y-0.5 overflow-y-auto border-b border-border/60 px-1 py-1",
+      )}
+    >
       {list.length === 0 && (
         <div className="text-center font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
           Main bus — no mastering yet
@@ -46,12 +71,21 @@ function MasterChain({ color, className }: { color: string; className?: string }
           className="flex items-center gap-1 rounded-sm px-1 py-[2px]"
           style={{ background: `color-mix(in oklab, ${color} 18%, var(--surface-2, transparent))` }}
         >
-          <button aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name} on master`} aria-pressed={p.bypass} onClick={() => toggleFxBypass("bus:master", p.id)} title="Bypass">
-            <Power className="size-2.5" style={{ color: p.bypass ? "var(--muted-foreground)" : color }} />
+          <button
+            aria-label={`${p.bypass ? "Enable" : "Bypass"} ${p.name} on master`}
+            aria-pressed={p.bypass}
+            onClick={() => toggleFxBypass("bus:master", p.id)}
+            title="Bypass"
+          >
+            <Power
+              className="size-2.5"
+              style={{ color: p.bypass ? "var(--muted-foreground)" : color }}
+            />
           </button>
           <span className="flex-1 truncate font-mono text-[8px] uppercase">{p.name}</span>
           <button
-            aria-label={`Remove ${p.name} from master`} onClick={() => removeFxPlugin("bus:master", p.id)}
+            aria-label={`Remove ${p.name} from master`}
+            onClick={() => removeFxPlugin("bus:master", p.id)}
             title={`Remove ${p.name}`}
             className="text-muted-foreground hover:text-destructive"
           >
@@ -71,7 +105,23 @@ function MasterChain({ color, className }: { color: string; className?: string }
           </button>
         ))}
       </div>
-      <Popover><PopoverTrigger asChild><Button variant="ghost" className="h-8 w-full text-[10px]" aria-label="Add any effect to master">Add effect</Button></PopoverTrigger><PopoverContent className="w-72" onClick={event => event.stopPropagation()}><EffectPicker effects={availableEffects(installedPlugins)} onAdd={def => addFxPlugin("bus:master", def)} /></PopoverContent></Popover>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            className="h-8 w-full text-[10px]"
+            aria-label="Add any effect to master"
+          >
+            Add effect
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-72" onClick={(event) => event.stopPropagation()}>
+          <EffectPicker
+            effects={availableEffects(installedPlugins)}
+            onAdd={(def) => addFxPlugin("bus:master", def)}
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -92,12 +142,15 @@ export function useMasterFx(kind: "eq" | "width") {
       setFxParam("bus:master", inst.id, id, value);
       return;
     }
-    const def = installedPlugins.find((d) => d.kind === kind) ?? BUILT_IN_PLUGINS.find((d) => d.kind === kind);
+    const def =
+      installedPlugins.find((d) => d.kind === kind) ??
+      BUILT_IN_PLUGINS.find((d) => d.kind === kind);
     if (!def) return;
     pending.current = [id, value];
     addFxPlugin("bus:master", def);
   };
-  const get = (id: string, fallback: number) => inst?.params.find((p) => p.id === id)?.value ?? fallback;
+  const get = (id: string, fallback: number) =>
+    inst?.params.find((p) => p.id === id)?.value ?? fallback;
   return { inst, set, get };
 }
 
@@ -118,15 +171,24 @@ function MasterEq({ color }: { color: string }) {
       setFxParam("bus:master", eq.id, id, value);
       return;
     }
-    const def = installedPlugins.find((d) => d.kind === "eq") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+    const def =
+      installedPlugins.find((d) => d.kind === "eq") ??
+      BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
     if (!def) return;
     pending.current = [id, value];
     addFxPlugin("bus:master", def);
   };
-  const bands = [["high", "High"], ["mid", "Mid"], ["low", "Low"]] as const;
+  const bands = [
+    ["high", "High"],
+    ["mid", "Mid"],
+    ["low", "Low"],
+  ] as const;
   return (
     <div
-      className={cn(ROW.eq, "mx-channel-eq mx-master-eq flex flex-col gap-1 border-b border-border/60 px-1.5 py-1")}
+      className={cn(
+        ROW.eq,
+        "mx-channel-eq mx-master-eq flex flex-col gap-1 border-b border-border/60 px-1.5 py-1",
+      )}
       style={{ "--primary": color } as CSSProperties}
     >
       <div className="mx-eq-knobs grid w-full grid-cols-3 gap-1">
@@ -147,7 +209,11 @@ function MasterEq({ color }: { color: string }) {
       <div className="mx-eq-curve h-10 w-full shrink-0">
         <EqCurve
           scopeId="master"
-          bands={["low", "mid", "high"].map((id) => eq?.params.find((param) => param.id === id)?.value ?? 0) as [number, number, number]}
+          bands={
+            ["low", "mid", "high"].map(
+              (id) => eq?.params.find((param) => param.id === id)?.value ?? 0,
+            ) as [number, number, number]
+          }
           color={color}
           bypass={!!eq?.bypass}
           onBand={(i, value) => {
@@ -177,14 +243,19 @@ function MasterWidth({ color }: { color: string }) {
       setFxParam("bus:master", width.id, "width", value);
       return;
     }
-    const def = installedPlugins.find((d) => d.kind === "width") ?? BUILT_IN_PLUGINS.find((d) => d.kind === "width");
+    const def =
+      installedPlugins.find((d) => d.kind === "width") ??
+      BUILT_IN_PLUGINS.find((d) => d.kind === "width");
     if (!def) return;
     pending.current = value;
     addFxPlugin("bus:master", def);
   };
   const v = width?.params.find((p) => p.id === "width")?.value ?? 1;
   return (
-    <div className={cn(ROW.pan, "flex items-center justify-center border-b border-border/60 px-1.5")} style={{ "--primary": color } as CSSProperties}>
+    <div
+      className={cn(ROW.pan, "flex items-center justify-center border-b border-border/60 px-1.5")}
+      style={{ "--primary": color } as CSSProperties}
+    >
       <Knob
         label="WIDTH"
         ariaLabel="Master stereo width"
@@ -240,19 +311,26 @@ export function MasterStrip({ level: peak }: { level: number }) {
           aria-label="Clip indicator for master — click to reset"
           className={cn(
             "size-2.5 shrink-0 rounded-full border border-black/60 transition-shadow",
-            clip ? "bg-red-500 shadow-[0_0_6px_1px_rgba(239,68,68,0.8)]" : "bg-black/50"
+            clip ? "bg-red-500 shadow-[0_0_6px_1px_rgba(239,68,68,0.8)]" : "bg-black/50",
           )}
         />
       </div>
       <div
-        className={cn(ROW.head, "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest")}
+        className={cn(
+          ROW.head,
+          "flex items-center justify-between border-b border-black/50 px-1.5 font-mono text-[8px] uppercase tracking-widest",
+        )}
         style={{ background: `color-mix(in oklab, ${color} 22%, transparent)` }}
       >
         <Screw />
         Master
         <Popover>
           <PopoverTrigger asChild>
-            <button aria-label="Master MIDI controls" title="Master hardware control" className="text-muted-foreground hover:text-foreground">
+            <button
+              aria-label="Master MIDI controls"
+              title="Master hardware control"
+              className="text-muted-foreground hover:text-foreground"
+            >
               <Sliders className="size-3" />
             </button>
           </PopoverTrigger>
@@ -261,23 +339,23 @@ export function MasterStrip({ level: peak }: { level: number }) {
           </PopoverContent>
         </Popover>
         <ChevronRight className="size-3.5 shrink-0" aria-hidden />
-      <div
-        className="mx-header-gain flex shrink-0 items-center justify-center"
-        title={`Master input gain ${trimText(master.gain)} (−24 to +24 dB) — before the master fader · double-click for 0 dB`}
-      >
-        <Knob
-          label="Master gain"
-          value={trimDb(master.gain)}
-          min={TRIM_MIN_DB}
-          max={TRIM_MAX_DB}
-          step={0.5}
-          defaultValue={0}
-          format={trimKnobText}
-          size={30}
-          onChange={(db) => setBus("master", { gain: trimGain(db) })}
-          midiTarget={{ id: "master", param: "gain" }}
-        />
-      </div>
+        <div
+          className="mx-header-gain flex shrink-0 items-center justify-center"
+          title={`Master input gain ${trimText(master.gain)} (−24 to +24 dB) — before the master fader · double-click for 0 dB`}
+        >
+          <Knob
+            label="Master gain"
+            value={trimDb(master.gain)}
+            min={TRIM_MIN_DB}
+            max={TRIM_MAX_DB}
+            step={0.5}
+            defaultValue={0}
+            format={trimKnobText}
+            size={30}
+            onChange={(db) => setBus("master", { gain: trimGain(db) })}
+            midiTarget={{ id: "master", param: "gain" }}
+          />
+        </div>
       </div>
       {/* live output scope, 3-band EQ and inserts — the same rows, meters and markings as every channel */}
       <div className={cn(ROW.scope, "border-b border-black/50 p-[3px]")}>
@@ -289,18 +367,28 @@ export function MasterStrip({ level: peak }: { level: number }) {
         <FxMenu target="bus:master" label="Master FX" />
       </div>
       <div className={cn(ROW.sendBars, "border-b border-border/60")} />
-      <div className={cn(ROW.io, "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground")}>
+      <div
+        className={cn(
+          ROW.io,
+          "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground",
+        )}
+      >
         Main out
       </div>
       <MasterWidth color={color} />
       <div
-        className={cn(ROW.fader, "flex items-stretch justify-center gap-1 border-b border-border/60 py-1")}
+        className={cn(
+          ROW.fader,
+          "flex items-stretch justify-center gap-1 border-b border-border/60 py-1",
+        )}
         style={{ "--primary": color } as CSSProperties}
       >
         <FaderScale />
         <Slider
           aria-label="Master volume"
-          aria-valuetext={master.volume === 0 ? "Silent" : `${toDb(master.volume).toFixed(1)} decibels`}
+          aria-valuetext={
+            master.volume === 0 ? "Silent" : `${toDb(master.volume).toFixed(1)} decibels`
+          }
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
           value={[faderPosition(master.volume)]}
@@ -313,11 +401,23 @@ export function MasterStrip({ level: peak }: { level: number }) {
         <Meter id="master" level={peak} tall />
         <Meter id="master" level={peak} tall />
       </div>
-      <div className={cn(ROW.readout, "flex items-center justify-between border-b border-border/60 px-1.5")}>
+      <div
+        className={cn(
+          ROW.readout,
+          "flex items-center justify-between border-b border-border/60 px-1.5",
+        )}
+      >
         <span className="font-mono text-[9px] text-muted-foreground" title="Fader position">
           {toDb(master.volume).toFixed(1)}
         </span>
-        <span className={cn("font-mono text-[9px]", peakHoldDb("master") > -0.2 ? "text-red-400" : "text-foreground/70")} title="Master peak hold (dBFS) — highest level since reset; click CLIP to reset" aria-label={`Master peak hold ${peakHoldText("master")} dB`}>
+        <span
+          className={cn(
+            "font-mono text-[9px]",
+            peakHoldDb("master") > -0.2 ? "text-red-400" : "text-foreground/70",
+          )}
+          title="Master peak hold (dBFS) — highest level since reset; click CLIP to reset"
+          aria-label={`Master peak hold ${peakHoldText("master")} dB`}
+        >
           {peakHoldText("master")}
         </span>
         <ClipLed id="master" compact />
@@ -332,7 +432,7 @@ export function MasterStrip({ level: peak }: { level: number }) {
             "col-span-2 h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
             master.muted
               ? "bg-orange-500 text-black shadow-[0_0_10px_rgba(249,115,22,0.8)]"
-              : "bg-black/30 text-muted-foreground hover:text-foreground"
+              : "bg-black/30 text-muted-foreground hover:text-foreground",
           )}
         >
           M
@@ -346,13 +446,20 @@ export function MasterStrip({ level: peak }: { level: number }) {
             "col-span-2 h-8 w-full rounded-[3px] font-mono text-[13px] font-bold leading-none transition-colors",
             clip
               ? "bg-red-500 text-black shadow-[0_0_10px_rgba(239,68,68,0.8)]"
-              : "bg-black/30 text-muted-foreground hover:text-foreground"
+              : "bg-black/30 text-muted-foreground hover:text-foreground",
           )}
         >
           CLIP
         </button>
       </div>
-      <div className={cn(ROW.icon, "flex shrink-0 items-center justify-center border-t border-border/60")} title="Master" aria-hidden>
+      <div
+        className={cn(
+          ROW.icon,
+          "flex shrink-0 items-center justify-center border-t border-border/60",
+        )}
+        title="Master"
+        aria-hidden
+      >
         <Speaker className="size-5" />
       </div>
     </div>

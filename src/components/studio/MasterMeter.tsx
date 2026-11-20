@@ -1,4 +1,12 @@
-import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import {
+  levelColor,
+  peakOf,
+  spectrumColor,
+  dbColor,
+  LEVEL_GREEN,
+  LEVEL_ORANGE,
+  LEVEL_RED,
+} from "@/lib/synclab/level-colors";
 import { elementSize } from "@/lib/display-cache";
 import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
@@ -49,7 +57,10 @@ export function MasterMeter() {
   const holdDbRef = useRef<[number, number]>([-100, -100]);
 
   useEffect(() => {
-    const hold = [{ v: 0, t: 0 }, { v: 0, t: 0 }];
+    const hold = [
+      { v: 0, t: 0 },
+      { v: 0, t: 0 },
+    ];
     const green = cssVar("--chart-5", "oklch(0.78 0.18 145)");
     const yellow = cssVar("--chart-3", "oklch(0.84 0.16 85)");
     const orange = cssVar("--meter-clip-orange", "oklch(0.75 0.19 55)");
@@ -82,25 +93,41 @@ export function MasterMeter() {
         let clipChanged = false;
         for (let ch = 0; ch < 2; ch++) {
           const d = wav[ch];
-          let peak = 0, sum = 0;
-          if (d) for (let i = 0; i < d.length; i++) { const a = Math.abs(d[i]!); if (a > peak) peak = a; sum += d[i]! * d[i]!; }
+          let peak = 0,
+            sum = 0;
+          if (d)
+            for (let i = 0; i < d.length; i++) {
+              const a = Math.abs(d[i]!);
+              if (a > peak) peak = a;
+              sum += d[i]! * d[i]!;
+            }
           const rms = d ? Math.sqrt(sum / d.length) : 0;
           const hd = hold[ch]!;
-          if (peak >= hd.v || now - hd.t > HOLD_MS) { hd.v = peak; hd.t = now; }
+          if (peak >= hd.v || now - hd.t > HOLD_MS) {
+            hd.v = peak;
+            hd.t = now;
+          }
           if (peak >= CLIP && !clipRef.current[ch]) {
-            clipRef.current[ch] = true; clearSinceRef.current[ch] = 0; clipChanged = true;
+            clipRef.current[ch] = true;
+            clearSinceRef.current[ch] = 0;
+            clipChanged = true;
           } else if (clipRef.current[ch]) {
             // auto-dismiss: the warning releases itself once the level stays under the clip zone
             const since = clearSinceRef.current[ch] ?? 0;
             if (peak < CLIP_CLEAR) {
               if (!since) clearSinceRef.current[ch] = now;
               else if (now - since >= CLIP_CLEAR_MS) {
-                clipRef.current[ch] = false; clearSinceRef.current[ch] = 0; clipChanged = true;
+                clipRef.current[ch] = false;
+                clearSinceRef.current[ch] = 0;
+                clipChanged = true;
               }
             } else clearSinceRef.current[ch] = 0;
           }
           const y = ch * (barH + 4);
-          c.fillStyle = muted; c.globalAlpha = 0.35; c.fillRect(0, y, w, barH); c.globalAlpha = 1;
+          c.fillStyle = muted;
+          c.globalAlpha = 0.35;
+          c.fillRect(0, y, w, barH);
+          c.globalAlpha = 1;
           const pw = dbPos(toDb(peak)) * w;
           const g = c.createLinearGradient(0, 0, w, 0);
           g.addColorStop(0, LEVEL_GREEN);
@@ -108,16 +135,24 @@ export function MasterMeter() {
           g.addColorStop(dbPos(-6), LEVEL_ORANGE);
           g.addColorStop(dbPos(-1.5), LEVEL_ORANGE);
           g.addColorStop(dbPos(-1), LEVEL_RED);
-          c.fillStyle = g; c.globalAlpha = 0.9; c.fillRect(0, y, pw, barH); c.globalAlpha = 1;
-          c.fillStyle = g; c.globalAlpha = 0.6; c.fillRect(0, y + barH * 0.25, dbPos(toDb(rms)) * w, barH * 0.5); c.globalAlpha = 1;
+          c.fillStyle = g;
+          c.globalAlpha = 0.9;
+          c.fillRect(0, y, pw, barH);
+          c.globalAlpha = 1;
+          c.fillStyle = g;
+          c.globalAlpha = 0.6;
+          c.fillRect(0, y + barH * 0.25, dbPos(toDb(rms)) * w, barH * 0.5);
+          c.globalAlpha = 1;
           const hx = dbPos(toDb(hd.v)) * w;
-          c.fillStyle = hd.v >= CLIP ? LEVEL_RED : dbColor(toDb(hd.v)); c.fillRect(Math.max(0, hx - 2), y, 2, barH);
+          c.fillStyle = hd.v >= CLIP ? LEVEL_RED : dbColor(toDb(hd.v));
+          c.fillRect(Math.max(0, hx - 2), y, 2, barH);
         }
         // 0 dB and -12 marks
         c.fillStyle = muted;
         for (const db of [-48, -36, -24, -18, -12, -6, -3, 0]) c.fillRect(dbPos(db) * w, 0, 1, h);
         if (clipChanged) setClip([...clipRef.current] as [boolean, boolean]);
-        const hd0 = toDb(hold[0]!.v), hd1 = toDb(hold[1]!.v);
+        const hd0 = toDb(hold[0]!.v),
+          hd1 = toDb(hold[1]!.v);
         if (hd0 !== holdDbRef.current[0] || hd1 !== holdDbRef.current[1]) {
           holdDbRef.current = [hd0, hd1];
           setHoldDb([hd0, hd1]);
@@ -130,7 +165,7 @@ export function MasterMeter() {
         const { c, w, h } = size(sc);
         const { mode: m, chan: ch } = opts.current;
         const chans = ch === "stereo" ? [0, 1] : ch === "left" ? [0] : [1];
-        const displayGain = waveformDisplayGain(Math.max(...chans.map(i => peakOf(wav[i]))));
+        const displayGain = waveformDisplayGain(Math.max(...chans.map((i) => peakOf(wav[i]))));
         c.lineWidth = 1.2;
         for (const i of chans) {
           c.strokeStyle = levelColor(peakOf(wav[i]));
@@ -138,27 +173,35 @@ export function MasterMeter() {
           c.beginPath();
           if (m === "osc") {
             const d = wav[i];
-            if (!d) { c.moveTo(0, h / 2); c.lineTo(w, h / 2); }
-            else {
+            if (!d) {
+              c.moveTo(0, h / 2);
+              c.lineTo(w, h / 2);
+            } else {
               const n = Math.min(d.length, 1024);
               for (let k = 0; k < n; k++) {
                 const x = (k / (n - 1)) * w;
-                const yv = h / 2 - Math.max(-1, Math.min(1, (d[k] ?? 0) * displayGain)) * (h / 2 - 1);
-                if (k === 0) c.moveTo(x, yv); else c.lineTo(x, yv);
+                const yv =
+                  h / 2 - Math.max(-1, Math.min(1, (d[k] ?? 0) * displayGain)) * (h / 2 - 1);
+                if (k === 0) c.moveTo(x, yv);
+                else c.lineTo(x, yv);
               }
             }
           } else {
             const d = eng.getMasterChannel(i as 0 | 1, "spectrum");
             if (d) {
               const nyq = eng.sampleRate / 2;
-              const lmin = Math.log10(20), lmax = Math.log10(20000);
+              const lmin = Math.log10(20),
+                lmax = Math.log10(20000);
               let first = true;
               for (let px = 0; px <= w; px += 2) {
                 const f = 10 ** (lmin + (px / w) * (lmax - lmin));
                 const bin = Math.min(d.length - 1, Math.round((f / nyq) * d.length));
                 const db = d[bin]!;
                 const yv = h - Math.max(0, Math.min(1, (db + 100) / 90)) * h;
-                if (first) { c.moveTo(px, yv); first = false; } else c.lineTo(px, yv);
+                if (first) {
+                  c.moveTo(px, yv);
+                  first = false;
+                } else c.lineTo(px, yv);
               }
             }
           }
@@ -171,7 +214,11 @@ export function MasterMeter() {
     return () => window.clearInterval(id);
   }, []);
 
-  const resetClip = () => { clipRef.current = [false, false]; clearSinceRef.current = [0, 0]; setClip([false, false]); };
+  const resetClip = () => {
+    clipRef.current = [false, false];
+    clearSinceRef.current = [0, 0];
+    setClip([false, false]);
+  };
   const anyClip = clip[0] || clip[1];
 
   return (
@@ -189,8 +236,16 @@ export function MasterMeter() {
             CLIP
           </button>
         </div>
-        <canvas ref={meterRef} className="h-5 w-full" aria-label="Master stereo level meter" role="img" />
-        <div className="flex items-center justify-between font-mono text-[9px] leading-none" aria-label="Peak hold levels">
+        <canvas
+          ref={meterRef}
+          className="h-5 w-full"
+          aria-label="Master stereo level meter"
+          role="img"
+        />
+        <div
+          className="flex items-center justify-between font-mono text-[9px] leading-none"
+          aria-label="Peak hold levels"
+        >
           <span className={clip[0] ? "font-bold text-destructive" : "text-foreground/80"}>
             L {holdDb[0] <= -99 ? "-∞" : `${holdDb[0] > 0 ? "+" : ""}${holdDb[0].toFixed(1)}`} dB
           </span>
@@ -208,13 +263,19 @@ export function MasterMeter() {
             CLIPPING — LOWER MASTER / CLICK TO RESET
           </button>
         )}
-        <div className="relative h-3 font-mono text-[8px] leading-none text-muted-foreground" aria-hidden>
+        <div
+          className="relative h-3 font-mono text-[8px] leading-none text-muted-foreground"
+          aria-hidden
+        >
           {SCALE_TICKS.map((db) => {
             const p = dbPos(db);
             const shift = p < 0.05 ? "" : p > 0.95 ? "-translate-x-full" : "-translate-x-1/2";
             return (
               <span key={db}>
-                <span className="absolute top-0 h-1 w-px -translate-x-1/2 bg-muted-foreground/70" style={{ left: `${p * 100}%` }} />
+                <span
+                  className="absolute top-0 h-1 w-px -translate-x-1/2 bg-muted-foreground/70"
+                  style={{ left: `${p * 100}%` }}
+                />
                 {SCALE_LABELS.includes(db) && (
                   <span
                     className={`absolute top-1 ${shift} ${db >= 0 ? "text-destructive" : db >= -6 ? "text-foreground/80" : ""}`}
@@ -231,22 +292,41 @@ export function MasterMeter() {
       <div className="flex w-60 flex-col gap-0.5">
         <div className="flex items-center gap-1 font-mono text-[9px] tracking-wider">
           {(["osc", "spectrum"] as const).map((m) => (
-            <button key={m} type="button" onClick={() => setMode(m)} aria-pressed={mode === m}
-              className={mode === m ? "text-primary" : "text-muted-foreground hover:text-foreground"}>
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              aria-pressed={mode === m}
+              className={
+                mode === m ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              }
+            >
               {m === "osc" ? "SCOPE" : "SPECTRUM"}
             </button>
           ))}
           <span className="ml-auto flex gap-1">
             {(["stereo", "left", "right"] as const).map((c) => (
-              <button key={c} type="button" onClick={() => setChan(c)} aria-pressed={chan === c}
-                className={chan === c ? "text-primary" : "text-muted-foreground hover:text-foreground"}>
+              <button
+                key={c}
+                type="button"
+                onClick={() => setChan(c)}
+                aria-pressed={chan === c}
+                className={
+                  chan === c ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }
+              >
                 {c === "stereo" ? "ST" : c === "left" ? "L" : "R"}
               </button>
             ))}
           </span>
           <ExpandScopeButton source={MASTER_SOURCE} view={mode === "osc" ? "wave" : "spectrum"} />
         </div>
-        <canvas ref={scopeRef} className="h-8 w-full" aria-label="Master oscilloscope and spectrum" role="img" />
+        <canvas
+          ref={scopeRef}
+          className="h-8 w-full"
+          aria-label="Master oscilloscope and spectrum"
+          role="img"
+        />
       </div>
     </div>
   );

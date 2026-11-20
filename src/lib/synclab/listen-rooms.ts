@@ -41,7 +41,13 @@ export interface ListenRoom {
 }
 
 export const LISTEN_ROOMS: ListenRoom[] = [
-  { id: "studio", name: "Studio monitors", note: "Flat reference — exactly what you mastered.", eq: [], level: 0 },
+  {
+    id: "studio",
+    name: "Studio monitors",
+    note: "Flat reference — exactly what you mastered.",
+    eq: [],
+    level: 0,
+  },
   {
     id: "car",
     name: "Car stereo",
@@ -219,7 +225,11 @@ function rng(seed: number) {
 }
 
 /** Stereo room impulse: decorrelated noise with an exponential decay that darkens over time. */
-export function roomImpulse(sampleRate: number, seconds: number, damp: number): [Float32Array, Float32Array] {
+export function roomImpulse(
+  sampleRate: number,
+  seconds: number,
+  damp: number,
+): [Float32Array, Float32Array] {
   const n = Math.max(1, Math.floor(sampleRate * seconds));
   const out: [Float32Array, Float32Array] = [new Float32Array(n), new Float32Array(n)];
   for (let c = 0; c < 2; c++) {
@@ -238,7 +248,11 @@ export function roomImpulse(sampleRate: number, seconds: number, damp: number): 
 }
 
 /** Background noise of a given colour, normalised to ~unit RMS. */
-export function roomNoise(kind: RoomNoise, sampleRate: number, seconds = 4): [Float32Array, Float32Array] {
+export function roomNoise(
+  kind: RoomNoise,
+  sampleRate: number,
+  seconds = 4,
+): [Float32Array, Float32Array] {
   const n = Math.max(1, Math.floor(sampleRate * seconds));
   const out: [Float32Array, Float32Array] = [new Float32Array(n), new Float32Array(n)];
   for (let c = 0; c < 2; c++) {
@@ -270,7 +284,10 @@ export function roomNoise(kind: RoomNoise, sampleRate: number, seconds = 4): [Fl
         hpOut = b * (hpOut + lp - hpPrev);
         hpPrev = lp;
         const t = i / sampleRate;
-        const swell = 0.6 + 0.25 * Math.sin(2 * Math.PI * 0.7 * t + c) + 0.15 * Math.sin(2 * Math.PI * 2.3 * t + 2 * c);
+        const swell =
+          0.6 +
+          0.25 * Math.sin(2 * Math.PI * 0.7 * t + c) +
+          0.15 * Math.sin(2 * Math.PI * 2.3 * t + 2 * c);
         ch[i] = hpOut * swell;
       }
     }
@@ -309,7 +326,11 @@ export interface RoomChain {
 }
 
 /** Builds a room's playback chain on a live context. Nothing here touches the mix or the master. */
-export function buildRoomChain(ctx: BaseAudioContext, room: ListenRoom, withNoise: boolean): RoomChain {
+export function buildRoomChain(
+  ctx: BaseAudioContext,
+  room: ListenRoom,
+  withNoise: boolean,
+): RoomChain {
   const input = ctx.createGain();
   const output = ctx.createGain();
   output.gain.value = dbToGain(room.level);
@@ -386,7 +407,9 @@ export function buildRoomChain(ctx: BaseAudioContext, room: ListenRoom, withNois
     c.release.value = 0.15;
     chain(c);
     const makeup = ctx.createGain();
-    makeup.gain.value = dbToGain(Math.min(9, (-room.compress.threshold * (1 - 1 / room.compress.ratio)) / 3));
+    makeup.gain.value = dbToGain(
+      Math.min(9, (-room.compress.threshold * (1 - 1 / room.compress.ratio)) / 3),
+    );
     chain(makeup);
   }
   if (room.drive) {

@@ -1,7 +1,12 @@
 /** Pure helpers that line an audio clip up with the song's beat grid. */
 
 /** Seconds of the first strong hit between `from` and `to` (source seconds), or null. */
-export function firstTransient(samples: Float32Array, sampleRate: number, from: number, to: number): number | null {
+export function firstTransient(
+  samples: Float32Array,
+  sampleRate: number,
+  from: number,
+  to: number,
+): number | null {
   const a = Math.max(0, Math.floor(from * sampleRate));
   const b = Math.min(samples.length, Math.ceil(to * sampleRate));
   if (b - a < 16) return null;
@@ -28,7 +33,13 @@ export function snapSteps(start: number, grid: number): number {
 }
 
 /** Speed that makes `lengthSec` (at `rate`) last a whole number of bars. */
-export function fitSpeedToBars(lengthSec: number, rate: number, speed: number, bpm: number, beatsPerBar = 4) {
+export function fitSpeedToBars(
+  lengthSec: number,
+  rate: number,
+  speed: number,
+  bpm: number,
+  beatsPerBar = 4,
+) {
   const barSec = (60 / Math.max(20, bpm)) * beatsPerBar;
   const onTimeline = lengthSec / rate;
   const bars = Math.max(1, Math.round(onTimeline / barSec));
@@ -41,7 +52,13 @@ export function fitSpeedToBars(lengthSec: number, rate: number, speed: number, b
  * Beat lines as positions inside the trimmed clip (source seconds from `offset`),
  * for a clip placed at `startSteps` on the song.
  */
-export function beatLines(startSteps: number, lengthSec: number, rate: number, bpm: number, beatsPerBar = 4) {
+export function beatLines(
+  startSteps: number,
+  lengthSec: number,
+  rate: number,
+  bpm: number,
+  beatsPerBar = 4,
+) {
   const beat = 60 / Math.max(20, bpm);
   const startSec = startSteps * (beat / 4);
   const onTimeline = lengthSec / rate;

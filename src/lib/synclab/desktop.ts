@@ -31,7 +31,11 @@ export interface DesktopApi {
   openFiles: (
     filters?: { name: string; extensions: string[] }[],
     multiple?: boolean,
-  ) => Promise<{ ok: boolean; canceled?: boolean; files?: { name: string; path: string; data: ArrayBuffer }[] }>;
+  ) => Promise<{
+    ok: boolean;
+    canceled?: boolean;
+    files?: { name: string; path: string; data: ArrayBuffer }[];
+  }>;
   revealFile: (path: string) => Promise<{ ok: boolean }>;
   pluginBridgeInfo?: () => Promise<{ ok: boolean; url: string; capability: "scan" | "host" }>;
 }
@@ -84,7 +88,10 @@ export async function saveBytes(
 ): Promise<{ saved: boolean; path: string | null; canceled: boolean }> {
   const buffer = data instanceof Blob ? await data.arrayBuffer() : data;
   const retain = () => {
-    if (/\.(mp3|mp4)$/i.test(name)) void import("./media-library").then(({ retainMediaInBackground }) => retainMediaInBackground(data instanceof Blob ? data : new Blob([buffer]), name, "Exports"));
+    if (/\.(mp3|mp4)$/i.test(name))
+      void import("./media-library").then(({ retainMediaInBackground }) =>
+        retainMediaInBackground(data instanceof Blob ? data : new Blob([buffer]), name, "Exports"),
+      );
   };
   const api = desktopApi();
   if (api) {
@@ -138,21 +145,24 @@ export const ARCHITECTURE: Layer[] = [
   {
     id: "ui",
     name: "Modular UI",
-    detail: "Timeline, piano roll, mixer, instruments and effects — one screen, panels open on demand.",
+    detail:
+      "Timeline, piano roll, mixer, instruments and effects — one screen, panels open on demand.",
     where: "Web + Desktop",
     status: "shipped",
   },
   {
     id: "engine",
     name: "Project Engine",
-    detail: "Tracks, clips, notes, automation, sections and undo history. One shared project timebase.",
+    detail:
+      "Tracks, clips, notes, automation, sections and undo history. One shared project timebase.",
     where: "Web + Desktop",
     status: "shipped",
   },
   {
     id: "audio",
     name: "Audio & MIDI Engine",
-    detail: "Web Audio scheduling, recording, effects and mastering; Web MIDI for controllers and keyboards.",
+    detail:
+      "Web Audio scheduling, recording, effects and mastering; Web MIDI for controllers and keyboards.",
     where: "Web + Desktop",
     status: "shipped",
   },
@@ -183,7 +193,8 @@ export const ARCHITECTURE: Layer[] = [
   {
     id: "cloud",
     name: "Cloud Services",
-    detail: "Account, subscription, cloud projects, samples and exports — identical in both runtimes.",
+    detail:
+      "Account, subscription, cloud projects, samples and exports — identical in both runtimes.",
     where: "Cloud",
     status: "shipped",
   },

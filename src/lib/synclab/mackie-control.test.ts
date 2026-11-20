@@ -37,10 +37,14 @@ describe("plugging a mixer surface in turns it on", () => {
   const korg = { id: "k", name: "nanoKONTROL Studio" };
   const keys = { id: "a", name: "Arturia KeyLab" };
   it("adds the Korg to a keyboard-only choice", () => {
-    expect(withKnownSurfaces(JSON.stringify(["a"]), [keys, korg], [])).toBe(JSON.stringify(["a", "k"]));
+    expect(withKnownSurfaces(JSON.stringify(["a"]), [keys, korg], [])).toBe(
+      JSON.stringify(["a", "k"]),
+    );
   });
   it("respects a Korg the user switched off, All devices and Disable all", () => {
-    expect(withKnownSurfaces(JSON.stringify(["a"]), [keys, korg], ["nanoKONTROL Studio"])).toBe(JSON.stringify(["a"]));
+    expect(withKnownSurfaces(JSON.stringify(["a"]), [keys, korg], ["nanoKONTROL Studio"])).toBe(
+      JSON.stringify(["a"]),
+    );
     expect(withKnownSurfaces("all", [keys, korg], [])).toBe("all");
     expect(withKnownSurfaces(null, [keys, korg], [])).toBeNull();
   });

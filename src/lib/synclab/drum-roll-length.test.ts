@@ -1,11 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { barsLabel, clearAllHits, drumLengthOptions, dropHitsOutsideBlock, trimSilentDrumOverhang } from "./drum-roll-length";
+import {
+  barsLabel,
+  clearAllHits,
+  drumLengthOptions,
+  dropHitsOutsideBlock,
+  trimSilentDrumOverhang,
+} from "./drum-roll-length";
 import type { Track } from "./types";
 
-const drum = (steps: number, hits: number[], cuts?: number[]): Track => ({
-  id: "t", name: "SNARE", kind: "drum", steps, cuts,
-  pads: [{ id: "p", name: "Snare", kind: "snare", volume: 1, pan: 0, pitch: 0, decay: 1, muted: false, solo: false, steps: Array.from({ length: steps }, (_, i) => (hits.includes(i) ? 1 : 0)) }],
-} as unknown as Track);
+const drum = (steps: number, hits: number[], cuts?: number[]): Track =>
+  ({
+    id: "t",
+    name: "SNARE",
+    kind: "drum",
+    steps,
+    cuts,
+    pads: [
+      {
+        id: "p",
+        name: "Snare",
+        kind: "snare",
+        volume: 1,
+        pan: 0,
+        pitch: 0,
+        decay: 1,
+        muted: false,
+        solo: false,
+        steps: Array.from({ length: steps }, (_, i) => (hits.includes(i) ? 1 : 0)),
+      },
+    ],
+  }) as unknown as Track;
 
 describe("drum roll length", () => {
   it("counts in bars like the timeline", () => {
@@ -42,12 +66,17 @@ describe("drum block edits", () => {
   });
 
   it("leaves a beat alone when nothing hides past its block", () => {
-    expect(dropHitsOutsideBlock({ ...drum(64, [4]), patternRegion: [0, 64] as [number, number] })).toBeNull();
+    expect(
+      dropHitsOutsideBlock({ ...drum(64, [4]), patternRegion: [0, 64] as [number, number] }),
+    ).toBeNull();
     expect(dropHitsOutsideBlock(drum(256, [4, 200]))).toBeNull();
   });
 
   it("Clear all removes every hit, even outside the loop", () => {
-    const cleared = clearAllHits({ ...drum(256, [4, 70, 200]), patternRegion: [0, 64] as [number, number] });
+    const cleared = clearAllHits({
+      ...drum(256, [4, 70, 200]),
+      patternRegion: [0, 64] as [number, number],
+    });
     expect(cleared.pads![0]!.steps.some((v) => v > 0)).toBe(false);
   });
 });

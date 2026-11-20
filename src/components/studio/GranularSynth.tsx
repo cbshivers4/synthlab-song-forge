@@ -32,7 +32,8 @@ function peaksOf(data: Float32Array, buckets = 360) {
   const size = Math.max(1, Math.floor(data.length / buckets));
   for (let b = 0; b < buckets; b++) {
     let pk = 0;
-    for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++) pk = Math.max(pk, Math.abs(data[i]!));
+    for (let i = b * size; i < Math.min(data.length, (b + 1) * size); i++)
+      pk = Math.max(pk, Math.abs(data[i]!));
     out[b] = pk;
   }
   return out;
@@ -75,10 +76,20 @@ export function GranularSynth({ track }: { track: Track }) {
       const engine = getEngine();
       engine.init();
       const loaded = await engine.loadSampleFile(file, file.name.replace(/\.[^.]+$/, ""));
-      set({ source: "sample", sampleUrl: loaded.url, sampleName: loaded.name, sampleCloudPath: undefined, sampleRoot: g.sampleRoot ?? 60 });
-      toast.success("Sample loaded into the Granular Synth", { description: `${loaded.name} · ${loaded.duration.toFixed(2)} s` });
+      set({
+        source: "sample",
+        sampleUrl: loaded.url,
+        sampleName: loaded.name,
+        sampleCloudPath: undefined,
+        sampleRoot: g.sampleRoot ?? 60,
+      });
+      toast.success("Sample loaded into the Granular Synth", {
+        description: `${loaded.name} · ${loaded.duration.toFixed(2)} s`,
+      });
     } catch {
-      toast.error("That file could not be read", { description: "Use a WAV, MP3, AIFF or M4A audio file." });
+      toast.error("That file could not be read", {
+        description: "Use a WAV, MP3, AIFF or M4A audio file.",
+      });
     } finally {
       setLoading(false);
     }
@@ -93,7 +104,10 @@ export function GranularSynth({ track }: { track: Track }) {
       if (!c) return;
       const dpr = window.devicePixelRatio || 1;
       const { w, h } = elementSize(c);
-      if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+      if (c.width !== Math.round(w * dpr)) {
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+      }
       const x = c.getContext("2d");
       if (!x) return;
       const css = cachedStyle(c);
@@ -125,7 +139,7 @@ export function GranularSynth({ track }: { track: Track }) {
       for (const gr of grains) {
         const env = Math.sin(Math.PI * Math.min(1, Math.max(0, gr.progress)));
         const r = 2 + env * 4;
-        const gy = h / 2 + ((gr.position * 997) % 1 - 0.5) * (h - 16);
+        const gy = h / 2 + (((gr.position * 997) % 1) - 0.5) * (h - 16);
         x.globalAlpha = 0.35 + env * 0.65;
         x.beginPath();
         x.arc(gr.position * w, gy, r, 0, Math.PI * 2);
@@ -146,7 +160,11 @@ export function GranularSynth({ track }: { track: Track }) {
 
   return (
     <div className="granular-synth space-y-3" aria-label="Granular Synth">
-      <div className="granular-source-row flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Grain source">
+      <div
+        className="granular-source-row flex flex-wrap items-center gap-2"
+        role="radiogroup"
+        aria-label="Grain source"
+      >
         <span className="label-xs mr-1">SOURCE</span>
         {GRANULAR_SOURCES.map((s) => (
           <Button
@@ -164,10 +182,27 @@ export function GranularSynth({ track }: { track: Track }) {
             {s.id === "sample" && g.sampleName ? g.sampleName : s.label}
           </Button>
         ))}
-        <Button type="button" size="sm" variant="outline" className="min-h-10" onClick={() => fileRef.current?.click()} disabled={loading}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="min-h-10"
+          onClick={() => fileRef.current?.click()}
+          disabled={loading}
+        >
           <Upload className="size-4" /> {loading ? "Loading…" : "Load sample"}
         </Button>
-        <input ref={fileRef} type="file" accept="audio/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void loadFile(f); e.target.value = ""; }} />
+        <input
+          ref={fileRef}
+          type="file"
+          accept="audio/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void loadFile(f);
+            e.target.value = "";
+          }}
+        />
         {g.source === "sample" && (
           <label className="flex items-center gap-1 text-xs">
             <span className="label-xs">ROOT</span>
@@ -177,7 +212,11 @@ export function GranularSynth({ track }: { track: Track }) {
               value={g.sampleRoot ?? 60}
               onChange={(e) => set({ sampleRoot: Number(e.target.value) })}
             >
-              {Array.from({ length: 61 }, (_, i) => i + 36).map((m) => <option key={m} value={m}>{noteName(m)}</option>)}
+              {Array.from({ length: 61 }, (_, i) => i + 36).map((m) => (
+                <option key={m} value={m}>
+                  {noteName(m)}
+                </option>
+              ))}
             </select>
           </label>
         )}
@@ -185,12 +224,28 @@ export function GranularSynth({ track }: { track: Track }) {
 
       <div
         className="granular-display"
-        onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) e.preventDefault(); }}
-        onDrop={(e) => { const f = e.dataTransfer.files?.[0]; if (f && f.type.startsWith("audio")) { e.preventDefault(); e.stopPropagation(); void loadFile(f); } }}
+        onDragOver={(e) => {
+          if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+        }}
+        onDrop={(e) => {
+          const f = e.dataTransfer.files?.[0];
+          if (f && f.type.startsWith("audio")) {
+            e.preventDefault();
+            e.stopPropagation();
+            void loadFile(f);
+          }
+        }}
       >
         <div className="granular-display-head">
-          <span>{g.source === "sample" ? (g.sampleName ?? "MY SAMPLE") : GRANULAR_SOURCES.find((s) => s.id === g.source)?.label.toUpperCase()}</span>
-          <span>{Math.round(g.size)} MS · {Math.round(g.density)}/S {g.freeze ? "· FROZEN" : g.scan ? `· SCAN ${g.scan > 0 ? "▶" : "◀"}` : ""}</span>
+          <span>
+            {g.source === "sample"
+              ? (g.sampleName ?? "MY SAMPLE")
+              : GRANULAR_SOURCES.find((s) => s.id === g.source)?.label.toUpperCase()}
+          </span>
+          <span>
+            {Math.round(g.size)} MS · {Math.round(g.density)}/S{" "}
+            {g.freeze ? "· FROZEN" : g.scan ? `· SCAN ${g.scan > 0 ? "▶" : "◀"}` : ""}
+          </span>
         </div>
         <canvas
           ref={canvasRef}
@@ -203,7 +258,9 @@ export function GranularSynth({ track }: { track: Track }) {
             set({ position: Math.max(0, Math.min(1, f)) });
           }}
         />
-        {!peaks && <p className="granular-empty">Loading the sample… press a key once it shows here.</p>}
+        {!peaks && (
+          <p className="granular-empty">Loading the sample… press a key once it shows here.</p>
+        )}
       </div>
 
       <div className="granular-sections grid gap-2 md:grid-cols-3">
@@ -227,15 +284,37 @@ export function GranularSynth({ track }: { track: Track }) {
               ))}
             </div>
             {grp.id === "grain" && (
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-1" role="radiogroup" aria-label="Grain shape">
+              <div
+                className="mt-2 flex flex-wrap items-center justify-center gap-1"
+                role="radiogroup"
+                aria-label="Grain shape"
+              >
                 {(["smooth", "triangle", "sharp"] as GrainShape[]).map((sh) => (
-                  <Button key={sh} type="button" size="sm" role="radio" aria-checked={g.shape === sh} variant={g.shape === sh ? "default" : "secondary"} className="min-h-9 uppercase" onClick={() => set({ shape: sh })}>{sh}</Button>
+                  <Button
+                    key={sh}
+                    type="button"
+                    size="sm"
+                    role="radio"
+                    aria-checked={g.shape === sh}
+                    variant={g.shape === sh ? "default" : "secondary"}
+                    className="min-h-9 uppercase"
+                    onClick={() => set({ shape: sh })}
+                  >
+                    {sh}
+                  </Button>
                 ))}
               </div>
             )}
             {grp.id === "cloud" && (
               <div className="mt-2 flex justify-center">
-                <Button type="button" size="sm" variant={g.freeze ? "default" : "secondary"} aria-pressed={g.freeze} className="min-h-9" onClick={() => set({ freeze: !g.freeze })}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={g.freeze ? "default" : "secondary"}
+                  aria-pressed={g.freeze}
+                  className="min-h-9"
+                  onClick={() => set({ freeze: !g.freeze })}
+                >
                   <Snowflake className="size-4" /> FREEZE
                 </Button>
               </div>
@@ -244,7 +323,14 @@ export function GranularSynth({ track }: { track: Track }) {
         ))}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" className="min-h-10" onClick={() => previewNote(track.id, 60, 2, false)}>Hear a 2-second note</Button>
+        <Button
+          type="button"
+          variant="secondary"
+          className="min-h-10"
+          onClick={() => previewNote(track.id, 60, 2, false)}
+        >
+          Hear a 2-second note
+        </Button>
       </div>
     </div>
   );

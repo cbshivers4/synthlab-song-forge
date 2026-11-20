@@ -1,12 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { frameAt, frameIndexAt, loadsUsed, pushFrame, type DeckFrame, type MixFrame } from "./dj-moves";
+import {
+  frameAt,
+  frameIndexAt,
+  loadsUsed,
+  pushFrame,
+  type DeckFrame,
+  type MixFrame,
+} from "./dj-moves";
 
 const deck = (over: Partial<DeckFrame> = {}): DeckFrame => ({
-  load: 1, name: "Song", playing: false, pos: 0, pitch: 0, gain: 1, eq: { high: 0.5, mid: 0.5, low: 0.5 },
-  filter: 0.5, fader: 0.85, loop: null, phones: false, rpm: 33, ...over,
+  load: 1,
+  name: "Song",
+  playing: false,
+  pos: 0,
+  pitch: 0,
+  gain: 1,
+  eq: { high: 0.5, mid: 0.5, low: 0.5 },
+  filter: 0.5,
+  fader: 0.85,
+  loop: null,
+  phones: false,
+  rpm: 33,
+  ...over,
 });
-const frame = (t: number, A: Partial<DeckFrame> = {}, B: Partial<DeckFrame> = {}, crossfader = 0): MixFrame =>
-  ({ t, A: deck(A), B: deck({ load: 2, name: "Other", ...B }), crossfader, master: 0.9 });
+const frame = (
+  t: number,
+  A: Partial<DeckFrame> = {},
+  B: Partial<DeckFrame> = {},
+  crossfader = 0,
+): MixFrame => ({
+  t,
+  A: deck(A),
+  B: deck({ load: 2, name: "Other", ...B }),
+  crossfader,
+  master: 0.9,
+});
 
 describe("DJ move replay", () => {
   it("skips repeated snapshots while both decks sit stopped and unchanged", () => {

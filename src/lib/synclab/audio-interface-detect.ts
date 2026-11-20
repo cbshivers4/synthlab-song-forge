@@ -18,8 +18,14 @@ export function isInterfaceLabel(label: string): boolean {
 }
 
 /** The connected interface's name, or null when only built-in/Bluetooth devices are present. */
-export function connectedInterface(inputs: { label: string }[], outputs: { label: string }[] = [], preferred?: string): string | null {
-  const all = [...inputs, ...outputs].map((d) => cleanDeviceLabel(d.label)).filter(isInterfaceLabel);
+export function connectedInterface(
+  inputs: { label: string }[],
+  outputs: { label: string }[] = [],
+  preferred?: string,
+): string | null {
+  const all = [...inputs, ...outputs]
+    .map((d) => cleanDeviceLabel(d.label))
+    .filter(isInterfaceLabel);
   if (!all.length) return null;
   const pick = preferred ? cleanDeviceLabel(preferred) : "";
   return all.find((l) => l === pick) ?? all[0] ?? null;

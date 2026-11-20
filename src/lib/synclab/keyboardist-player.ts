@@ -1,6 +1,14 @@
 import { getEngine } from "./audio-engine";
 import { activeSongClock } from "./song-clock";
-import { chordAt, chordName, genKeysBar, keysBarOptions, type KeyNote, type KeysBarOptions, type KeysSettings } from "./keyboardist";
+import {
+  chordAt,
+  chordName,
+  genKeysBar,
+  keysBarOptions,
+  type KeyNote,
+  type KeysBarOptions,
+  type KeysSettings,
+} from "./keyboardist";
 import type { Track } from "./types";
 
 /**
@@ -49,7 +57,8 @@ class KeysPlayer {
   private lastTime = 0;
   private cache = new Map<number, KeyNote[]>();
   private forced = new Map<number, KeysBarOptions>();
-  private queued: { fill: number | null; fillAt: number; brk: number | null; hit: number | null } = { fill: null, fillAt: 0, brk: null, hit: null };
+  private queued: { fill: number | null; fillAt: number; brk: number | null; hit: number | null } =
+    { fill: null, fillAt: 0, brk: null, hit: null };
   private captured = new Map<number, KeyNote[]>();
   private shown = { bar: 0, step: 0 };
   private listeners = new Set<() => void>();
@@ -57,16 +66,24 @@ class KeysPlayer {
   /** The bridge keeps the player pointed at the latest keys channel and song settings. */
   sync(track: Track | null, bpm: number, swing: number, stepsPerBar: number) {
     const prev = this.track?.keyboardist;
-    if (track?.id !== this.track?.id) { this.cache.clear(); this.captured.clear(); }
+    if (track?.id !== this.track?.id) {
+      this.cache.clear();
+      this.captured.clear();
+    }
     this.track = track;
     this.bpm = bpm;
     this.swing = swing;
-    if (stepsPerBar !== this.spb) { this.spb = stepsPerBar; this.cache.clear(); }
+    if (stepsPerBar !== this.spb) {
+      this.spb = stepsPerBar;
+      this.cache.clear();
+    }
     if (track?.keyboardist !== prev) this.invalidate();
     if (!track?.keyboardist && this.running) this.stop();
   }
 
-  get trackId() { return this.track?.id ?? null; }
+  get trackId() {
+    return this.track?.id ?? null;
+  }
 
   start(mode: KeysStart = "alone") {
     if (this.running || !this.track?.keyboardist) return;
@@ -96,17 +113,24 @@ class KeysPlayer {
     this.queued = { fill: null, fillAt: 0, brk: null, hit: null };
     // Lift the hands: held chords stop with the player (the song's own channels are left alone).
     const engine = getEngine();
-    if (wasRunning && this.track && engine.ctx && !activeSongClock(engine.ctx.currentTime)) engine.silenceChannels([this.track.id]);
+    if (wasRunning && this.track && engine.ctx && !activeSongClock(engine.ctx.currentTime))
+      engine.silenceChannels([this.track.id]);
     this.emit();
   }
 
-  toggle() { if (this.running) this.stop(); else this.start(); }
+  toggle() {
+    if (this.running) this.stop();
+    else this.start();
+  }
 
   /**
    * Hand over to a printed part: queue every step the song has already scheduled, then stop.
    * Called in the same commit that adds the printed track, so no step is missed or doubled.
    */
-  finish() { if (this.running) this.tick(); this.stop(); }
+  finish() {
+    if (this.running) this.tick();
+    this.stop();
+  }
 
   /** Already playing alone: lock onto the song (which is starting) instead of carrying on unsynced. */
   followSong() {
@@ -116,11 +140,20 @@ class KeysPlayer {
     this.emit();
   }
   /** Fill now: the current bar ends with a run if there is still room, otherwise the next one. */
-  fill() { this.place("fill"); this.emit(); }
+  fill() {
+    this.place("fill");
+    this.emit();
+  }
   /** Lay out for the next bar, coming back in with a big chord. */
-  breakNext() { this.place("brk"); this.emit(); }
+  breakNext() {
+    this.place("brk");
+    this.emit();
+  }
   /** A big chord on the next downbeat. */
-  hitNext() { this.place("hit"); this.emit(); }
+  hitNext() {
+    this.place("hit");
+    this.emit();
+  }
 
   invalidate() {
     const keep = this.shown.bar;
@@ -136,42 +169,72 @@ class KeysPlayer {
     if (s && now) {
       for (let k = this.shown.step + 1; k < this.spb * 2; k++) {
         const c = chordAt(s, bar + Math.floor(k / this.spb), k % this.spb, this.spb);
-        if (c !== now) { next = chordName(s, c); break; }
+        if (c !== now) {
+          next = chordName(s, c);
+          break;
+        }
       }
     }
     return {
-      running: this.running, following: this.following, waiting: this.running && this.waitSince !== null, bar, step: this.shown.step,
-      fillQueued: this.queued.fill !== null, breakQueued: this.queued.brk !== null, hitQueued: this.queued.hit !== null,
+      running: this.running,
+      following: this.following,
+      waiting: this.running && this.waitSince !== null,
+      bar,
+      step: this.shown.step,
+      fillQueued: this.queued.fill !== null,
+      breakQueued: this.queued.brk !== null,
+      hitQueued: this.queued.hit !== null,
       notes: this.cache.get(bar) ?? (s ? genKeysBar(s, bar, this.spb, keysBarOptions(s, bar)) : []),
-      chord: s && now ? chordName(s, now) : "", nextChord: next, captured: this.captured.size,
+      chord: s && now ? chordName(s, now) : "",
+      nextChord: next,
+      captured: this.captured.size,
     };
   }
 
   performance(): { bar: number; notes: KeyNote[] }[] {
-    return [...this.captured.entries()].sort((a, b) => a[0] - b[0]).map(([bar, notes]) => ({ bar, notes }));
+    return [...this.captured.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([bar, notes]) => ({ bar, notes }));
   }
-  clearPerformance() { this.captured.clear(); this.emit(); }
+  clearPerformance() {
+    this.captured.clear();
+    this.emit();
+  }
 
-  subscribe(fn: () => void) { this.listeners.add(fn); return () => void this.listeners.delete(fn); }
+  subscribe(fn: () => void) {
+    this.listeners.add(fn);
+    return () => void this.listeners.delete(fn);
+  }
   /** Called as each note is heard (for the keyboard picture). */
-  onNote(fn: (pitch: number, vel: number, seconds: number) => void) { this.noteListeners.add(fn); return () => void this.noteListeners.delete(fn); }
-  private emit() { this.listeners.forEach((l) => l()); }
+  onNote(fn: (pitch: number, vel: number, seconds: number) => void) {
+    this.noteListeners.add(fn);
+    return () => void this.noteListeners.delete(fn);
+  }
+  private emit() {
+    this.listeners.forEach((l) => l());
+  }
 
   private place(kind: "fill" | "brk" | "hit") {
     if (!this.running) return;
     const settings = this.track?.keyboardist;
     if (kind === "fill") {
       const fillLen = Math.min(this.spb, (settings?.fills ?? 0.5) > 0.5 ? 8 : 4);
-      const target = this.nextStep % this.spb < this.spb - fillLen ? this.barOf(this.nextStep) : this.barOf(this.nextStep) + 1;
+      const target =
+        this.nextStep % this.spb < this.spb - fillLen
+          ? this.barOf(this.nextStep)
+          : this.barOf(this.nextStep) + 1;
       this.forced.set(target, { ...this.forced.get(target), fill: true });
       this.forced.set(target + 1, { ...this.forced.get(target + 1), hit: true });
-      this.cache.delete(target); this.cache.delete(target + 1);
-      this.queued.fill = target; this.queued.fillAt = this.spb - fillLen;
+      this.cache.delete(target);
+      this.cache.delete(target + 1);
+      this.queued.fill = target;
+      this.queued.fillAt = this.spb - fillLen;
     } else if (kind === "brk") {
       const target = this.barOf(this.nextStep) + 1;
       this.forced.set(target, { ...this.forced.get(target), silent: true });
       this.forced.set(target + 1, { ...this.forced.get(target + 1), hit: true });
-      this.cache.delete(target); this.cache.delete(target + 1);
+      this.cache.delete(target);
+      this.cache.delete(target + 1);
       this.queued.brk = target;
     } else {
       const target = this.barOf(this.nextStep) + (this.nextStep % this.spb === 0 ? 0 : 1);
@@ -181,7 +244,9 @@ class KeysPlayer {
     }
   }
 
-  private barOf(step: number) { return Math.max(0, Math.floor(step / this.spb)); }
+  private barOf(step: number) {
+    return Math.max(0, Math.floor(step / this.spb));
+  }
 
   private barNotes(bar: number): KeyNote[] {
     const hit = this.cache.get(bar);
@@ -191,7 +256,8 @@ class KeysPlayer {
     const opts = { ...keysBarOptions(settings, bar), ...this.forced.get(bar) };
     const notes = genKeysBar(settings, bar, this.spb, opts);
     this.cache.set(bar, notes);
-    if (this.cache.size > 16) for (const k of [...this.cache.keys()]) if (k < bar - 4) this.cache.delete(k);
+    if (this.cache.size > 16)
+      for (const k of [...this.cache.keys()]) if (k < bar - 4) this.cache.delete(k);
     for (const k of [...this.forced.keys()]) if (k < bar - 1) this.forced.delete(k);
     return notes;
   }
@@ -212,18 +278,27 @@ class KeysPlayer {
       this.waitSince = null;
     }
     if (song) {
-      if (!this.following) { this.following = true; this.cache.clear(); this.emit(); }
+      if (!this.following) {
+        this.following = true;
+        this.cache.clear();
+        this.emit();
+      }
       const steps: { step: number; time: number }[] = [];
       for (let j = 0; j < 64; j++) {
         const time = song.time - j * song.dur;
         if (time <= this.lastTime + 1e-4 || time < now - 0.005) break;
         steps.push({ step: song.step - j, time });
       }
-      steps.reverse().forEach(({ step, time }) => this.play(Math.max(0, step), time, song.dur, true));
+      steps
+        .reverse()
+        .forEach(({ step, time }) => this.play(Math.max(0, step), time, song.dur, true));
       if (steps.length) this.lastTime = steps[steps.length - 1]!.time;
       return;
     }
-    if (this.following) { this.stop(); return; }
+    if (this.following) {
+      this.stop();
+      return;
+    }
     const dur = 60 / Math.max(20, this.bpm) / 4;
     // After a stall (busy page, background tab) skip the steps that are already late instead of
     // firing them all at once: a pile of late chords lands together as one loud, distorted burst.
@@ -254,7 +329,10 @@ class KeysPlayer {
       this.captured.get(bar)!.push(...here);
     }
     const q = this.queued;
-    const landed = (q.fill !== null && (bar > q.fill || (bar === q.fill && s >= q.fillAt))) || (q.brk !== null && bar >= q.brk) || (q.hit !== null && bar >= q.hit);
+    const landed =
+      (q.fill !== null && (bar > q.fill || (bar === q.fill && s >= q.fillAt))) ||
+      (q.brk !== null && bar >= q.brk) ||
+      (q.hit !== null && bar >= q.hit);
     if (q.fill !== null && (bar > q.fill || (bar === q.fill && s >= q.fillAt))) q.fill = null;
     if (q.brk !== null && bar >= q.brk) q.brk = null;
     if (q.hit !== null && bar >= q.hit) q.hit = null;
@@ -271,12 +349,18 @@ class KeysPlayer {
       const seconds = Math.max(0.05, n.length * dur * 0.96);
       engine.playNote(t.id, t.patch, n.pitch + oct, seconds, n.vel, when);
       if (this.noteListeners.size) {
-        const pitch = n.pitch, vel = n.vel;
-        setTimeout(() => this.noteListeners.forEach((l) => l(pitch, vel, seconds)), Math.max(0, (when - (engine.ctx?.currentTime ?? when)) * 1000));
+        const pitch = n.pitch,
+          vel = n.vel;
+        setTimeout(
+          () => this.noteListeners.forEach((l) => l(pitch, vel, seconds)),
+          Math.max(0, (when - (engine.ctx?.currentTime ?? when)) * 1000),
+        );
       }
     }
   }
 }
 
 let player: KeysPlayer | null = null;
-export function getKeysPlayer() { return (player ??= new KeysPlayer()); }
+export function getKeysPlayer() {
+  return (player ??= new KeysPlayer());
+}

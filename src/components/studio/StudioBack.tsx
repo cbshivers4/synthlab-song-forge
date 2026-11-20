@@ -2,7 +2,13 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { Cable, Unplug, Cpu, Scan, ZoomIn, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { studioCablePatch } from "@/lib/synclab/studio-routing";
 import { useStudio } from "@/lib/synclab/store";
 import type { PluginInstance, Track } from "@/lib/synclab/types";
@@ -56,13 +62,24 @@ export function StudioBack() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [overview, setOverview] = useState(true);
   const [view, setView] = useState({ phone: false, scale: 1, width: 760, height: 0 });
-  const [lines, setLines] = useState<{ id: string; d: string; color: CableColor; selected: boolean; wireless?: boolean | undefined }[]>([]);
+  const [lines, setLines] = useState<
+    {
+      id: string;
+      d: string;
+      color: CableColor;
+      selected: boolean;
+      wireless?: boolean | undefined;
+    }[]
+  >([]);
 
   // Scale the measured room and its cables together, never their individual jacks.
   useLayoutEffect(() => {
-    const box = boxRef.current, scroll = scrollRef.current;
+    const box = boxRef.current,
+      scroll = scrollRef.current;
     if (!box || !scroll) return;
-    const phoneQuery = window.matchMedia("(max-width: 767px), (orientation: landscape) and (max-width: 1100px) and (max-height: 600px)");
+    const phoneQuery = window.matchMedia(
+      "(max-width: 767px), (orientation: landscape) and (max-width: 1100px) and (max-height: 600px)",
+    );
     const measure = () => {
       // Match the front room: fill the full width of the view and let the
       // height overflow into the scroll area, instead of shrinking the whole
@@ -72,13 +89,24 @@ export function StudioBack() {
       const base = Math.max(760, scroll.clientWidth);
       const scale = overview && height > 0 ? Math.min(1, scroll.clientWidth / base) : 1;
       const width = base;
-      setView(previous => previous.phone === phone && Math.abs(previous.width - width) < 12 && previous.height === height && Math.abs(previous.scale - scale) < .001 ? previous : { phone, width, height, scale });
+      setView((previous) =>
+        previous.phone === phone &&
+        Math.abs(previous.width - width) < 12 &&
+        previous.height === height &&
+        Math.abs(previous.scale - scale) < 0.001
+          ? previous
+          : { phone, width, height, scale },
+      );
     };
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(box); observer.observe(scroll);
+    observer.observe(box);
+    observer.observe(scroll);
     phoneQuery.addEventListener("change", measure);
-    return () => { observer.disconnect(); phoneQuery.removeEventListener("change", measure); };
+    return () => {
+      observer.disconnect();
+      phoneQuery.removeEventListener("change", measure);
+    };
   }, [overview]);
 
   // ---- derive the wiring from real routing state ----
@@ -124,31 +152,85 @@ export function StudioBack() {
           to: busIn(bus),
           color: "green",
           label: `${track.name} → ${bus} send ${(level * 100).toFixed(0)}%`,
-          unplug: () => updateTrack(track.id, { sends: { reverb: 0, delay: 0, chorus: 0, ...track.sends, [bus]: 0 } }),
+          unplug: () =>
+            updateTrack(track.id, {
+              sends: { reverb: 0, delay: 0, chorus: 0, ...track.sends, [bus]: 0 },
+            }),
         });
     }
   }
   wires.push(
-    { id: "master>monitor-l", from: { device: "master", port: "out" }, to: { device: "monitor-l", port: "in" }, color: "blue", label: "Master → Left studio monitor", fixed: true },
-    { id: "master>monitor-r", from: { device: "master", port: "out" }, to: { device: "monitor-r", port: "in" }, color: "blue", label: "Master → Right studio monitor", fixed: true },
-    { id: "master>reel", from: { device: "master", port: "out" }, to: { device: "reel", port: "in" }, color: "purple", label: "Master → Reel-to-reel input", fixed: true },
+    {
+      id: "master>monitor-l",
+      from: { device: "master", port: "out" },
+      to: { device: "monitor-l", port: "in" },
+      color: "blue",
+      label: "Master → Left studio monitor",
+      fixed: true,
+    },
+    {
+      id: "master>monitor-r",
+      from: { device: "master", port: "out" },
+      to: { device: "monitor-r", port: "in" },
+      color: "blue",
+      label: "Master → Right studio monitor",
+      fixed: true,
+    },
+    {
+      id: "master>reel",
+      from: { device: "master", port: "out" },
+      to: { device: "reel", port: "in" },
+      color: "purple",
+      label: "Master → Reel-to-reel input",
+      fixed: true,
+    },
   );
   // connected gear: how each piece reaches the computer (reported USB/Bluetooth/network, or a declared cable into the interface)
   const cabled = gear.filter((g) => g.link === "cable");
-  const ifaceInputs = Array.from(new Set(cabled.map((g) => Number(g.detail.match(/Input (\d+)/)?.[1] ?? 1)))).sort((a, b) => a - b);
+  const ifaceInputs = Array.from(
+    new Set(cabled.map((g) => Number(g.detail.match(/Input (\d+)/)?.[1] ?? 1))),
+  ).sort((a, b) => a - b);
   const hasInterface = !!interfaceName || cabled.length > 0;
   for (const g of gear) {
     if (g.kind === "interface") continue;
     const from = { device: `gear:${g.id}`, port: "out" };
     if (g.link === "cable") {
       const n = Number(g.detail.match(/Input (\d+)/)?.[1] ?? 1);
-      wires.push({ id: `${g.id}>iface:${n}`, from, to: { device: "interface", port: `in:${n}` }, color: "orange", label: `${g.name} → ${g.detail.split("→ ")[1] ?? `Input ${n}`} (${g.detail.split(" →")[0]})`, fixed: true });
+      wires.push({
+        id: `${g.id}>iface:${n}`,
+        from,
+        to: { device: "interface", port: `in:${n}` },
+        color: "orange",
+        label: `${g.name} → ${g.detail.split("→ ")[1] ?? `Input ${n}`} (${g.detail.split(" →")[0]})`,
+        fixed: true,
+      });
     } else {
-      wires.push({ id: `${g.id}>computer`, from, to: { device: "computer", port: g.link }, color: g.link === "bluetooth" ? "purple" : g.link === "network" ? "green" : "blue", label: `${g.name} → Computer (${g.detail})`, fixed: true, wireless: g.link === "bluetooth" || g.link === "network" });
+      wires.push({
+        id: `${g.id}>computer`,
+        from,
+        to: { device: "computer", port: g.link },
+        color: g.link === "bluetooth" ? "purple" : g.link === "network" ? "green" : "blue",
+        label: `${g.name} → Computer (${g.detail})`,
+        fixed: true,
+        wireless: g.link === "bluetooth" || g.link === "network",
+      });
     }
   }
-  if (hasInterface) wires.push({ id: "interface>computer", from: { device: "interface", port: "usb" }, to: { device: "computer", port: "usb" }, color: "blue", label: `${interfaceName ?? "Audio interface"} → Computer (USB cable)`, fixed: true });
-  const computerPorts = Array.from(new Set(["usb", ...gear.filter((g) => g.link === "bluetooth" || g.link === "network").map((g) => g.link)]));
+  if (hasInterface)
+    wires.push({
+      id: "interface>computer",
+      from: { device: "interface", port: "usb" },
+      to: { device: "computer", port: "usb" },
+      color: "blue",
+      label: `${interfaceName ?? "Audio interface"} → Computer (USB cable)`,
+      fixed: true,
+    });
+  const computerPorts = Array.from(
+    new Set([
+      "usb",
+      ...gear.filter((g) => g.link === "bluetooth" || g.link === "network").map((g) => g.link),
+    ]),
+  );
 
   // ---- re-patch: turn a new connection into a real routing change ----
   const connect = (to: JackRef, from: JackRef | null = pending) => {
@@ -156,9 +238,13 @@ export function StudioBack() {
     if (!from || from.device === to.device) return;
     const fromTrack = from.device.startsWith("track:") ? from.device.slice(6) : null;
     const fromFx = from.device.startsWith("fx:") ? from.device.slice(3) : null;
-    const track = tracks.find((t) => t.id === fromTrack) ?? tracks.find((t) => (t.plugins ?? []).some((p) => p.id === fromFx));
+    const track =
+      tracks.find((t) => t.id === fromTrack) ??
+      tracks.find((t) => (t.plugins ?? []).some((p) => p.id === fromFx));
     if (!track) {
-      toast("That connection isn't possible", { description: "Patch within one channel's chain, to the mixer, or to a send." });
+      toast("That connection isn't possible", {
+        description: "Patch within one channel's chain, to the mixer, or to a send.",
+      });
       return;
     }
 
@@ -168,7 +254,9 @@ export function StudioBack() {
       setAddOpen(false);
       return;
     }
-    toast("That connection isn't possible", { description: "Monitors and the reel are always fed from the master output." });
+    toast("That connection isn't possible", {
+      description: "Monitors and the reel are always fed from the master output.",
+    });
   };
 
   // ---- draw cables from real jack positions ----
@@ -181,19 +269,41 @@ export function StudioBack() {
       const pos = (p: JackRef) => {
         const el = box.querySelector<HTMLElement>(`[data-jack="${CSS.escape(pkey(p))}"]`);
         if (!el) return null;
-        let x = el.offsetWidth / 2, y = el.offsetHeight / 2;
+        let x = el.offsetWidth / 2,
+          y = el.offsetHeight / 2;
         let n: HTMLElement | null = el;
-        while (n && n !== box) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent as HTMLElement | null; }
+        while (n && n !== box) {
+          x += n.offsetLeft;
+          y += n.offsetTop;
+          n = n.offsetParent as HTMLElement | null;
+        }
         if (n !== box) return null;
         return { x, y };
       };
       setLines(
         wires.flatMap((w) => {
-          const a = pos(w.from), b = pos(w.to);
+          const a = pos(w.from),
+            b = pos(w.to);
           if (!a || !b) return [];
           const sag = Math.max(a.y, b.y) + 26 + (wires.indexOf(w) % 7) * 9;
-          if (w.wireless) return [{ id: w.id, color: w.color, selected: selectedWire === w.id, wireless: true, d: `M${a.x},${a.y} Q${(a.x + b.x) / 2},${Math.min(a.y, b.y) - 60} ${b.x},${b.y}` }];
-          return [{ id: w.id, color: w.color, selected: selectedWire === w.id, d: `M${a.x},${a.y} C${a.x},${sag} ${b.x},${sag} ${b.x},${b.y}` }];
+          if (w.wireless)
+            return [
+              {
+                id: w.id,
+                color: w.color,
+                selected: selectedWire === w.id,
+                wireless: true,
+                d: `M${a.x},${a.y} Q${(a.x + b.x) / 2},${Math.min(a.y, b.y) - 60} ${b.x},${b.y}`,
+              },
+            ];
+          return [
+            {
+              id: w.id,
+              color: w.color,
+              selected: selectedWire === w.id,
+              d: `M${a.x},${a.y} C${a.x},${sag} ${b.x},${sag} ${b.x},${b.y}`,
+            },
+          ];
         }),
       );
     };
@@ -239,30 +349,79 @@ export function StudioBack() {
   );
 
   const selected = wires.find((w) => w.id === selectedWire);
-  const sources = tracks.flatMap(t => [
+  const sources = tracks.flatMap((t) => [
     { jack: trackOut(t), label: `${t.name} · Audio out`, track: t },
-    ...(t.plugins ?? []).filter(p => !p.bypass).map(p => ({ jack: fxOut(p), label: `${t.name} · ${p.name} out`, track: t })),
+    ...(t.plugins ?? [])
+      .filter((p) => !p.bypass)
+      .map((p) => ({ jack: fxOut(p), label: `${t.name} · ${p.name} out`, track: t })),
   ]);
-  const source = sources.find(s => pkey(s.jack) === sourceKey);
-  const targets = source ? [
-    ...(source.track.plugins ?? []).map(p => ({ jack: fxIn(p), label: `${p.name} · In` })),
-    { jack: masterIn(source.track), label: `Mixer · ${source.track.name}` },
-    ...SEND_BUSES.map(b => ({ jack: busIn(b), label: `${b.toUpperCase()} · Send in` })),
-  ].filter(t => studioCablePatch(source.track, source.jack, t.jack) !== null) : [];
-  const target = targets.find(t => pkey(t.jack) === targetKey);
+  const source = sources.find((s) => pkey(s.jack) === sourceKey);
+  const targets = source
+    ? [
+        ...(source.track.plugins ?? []).map((p) => ({ jack: fxIn(p), label: `${p.name} · In` })),
+        { jack: masterIn(source.track), label: `Mixer · ${source.track.name}` },
+        ...SEND_BUSES.map((b) => ({ jack: busIn(b), label: `${b.toUpperCase()} · Send in` })),
+      ].filter((t) => studioCablePatch(source.track, source.jack, t.jack) !== null)
+    : [];
+  const target = targets.find((t) => pkey(t.jack) === targetKey);
 
   return (
     <div className="studio-back flex min-h-0 flex-1 flex-col">
       <div className="studio-back-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-surface px-3 py-2 text-xs">
         <Cable className="size-4 text-primary" />
-        <Button variant="secondary" size="sm" className="min-h-11" onClick={() => { setSourceKey(sources[0] ? pkey(sources[0].jack) : ""); setTargetKey(""); setAddOpen(true); }} disabled={!tracks.length}><Plus className="size-4" />Add cable</Button>
-        <Button variant="outline" size="sm" className="min-h-11" aria-expanded={listOpen} onClick={() => setListOpen(o => !o)}><Cable className="size-4" />Cables ({wires.length})</Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="min-h-11"
+          onClick={() => {
+            setSourceKey(sources[0] ? pkey(sources[0].jack) : "");
+            setTargetKey("");
+            setAddOpen(true);
+          }}
+          disabled={!tracks.length}
+        >
+          <Plus className="size-4" />
+          Add cable
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="min-h-11"
+          aria-expanded={listOpen}
+          onClick={() => setListOpen((o) => !o)}
+        >
+          <Cable className="size-4" />
+          Cables ({wires.length})
+        </Button>
         <span className="font-mono text-[11px] text-muted-foreground">
           {pending ? "CONNECT CABLE" : "STUDIO · REAR CONNECTIONS"}
         </span>
         <div className="studio-back-view-controls ml-auto gap-1">
-          <Button size="sm" variant={overview ? "secondary" : "ghost"} className="h-8" aria-label="Fit rear studio setup" aria-pressed={overview} onClick={() => { setOverview(true); scrollRef.current?.scrollTo(0, 0); }}><Scan className="size-4" />Fit</Button>
-          <Button size="sm" variant={!overview ? "secondary" : "ghost"} className="h-8" aria-label="View rear studio at full size" aria-pressed={!overview} onClick={() => setOverview(false)}><ZoomIn className="size-4" />100%</Button>
+          <Button
+            size="sm"
+            variant={overview ? "secondary" : "ghost"}
+            className="h-8"
+            aria-label="Fit rear studio setup"
+            aria-pressed={overview}
+            onClick={() => {
+              setOverview(true);
+              scrollRef.current?.scrollTo(0, 0);
+            }}
+          >
+            <Scan className="size-4" />
+            Fit
+          </Button>
+          <Button
+            size="sm"
+            variant={!overview ? "secondary" : "ghost"}
+            className="h-8"
+            aria-label="View rear studio at full size"
+            aria-pressed={!overview}
+            onClick={() => setOverview(false)}
+          >
+            <ZoomIn className="size-4" />
+            100%
+          </Button>
         </div>
         {pending && (
           <Button size="sm" variant="ghost" className="h-7" onClick={() => setPending(null)}>
@@ -283,87 +442,367 @@ export function StudioBack() {
           </Button>
         )}
         {selected && (selected.fixed || !selected.unplug) && (
-          <span className="ml-auto font-mono text-[10px] text-muted-foreground uppercase">{selected.label} — fixed wiring</span>
+          <span className="ml-auto font-mono text-[10px] text-muted-foreground uppercase">
+            {selected.label} — fixed wiring
+          </span>
         )}
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-h-[80dvh] overflow-y-auto">
           <DialogTitle>Add cable</DialogTitle>
-          <DialogDescription>Channel inserts and sends · Monitor and recorder feeds are fixed.</DialogDescription>
-          <label className="grid gap-2 text-sm">From
-            <Select value={sourceKey} onValueChange={v => { setSourceKey(v); setTargetKey(""); }}><SelectTrigger aria-label="Cable output" className="min-h-11"><SelectValue placeholder="Choose output" /></SelectTrigger><SelectContent>{sources.map(s => <SelectItem key={pkey(s.jack)} value={pkey(s.jack)}>{s.label}</SelectItem>)}</SelectContent></Select>
+          <DialogDescription>
+            Channel inserts and sends · Monitor and recorder feeds are fixed.
+          </DialogDescription>
+          <label className="grid gap-2 text-sm">
+            From
+            <Select
+              value={sourceKey}
+              onValueChange={(v) => {
+                setSourceKey(v);
+                setTargetKey("");
+              }}
+            >
+              <SelectTrigger aria-label="Cable output" className="min-h-11">
+                <SelectValue placeholder="Choose output" />
+              </SelectTrigger>
+              <SelectContent>
+                {sources.map((s) => (
+                  <SelectItem key={pkey(s.jack)} value={pkey(s.jack)}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
-          <label className="grid gap-2 text-sm">To
-            <Select value={targetKey} onValueChange={setTargetKey}><SelectTrigger aria-label="Cable input" className="min-h-11"><SelectValue placeholder="Choose input" /></SelectTrigger><SelectContent>{targets.map(t => <SelectItem key={pkey(t.jack)} value={pkey(t.jack)}>{t.label}</SelectItem>)}</SelectContent></Select>
+          <label className="grid gap-2 text-sm">
+            To
+            <Select value={targetKey} onValueChange={setTargetKey}>
+              <SelectTrigger aria-label="Cable input" className="min-h-11">
+                <SelectValue placeholder="Choose input" />
+              </SelectTrigger>
+              <SelectContent>
+                {targets.map((t) => (
+                  <SelectItem key={pkey(t.jack)} value={pkey(t.jack)}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
-          <Button className="min-h-11" disabled={!source || !target} onClick={() => { if (source && target) connect(target.jack, source.jack); }}><Plus className="size-4" />Connect cable</Button>
+          <Button
+            className="min-h-11"
+            disabled={!source || !target}
+            onClick={() => {
+              if (source && target) connect(target.jack, source.jack);
+            }}
+          >
+            <Plus className="size-4" />
+            Connect cable
+          </Button>
         </DialogContent>
       </Dialog>
-      <div ref={scrollRef} className="studio-back-scroll relative min-h-0 flex-1 overflow-auto" tabIndex={0} aria-label="Studio rear room">
-      <div className="studio-back-canvas" style={view.phone ? { marginInline: "auto", width: view.width * view.scale, height: view.height * view.scale } : undefined}>
-      <img src={roomImage} alt="" className="studio-back-room-image" />
-      <div ref={boxRef} className="studio-back-rack relative" data-fit={view.phone ? "phone" : undefined} style={view.phone ? { width: view.width, position: "absolute", left: 0, top: 0, minHeight: 0, transform: `scale(${view.scale})`, transformOrigin: "top left" } : undefined} aria-label="Back of the studio rack — audio cable routing">
-                <div className="studio-room-brand font-display">SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH. · BACK</span></div>
-        <div className="studio-rear-desk">
-          <div className="studio-rear-monitor">{unit("monitor-l", "MONITOR L", "LEFT · MASTER FEED", jack({ device: "monitor-l", port: "in" }, false, "LEFT IN", true))}<div className="studio-rear-speaker-stand" /></div>
-          <div className="studio-rear-console studio-back-mixing">{unit("master", "MIXING DESK", `${tracks.length} CHANNEL INPUTS · MASTER OUTPUT`, <>{tracks.map(t => jack(masterIn(t), false, t.name))}{jack({ device: "master", port: "out" }, true, "MASTER OUT")}</>)}<div className="studio-table-top" /><div className="studio-desk-legs" /></div>
-          <div className="studio-rear-monitor">{unit("monitor-r", "MONITOR R", "RIGHT · MASTER FEED", jack({ device: "monitor-r", port: "in" }, false, "RIGHT IN", true))}<div className="studio-rear-speaker-stand" /></div>
-        </div>
-        <div className="studio-rear-furniture">
-          <div className="studio-rear-recorder studio-back-tape">{unit("reel", "REEL TO REEL", "RECORDER · MASTER FEED", jack({ device: "reel", port: "in" }, false, "REC IN", true))}</div>
-          <svg viewBox="0 0 180 195" role="img" aria-label="Rear of studio chair" className="studio-chair"><path d="M90 124v40m0 0-54 20m54-20 54 20m-54-20-20 24m20-24 20 24" className="studio-stand" /><rect x="54" y="12" width="72" height="78" rx="16" className="studio-chair-cushion" /><path d="M90 90v19M42 83v30m96-30v30" className="studio-stand" /><path d="M45 101h90l12 23H33z" className="studio-chair-cushion" /></svg>
-          <svg viewBox="0 0 200 195" role="img" aria-label="Studio headphones" className="studio-rear-headphones"><path d="M40 120v-20q0-60 60-60t60 60v20" className="studio-stand" /><rect x="22" y="112" width="36" height="56" rx="16" className="studio-chair-cushion" /><rect x="142" y="112" width="36" height="56" rx="16" className="studio-chair-cushion" /></svg>
-        </div>
-        <div className="studio-rear-floor">
-          <div className="studio-rear-instruments">{tracks.map(track => <div key={track.id} className="studio-rear-instrument">{unit(`track:${track.id}`, track.name, track.kind === "drum" ? "DRUM MACHINE" : track.kind === "sampler" ? "SAMPLER" : track.kind === "audio" || track.kind === "ai-vocal" ? "MICROPHONE" : track.instrument ?? "SYNTH", jack(trackOut(track), true, "AUDIO OUT"))}<svg viewBox="0 0 280 82" aria-hidden="true" className="studio-rear-instrument-stand"><path d="M60 3 213 75M220 3 67 75M43 78h51m102 0h51" className="studio-stand" /></svg></div>)}</div>
-        <section className="studio-back-column studio-back-effects" data-column="effects" aria-label="Effect rack">
-          <header className="studio-back-column-header"><Cpu className="size-4 text-primary" /><h3>EFFECT RACK</h3><span>{tracks.reduce((n, t) => n + (t.plugins?.length ?? 0), 0)}</span></header>
-          <div className="studio-back-column-body">
-            {tracks.filter(t => t.plugins?.length).map(track => <div key={track.id} className="studio-back-effect-chain"><h4>{track.name}</h4>{(track.plugins ?? []).map(fx => unit(`fx:${fx.id}`, fx.name, fx.bypass ? "BYPASSED" : "INSERT EFFECT", <>{jack(fxIn(fx), false, "IN")}{jack(fxOut(fx), true, "OUT")}</>, fx.bypass))}</div>)}
-            <h4 className="studio-back-send-label">SEND EFFECTS</h4>
-            {SEND_BUSES.map(b => unit(`bus:${b}`, b.toUpperCase(), "SEND INPUT", jack(busIn(b), false, "IN")))}
-          </div>
-        </section>
-        </div>
-        {(gear.length > 0 || hasInterface) && <div className="studio-rear-gear" aria-label="Connected gear and how it is connected">
-          {gear.filter((g) => g.kind !== "interface").map((g) => unit(`gear:${g.id}`, g.name, `${LINK_LABEL[g.link].toUpperCase()} · ${g.reported ? "REPORTED" : "ADDED BY YOU"}`, jack({ device: `gear:${g.id}`, port: "out" }, true, g.link === "cable" ? "OUT" : LINK_LABEL[g.link].toUpperCase(), true)))}
-          {hasInterface && unit("interface", interfaceName ?? "AUDIO INTERFACE", interfaceName ? "USB AUDIO INTERFACE" : "NOT REPORTED RIGHT NOW", <>{ifaceInputs.map((n) => jack({ device: "interface", port: `in:${n}` }, false, `IN ${n}`, true))}{jack({ device: "interface", port: "usb" }, true, "USB", true)}</>, !interfaceName)}
-          {unit("computer", "COMPUTER", "THIS DEVICE", <>{computerPorts.map((p) => <span key={p} className="contents">{jack({ device: "computer", port: p }, false, p === "usb" ? "USB" : p === "bluetooth" ? "BT" : "NET", true)}</span>)}</>)}
-        </div>}
+      <div
+        ref={scrollRef}
+        className="studio-back-scroll relative min-h-0 flex-1 overflow-auto"
+        tabIndex={0}
+        aria-label="Studio rear room"
+      >
+        <div
+          className="studio-back-canvas"
+          style={
+            view.phone
+              ? {
+                  marginInline: "auto",
+                  width: view.width * view.scale,
+                  height: view.height * view.scale,
+                }
+              : undefined
+          }
+        >
+          <img src={roomImage} alt="" className="studio-back-room-image" />
+          <div
+            ref={boxRef}
+            className="studio-back-rack relative"
+            data-fit={view.phone ? "phone" : undefined}
+            style={
+              view.phone
+                ? {
+                    width: view.width,
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    minHeight: 0,
+                    transform: `scale(${view.scale})`,
+                    transformOrigin: "top left",
+                  }
+                : undefined
+            }
+            aria-label="Back of the studio rack — audio cable routing"
+          >
+            <div className="studio-room-brand font-display">
+              SYNCLAB<span>CREATE. RECORD. PRODUCE. FINISH. · BACK</span>
+            </div>
+            <div className="studio-rear-desk">
+              <div className="studio-rear-monitor">
+                {unit(
+                  "monitor-l",
+                  "MONITOR L",
+                  "LEFT · MASTER FEED",
+                  jack({ device: "monitor-l", port: "in" }, false, "LEFT IN", true),
+                )}
+                <div className="studio-rear-speaker-stand" />
+              </div>
+              <div className="studio-rear-console studio-back-mixing">
+                {unit(
+                  "master",
+                  "MIXING DESK",
+                  `${tracks.length} CHANNEL INPUTS · MASTER OUTPUT`,
+                  <>
+                    {tracks.map((t) => jack(masterIn(t), false, t.name))}
+                    {jack({ device: "master", port: "out" }, true, "MASTER OUT")}
+                  </>,
+                )}
+                <div className="studio-table-top" />
+                <div className="studio-desk-legs" />
+              </div>
+              <div className="studio-rear-monitor">
+                {unit(
+                  "monitor-r",
+                  "MONITOR R",
+                  "RIGHT · MASTER FEED",
+                  jack({ device: "monitor-r", port: "in" }, false, "RIGHT IN", true),
+                )}
+                <div className="studio-rear-speaker-stand" />
+              </div>
+            </div>
+            <div className="studio-rear-furniture">
+              <div className="studio-rear-recorder studio-back-tape">
+                {unit(
+                  "reel",
+                  "REEL TO REEL",
+                  "RECORDER · MASTER FEED",
+                  jack({ device: "reel", port: "in" }, false, "REC IN", true),
+                )}
+              </div>
+              <svg
+                viewBox="0 0 180 195"
+                role="img"
+                aria-label="Rear of studio chair"
+                className="studio-chair"
+              >
+                <path
+                  d="M90 124v40m0 0-54 20m54-20 54 20m-54-20-20 24m20-24 20 24"
+                  className="studio-stand"
+                />
+                <rect
+                  x="54"
+                  y="12"
+                  width="72"
+                  height="78"
+                  rx="16"
+                  className="studio-chair-cushion"
+                />
+                <path d="M90 90v19M42 83v30m96-30v30" className="studio-stand" />
+                <path d="M45 101h90l12 23H33z" className="studio-chair-cushion" />
+              </svg>
+              <svg
+                viewBox="0 0 200 195"
+                role="img"
+                aria-label="Studio headphones"
+                className="studio-rear-headphones"
+              >
+                <path d="M40 120v-20q0-60 60-60t60 60v20" className="studio-stand" />
+                <rect
+                  x="22"
+                  y="112"
+                  width="36"
+                  height="56"
+                  rx="16"
+                  className="studio-chair-cushion"
+                />
+                <rect
+                  x="142"
+                  y="112"
+                  width="36"
+                  height="56"
+                  rx="16"
+                  className="studio-chair-cushion"
+                />
+              </svg>
+            </div>
+            <div className="studio-rear-floor">
+              <div className="studio-rear-instruments">
+                {tracks.map((track) => (
+                  <div key={track.id} className="studio-rear-instrument">
+                    {unit(
+                      `track:${track.id}`,
+                      track.name,
+                      track.kind === "drum"
+                        ? "DRUM MACHINE"
+                        : track.kind === "sampler"
+                          ? "SAMPLER"
+                          : track.kind === "audio" || track.kind === "ai-vocal"
+                            ? "MICROPHONE"
+                            : (track.instrument ?? "SYNTH"),
+                      jack(trackOut(track), true, "AUDIO OUT"),
+                    )}
+                    <svg
+                      viewBox="0 0 280 82"
+                      aria-hidden="true"
+                      className="studio-rear-instrument-stand"
+                    >
+                      <path
+                        d="M60 3 213 75M220 3 67 75M43 78h51m102 0h51"
+                        className="studio-stand"
+                      />
+                    </svg>
+                  </div>
+                ))}
+              </div>
+              <section
+                className="studio-back-column studio-back-effects"
+                data-column="effects"
+                aria-label="Effect rack"
+              >
+                <header className="studio-back-column-header">
+                  <Cpu className="size-4 text-primary" />
+                  <h3>EFFECT RACK</h3>
+                  <span>{tracks.reduce((n, t) => n + (t.plugins?.length ?? 0), 0)}</span>
+                </header>
+                <div className="studio-back-column-body">
+                  {tracks
+                    .filter((t) => t.plugins?.length)
+                    .map((track) => (
+                      <div key={track.id} className="studio-back-effect-chain">
+                        <h4>{track.name}</h4>
+                        {(track.plugins ?? []).map((fx) =>
+                          unit(
+                            `fx:${fx.id}`,
+                            fx.name,
+                            fx.bypass ? "BYPASSED" : "INSERT EFFECT",
+                            <>
+                              {jack(fxIn(fx), false, "IN")}
+                              {jack(fxOut(fx), true, "OUT")}
+                            </>,
+                            fx.bypass,
+                          ),
+                        )}
+                      </div>
+                    ))}
+                  <h4 className="studio-back-send-label">SEND EFFECTS</h4>
+                  {SEND_BUSES.map((b) =>
+                    unit(`bus:${b}`, b.toUpperCase(), "SEND INPUT", jack(busIn(b), false, "IN")),
+                  )}
+                </div>
+              </section>
+            </div>
+            {(gear.length > 0 || hasInterface) && (
+              <div className="studio-rear-gear" aria-label="Connected gear and how it is connected">
+                {gear
+                  .filter((g) => g.kind !== "interface")
+                  .map((g) =>
+                    unit(
+                      `gear:${g.id}`,
+                      g.name,
+                      `${LINK_LABEL[g.link].toUpperCase()} · ${g.reported ? "REPORTED" : "ADDED BY YOU"}`,
+                      jack(
+                        { device: `gear:${g.id}`, port: "out" },
+                        true,
+                        g.link === "cable" ? "OUT" : LINK_LABEL[g.link].toUpperCase(),
+                        true,
+                      ),
+                    ),
+                  )}
+                {hasInterface &&
+                  unit(
+                    "interface",
+                    interfaceName ?? "AUDIO INTERFACE",
+                    interfaceName ? "USB AUDIO INTERFACE" : "NOT REPORTED RIGHT NOW",
+                    <>
+                      {ifaceInputs.map((n) =>
+                        jack({ device: "interface", port: `in:${n}` }, false, `IN ${n}`, true),
+                      )}
+                      {jack({ device: "interface", port: "usb" }, true, "USB", true)}
+                    </>,
+                    !interfaceName,
+                  )}
+                {unit(
+                  "computer",
+                  "COMPUTER",
+                  "THIS DEVICE",
+                  <>
+                    {computerPorts.map((p) => (
+                      <span key={p} className="contents">
+                        {jack(
+                          { device: "computer", port: p },
+                          false,
+                          p === "usb" ? "USB" : p === "bluetooth" ? "BT" : "NET",
+                          true,
+                        )}
+                      </span>
+                    ))}
+                  </>,
+                )}
+              </div>
+            )}
 
-        <svg className="pointer-events-none absolute inset-0 size-full overflow-visible" aria-hidden>
-          {lines.map((l) => (
-            <g key={l.id}>
-              <title>{wires.find(w => w.id === l.id)?.label}</title>
-              {!l.wireless && <path d={l.d} className="modular-cable-shadow" />}
-              <path d={l.d} className={`modular-cable cable-${l.color} ${l.selected ? "is-selected" : ""} ${l.wireless ? "is-wireless" : ""}`} style={l.selected ? { strokeWidth: 6 } : undefined} />
-              {!l.wireless && <path d={l.d} className="modular-cable-sheen" />}
-              <path d={l.d} className="studio-rear-cable-hit" onClick={() => setSelectedWire(selectedWire === l.id ? null : l.id)} />
-            </g>
-          ))}
-        </svg>
-      </div>
-      </div>
+            <svg
+              className="pointer-events-none absolute inset-0 size-full overflow-visible"
+              aria-hidden
+            >
+              {lines.map((l) => (
+                <g key={l.id}>
+                  <title>{wires.find((w) => w.id === l.id)?.label}</title>
+                  {!l.wireless && <path d={l.d} className="modular-cable-shadow" />}
+                  <path
+                    d={l.d}
+                    className={`modular-cable cable-${l.color} ${l.selected ? "is-selected" : ""} ${l.wireless ? "is-wireless" : ""}`}
+                    style={l.selected ? { strokeWidth: 6 } : undefined}
+                  />
+                  {!l.wireless && <path d={l.d} className="modular-cable-sheen" />}
+                  <path
+                    d={l.d}
+                    className="studio-rear-cable-hit"
+                    onClick={() => setSelectedWire(selectedWire === l.id ? null : l.id)}
+                  />
+                </g>
+              ))}
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* wire list — tap a wire to select it for unplugging */}
-      <div className={`studio-back-cables max-h-36 shrink-0 overflow-auto border-t border-border bg-surface px-3 py-1.5 ${listOpen ? "" : "is-closed"}`} aria-label="Patched cables">
-        <Button variant="ghost" size="sm" className="h-9 w-full justify-start px-1 text-xs font-bold" aria-expanded={listOpen} onClick={() => setListOpen((o) => !o)}>CABLES ({wires.length}) {listOpen ? "▾ HIDE" : "▸ SHOW LIST"}</Button>
-        {listOpen && <div className="flex flex-wrap gap-1">
-          {wires.map((w) => (
-            <Button
-              variant="ghost"
-              key={w.id}
-              aria-pressed={selectedWire === w.id}
-              onClick={() => setSelectedWire(selectedWire === w.id ? null : w.id)}
-              className={`modular-add ${selectedWire === w.id ? "is-on" : ""}`}
-            >
-              <span className={`modular-swatch small cable-${w.color}`} aria-hidden />
-              {w.label}
-            </Button>
-          ))}
-        </div>}
+      <div
+        className={`studio-back-cables max-h-36 shrink-0 overflow-auto border-t border-border bg-surface px-3 py-1.5 ${listOpen ? "" : "is-closed"}`}
+        aria-label="Patched cables"
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-9 w-full justify-start px-1 text-xs font-bold"
+          aria-expanded={listOpen}
+          onClick={() => setListOpen((o) => !o)}
+        >
+          CABLES ({wires.length}) {listOpen ? "▾ HIDE" : "▸ SHOW LIST"}
+        </Button>
+        {listOpen && (
+          <div className="flex flex-wrap gap-1">
+            {wires.map((w) => (
+              <Button
+                variant="ghost"
+                key={w.id}
+                aria-pressed={selectedWire === w.id}
+                onClick={() => setSelectedWire(selectedWire === w.id ? null : w.id)}
+                className={`modular-add ${selectedWire === w.id ? "is-on" : ""}`}
+              >
+                <span className={`modular-swatch small cable-${w.color}`} aria-hidden />
+                {w.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

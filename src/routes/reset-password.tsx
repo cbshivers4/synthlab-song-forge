@@ -65,7 +65,9 @@ function ResetPasswordPage() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast.success("Password updated", { description: "Use your new password next time you sign in." });
+      toast.success("Password updated", {
+        description: "Use your new password next time you sign in.",
+      });
       setPassword("");
       setConfirm("");
       void navigate({ to: "/" });
@@ -76,7 +78,11 @@ function ResetPasswordPage() {
       } else if (msg.includes("at least 6")) {
         toast.error("Password must be at least 6 characters.");
       } else {
-        toast.error(err instanceof Error ? err.message : "Could not update the password. Open the email link again.");
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Could not update the password. Open the email link again.",
+        );
       }
     } finally {
       setBusy(false);
@@ -86,7 +92,11 @@ function ResetPasswordPage() {
   return (
     <div className="min-h-[100dvh] overflow-y-auto bg-background px-4 py-10 text-foreground">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center">
-        <img src={synclabLogoAsset.url} alt="SYNCLAB" className="mb-5 size-16 rounded-xl border border-border object-cover" />
+        <img
+          src={synclabLogoAsset.url}
+          alt="SYNCLAB"
+          className="mb-5 size-16 rounded-xl border border-border object-cover"
+        />
         <h1 className="font-display text-xl font-semibold">Set a new password</h1>
         {checking ? (
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
@@ -124,9 +134,13 @@ function ResetPasswordPage() {
         ) : (
           <>
             <p className="mt-2 text-center text-sm text-muted-foreground">
-              This password-reset link has expired or was already used. Request a new one from the sign-in screen.
+              This password-reset link has expired or was already used. Request a new one from the
+              sign-in screen.
             </p>
-            <Link to="/" className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+            <Link
+              to="/"
+              className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            >
               Back to sign in
             </Link>
           </>

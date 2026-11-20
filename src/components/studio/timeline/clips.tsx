@@ -2,10 +2,24 @@ import type { CSSProperties } from "react";
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { boundedRegions, loopRegion } from "@/lib/synclab/recording-region";
 import { timelineUsesWaveform } from "@/lib/synclab/timeline-content";
-import { drumPartRoom, moveDrumPart, rightEdgeEdit, stretchDrumPart, trimDrumPart } from "@/lib/synclab/arrangement-edit";
+import {
+  drumPartRoom,
+  moveDrumPart,
+  rightEdgeEdit,
+  stretchDrumPart,
+  trimDrumPart,
+} from "@/lib/synclab/arrangement-edit";
 import { useEffect, useRef, useState } from "react";
 import { stepsPerBar, songSteps, stepSeconds } from "@/lib/synclab/timebase";
-import { notesInRegion, regionsOf, deleteRegion, moveNoteRegion, regionRoom, trimNoteRegion, unrollNotes } from "@/lib/synclab/note-cuts";
+import {
+  notesInRegion,
+  regionsOf,
+  deleteRegion,
+  moveNoteRegion,
+  regionRoom,
+  trimNoteRegion,
+  unrollNotes,
+} from "@/lib/synclab/note-cuts";
 import { Copy, Disc3, Piano } from "lucide-react";
 import { toast } from "sonner";
 import { useStudio } from "@/lib/synclab/store";
@@ -23,13 +37,18 @@ import { partFamily } from "@/lib/synclab/track-move";
 function laneTrackAt(x: number, y: number): string | undefined {
   for (const lane of document.querySelectorAll<HTMLElement>("[data-lane-track]")) {
     const r = canvasRect(lane);
-    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return lane.dataset["laneTrack"];
+    if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom)
+      return lane.dataset["laneTrack"];
   }
   return undefined;
 }
 /** Dashed outline on the channel a dragged block would land on. */
 function markDropRow(id: string | undefined) {
-  document.querySelectorAll<HTMLElement>("[data-track-row]").forEach((row) => row.classList.toggle("track-drop-target", !!id && row.dataset["trackRow"] === id));
+  document
+    .querySelectorAll<HTMLElement>("[data-track-row]")
+    .forEach((row) =>
+      row.classList.toggle("track-drop-target", !!id && row.dataset["trackRow"] === id),
+    );
 }
 
 /** Sends one note block / beat part to another channel when it is dragged onto that lane. */
@@ -48,12 +67,24 @@ function usePartMoves(track: Track) {
     const dest = live.current.find((t) => t.id === destId);
     if (!dest) return false;
     if (!canTake(destId)) {
-      toast.error(`Can't move this block to ${dest.name}`, { description: family === "drums" ? "Beat parts move between drum tracks." : "Note blocks move between synth, MIDI and sampler tracks that show notes." });
+      toast.error(`Can't move this block to ${dest.name}`, {
+        description:
+          family === "drums"
+            ? "Beat parts move between drum tracks."
+            : "Note blocks move between synth, MIDI and sampler tracks that show notes.",
+      });
       return false;
     }
     const r = movePartToTrack(track.id, destId, a, b, to);
     if (!r) return false;
-    toast.success(`Block moved to ${dest.name}`, r.unmatched ? { description: `${r.unmatched} hits had no matching drum on ${dest.name} and were left out.` } : undefined);
+    toast.success(
+      `Block moved to ${dest.name}`,
+      r.unmatched
+        ? {
+            description: `${r.unmatched} hits had no matching drum on ${dest.name} and were left out.`,
+          }
+        : undefined,
+    );
     return true;
   };
   return { sendPart, canTake };
@@ -64,19 +95,31 @@ function useClickToDeselect() {
   const { clearTimelineSelection } = useStudio();
   const press = useRef<{ x: number; y: number } | null>(null);
   return {
-    down: (e: React.PointerEvent, wasActive: boolean) => { press.current = wasActive ? { x: e.clientX, y: e.clientY } : null; },
+    down: (e: React.PointerEvent, wasActive: boolean) => {
+      press.current = wasActive ? { x: e.clientX, y: e.clientY } : null;
+    },
     click: (e: React.MouseEvent) => {
       e.stopPropagation();
       const p = press.current;
       press.current = null;
-      if (p && e.detail <= 1 && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 5) clearTimelineSelection();
+      if (p && e.detail <= 1 && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 5)
+        clearTimelineSelection();
     },
   };
 }
 
 /** Audio lane: every clip sits at its own bar position and can be moved, trimmed and dragged between tracks. */
 export function Waveform({ track }: { track: Track }) {
-  const { setActiveClip, updateTrack, moveClipToNew, stretchClip, setTransport, transport, tracks, editTool } = useStudio();
+  const {
+    setActiveClip,
+    updateTrack,
+    moveClipToNew,
+    stretchClip,
+    setTransport,
+    transport,
+    tracks,
+    editTool,
+  } = useStudio();
   const cutting = editTool === "split" || editTool === "razor";
   const deselect = useClickToDeselect();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -135,7 +178,12 @@ export function Waveform({ track }: { track: Track }) {
       if (!newChannel || !viewport) return false;
       const bounds = canvasRect(newChannel);
       const visible = canvasRect(viewport);
-      return x >= visible.left && x <= visible.right && y >= Math.max(bounds.top, visible.top) && y <= Math.min(bounds.bottom, visible.bottom);
+      return (
+        x >= visible.left &&
+        x <= visible.right &&
+        y >= Math.max(bounds.top, visible.top) &&
+        y <= Math.min(bounds.bottom, visible.bottom)
+      );
     };
     const highlight = () => {
       const over = dragged && mode === "move" && overNewChannel(pointerX, pointerY);
@@ -170,7 +218,9 @@ export function Waveform({ track }: { track: Track }) {
         el.style.transform = `translateY(${pt.y - y0}px)`;
         el.style.zIndex = "50";
       }
-      const raw = (pt.x - x0 + (viewport?.scrollLeft ?? initialScrollLeft) - initialScrollLeft) / Math.max(1, perStep);
+      const raw =
+        (pt.x - x0 + (viewport?.scrollLeft ?? initialScrollLeft) - initialScrollLeft) /
+        Math.max(1, perStep);
       const dSteps = grid > 0 ? Math.round(raw / grid) * grid : Math.round(raw * 100) / 100;
       if (mode === "move") {
         const next = orig.start + dSteps;
@@ -183,8 +233,9 @@ export function Waveform({ track }: { track: Track }) {
         const bar = stepsPerBar() * stepDur;
         edgeEdit = rightEdgeEdit(clip, dSteps * stepDur, bar, ev.shiftKey, track.kind === "drum");
         if (clipElement) {
-          clipElement.dataset["bars"] = `${+(edgeEdit.seconds / bar).toFixed(2)} BARS${edgeEdit.stretch ? " · STRETCH" : ""}`;
-          clipElement.style.width = `${edgeEdit.seconds / stepDur * perStep}px`;
+          clipElement.dataset["bars"] =
+            `${+(edgeEdit.seconds / bar).toFixed(2)} BARS${edgeEdit.stretch ? " · STRETCH" : ""}`;
+          clipElement.style.width = `${(edgeEdit.seconds / stepDur) * perStep}px`;
         }
       } else {
         const rate = clipRate(clip);
@@ -192,7 +243,8 @@ export function Waveform({ track }: { track: Track }) {
         const rawDelta = dSteps * stepDur;
         const want = ev.shiftKey ? rawDelta : Math.round(rawDelta / bar) * bar;
         const delta = Math.max(-orig.offset / rate, Math.min((orig.length - 0.05) / rate, want));
-        (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"] = `${+((orig.length - delta * rate) / rate / bar).toFixed(2)} BARS`;
+        ((el.closest(".arrangement-clip") as HTMLElement | null) ?? el).dataset["bars"] =
+          `${+((orig.length - delta * rate) / rate / bar).toFixed(2)} BARS`;
         writeClip(clip.id, {
           offset: orig.offset + delta * rate,
           length: orig.length - delta * rate,
@@ -206,7 +258,7 @@ export function Waveform({ track }: { track: Track }) {
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
       clearDrag();
-      delete (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"];
+      delete ((el.closest(".arrangement-clip") as HTMLElement | null) ?? el).dataset["bars"];
       if (mode === "trim-right") {
         if (clipElement) clipElement.style.width = originalWidth;
         if (edgeEdit) {
@@ -225,7 +277,9 @@ export function Waveform({ track }: { track: Track }) {
       if (overNewChannel(upPt.x, upPt.y)) {
         moveClipToNew(track.id, clip.id, orig.start);
         toast.success(`${clip.name} moved to a new channel`);
-        requestAnimationFrame(() => { if (viewport) viewport.scrollTop = viewport.scrollHeight; });
+        requestAnimationFrame(() => {
+          if (viewport) viewport.scrollTop = viewport.scrollHeight;
+        });
         return;
       }
       let targetId: string | undefined;
@@ -233,7 +287,12 @@ export function Waveform({ track }: { track: Track }) {
       // not the floating source element or the captured pointer target.
       for (const lane of document.querySelectorAll<HTMLElement>("[data-lane-track]")) {
         const bounds = canvasRect(lane);
-        if (upPt.x >= bounds.left && upPt.x <= bounds.right && upPt.y >= bounds.top && upPt.y <= bounds.bottom) {
+        if (
+          upPt.x >= bounds.left &&
+          upPt.x <= bounds.right &&
+          upPt.y >= bounds.top &&
+          upPt.y <= bounds.bottom
+        ) {
           targetId = lane.dataset["laneTrack"];
           break;
         }
@@ -244,23 +303,39 @@ export function Waveform({ track }: { track: Track }) {
       const src = all.find((t) => t.id === track.id);
       const moved = src?.clips?.find((c) => c.id === clip.id);
       if (!dest || !src || !moved) return;
-      const destIsNotes = dest.kind === "drum" || dest.kind === "instrument" || dest.kind === "midi" || dest.kind === "sampler";
+      const destIsNotes =
+        dest.kind === "drum" ||
+        dest.kind === "instrument" ||
+        dest.kind === "midi" ||
+        dest.kind === "sampler";
       // The take leaves nothing behind: notes and drum hits recorded under it go too.
       const a = orig.start;
       const b = a + clipSeconds(moved) / stepDur;
       const leftClips = (src.clips ?? []).filter((c) => c.id !== clip.id);
       updateTrack(src.id, {
-        clips: leftClips, activeClipId: undefined,
+        clips: leftClips,
+        activeClipId: undefined,
         ...(src.notes?.length ? { notes: deleteRegion(src.notes, [a, b]) } : {}),
-        ...(src.kind === "drum" && src.pads ? { pads: src.pads.map((pad) => ({ ...pad, steps: pad.steps.map((v, i) => {
-          const len = Math.max(1, pad.steps.length);
-          const first = i + Math.max(0, Math.ceil((a - i) / len)) * len;
-          return first < b ? 0 : v;
-        }) })) } : {}),
+        ...(src.kind === "drum" && src.pads
+          ? {
+              pads: src.pads.map((pad) => ({
+                ...pad,
+                steps: pad.steps.map((v, i) => {
+                  const len = Math.max(1, pad.steps.length);
+                  const first = i + Math.max(0, Math.ceil((a - i) / len)) * len;
+                  return first < b ? 0 : v;
+                }),
+              })),
+            }
+          : {}),
         ...(leftClips.length ? {} : { printedAudio: false }),
       });
       // Note tracks switch to WAVE so the moved audio actually plays there.
-      updateTrack(dest.id, { clips: [...(dest.clips ?? []), moved], activeClipId: moved.id, ...(destIsNotes ? { printedAudio: true } : {}) });
+      updateTrack(dest.id, {
+        clips: [...(dest.clips ?? []), moved],
+        activeClipId: moved.id,
+        ...(destIsNotes ? { printedAudio: true } : {}),
+      });
       setActiveClip(dest.id, moved.id);
       toast.success(`${moved.name} moved to ${dest.name}`);
     };
@@ -274,7 +349,7 @@ export function Waveform({ track }: { track: Track }) {
       if (dragged) writeClip(clip.id, orig);
       el.style.transform = "";
       el.style.zIndex = "";
-      delete (el.closest(".arrangement-clip") as HTMLElement | null ?? el).dataset["bars"];
+      delete ((el.closest(".arrangement-clip") as HTMLElement | null) ?? el).dataset["bars"];
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -302,7 +377,15 @@ export function Waveform({ track }: { track: Track }) {
             data-selected={active}
             data-cutting={cutting}
             className="arrangement-clip group absolute inset-y-1 flex touch-none flex-col overflow-hidden rounded-[2px] border transition-colors"
-            style={{ left: `${left}%`, width: `max(0px, ${width}%)`, ...(clip.color ? { "--clip-audio": clip.color, "--color-clip-audio": clip.color } : {}) } as CSSProperties}
+            style={
+              {
+                left: `${left}%`,
+                width: `max(0px, ${width}%)`,
+                ...(clip.color
+                  ? { "--clip-audio": clip.color, "--color-clip-audio": clip.color }
+                  : {}),
+              } as CSSProperties
+            }
             onPointerDown={(e) => {
               deselect.down(e, active);
               setActiveClip(track.id, clip.id);
@@ -316,14 +399,21 @@ export function Waveform({ track }: { track: Track }) {
             title={`${clip.name} — drag to move, pull the edges to trim, double-click to edit`}
           >
             <div className="arrangement-clip-name flex h-[17px] shrink-0 cursor-grab items-center gap-1 px-1.5 active:cursor-grabbing">
-              <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{clip.name}</span>
-              <span className="ml-auto shrink-0 font-mono text-[8px] opacity-70">{length.toFixed(1)}s</span>
+              <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">
+                {clip.name}
+              </span>
+              <span className="ml-auto shrink-0 font-mono text-[8px] opacity-70">
+                {length.toFixed(1)}s
+              </span>
               <button
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   updateTrack(track.id, {
-                    clips: [...clips, { ...clip, id: uid(), name: `${clip.name} COPY`, start: start + steps }],
+                    clips: [
+                      ...clips,
+                      { ...clip, id: uid(), name: `${clip.name} COPY`, start: start + steps },
+                    ],
                   });
                 }}
                 title="Duplicate clip"
@@ -332,11 +422,15 @@ export function Waveform({ track }: { track: Track }) {
               >
                 <Copy className="size-3" />
               </button>
-
             </div>
 
             <div className="min-h-0 w-full flex-1 px-1 pb-1">
-              <WaveformView peaks={peaks} color="var(--arrangement-wave)" grid={false} label={`${clip.name} waveform`} />
+              <WaveformView
+                peaks={peaks}
+                color="var(--arrangement-wave)"
+                grid={false}
+                label={`${clip.name} waveform`}
+              />
             </div>
 
             <div
@@ -346,7 +440,10 @@ export function Waveform({ track }: { track: Track }) {
             />
             <div
               onPointerDown={(e) => beginDrag(e, clip, "trim-right")}
-              role="slider" aria-label={`Resize or stretch ${clip.name}`} aria-valuenow={length} aria-valuemin={0.05}
+              role="slider"
+              aria-label={`Resize or stretch ${clip.name}`}
+              aria-valuenow={length}
+              aria-valuemin={0.05}
               title="Drag to resize; extends past source end with pitch-preserving stretch (Shift for fine)"
               className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none"
             />
@@ -417,7 +514,10 @@ function MidiClip({ track }: { track: Track }) {
   /** Notes and cut marks as parts: a looping pattern is written out across the song first. */
   const asParts = () => {
     const unrolled = cuts.length === 0 && patLen < total;
-    return { notes: unrolled ? unrollNotes(notes, patLen, total) : notes, extra: unrolled ? { steps: total } : {} };
+    return {
+      notes: unrolled ? unrollNotes(notes, patLen, total) : notes,
+      extra: unrolled ? { steps: total } : {},
+    };
   };
   const snapDelta = (raw: number) => {
     const grid = transport.snap ?? 1;
@@ -438,7 +538,11 @@ function MidiClip({ track }: { track: Track }) {
     let free = 0;
     const y0 = canvasPoint(e.clientX, e.clientY).y;
     let over: string | undefined;
-    try { el.setPointerCapture(e.pointerId); } catch { /* released */ }
+    try {
+      el.setPointerCapture(e.pointerId);
+    } catch {
+      /* released */
+    }
     const onMove = (ev: PointerEvent) => {
       const pt = canvasPoint(ev.clientX, ev.clientY);
       free = Math.max(-a, Math.min(total - b, snapDelta((pt.x - x0) / Math.max(0.0001, perStep))));
@@ -447,7 +551,9 @@ function MidiClip({ track }: { track: Track }) {
       over = Math.abs(pt.y - y0) > 12 ? laneTrackAt(pt.x, pt.y) : undefined;
       const crossing = partMoves.canTake(over);
       markDropRow(crossing ? over : undefined);
-      el.style.transform = crossing ? `translate(${free * perStep}px, ${pt.y - y0}px)` : `translateX(${d * perStep}px)`;
+      el.style.transform = crossing
+        ? `translate(${free * perStep}px, ${pt.y - y0}px)`
+        : `translateX(${d * perStep}px)`;
       el.style.zIndex = crossing ? "50" : "";
     };
     const onUp = () => {
@@ -457,7 +563,10 @@ function MidiClip({ track }: { track: Track }) {
       el.style.transform = "";
       el.style.zIndex = "";
       markDropRow(undefined);
-      if (over && over !== track.id) { partMoves.sendPart(over, a, b, a + free); return; }
+      if (over && over !== track.id) {
+        partMoves.sendPart(over, a, b, a + free);
+        return;
+      }
       if (Math.abs(d) < 0.001) return;
       const r = moveNoteRegion(track.notes ?? [], track.cuts, total, [a, b], d);
       updateTrack(track.id, { notes: r.notes, cuts: r.cuts, activeRegion: r.activeRegion });
@@ -479,9 +588,14 @@ function MidiClip({ track }: { track: Track }) {
     const x0 = canvasPoint(e.clientX, e.clientY).x;
     const parts = asParts();
     const [lo, hi] = regionRoom(parts.notes, cuts.length ? cuts : undefined, total, [a, b]);
-    let na = a, nb = b;
+    let na = a,
+      nb = b;
     const style0 = { left: block.style.left, width: block.style.width };
-    try { handle.setPointerCapture(e.pointerId); } catch { /* released */ }
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+      /* released */
+    }
     const onMove = (ev: PointerEvent) => {
       const d = snapDelta((canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep));
       if (side === "left") na = Math.max(lo, Math.min(b - 0.25, a + d));
@@ -496,8 +610,20 @@ function MidiClip({ track }: { track: Track }) {
       block.style.left = style0.left;
       block.style.width = style0.width;
       if (Math.abs(na - a) < 0.001 && Math.abs(nb - b) < 0.001) return;
-      const r = trimNoteRegion(parts.notes, cuts.length ? cuts : [a, b].filter((c) => c > 0 && c < total), total, [a, b], na, nb);
-      updateTrack(track.id, { ...parts.extra, notes: r.notes, cuts: r.cuts, activeRegion: r.activeRegion });
+      const r = trimNoteRegion(
+        parts.notes,
+        cuts.length ? cuts : [a, b].filter((c) => c > 0 && c < total),
+        total,
+        [a, b],
+        na,
+        nb,
+      );
+      updateTrack(track.id, {
+        ...parts.extra,
+        notes: r.notes,
+        cuts: r.cuts,
+        activeRegion: r.activeRegion,
+      });
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -518,60 +644,115 @@ function MidiClip({ track }: { track: Track }) {
   const hi = Math.max(...pitches) + 2;
   const span = Math.max(6, hi - lo);
   const rows = 12;
-  const bounds: [number, number] = [Math.min(...notes.map(n => n.recordedEnd != null ? n.step : 0)), Math.max(...notes.map(n => n.recordedEnd ?? total))];
-  return <>{boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
-    const regionNotes = cuts.length > 0 ? notesInRegion(notes, [a, b]) : notes;
-    if (regionNotes.length === 0) return null;
-    const active = track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
-    return <div key={a}
-      data-part-start={a}
-      data-part-end={b}
-      data-note-region={active ? "active" : "part"}
-      data-selected={active}
-      className="arrangement-clip arrangement-midi absolute inset-y-1 flex cursor-grab flex-col overflow-hidden rounded-[2px] border active:cursor-grabbing"
-      style={{ left: `${a / total * 100}%`, width: `${(b - a) / total * 100}%` }}
-      onPointerDown={(e) => {
-        deselect.down(e, active);
-        updateTrack(track.id, { activeRegion: a });
-        select(track.id);
-        // A part between cut marks moves on its own; an uncut pattern moves as a whole.
-        if (cuts.length > 0) beginRegionDrag(e, a, b);
-        else beginPatternDrag(e);
-      }}
-      onClick={deselect.click}
-      onDoubleClick={() => { select(track.id); setPanel("piano"); }}
-      title={`${track.name} — drag to move, pull the edges to trim, double-click to edit notes`}
-    >
-      <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
-        <Piano className="size-2.5 shrink-0" />
-        <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name}</span>
-
-      </div>
-      <div className="relative min-h-0 flex-1">
-        {Array.from({ length: rows }).map((_, r) => <div key={r} className="arrangement-note-grid absolute inset-x-0 border-t" style={{ top: `${r / rows * 100}%` }} />)}
-        {Array.from({ length: reps }).flatMap((_, rep) => regionNotes.map((n) => {
-          if (n.recordedEnd != null && rep > 0) return null;
-          const at = n.recordedEnd != null ? n.step : rep * patLen + (n.step % patLen);
-          const end = at + Math.min(n.length, n.recordedEnd != null ? n.recordedEnd - at : patLen - (n.step % patLen), total - at);
-          if (at >= b || end <= a) return null;
-          const from = Math.max(a, at);
-          const to = Math.min(b, end);
-          return <div key={`${n.id}-${rep}`} className="arrangement-note absolute rounded-[1px]"
-            title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
-            style={{ left: `${(from - a) / (b - a) * 100}%`, width: `${Math.max(0.3, (to - from) / (b - a) * 100 - 0.1)}%`, top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`, height: "6%", opacity: 0.5 + (n.velocity ?? 0.8) * 0.35 }} />;
-        }))}
-      </div>
-      <div onPointerDown={(e) => beginRegionTrim(e, a, b, "left")} onClick={(e) => e.stopPropagation()}
-        role="slider" aria-label={`Trim start of ${track.name} part`} aria-valuenow={a} aria-valuemin={0} aria-valuemax={total}
-        title="Drag to trim or extend the start of this part"
-        className="arrangement-trim arrangement-trim-left absolute inset-y-0 left-0 z-30 w-3 cursor-ew-resize touch-none" />
-      <div onPointerDown={(e) => beginRegionTrim(e, a, b, "right")} onClick={(e) => e.stopPropagation()}
-        role="slider" aria-label={`Trim end of ${track.name} part`} aria-valuenow={b} aria-valuemin={0} aria-valuemax={total}
-        title="Drag to trim or extend the end of this part"
-        className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none" />
-    </div>;
-  })}</>;
-
+  const bounds: [number, number] = [
+    Math.min(...notes.map((n) => (n.recordedEnd != null ? n.step : 0))),
+    Math.max(...notes.map((n) => n.recordedEnd ?? total)),
+  ];
+  return (
+    <>
+      {boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
+        const regionNotes = cuts.length > 0 ? notesInRegion(notes, [a, b]) : notes;
+        if (regionNotes.length === 0) return null;
+        const active =
+          track.activeRegion != null &&
+          track.activeRegion >= a - 0.001 &&
+          track.activeRegion < b - 0.001;
+        return (
+          <div
+            key={a}
+            data-part-start={a}
+            data-part-end={b}
+            data-note-region={active ? "active" : "part"}
+            data-selected={active}
+            className="arrangement-clip arrangement-midi absolute inset-y-1 flex cursor-grab flex-col overflow-hidden rounded-[2px] border active:cursor-grabbing"
+            style={{ left: `${(a / total) * 100}%`, width: `${((b - a) / total) * 100}%` }}
+            onPointerDown={(e) => {
+              deselect.down(e, active);
+              updateTrack(track.id, { activeRegion: a });
+              select(track.id);
+              // A part between cut marks moves on its own; an uncut pattern moves as a whole.
+              if (cuts.length > 0) beginRegionDrag(e, a, b);
+              else beginPatternDrag(e);
+            }}
+            onClick={deselect.click}
+            onDoubleClick={() => {
+              select(track.id);
+              setPanel("piano");
+            }}
+            title={`${track.name} — drag to move, pull the edges to trim, double-click to edit notes`}
+          >
+            <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
+              <Piano className="size-2.5 shrink-0" />
+              <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">
+                {track.name}
+              </span>
+            </div>
+            <div className="relative min-h-0 flex-1">
+              {Array.from({ length: rows }).map((_, r) => (
+                <div
+                  key={r}
+                  className="arrangement-note-grid absolute inset-x-0 border-t"
+                  style={{ top: `${(r / rows) * 100}%` }}
+                />
+              ))}
+              {Array.from({ length: reps }).flatMap((_, rep) =>
+                regionNotes.map((n) => {
+                  if (n.recordedEnd != null && rep > 0) return null;
+                  const at = n.recordedEnd != null ? n.step : rep * patLen + (n.step % patLen);
+                  const end =
+                    at +
+                    Math.min(
+                      n.length,
+                      n.recordedEnd != null ? n.recordedEnd - at : patLen - (n.step % patLen),
+                      total - at,
+                    );
+                  if (at >= b || end <= a) return null;
+                  const from = Math.max(a, at);
+                  const to = Math.min(b, end);
+                  return (
+                    <div
+                      key={`${n.id}-${rep}`}
+                      className="arrangement-note absolute rounded-[1px]"
+                      title={`${NOTE_NAMES[n.pitch % 12]}${Math.floor(n.pitch / 12) - 1}`}
+                      style={{
+                        left: `${((from - a) / (b - a)) * 100}%`,
+                        width: `${Math.max(0.3, ((to - from) / (b - a)) * 100 - 0.1)}%`,
+                        top: `${(1 - (n.pitch - lo) / span) * 82 + 4}%`,
+                        height: "6%",
+                        opacity: 0.5 + (n.velocity ?? 0.8) * 0.35,
+                      }}
+                    />
+                  );
+                }),
+              )}
+            </div>
+            <div
+              onPointerDown={(e) => beginRegionTrim(e, a, b, "left")}
+              onClick={(e) => e.stopPropagation()}
+              role="slider"
+              aria-label={`Trim start of ${track.name} part`}
+              aria-valuenow={a}
+              aria-valuemin={0}
+              aria-valuemax={total}
+              title="Drag to trim or extend the start of this part"
+              className="arrangement-trim arrangement-trim-left absolute inset-y-0 left-0 z-30 w-3 cursor-ew-resize touch-none"
+            />
+            <div
+              onPointerDown={(e) => beginRegionTrim(e, a, b, "right")}
+              onClick={(e) => e.stopPropagation()}
+              role="slider"
+              aria-label={`Trim end of ${track.name} part`}
+              aria-valuenow={b}
+              aria-valuemin={0}
+              aria-valuemax={total}
+              title="Drag to trim or extend the end of this part"
+              className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none"
+            />
+          </div>
+        );
+      })}
+    </>
+  );
 }
 
 /** Shows the track's level after its VCA so moving the VCA fader is visible on the track. */
@@ -580,9 +761,20 @@ export function VcaLevel({ track }: { track: Track }) {
   const st = track.vca ? vcas[track.vca] : undefined;
   const eff = Math.min(1, track.volume * (st ? (st.muted ? 0 : st.volume) : 1));
   return (
-    <div className="flex w-14 flex-col gap-0.5" title={`Level after VCA ${track.vca}`} aria-label={`Level after VCA ${track.vca}`}>
-      <div className="h-1.5 rounded-sm bg-surface-2"><div className="h-full rounded-sm bg-primary transition-[width] duration-75" style={{ width: `${eff * 100}%` }} /></div>
-      <span className="font-mono text-[8px] leading-none text-primary">VCA {track.vca} {eff > 0 ? `${(20 * Math.log10(eff)).toFixed(1)} dB` : "-∞"}</span>
+    <div
+      className="flex w-14 flex-col gap-0.5"
+      title={`Level after VCA ${track.vca}`}
+      aria-label={`Level after VCA ${track.vca}`}
+    >
+      <div className="h-1.5 rounded-sm bg-surface-2">
+        <div
+          className="h-full rounded-sm bg-primary transition-[width] duration-75"
+          style={{ width: `${eff * 100}%` }}
+        />
+      </div>
+      <span className="font-mono text-[8px] leading-none text-primary">
+        VCA {track.vca} {eff > 0 ? `${(20 * Math.log10(eff)).toFixed(1)} dB` : "-∞"}
+      </span>
     </div>
   );
 }
@@ -637,7 +829,9 @@ function DrumClip({ track }: { track: Track }) {
   const shown = pads.slice(0, 8);
   const steps = track.pads?.[0]?.steps.length ?? 16;
   const cuts = track.cuts ?? [];
-  const bounds = track.patternRegion ?? (transport.loop ? loopRegion(transport) : [0, total] as [number, number]);
+  const bounds =
+    track.patternRegion ??
+    (transport.loop ? loopRegion(transport) : ([0, total] as [number, number]));
   /** Drag one beat part like a synth take; it snaps to the grid and clicks onto neighbouring parts' edges. */
   const beginPartDrag = (e: React.PointerEvent, a: number, b: number) => {
     e.stopPropagation();
@@ -649,15 +843,22 @@ function DrumClip({ track }: { track: Track }) {
     const x0 = canvasPoint(e.clientX, e.clientY).x;
     const grid = transport.snap && transport.snap > 0 ? transport.snap : 1;
     const bar = stepsPerBar();
-    const others = boundedRegions(regionsOf(cuts, total), bounds)
-      .filter(([x, y]) => (x !== a || y !== b) && track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)));
+    const others = boundedRegions(regionsOf(cuts, total), bounds).filter(
+      ([x, y]) =>
+        (x !== a || y !== b) &&
+        track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)),
+    );
     const edges = others.flatMap(([x, y]) => [y, x - (b - a)]);
     let to = a;
     let freeTo = a;
     const y0 = canvasPoint(e.clientX, e.clientY).y;
     let over: string | undefined;
     const target = e.currentTarget as HTMLElement;
-    try { target.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
+    try {
+      target.setPointerCapture(e.pointerId);
+    } catch {
+      /* pointer already released */
+    }
     const onMove = (ev: PointerEvent) => {
       const pt = canvasPoint(ev.clientX, ev.clientY);
       const raw = a + (pt.x - x0) / Math.max(0.0001, perStep);
@@ -672,12 +873,25 @@ function DrumClip({ track }: { track: Track }) {
       }
       markDropRow(undefined);
       target.style.zIndex = "";
-      const near = edges.reduce<number | null>((best, edge) => Math.abs(edge - raw) <= bar / 4 && (best == null || Math.abs(edge - raw) < Math.abs(best - raw)) ? edge : best, null);
+      const near = edges.reduce<number | null>(
+        (best, edge) =>
+          Math.abs(edge - raw) <= bar / 4 &&
+          (best == null || Math.abs(edge - raw) < Math.abs(best - raw))
+            ? edge
+            : best,
+        null,
+      );
       let next = Math.max(0, near ?? Math.round(raw / grid) * grid);
       // Never drop a part on top of another one: butt it against the closest free edge instead.
       if (others.some(([x, y]) => next < y && next + (b - a) > x)) {
-        const free = edges.filter((edge) => edge >= 0 && !others.some(([x, y]) => edge < y - 0.001 && edge + (b - a) > x + 0.001));
-        if (free.length) next = free.reduce((best, edge) => Math.abs(edge - raw) < Math.abs(best - raw) ? edge : best);
+        const free = edges.filter(
+          (edge) =>
+            edge >= 0 && !others.some(([x, y]) => edge < y - 0.001 && edge + (b - a) > x + 0.001),
+        );
+        if (free.length)
+          next = free.reduce((best, edge) =>
+            Math.abs(edge - raw) < Math.abs(best - raw) ? edge : best,
+          );
       }
       to = next;
       if (target) target.style.transform = `translateX(${(to - a) * perStep}px)`;
@@ -689,7 +903,10 @@ function DrumClip({ track }: { track: Track }) {
       target.style.transform = "";
       target.style.zIndex = "";
       markDropRow(undefined);
-      if (over && over !== track.id) { partMoves.sendPart(over, a, b, freeTo); return; }
+      if (over && over !== track.id) {
+        partMoves.sendPart(over, a, b, freeTo);
+        return;
+      }
       if (Math.abs(to - a) < 0.5) return;
       updateTrack(track.id, moveDrumPart(track, a, b, to));
     };
@@ -709,12 +926,26 @@ function DrumClip({ track }: { track: Track }) {
     const perStep = canvasRect(lane).width / Math.max(1, total);
     const x0 = canvasPoint(e.clientX, e.clientY).x;
     const grid = transport.snap && transport.snap > 0 ? transport.snap : 1;
-    const [lo, hi] = drumPartRoom(track, boundedRegions(regionsOf(cuts, total), bounds), a, b, total);
-    let na = a, nb = b;
+    const [lo, hi] = drumPartRoom(
+      track,
+      boundedRegions(regionsOf(cuts, total), bounds),
+      a,
+      b,
+      total,
+    );
+    let na = a,
+      nb = b;
     const style0 = { left: block.style.left, width: block.style.width };
-    try { handle.setPointerCapture(e.pointerId); } catch { /* released */ }
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+      /* released */
+    }
     const onMove = (ev: PointerEvent) => {
-      const d = Math.round((canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep) / grid) * grid;
+      const d =
+        Math.round(
+          (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep) / grid,
+        ) * grid;
       if (side === "left") na = Math.max(lo, Math.min(b - 1, a + d));
       else nb = Math.min(hi, Math.max(a + 1, b + d));
       block.style.left = `${(na / total) * 100}%`;
@@ -746,12 +977,20 @@ function DrumClip({ track }: { track: Track }) {
     const x0 = canvasPoint(e.clientX, e.clientY).x;
     const grid = transport.snap && transport.snap > 0 ? transport.snap : 1;
     const nextStart = boundedRegions(regionsOf(cuts, total), bounds)
-      .filter(([x, y]) => x >= b - 0.001 && track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)))
+      .filter(
+        ([x, y]) =>
+          x >= b - 0.001 &&
+          track.pads?.some((p) => p.steps.slice(Math.floor(x), Math.ceil(y)).some((v) => v > 0)),
+      )
       .reduce((m, [x]) => Math.min(m, x), total);
     const maxLen = Math.max(1, nextStart - a);
     let len = b - a;
     const originalWidth = block.style.width;
-    try { handle.setPointerCapture(e.pointerId); } catch { /* pointer already released */ }
+    try {
+      handle.setPointerCapture(e.pointerId);
+    } catch {
+      /* pointer already released */
+    }
     const onMove = (ev: PointerEvent) => {
       const raw = b - a + (canvasPoint(ev.clientX, ev.clientY).x - x0) / Math.max(0.0001, perStep);
       len = Math.max(grid, Math.min(maxLen, Math.round(raw / grid) * grid));
@@ -774,43 +1013,94 @@ function DrumClip({ track }: { track: Track }) {
   };
   {
     // Cut beat: each part is its own block that can be selected and deleted, like a DAW part.
-    return <>{boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
-      const lo = Math.floor(a), hi = Math.ceil(b);
-      const part = pads.map((p) => ({ steps: Array.from({ length: hi - lo }, (_, i) => p.steps[(lo + i) % Math.max(1, steps)] ?? 0) }));
-      const hits = part.reduce((n, p) => n + p.steps.filter((v) => v > 0).length, 0);
-      if (hits === 0) return null;
-      const active = track.activeRegion != null && track.activeRegion >= a - 0.001 && track.activeRegion < b - 0.001;
-      return (
-        <div key={a} data-part-start={a} data-part-end={b} data-selected={active} data-note-region={active ? "active" : "part"}
-          className="arrangement-clip absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border"
-          onPointerDown={(e) => { deselect.down(e, active); updateTrack(track.id, { activeRegion: a }); select(track.id); beginPartDrag(e, a, b); }}
-          onClick={deselect.click}
-          onDoubleClick={() => { select(track.id); setPanel("drums"); }}
-          style={{ left: `${a / total * 100}%`, width: `${(b - a) / total * 100}%`, cursor: "grab", touchAction: "none" }}
-          title={`${track.name} beat part — drag to move, pull the left edge to trim, the right edge to stretch (Alt + right edge trims), double-click to open the drum machine`}>
-          <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
-            <Disc3 className="size-2.5 shrink-0" />
-            <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">{track.name} · {track.drumChain?.on && track.drumChain.items.length ? `CHAIN ${track.drumChain.items.map((i) => `${i.slot + 1}×${i.bars}`).join(" → ")}` : `${hits} HITS`}</span>
-
-          </div>
-          <div className="relative min-h-0 flex-1"><DrumHitWave pads={part} steps={hi - lo} total={hi - lo} tone="text-[var(--arrangement-ink)]" /></div>
-          <div
-            onPointerDown={(e) => beginPartTrim(e, a, b, "left")}
-            onClick={(e) => e.stopPropagation()}
-            role="slider" aria-label={`Trim start of ${track.name} beat part`} aria-valuenow={a} aria-valuemin={0}
-            title="Drag to trim or extend the start of this beat part"
-            className="arrangement-trim arrangement-trim-left absolute inset-y-0 left-0 z-30 w-3 cursor-ew-resize touch-none"
-          />
-          <div
-            onPointerDown={(e) => (e.altKey ? beginPartTrim(e, a, b, "right") : beginPartStretch(e, a, b))}
-            onClick={(e) => e.stopPropagation()}
-            role="slider" aria-label={`Stretch ${track.name} beat part`} aria-valuenow={b - a} aria-valuemin={1}
-            title="Drag to stretch this beat part — its hits spread out to fill the new length. Hold Alt while dragging to trim instead."
-            className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none"
-          />
-        </div>
-      );
-    })}</>;
+    return (
+      <>
+        {boundedRegions(regionsOf(cuts, total), bounds).map(([a, b]) => {
+          const lo = Math.floor(a),
+            hi = Math.ceil(b);
+          const part = pads.map((p) => ({
+            steps: Array.from(
+              { length: hi - lo },
+              (_, i) => p.steps[(lo + i) % Math.max(1, steps)] ?? 0,
+            ),
+          }));
+          const hits = part.reduce((n, p) => n + p.steps.filter((v) => v > 0).length, 0);
+          if (hits === 0) return null;
+          const active =
+            track.activeRegion != null &&
+            track.activeRegion >= a - 0.001 &&
+            track.activeRegion < b - 0.001;
+          return (
+            <div
+              key={a}
+              data-part-start={a}
+              data-part-end={b}
+              data-selected={active}
+              data-note-region={active ? "active" : "part"}
+              className="arrangement-clip absolute inset-y-1 flex flex-col overflow-hidden rounded-[2px] border"
+              onPointerDown={(e) => {
+                deselect.down(e, active);
+                updateTrack(track.id, { activeRegion: a });
+                select(track.id);
+                beginPartDrag(e, a, b);
+              }}
+              onClick={deselect.click}
+              onDoubleClick={() => {
+                select(track.id);
+                setPanel("drums");
+              }}
+              style={{
+                left: `${(a / total) * 100}%`,
+                width: `${((b - a) / total) * 100}%`,
+                cursor: "grab",
+                touchAction: "none",
+              }}
+              title={`${track.name} beat part — drag to move, pull the left edge to trim, the right edge to stretch (Alt + right edge trims), double-click to open the drum machine`}
+            >
+              <div className="arrangement-clip-name flex h-[17px] shrink-0 items-center gap-1 px-1.5">
+                <Disc3 className="size-2.5 shrink-0" />
+                <span className="min-w-0 flex-1 truncate font-mono text-[9px] font-semibold">
+                  {track.name} ·{" "}
+                  {track.drumChain?.on && track.drumChain.items.length
+                    ? `CHAIN ${track.drumChain.items.map((i) => `${i.slot + 1}×${i.bars}`).join(" → ")}`
+                    : `${hits} HITS`}
+                </span>
+              </div>
+              <div className="relative min-h-0 flex-1">
+                <DrumHitWave
+                  pads={part}
+                  steps={hi - lo}
+                  total={hi - lo}
+                  tone="text-[var(--arrangement-ink)]"
+                />
+              </div>
+              <div
+                onPointerDown={(e) => beginPartTrim(e, a, b, "left")}
+                onClick={(e) => e.stopPropagation()}
+                role="slider"
+                aria-label={`Trim start of ${track.name} beat part`}
+                aria-valuenow={a}
+                aria-valuemin={0}
+                title="Drag to trim or extend the start of this beat part"
+                className="arrangement-trim arrangement-trim-left absolute inset-y-0 left-0 z-30 w-3 cursor-ew-resize touch-none"
+              />
+              <div
+                onPointerDown={(e) =>
+                  e.altKey ? beginPartTrim(e, a, b, "right") : beginPartStretch(e, a, b)
+                }
+                onClick={(e) => e.stopPropagation()}
+                role="slider"
+                aria-label={`Stretch ${track.name} beat part`}
+                aria-valuenow={b - a}
+                aria-valuemin={1}
+                title="Drag to stretch this beat part — its hits spread out to fill the new length. Hold Alt while dragging to trim instead."
+                className="arrangement-trim arrangement-trim-right absolute inset-y-0 right-0 z-30 w-3 cursor-ew-resize touch-none"
+              />
+            </div>
+          );
+        })}
+      </>
+    );
   }
   const hits = pads.reduce((n, p) => n + p.steps.filter((s) => s > 0).length, 0);
   return (
@@ -823,12 +1113,14 @@ function DrumClip({ track }: { track: Track }) {
         setPanel("drums");
       }}
     >
-      <div
-        className="flex h-[17px] items-center gap-1 bg-clip-drum/10 px-1.5"
-      >
+      <div className="flex h-[17px] items-center gap-1 bg-clip-drum/10 px-1.5">
         <Disc3 className="size-2.5" />
         <span className="truncate font-mono text-[9px] font-semibold text-clip-drum/75">
-          DRUM PATTERN · {hits} HITS · {shown.map((p) => p.name).slice(0, 4).join(" / ")}
+          DRUM PATTERN · {hits} HITS ·{" "}
+          {shown
+            .map((p) => p.name)
+            .slice(0, 4)
+            .join(" / ")}
         </span>
       </div>
       <div className="relative flex-1" style={{ height: "calc(100% - 17px)" }}>
@@ -867,7 +1159,9 @@ function RecordingTake({ track }: { track: Track }) {
       style={{ left: `${left}%`, width: `${Math.max(1.5, width)}%` }}
       aria-label={`Recording on ${track.name}`}
     >
-      <span className="block truncate bg-destructive px-1.5 py-[1px] font-mono text-[9px] font-semibold text-destructive-foreground">{track.name}</span>
+      <span className="block truncate bg-destructive px-1.5 py-[1px] font-mono text-[9px] font-semibold text-destructive-foreground">
+        {track.name}
+      </span>
     </div>
   );
 }
@@ -877,10 +1171,22 @@ export function Lane({ track }: { track: Track }) {
   const live = track.recording ? <RecordingClip track={track} /> : null;
   // Keep the same editable material beneath the non-interactive incoming-take
   // indicator, so recording never replaces the arrangement with a locked view.
-  if ((track.kind === "instrument" || track.kind === "midi" || track.kind === "sampler" || track.kind === "drum") && (track.clips?.length ?? 0) > 0)
+  if (
+    (track.kind === "instrument" ||
+      track.kind === "midi" ||
+      track.kind === "sampler" ||
+      track.kind === "drum") &&
+    (track.clips?.length ?? 0) > 0
+  )
     return (
       <>
-        {timelineUsesWaveform(track) ? <Waveform track={track} /> : track.kind === "drum" ? <DrumClip track={track} /> : <MidiClip track={track} />}
+        {timelineUsesWaveform(track) ? (
+          <Waveform track={track} />
+        ) : track.kind === "drum" ? (
+          <DrumClip track={track} />
+        ) : (
+          <MidiClip track={track} />
+        )}
         {live}
       </>
     );

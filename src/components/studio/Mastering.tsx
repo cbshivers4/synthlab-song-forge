@@ -26,24 +26,112 @@ import {
 
 type Phase = "idle" | "capturing" | "working" | "ready";
 
-const KNOBS: { key: keyof MasterSettings; label: string; min: number; max: number; step: number; unit: string; hint: string }[] = [
-  { key: "targetLufs", label: "Loudness", min: -24, max: -5, step: 0.5, unit: "LUFS", hint: "How loud the finished track sits" },
-  { key: "ceilingDb", label: "Ceiling", min: -3, max: -0.1, step: 0.1, unit: "dBTP", hint: "Highest peak allowed — keeps it from distorting" },
-  { key: "bass", label: "Bass", min: -6, max: 6, step: 0.25, unit: "dB", hint: "Low end weight at 90 Hz" },
-  { key: "air", label: "Air", min: -6, max: 6, step: 0.25, unit: "dB", hint: "Top end sparkle at 6 kHz" },
-  { key: "width", label: "Width", min: 0, max: 2, step: 0.05, unit: "x", hint: "Stereo spread — 1 leaves it as mixed" },
-  { key: "glue", label: "Glue", min: 0, max: 1, step: 0.05, unit: "", hint: "Holds the mix together" },
-  { key: "drive", label: "Drive", min: 0, max: 1, step: 0.05, unit: "", hint: "Warmth and saturation" },
-  { key: "monoBass", label: "Mono bass", min: 0, max: 250, step: 5, unit: "Hz", hint: "Keeps deep bass centred" },
+const KNOBS: {
+  key: keyof MasterSettings;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  hint: string;
+}[] = [
+  {
+    key: "targetLufs",
+    label: "Loudness",
+    min: -24,
+    max: -5,
+    step: 0.5,
+    unit: "LUFS",
+    hint: "How loud the finished track sits",
+  },
+  {
+    key: "ceilingDb",
+    label: "Ceiling",
+    min: -3,
+    max: -0.1,
+    step: 0.1,
+    unit: "dBTP",
+    hint: "Highest peak allowed — keeps it from distorting",
+  },
+  {
+    key: "bass",
+    label: "Bass",
+    min: -6,
+    max: 6,
+    step: 0.25,
+    unit: "dB",
+    hint: "Low end weight at 90 Hz",
+  },
+  {
+    key: "air",
+    label: "Air",
+    min: -6,
+    max: 6,
+    step: 0.25,
+    unit: "dB",
+    hint: "Top end sparkle at 6 kHz",
+  },
+  {
+    key: "width",
+    label: "Width",
+    min: 0,
+    max: 2,
+    step: 0.05,
+    unit: "x",
+    hint: "Stereo spread — 1 leaves it as mixed",
+  },
+  {
+    key: "glue",
+    label: "Glue",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+    hint: "Holds the mix together",
+  },
+  {
+    key: "drive",
+    label: "Drive",
+    min: 0,
+    max: 1,
+    step: 0.05,
+    unit: "",
+    hint: "Warmth and saturation",
+  },
+  {
+    key: "monoBass",
+    label: "Mono bass",
+    min: 0,
+    max: 250,
+    step: 5,
+    unit: "Hz",
+    hint: "Keeps deep bass centred",
+  },
 ];
 
-const fmt = (v: number, unit: string) => `${v > 0 && (unit === "dB" ) ? "+" : ""}${v.toFixed(unit === "Hz" ? 0 : 2)}${unit ? ` ${unit}` : ""}`;
+const fmt = (v: number, unit: string) =>
+  `${v > 0 && unit === "dB" ? "+" : ""}${v.toFixed(unit === "Hz" ? 0 : 2)}${unit ? ` ${unit}` : ""}`;
 
-function Meter({ label, value, unit, good }: { label: string; value: number; unit: string; good?: boolean | undefined }) {
+function Meter({
+  label,
+  value,
+  unit,
+  good,
+}: {
+  label: string;
+  value: number;
+  unit: string;
+  good?: boolean | undefined;
+}) {
   return (
     <div className="rounded-sm border border-border bg-surface-2 px-2 py-1.5">
       <div className="label-xs">{label}</div>
-      <div className={cn("font-mono text-sm", good === false ? "text-destructive" : good ? "text-primary" : "text-foreground")}>
+      <div
+        className={cn(
+          "font-mono text-sm",
+          good === false ? "text-destructive" : good ? "text-primary" : "text-foreground",
+        )}
+      >
         {Number.isFinite(value) ? value.toFixed(1) : "—"}
         <span className="ml-1 text-[9px] text-muted-foreground">{unit}</span>
       </div>
@@ -71,14 +159,18 @@ export function Mastering() {
   const [result, setResult] = useState<MasterResult | null>(null);
   const timer = useRef<number | null>(null);
 
-  const safeName = (project?.name ?? "synclab-master").replace(/[^\w\-. ]+/g, "").trim() || "synclab-master";
+  const safeName =
+    (project?.name ?? "synclab-master").replace(/[^\w\-. ]+/g, "").trim() || "synclab-master";
   const barSeconds = (60 / transport.bpm) * (transport.beatsPerBar ?? 4);
   const bars = Math.max(1, transport.bars ?? 8);
   const total = bars * barSeconds + 0.6;
 
-  useEffect(() => () => {
-    if (timer.current) window.clearInterval(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current) window.clearInterval(timer.current);
+    },
+    [],
+  );
 
   const set = (k: keyof MasterSettings, v: number | boolean) => {
     setSettings((s) => ({ ...s, [k]: v }));
@@ -110,7 +202,9 @@ export function Mastering() {
     stop();
     if (!cap || cap.left.length < 4096) {
       setPhase("idle");
-      toast("Nothing was captured", { description: "Make sure the song actually plays, then press Bounce again." });
+      toast("Nothing was captured", {
+        description: "Make sure the song actually plays, then press Bounce again.",
+      });
       return;
     }
     setCapture(cap);
@@ -146,7 +240,12 @@ export function Mastering() {
   const busy = phase === "capturing" || phase === "working";
 
   return (
-    <div className={`space-y-4${skinned ? " studio-wallpaper rounded-md p-3" : ""}`} data-skin-panel="mastering" style={skinBackground(skin)} {...skinDrop}>
+    <div
+      className={`space-y-4${skinned ? " studio-wallpaper rounded-md p-3" : ""}`}
+      data-skin-panel="mastering"
+      style={skinBackground(skin)}
+      {...skinDrop}
+    >
       <SkinControls skinKey="mastering" image />
       <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface-2/60 p-2">
         <Gauge className="size-4 text-primary" />
@@ -154,13 +253,27 @@ export function Mastering() {
         <span className="label-xs">real loudness measurement · true-peak limiting</span>
         <div className="ml-auto flex items-center gap-2">
           {phase === "capturing" && (
-            <Button size="sm" variant="destructive" className="h-8 gap-1.5" onClick={() => void finishCapture(getEngine().stopCapture())}>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-8 gap-1.5"
+              onClick={() => void finishCapture(getEngine().stopCapture())}
+            >
               <Square className="size-3.5" /> Stop
             </Button>
           )}
-          <Button size="sm" className="h-8 gap-1.5 font-mono text-[10px] uppercase tracking-widest" disabled={busy} onClick={bounce}>
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 font-mono text-[10px] uppercase tracking-widest"
+            disabled={busy}
+            onClick={bounce}
+          >
             <Play className="size-3.5" />
-            {phase === "capturing" ? `Bouncing ${elapsed.toFixed(0)}s` : phase === "working" ? `Mastering ${(progress * 100) | 0}%` : "Bounce & master"}
+            {phase === "capturing"
+              ? `Bouncing ${elapsed.toFixed(0)}s`
+              : phase === "working"
+                ? `Mastering ${(progress * 100) | 0}%`
+                : "Bounce & master"}
           </Button>
         </div>
       </div>
@@ -213,7 +326,9 @@ export function Mastering() {
         <div className="flex items-center justify-between rounded-sm border border-border bg-surface-2/50 p-2">
           <div>
             <div className="label-xs">Dither</div>
-            <div className="text-[9px] text-muted-foreground">Smooths the very quietest detail for CD-style files</div>
+            <div className="text-[9px] text-muted-foreground">
+              Smooths the very quietest detail for CD-style files
+            </div>
           </div>
           <Switch
             checked={settings.dither}
@@ -250,10 +365,22 @@ export function Mastering() {
               unit="dBTP"
               good={result ? result.after.truePeakDb <= settings.ceilingDb + 0.2 : undefined}
             />
-            <Meter label="Dynamics (LRA)" value={result?.after.lra ?? before?.lra ?? NaN} unit="LU" />
-            <Meter label="Headroom (PLR)" value={result?.after.plr ?? before?.plr ?? NaN} unit="dB" />
+            <Meter
+              label="Dynamics (LRA)"
+              value={result?.after.lra ?? before?.lra ?? NaN}
+              unit="LU"
+            />
+            <Meter
+              label="Headroom (PLR)"
+              value={result?.after.plr ?? before?.plr ?? NaN}
+              unit="dB"
+            />
             <Meter label="Gain applied" value={result?.matchDb ?? NaN} unit="dB" />
-            <Meter label="Length" value={capture ? capture.left.length / capture.sampleRate : NaN} unit="sec" />
+            <Meter
+              label="Length"
+              value={capture ? capture.left.length / capture.sampleRate : NaN}
+              unit="sec"
+            />
           </div>
         </div>
       )}
@@ -261,7 +388,12 @@ export function Mastering() {
       {result && (
         <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface-2/60 p-2">
           <span className="label-xs">Mastered file</span>
-          <Button size="sm" variant="outline" className="ml-auto h-8 gap-1.5" onClick={() => save("wav")}>
+          <Button
+            size="sm"
+            variant="outline"
+            className="ml-auto h-8 gap-1.5"
+            onClick={() => save("wav")}
+          >
             <Download className="size-3.5" /> WAV
           </Button>
           <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => save("mp3")}>
@@ -273,9 +405,9 @@ export function Mastering() {
       <ListenRooms original={capture} mastered={result?.audio ?? null} />
 
       <p className="text-[10px] leading-relaxed text-muted-foreground">
-        This is real measuring and processing done on your device — loudness is read the same way streaming services read it, and the
-        ceiling is held by a true-peak limiter. It shapes and levels a finished mix; it cannot repair a mix that needs fixing at the
-        channels first.
+        This is real measuring and processing done on your device — loudness is read the same way
+        streaming services read it, and the ceiling is held by a true-peak limiter. It shapes and
+        levels a finished mix; it cannot repair a mix that needs fixing at the channels first.
       </p>
     </div>
   );

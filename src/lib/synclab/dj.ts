@@ -3,7 +3,11 @@
  * three-band waveform the decks draw (lows red, mids green, highs blue, Serato-style).
  */
 
-export interface BpmResult { bpm: number; firstBeat: number; confidence: number }
+export interface BpmResult {
+  bpm: number;
+  firstBeat: number;
+  confidence: number;
+}
 
 /** Onset strength per frame (positive energy change), from a mono signal. */
 export function onsetEnvelope(mono: Float32Array, sampleRate: number, hop = 512) {
@@ -37,8 +41,11 @@ export function detectBpm(mono: Float32Array, sampleRate: number, min = 70, max 
   for (const v of env) mean += v;
   mean /= env.length;
   const x = env.map((v) => v - mean);
-  const lagMin = Math.floor((60 / max) * fps), lagMax = Math.ceil((60 / min) * fps);
-  let best = 0, bestLag = lagMin, total = 0;
+  const lagMin = Math.floor((60 / max) * fps),
+    lagMax = Math.ceil((60 / min) * fps);
+  let best = 0,
+    bestLag = lagMin,
+    total = 0;
   const scores: number[] = [];
   for (let lag = lagMin; lag <= lagMax; lag++) {
     let s = 0;
@@ -47,35 +54,54 @@ export function detectBpm(mono: Float32Array, sampleRate: number, min = 70, max 
     for (let i = 0; i + 2 * lag < x.length; i++) s += 0.5 * x[i]! * x[i + 2 * lag]!;
     scores.push(s);
     total += Math.max(0, s);
-    if (s > best) { best = s; bestLag = lag; }
+    if (s > best) {
+      best = s;
+      bestLag = lag;
+    }
   }
   // parabolic refinement around the best lag for a fractional tempo
   const k = bestLag - lagMin;
-  const y0 = scores[k - 1] ?? best, y1 = best, y2 = scores[k + 1] ?? best;
+  const y0 = scores[k - 1] ?? best,
+    y1 = best,
+    y2 = scores[k + 1] ?? best;
   const denom = y0 - 2 * y1 + y2;
   const shift = denom !== 0 ? Math.max(-0.5, Math.min(0.5, (0.5 * (y0 - y2)) / denom)) : 0;
   let rough = (60 * fps) / (bestLag + shift);
   while (rough < min) rough *= 2;
   while (rough > max) rough /= 2;
   // Fine pass: the tempo (in 0.05 BPM steps) and phase whose beat grid lands on the most onset energy.
-  const at = (t: number) => { const i = Math.floor(t), f = t - i; return (env[i] ?? 0) * (1 - f) + (env[i + 1] ?? 0) * f; };
+  const at = (t: number) => {
+    const i = Math.floor(t),
+      f = t - i;
+    return (env[i] ?? 0) * (1 - f) + (env[i + 1] ?? 0) * f;
+  };
   const comb = (b: number) => {
     const period = (60 / b) * fps;
-    let bestP = 0, bestS = -Infinity;
+    let bestP = 0,
+      bestS = -Infinity;
     const phases = Math.ceil(period * 2);
     for (let k = 0; k < phases; k++) {
       const p = (k / phases) * period;
       let sum = 0;
       for (let t = p; t < env.length - 1; t += period) sum += at(t);
-      if (sum > bestS) { bestS = sum; bestP = p; }
+      if (sum > bestS) {
+        bestS = sum;
+        bestP = p;
+      }
     }
     return { score: bestS, phase: bestP };
   };
-  let bpm = rough, phase = 0, top = -Infinity;
+  let bpm = rough,
+    phase = 0,
+    top = -Infinity;
   for (let b = rough - 3; b <= rough + 3; b += 0.05) {
     if (b < min * 0.95 || b > max * 1.05) continue;
     const r = comb(b);
-    if (r.score > top) { top = r.score; bpm = b; phase = r.phase; }
+    if (r.score > top) {
+      top = r.score;
+      bpm = b;
+      phase = r.phase;
+    }
   }
   bpm = Math.round(bpm * 10) / 10;
   const confidence = total > 0 ? Math.min(1, (best / total) * scores.length * 0.08) : 0;
@@ -137,9 +163,12 @@ export function filterFor(v: number): { type: "lowpass" | "highpass" | "off"; fr
 /** The controls that decide whether a playing deck reaches the speakers. */
 export interface DeckLevels {
   deck: "A" | "B";
-  gain: number; fader: number; filter: number;
+  gain: number;
+  fader: number;
+  filter: number;
   eq: { high: number; mid: number; low: number };
-  crossfader: number; master: number;
+  crossfader: number;
+  master: number;
 }
 /** Which mixer control is keeping a playing deck silent at the speakers (plain words), or null when sound can get through. */
 export function djSilenceReason(c: DeckLevels): string | null {
@@ -147,26 +176,43 @@ export function djSilenceReason(c: DeckLevels): string | null {
   if (c.gain < 0.05) return `Deck ${c.deck}'s GAIN knob is turned all the way down.`;
   if (c.fader < 0.05) return `Deck ${c.deck}'s volume fader is all the way down.`;
   const [a, b] = crossfade(c.crossfader);
-  if ((c.deck === "A" ? a : b) < 0.05) return `The crossfader is all the way over to deck ${other}.`;
+  if ((c.deck === "A" ? a : b) < 0.05)
+    return `The crossfader is all the way over to deck ${other}.`;
   if (c.master < 0.05) return "The MASTER knob is turned all the way down.";
-  if (c.eq.high <= 0.02 && c.eq.mid <= 0.02 && c.eq.low <= 0.02) return `All three of deck ${c.deck}'s EQ knobs (HI, MID, LOW) are turned all the way down.`;
+  if (c.eq.high <= 0.02 && c.eq.mid <= 0.02 && c.eq.low <= 0.02)
+    return `All three of deck ${c.deck}'s EQ knobs (HI, MID, LOW) are turned all the way down.`;
   const f = filterFor(c.filter);
-  if ((f.type === "lowpass" && f.freq < 150) || (f.type === "highpass" && f.freq > 6000)) return `Deck ${c.deck}'s FILT knob is turned all the way to one side.`;
+  if ((f.type === "lowpass" && f.freq < 150) || (f.type === "highpass" && f.freq > 6000))
+    return `Deck ${c.deck}'s FILT knob is turned all the way to one side.`;
   return null;
 }
 
-export interface BandWave { peak: Float32Array; low: Float32Array; mid: Float32Array; high: Float32Array; perSecond: number }
+export interface BandWave {
+  peak: Float32Array;
+  low: Float32Array;
+  mid: Float32Array;
+  high: Float32Array;
+  perSecond: number;
+}
 
 /** Three-band levels per column, `perSecond` columns per second of audio. */
 export function bandWave(channels: Float32Array[], sampleRate: number, perSecond = 120): BandWave {
   const len = channels[0]?.length ?? 0;
   const hop = Math.max(1, Math.round(sampleRate / perSecond));
   const cols = Math.ceil(len / hop);
-  const peak = new Float32Array(cols), low = new Float32Array(cols), mid = new Float32Array(cols), high = new Float32Array(cols);
-  const aL = Math.exp((-2 * Math.PI * 220) / sampleRate), aH = Math.exp((-2 * Math.PI * 2500) / sampleRate);
-  let l = 0, h = 0;
+  const peak = new Float32Array(cols),
+    low = new Float32Array(cols),
+    mid = new Float32Array(cols),
+    high = new Float32Array(cols);
+  const aL = Math.exp((-2 * Math.PI * 220) / sampleRate),
+    aH = Math.exp((-2 * Math.PI * 2500) / sampleRate);
+  let l = 0,
+    h = 0;
   for (let c = 0; c < cols; c++) {
-    let p = 0, el = 0, em = 0, eh = 0;
+    let p = 0,
+      el = 0,
+      em = 0,
+      eh = 0;
     const end = Math.min(len, (c + 1) * hop);
     for (let i = c * hop; i < end; i++) {
       let x = 0;
@@ -174,12 +220,18 @@ export function bandWave(channels: Float32Array[], sampleRate: number, perSecond
       x /= channels.length || 1;
       l = aL * l + (1 - aL) * x;
       h = aH * h + (1 - aH) * x;
-      const hi = x - h, md = h - l;
+      const hi = x - h,
+        md = h - l;
       p = Math.max(p, Math.abs(x));
-      el += l * l; em += md * md; eh += hi * hi;
+      el += l * l;
+      em += md * md;
+      eh += hi * hi;
     }
     const n = Math.max(1, end - c * hop);
-    peak[c] = p; low[c] = Math.sqrt(el / n); mid[c] = Math.sqrt(em / n); high[c] = Math.sqrt(eh / n);
+    peak[c] = p;
+    low[c] = Math.sqrt(el / n);
+    mid[c] = Math.sqrt(em / n);
+    high[c] = Math.sqrt(eh / n);
   }
   return { peak, low, mid, high, perSecond: sampleRate / hop };
 }
@@ -196,10 +248,22 @@ export function wavFromPcm16(chunks: Int16Array[], sampleRate: number): Blob {
   const samples = chunks.reduce((n, c) => n + c.length, 0);
   const header = new ArrayBuffer(44);
   const v = new DataView(header);
-  const w = (o: number, s: string) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
-  w(0, "RIFF"); v.setUint32(4, 36 + samples * 2, true); w(8, "WAVE"); w(12, "fmt ");
-  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 2, true); v.setUint32(24, sampleRate, true);
-  v.setUint32(28, sampleRate * 4, true); v.setUint16(32, 4, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, samples * 2, true);
+  const w = (o: number, s: string) => {
+    for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i));
+  };
+  w(0, "RIFF");
+  v.setUint32(4, 36 + samples * 2, true);
+  w(8, "WAVE");
+  w(12, "fmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);
+  v.setUint16(22, 2, true);
+  v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * 4, true);
+  v.setUint16(32, 4, true);
+  v.setUint16(34, 16, true);
+  w(36, "data");
+  v.setUint32(40, samples * 2, true);
   return new Blob([header, ...(chunks as unknown as BlobPart[])], { type: "audio/wav" });
 }
 
@@ -210,7 +274,9 @@ export function phonesBlend(mix: number): [number, number] {
 }
 
 /** 45 RPM plays a 33⅓ record 1.35× faster (tempo and key together, like the real thing). */
-export function speedFactor(rpm: 33 | 45) { return rpm === 45 ? 45 / (100 / 3) : 1; }
+export function speedFactor(rpm: 33 | 45) {
+  return rpm === 45 ? 45 / (100 / 3) : 1;
+}
 
 /**
  * Where the headphone (cue) signal goes:
@@ -220,7 +286,11 @@ export function speedFactor(rpm: 33 | 45) { return rpm === 45 ? 45 / (100 / 3) :
  * A device can only be used when the browser can choose outputs and one is picked.
  */
 export type PhonesMode = "off" | "split" | "device";
-export function phonesRoute(mode: PhonesMode, canPickDevice: boolean, deviceId: string | null): PhonesMode {
+export function phonesRoute(
+  mode: PhonesMode,
+  canPickDevice: boolean,
+  deviceId: string | null,
+): PhonesMode {
   if (mode === "device") return canPickDevice && deviceId ? "device" : "off";
   return mode;
 }

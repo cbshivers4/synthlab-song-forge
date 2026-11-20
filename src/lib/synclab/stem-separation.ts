@@ -30,23 +30,37 @@ function makeFft(n: number) {
   }
   const cos = new Float64Array(n / 2);
   const sin = new Float64Array(n / 2);
-  for (let i = 0; i < n / 2; i++) { cos[i] = Math.cos((2 * Math.PI * i) / n); sin[i] = -Math.sin((2 * Math.PI * i) / n); }
+  for (let i = 0; i < n / 2; i++) {
+    cos[i] = Math.cos((2 * Math.PI * i) / n);
+    sin[i] = -Math.sin((2 * Math.PI * i) / n);
+  }
   return (re: Float64Array, im: Float64Array) => {
     for (let i = 0; i < n; i++) {
       const j = rev[i]!;
-      if (j > i) { let t = re[i]!; re[i] = re[j]!; re[j] = t; t = im[i]!; im[i] = im[j]!; im[j] = t; }
+      if (j > i) {
+        let t = re[i]!;
+        re[i] = re[j]!;
+        re[j] = t;
+        t = im[i]!;
+        im[i] = im[j]!;
+        im[j] = t;
+      }
     }
     for (let size = 2; size <= n; size <<= 1) {
       const half = size >> 1;
       const step = n / size;
       for (let s = 0; s < n; s += size) {
         for (let k = 0; k < half; k++) {
-          const wr = cos[k * step]!, wi = sin[k * step]!;
-          const a = s + k, b = a + half;
+          const wr = cos[k * step]!,
+            wi = sin[k * step]!;
+          const a = s + k,
+            b = a + half;
           const xr = re[b]! * wr - im[b]! * wi;
           const xi = re[b]! * wi + im[b]! * wr;
-          re[b] = re[a]! - xr; im[b] = im[a]! - xi;
-          re[a] = re[a]! + xr; im[a] = im[a]! + xi;
+          re[b] = re[a]! - xr;
+          im[b] = im[a]! - xi;
+          re[a] = re[a]! + xr;
+          im[a] = im[a]! + xi;
         }
       }
     }
@@ -57,7 +71,10 @@ function median(buf: Float32Array, count: number) {
   for (let i = 1; i < count; i++) {
     const v = buf[i]!;
     let j = i - 1;
-    while (j >= 0 && buf[j]! > v) { buf[j + 1] = buf[j]!; j--; }
+    while (j >= 0 && buf[j]! > v) {
+      buf[j + 1] = buf[j]!;
+      j--;
+    }
     buf[j + 1] = v;
   }
   return count ? buf[count >> 1]! : 0;
@@ -82,8 +99,11 @@ export function separateSpectral(
   const needD = want.has("drums") || needMusic;
   const needB = want.has("bass") || needMusic;
   const padLen = len + 2 * N;
-  const alloc = (on: boolean) => (on ? { left: new Float32Array(padLen), right: new Float32Array(padLen) } : null);
-  const outV = alloc(needV), outD = alloc(needD), outB = alloc(needB);
+  const alloc = (on: boolean) =>
+    on ? { left: new Float32Array(padLen), right: new Float32Array(padLen) } : null;
+  const outV = alloc(needV),
+    outD = alloc(needD),
+    outB = alloc(needB);
 
   const fft = makeFft(N);
   const win = new Float64Array(N);
@@ -93,11 +113,17 @@ export function separateSpectral(
 
   // Ring buffers of spectra and magnitudes for the time-median window.
   const ring = Array.from({ length: TK }, () => ({
-    lr: new Float32Array(BINS), li: new Float32Array(BINS), rr: new Float32Array(BINS), ri: new Float32Array(BINS), mag: new Float32Array(BINS),
+    lr: new Float32Array(BINS),
+    li: new Float32Array(BINS),
+    rr: new Float32Array(BINS),
+    ri: new Float32Array(BINS),
+    mag: new Float32Array(BINS),
   }));
-  const re = new Float64Array(N), im = new Float64Array(N);
+  const re = new Float64Array(N),
+    im = new Float64Array(N);
   const scratch = new Float32Array(Math.max(TK, FK));
-  const band = new Float32Array(BINS), low = new Float32Array(BINS);
+  const band = new Float32Array(BINS),
+    low = new Float32Array(BINS);
   for (let b = 0; b < BINS; b++) {
     const f = (b * sampleRate) / N;
     band[b] = smooth(90, 180, f) * (1 - smooth(7000, 11000, f));
@@ -108,13 +134,25 @@ export function separateSpectral(
   const analyse = (k: number) => {
     const slot = ring[k % TK]!;
     const off = k * HOP;
-    for (let i = 0; i < N; i++) { re[i] = sample(leftIn, off + i) * win[i]!; im[i] = sample(rightIn, off + i) * win[i]!; }
+    for (let i = 0; i < N; i++) {
+      re[i] = sample(leftIn, off + i) * win[i]!;
+      im[i] = sample(rightIn, off + i) * win[i]!;
+    }
     fft(re, im);
     for (let b = 0; b < BINS; b++) {
       const m = (N - b) % N;
-      const zr = re[b]!, zi = im[b]!, wr = re[m]!, wi = im[m]!;
-      const lr = (zr + wr) / 2, li = (zi - wi) / 2, rr = (zi + wi) / 2, ri = (wr - zr) / 2;
-      slot.lr[b] = lr; slot.li[b] = li; slot.rr[b] = rr; slot.ri[b] = ri;
+      const zr = re[b]!,
+        zi = im[b]!,
+        wr = re[m]!,
+        wi = im[m]!;
+      const lr = (zr + wr) / 2,
+        li = (zi - wi) / 2,
+        rr = (zi + wi) / 2,
+        ri = (wr - zr) / 2;
+      slot.lr[b] = lr;
+      slot.li[b] = li;
+      slot.rr[b] = rr;
+      slot.ri[b] = ri;
       slot.mag[b] = (Math.hypot(lr, li) + Math.hypot(rr, ri)) / 2;
     }
   };
@@ -122,10 +160,18 @@ export function separateSpectral(
   const synth = (out: StereoPcm, k: number, mask: Float32Array, slot: (typeof ring)[number]) => {
     for (let b = 0; b < BINS; b++) {
       const g = mask[b]!;
-      const ar = slot.lr[b]! * g, ai = slot.li[b]! * g, br = slot.rr[b]! * g, bi = slot.ri[b]! * g;
+      const ar = slot.lr[b]! * g,
+        ai = slot.li[b]! * g,
+        br = slot.rr[b]! * g,
+        bi = slot.ri[b]! * g;
       // C = A + iB, conjugated for an inverse via the forward FFT.
-      re[b] = ar - bi; im[b] = -(ai + br);
-      if (b > 0 && b < N / 2) { const m = N - b; re[m] = ar + bi; im[m] = -(-ai + br); }
+      re[b] = ar - bi;
+      im[b] = -(ai + br);
+      if (b > 0 && b < N / 2) {
+        const m = N - b;
+        re[m] = ar + bi;
+        im[m] = -(-ai + br);
+      }
     }
     fft(re, im);
     const off = k * HOP;
@@ -136,7 +182,9 @@ export function separateSpectral(
     }
   };
 
-  const mV = new Float32Array(BINS), mD = new Float32Array(BINS), mB = new Float32Array(BINS);
+  const mV = new Float32Array(BINS),
+    mD = new Float32Array(BINS),
+    mB = new Float32Array(BINS);
   for (let k = 0; k < Math.min(frames, half + 1); k++) analyse(k);
   for (let t = 0; t < frames; t++) {
     const ahead = t + half + 1;
@@ -144,17 +192,21 @@ export function separateSpectral(
     const slot = ring[t % TK]!;
     for (let b = 0; b < BINS; b++) {
       let c = 0;
-      for (let j = Math.max(0, t - half); j <= Math.min(frames - 1, t + half); j++) scratch[c++] = ring[j % TK]!.mag[b]!;
+      for (let j = Math.max(0, t - half); j <= Math.min(frames - 1, t + half); j++)
+        scratch[c++] = ring[j % TK]!.mag[b]!;
       const h = median(scratch, c);
       c = 0;
-      for (let j = Math.max(0, b - (FK >> 1)); j <= Math.min(BINS - 1, b + (FK >> 1)); j++) scratch[c++] = slot.mag[j]!;
+      for (let j = Math.max(0, b - (FK >> 1)); j <= Math.min(BINS - 1, b + (FK >> 1)); j++)
+        scratch[c++] = slot.mag[j]!;
       const p = median(scratch, c);
       // Power 4 instead of 2 sharpens the soft masks, so sustained and percussive
       // energy bleed far less into each other.
-      const h2 = h * h * h * h, p2 = p * p * p * p;
+      const h2 = h * h * h * h,
+        p2 = p * p * p * p;
       const perc = p2 / (h2 + p2 + 1e-12);
       const harm = 1 - perc;
-      const dr = slot.lr[b]! - slot.rr[b]!, di = slot.li[b]! - slot.ri[b]!;
+      const dr = slot.lr[b]! - slot.rr[b]!,
+        di = slot.li[b]! - slot.ri[b]!;
       const sum = Math.hypot(slot.lr[b]!, slot.li[b]!) + Math.hypot(slot.rr[b]!, slot.ri[b]!);
       const centre = sum > 1e-9 ? Math.max(0, 1 - Math.hypot(dr, di) / sum) : 0;
       const cv = centre ** 12 * band[b]!;
@@ -169,19 +221,27 @@ export function separateSpectral(
     if (onProgress && t % 256 === 0) onProgress(t / frames);
   }
 
-  const cut = (s: StereoPcm | null) => (s ? { left: s.left.slice(N, N + len), right: s.right.slice(N, N + len) } : null);
-  const v = cut(outV), d = cut(outD), bass = cut(outB);
+  const cut = (s: StereoPcm | null) =>
+    s ? { left: s.left.slice(N, N + len), right: s.right.slice(N, N + len) } : null;
+  const v = cut(outV),
+    d = cut(outD),
+    bass = cut(outB);
   const result: Partial<Record<SpectralStem, StereoPcm>> = {};
   if (v && want.has("vocals")) result.vocals = v;
   if (d && want.has("drums")) result.drums = d;
   if (bass && want.has("bass")) result.bass = bass;
   if (v && want.has("instrumental")) {
-    const l = new Float32Array(len), r = new Float32Array(len);
-    for (let i = 0; i < len; i++) { l[i] = leftIn[i]! - v.left[i]!; r[i] = rightIn[i]! - v.right[i]!; }
+    const l = new Float32Array(len),
+      r = new Float32Array(len);
+    for (let i = 0; i < len; i++) {
+      l[i] = leftIn[i]! - v.left[i]!;
+      r[i] = rightIn[i]! - v.right[i]!;
+    }
     result.instrumental = { left: l, right: r };
   }
   if (needMusic && v && d && bass) {
-    const l = new Float32Array(len), r = new Float32Array(len);
+    const l = new Float32Array(len),
+      r = new Float32Array(len);
     for (let i = 0; i < len; i++) {
       l[i] = leftIn[i]! - v.left[i]! - d.left[i]! - bass.left[i]!;
       r[i] = rightIn[i]! - v.right[i]! - d.right[i]! - bass.right[i]!;

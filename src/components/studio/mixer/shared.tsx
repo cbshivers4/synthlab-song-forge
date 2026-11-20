@@ -1,5 +1,11 @@
 import { faderTickPosition } from "@/lib/synclab/fader-taper";
-import { dbColor, LEVEL_RED, mixerDbToFraction, mixerFractionToDb, mixerSegmentDb } from "@/lib/synclab/level-colors";
+import {
+  dbColor,
+  LEVEL_RED,
+  mixerDbToFraction,
+  mixerFractionToDb,
+  mixerSegmentDb,
+} from "@/lib/synclab/level-colors";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Knob } from "../Knob";
 import { Button } from "@/components/ui/button";
@@ -9,7 +15,14 @@ import { TrackIcon, TrackStylePicker } from "@/components/studio/TrackStyle";
 import type { AuxId, BusId, Track, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, reportLevel, useClipped } from "@/lib/synclab/clip-monitor";
-import { TRIM_MAX_DB, TRIM_MIN_DB, trimDb, trimGain, trimKnobText, trimText } from "@/lib/synclab/trim-gain";
+import {
+  TRIM_MAX_DB,
+  TRIM_MIN_DB,
+  trimDb,
+  trimGain,
+  trimKnobText,
+  trimText,
+} from "@/lib/synclab/trim-gain";
 
 export const BUSES: BusId[] = ["drums", "vocals", "instruments", "synths", "fx", "master"];
 export const DB_TICKS = [6, 0, -6, -12, -24, -48];
@@ -47,8 +60,19 @@ export function FaderScale() {
   return (
     <div className="relative my-2 w-4 shrink-0" aria-hidden>
       {DB_TICKS.map((db) => (
-        <div key={db} className="absolute right-0 flex translate-y-1/2 items-center gap-0.5" style={{ bottom: `${faderTickPosition(db) * 100}%` }}>
-          <span className={cn("font-mono text-[7px] leading-none", db > 0 ? "text-destructive" : "text-muted-foreground")}>{db > 0 ? `+${db}` : db}</span>
+        <div
+          key={db}
+          className="absolute right-0 flex translate-y-1/2 items-center gap-0.5"
+          style={{ bottom: `${faderTickPosition(db) * 100}%` }}
+        >
+          <span
+            className={cn(
+              "font-mono text-[7px] leading-none",
+              db > 0 ? "text-destructive" : "text-muted-foreground",
+            )}
+          >
+            {db > 0 ? `+${db}` : db}
+          </span>
           <span className="h-px w-1 bg-border" />
         </div>
       ))}
@@ -58,9 +82,17 @@ export function FaderScale() {
 
 /** Real post-fader signal readings; one shared 20 fps refresh for every strip. */
 export function useMeters(tracks: Track[]) {
-  const [levels, setLevels] = useState<{ tracks: Record<string, number>; buses: Record<string, number>; vcas: Record<string, number>; aux: Record<string, number>; master: number }>({
+  const [levels, setLevels] = useState<{
+    tracks: Record<string, number>;
+    buses: Record<string, number>;
+    vcas: Record<string, number>;
+    aux: Record<string, number>;
+    master: number;
+  }>({
     tracks: {},
-    buses: {}, vcas: {}, aux: {},
+    buses: {},
+    vcas: {},
+    aux: {},
     master: 0,
   });
   const smooth = useRef<Record<string, number>>({});
@@ -119,41 +151,49 @@ export function Meter({ id, level, tall }: { id: string; level: number; tall?: b
     <div className={cn("flex items-stretch gap-0.5", tall ? "h-full min-h-0" : "h-44")}>
       <div className="relative w-5 shrink-0" aria-hidden>
         {DB_TICKS.map((db) => (
-          <div key={db} className="absolute right-0 flex items-center gap-px" style={{ top: `calc(${(1 - dbToFrac(db)) * 100}% - ${(1 - dbToFrac(db)) * 7}px)` }}>
+          <div
+            key={db}
+            className="absolute right-0 flex items-center gap-px"
+            style={{ top: `calc(${(1 - dbToFrac(db)) * 100}% - ${(1 - dbToFrac(db)) * 7}px)` }}
+          >
             <span className="font-mono text-[6px] leading-none text-muted-foreground/80">{db}</span>
             <span className="inline-block h-px w-1 bg-muted-foreground/60" />
           </div>
         ))}
       </div>
       <div className="flex w-4 flex-col-reverse gap-px rounded-[3px] border border-black/60 bg-black/60 p-[3px] shadow-inner">
-      {Array.from({ length: segs }, (_, i) => {
-        const on = i < lit;
-        const isHold = i === holdSeg;
-        // Printed hot zone like a hardware LED ladder: the top segments are
-        // physically amber/red even when unlit, so the clipping area reads as
-        // a marked danger region instead of a flat recolour.
-        const segDb = mixerSegmentDb(i, segs);
-        const zone = segDb >= -1 ? "red" : segDb >= -6 ? "amber" : "green";
-        const unlitZone =
-          zone === "red" ? "oklch(0.32 0.09 27 / 0.55)" : zone === "amber" ? "oklch(0.38 0.08 55 / 0.35)" : undefined;
-        return (
-          <div
-            key={i}
-            className={cn(
-              "flex-1 rounded-[1px] transition-colors duration-75",
-              !on && !isHold && !unlitZone && "bg-surface-2/70",
-              isHold && !on && "opacity-70"
-            )}
-            style={
-              on || isHold
-                ? { background: clipped && i >= segs - 2 ? LEVEL_RED : dbColor(segDb) }
-                : unlitZone
-                  ? { background: unlitZone }
-                  : undefined
-            }
-          />
-        );
-      })}
+        {Array.from({ length: segs }, (_, i) => {
+          const on = i < lit;
+          const isHold = i === holdSeg;
+          // Printed hot zone like a hardware LED ladder: the top segments are
+          // physically amber/red even when unlit, so the clipping area reads as
+          // a marked danger region instead of a flat recolour.
+          const segDb = mixerSegmentDb(i, segs);
+          const zone = segDb >= -1 ? "red" : segDb >= -6 ? "amber" : "green";
+          const unlitZone =
+            zone === "red"
+              ? "oklch(0.32 0.09 27 / 0.55)"
+              : zone === "amber"
+                ? "oklch(0.38 0.08 55 / 0.35)"
+                : undefined;
+          return (
+            <div
+              key={i}
+              className={cn(
+                "flex-1 rounded-[1px] transition-colors duration-75",
+                !on && !isHold && !unlitZone && "bg-surface-2/70",
+                isHold && !on && "opacity-70",
+              )}
+              style={
+                on || isHold
+                  ? { background: clipped && i >= segs - 2 ? LEVEL_RED : dbColor(segDb) }
+                  : unlitZone
+                    ? { background: unlitZone }
+                    : undefined
+              }
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -190,7 +230,11 @@ export function ClipLed({ id, compact }: { id: string; compact?: boolean }) {
   return (
     <button
       type="button"
-      title={clipped ? "Clipping — click to reset the clip light and peak hold" : "No clipping — click to reset the peak hold"}
+      title={
+        clipped
+          ? "Clipping — click to reset the clip light and peak hold"
+          : "No clipping — click to reset the peak hold"
+      }
       onClick={(e) => {
         e.stopPropagation();
         clearClip(id);
@@ -198,7 +242,7 @@ export function ClipLed({ id, compact }: { id: string; compact?: boolean }) {
       className={cn(
         "rounded-[2px] font-mono text-[8px] font-bold uppercase tracking-wider transition-colors",
         compact ? "px-1 leading-[13px]" : "px-1.5 py-[1px]",
-        clipped ? "animate-pulse bg-red-500 text-black" : "bg-black/40 text-muted-foreground"
+        clipped ? "animate-pulse bg-red-500 text-black" : "bg-black/40 text-muted-foreground",
       )}
     >
       CLIP
@@ -225,7 +269,8 @@ export const ROW = {
 } as const;
 
 /** Console desk finishes the user can pick between. */
-export type ConsoleStyleId = "studiopro" | "ssl" | "neve" | "api" | "live" | "vintage" | "neon" | "solid";
+export type ConsoleStyleId =
+  "studiopro" | "ssl" | "neve" | "api" | "live" | "vintage" | "neon" | "solid";
 export type ConsoleStyle = {
   id: ConsoleStyleId;
   name: string;
@@ -353,13 +398,11 @@ export function Screw({ className }: { className?: string }) {
       className={cn(
         "mx-screw pointer-events-none inline-block size-[7px] shrink-0 rounded-full border border-black/70 [display:var(--mx-screw-display,inline-block)]",
         "bg-[radial-gradient(circle_at_35%_30%,rgba(255,255,255,0.55),rgba(0,0,0,0.65))]",
-        className
+        className,
       )}
     />
   );
 }
-
-
 
 /** Chunky console fader thumb overrides for the shadcn slider (cap face + centre line live in styles.css). */
 export const FADER_CAP =
@@ -370,7 +413,7 @@ function SectionLabel({ children, className }: { children?: ReactNode; className
     <div
       className={cn(
         "flex items-center justify-end border-b border-border/60 pr-2 font-mono text-[8px] uppercase tracking-widest text-muted-foreground",
-        className
+        className,
       )}
     >
       {children}
@@ -381,14 +424,34 @@ function SectionLabel({ children, className }: { children?: ReactNode; className
 /** Left-hand label rail, mirrors the strip row heights. */
 export function LabelRail() {
   const { tracks, selectedId, select, setPanel } = useStudio();
-  return <aside className="mx-channel-list sticky left-0 z-10 flex shrink-0 flex-col border-r border-border" aria-label="Mixer channel list">
-    <div className="border-b border-border px-2 py-2 text-[10px] font-semibold">Channels</div>
-    {tracks.map((track, index) => <Button key={track.id} variant="ghost" aria-pressed={track.id === selectedId} className="mx-channel-list-item h-7 w-full min-w-0 justify-start gap-2 rounded-none px-2 text-[10px]" onClick={() => { select(track.id); setPanel("mixer"); }} title={track.name}>
-      <span className="w-4 shrink-0 font-mono text-muted-foreground">{index + 1}</span>
-      <span className="mx-channel-swatch" style={{ "--mixer-channel-color": track.color } as CSSProperties} />
-      <span className="truncate">{track.name}</span>
-    </Button>)}
-  </aside>;
+  return (
+    <aside
+      className="mx-channel-list sticky left-0 z-10 flex shrink-0 flex-col border-r border-border"
+      aria-label="Mixer channel list"
+    >
+      <div className="border-b border-border px-2 py-2 text-[10px] font-semibold">Channels</div>
+      {tracks.map((track, index) => (
+        <Button
+          key={track.id}
+          variant="ghost"
+          aria-pressed={track.id === selectedId}
+          className="mx-channel-list-item h-7 w-full min-w-0 justify-start gap-2 rounded-none px-2 text-[10px]"
+          onClick={() => {
+            select(track.id);
+            setPanel("mixer");
+          }}
+          title={track.name}
+        >
+          <span className="w-4 shrink-0 font-mono text-muted-foreground">{index + 1}</span>
+          <span
+            className="mx-channel-swatch"
+            style={{ "--mixer-channel-color": track.color } as CSSProperties}
+          />
+          <span className="truncate">{track.name}</span>
+        </Button>
+      ))}
+    </aside>
+  );
 }
 
 /** Instrument drawing shown on a channel's name plate. */

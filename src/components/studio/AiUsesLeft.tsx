@@ -11,14 +11,26 @@ export function AiUsesLeft() {
   const [left, setLeft] = useState<{ left: number; limit: number } | null>(null);
   useEffect(() => {
     let live = true;
-    const load = () => { fetchLeft().then((r) => { if (live && r.ok) setLeft({ left: r.left, limit: r.limit }); }).catch(() => {}); };
+    const load = () => {
+      fetchLeft()
+        .then((r) => {
+          if (live && r.ok) setLeft({ left: r.left, limit: r.limit });
+        })
+        .catch(() => {});
+    };
     load();
     window.addEventListener("synclab:ai-used", load);
-    return () => { live = false; window.removeEventListener("synclab:ai-used", load); };
+    return () => {
+      live = false;
+      window.removeEventListener("synclab:ai-used", load);
+    };
   }, [fetchLeft]);
   if (!left) return null;
   return (
-    <p className={`font-mono text-[10px] uppercase tracking-widest ${left.left === 0 ? "text-destructive" : "text-muted-foreground"}`} aria-live="polite">
+    <p
+      className={`font-mono text-[10px] uppercase tracking-widest ${left.left === 0 ? "text-destructive" : "text-muted-foreground"}`}
+      aria-live="polite"
+    >
       {left.left} of {left.limit} AI uses left today · shared by all AI tools
     </p>
   );

@@ -28,7 +28,10 @@ export function orderPresetGroups<T extends { category: string }>(groups: T[]): 
     const i = (STANDARD_CATEGORIES as readonly string[]).indexOf(c);
     return i >= 0 ? i : 100;
   };
-  return groups.map((g, i) => ({ g, i })).sort((a, b) => rank(a.g.category) - rank(b.g.category) || a.i - b.i).map((x) => x.g);
+  return groups
+    .map((g, i) => ({ g, i }))
+    .sort((a, b) => rank(a.g.category) - rank(b.g.category) || a.i - b.i)
+    .map((x) => x.g);
 }
 
 /* ---- Preset browser: every preset sorted by sound type, plus the genre/style it came from ---- */
@@ -47,7 +50,16 @@ export type PresetBrowserIndex = {
 };
 
 /** Old group names that are really sound types. */
-const TYPE_ALIASES: Record<string, string> = { Piano: "Piano", Pluck: "Pluck", Plucks: "Pluck", Bells: "Bell", Stabs: "Stab", Acid: "Acid Bass", "Acid Bass": "Acid Bass", "Clean Bass": "Clean Bass" };
+const TYPE_ALIASES: Record<string, string> = {
+  Piano: "Piano",
+  Pluck: "Pluck",
+  Plucks: "Pluck",
+  Bells: "Bell",
+  Stabs: "Stab",
+  Acid: "Acid Bass",
+  "Acid Bass": "Acid Bass",
+  "Clean Bass": "Clean Bass",
+};
 
 /** First match wins: what a preset sounds like, read from its name. */
 const TYPE_RULES: [RegExp, string][] = [
@@ -76,12 +88,19 @@ export function soundTypeFromName(name: string): string {
 }
 
 /** Sound type and (optional) style for one preset, from its factory category and name. */
-export function classifyPreset(entry: PresetEntry, granularTypes: Record<string, string> = {}): { type: string; style?: string } {
+export function classifyPreset(
+  entry: PresetEntry,
+  granularTypes: Record<string, string> = {},
+): { type: string; style?: string } {
   const label = presetCategoryLabel(entry.category);
   if (label === "Granular") return { type: granularTypes[entry.name] ?? "Texture" };
   if ((STANDARD_CATEGORIES as readonly string[]).includes(label)) return { type: label };
   if (TYPE_ALIASES[label]) {
-    const style = /^TD-3 Electro\b/.test(entry.name) ? "Electro" : /^TD-3 Techno\b/.test(entry.name) ? "Techno" : undefined;
+    const style = /^TD-3 Electro\b/.test(entry.name)
+      ? "Electro"
+      : /^TD-3 Techno\b/.test(entry.name)
+        ? "Techno"
+        : undefined;
     return style ? { type: TYPE_ALIASES[label], style } : { type: TYPE_ALIASES[label] };
   }
   if (label === "Modular Tech") return modularClass(entry.name);
@@ -91,8 +110,13 @@ export function classifyPreset(entry: PresetEntry, granularTypes: Record<string,
 
 /** Modular Tech racks: the main rack device they're built on (Step Sequencer, Chaos…) is the second list. */
 const MODULAR_DEVICES: Record<string, string> = {
-  Seq: "Step Sequencer", Chaos: "Chaos", Comb: "Comb Resonator", Follower: "Envelope Follower",
-  Macro: "Macro", Ring: "Ring Modulator", Gate: "Gate",
+  Seq: "Step Sequencer",
+  Chaos: "Chaos",
+  Comb: "Comb Resonator",
+  Follower: "Envelope Follower",
+  Macro: "Macro",
+  Ring: "Ring Modulator",
+  Gate: "Gate",
 };
 export const MODULAR_CLASSIC_RACKS = "Classic Racks";
 function modularClass(name: string): { type: string; style: string } {
@@ -101,10 +125,17 @@ function modularClass(name: string): { type: string; style: string } {
   const device = MODULAR_DEVICES[family];
   const sound = device ? rest.slice(family.length + 1) : rest;
   const type = soundTypeFromName(sound);
-  return { type: type === "Synth" ? soundTypeFromName(rest) : type, style: device ?? MODULAR_CLASSIC_RACKS };
+  return {
+    type: type === "Synth" ? soundTypeFromName(rest) : type,
+    style: device ?? MODULAR_CLASSIC_RACKS,
+  };
 }
 
-export function presetBrowserIndex(factory: PresetEntry[], mine: string[] = [], granularTypes: Record<string, string> = {}): PresetBrowserIndex {
+export function presetBrowserIndex(
+  factory: PresetEntry[],
+  mine: string[] = [],
+  granularTypes: Record<string, string> = {},
+): PresetBrowserIndex {
   const types = new Map<string, string[]>();
   const styles = new Map<string, string[]>();
   const seen = new Set<string>();
@@ -115,7 +146,13 @@ export function presetBrowserIndex(factory: PresetEntry[], mine: string[] = [], 
     (types.get(type) ?? types.set(type, []).get(type)!).push(entry.name);
     if (style) (styles.get(style) ?? styles.set(style, []).get(style)!).push(entry.name);
   }
-  const sorted = (m: Map<string, string[]>) => [...m].sort((a, b) => a[0].localeCompare(b[0])).map(([label, items]) => ({ label, items }));
+  const sorted = (m: Map<string, string[]>) =>
+    [...m].sort((a, b) => a[0].localeCompare(b[0])).map(([label, items]) => ({ label, items }));
   const typeGroups = sorted(types);
-  return { types: typeGroups, styles: sorted(styles), mine: [...mine], order: [...typeGroups.flatMap((g) => g.items), ...mine] };
+  return {
+    types: typeGroups,
+    styles: sorted(styles),
+    mine: [...mine],
+    order: [...typeGroups.flatMap((g) => g.items), ...mine],
+  };
 }

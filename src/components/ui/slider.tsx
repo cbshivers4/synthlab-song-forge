@@ -33,7 +33,9 @@ function useSidewaysDrag(props: SliderProps) {
     });
     // Move the thumb nearest the finger (single-thumb sliders: the only one).
     let idx = 0;
-    current.forEach((v, i) => { if (Math.abs(v - next) < Math.abs((current[idx] ?? 0) - next)) idx = i; });
+    current.forEach((v, i) => {
+      if (Math.abs(v - next) < Math.abs((current[idx] ?? 0) - next)) idx = i;
+    });
     if (current[idx] === next) return current;
     const values = current.map((v, i) => (i === idx ? next : v));
     p.onValueChange?.(values);
@@ -47,7 +49,11 @@ function useSidewaysDrag(props: SliderProps) {
       e.preventDefault();
       dragging.current = true;
       const el = e.currentTarget;
-      try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
       apply(el, e);
       el.querySelector<HTMLElement>("[role=slider]")?.focus({ preventScroll: true });
     },
@@ -60,11 +66,17 @@ function useSidewaysDrag(props: SliderProps) {
       if (!dragging.current) return;
       e.stopPropagation();
       dragging.current = false;
-      try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
       const values = apply(e.currentTarget, e);
       latest.current.onValueCommit?.(values);
     },
-    onPointerCancelCapture: () => { dragging.current = false; },
+    onPointerCancelCapture: () => {
+      dragging.current = false;
+    },
   };
 }
 
@@ -81,7 +93,12 @@ const Slider = React.forwardRef<React.ElementRef<typeof SliderPrimitive.Root>, S
         <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-primary/20">
           <SliderPrimitive.Range className="absolute h-full bg-primary" />
         </SliderPrimitive.Track>
-        <SliderPrimitive.Thumb aria-label={props["aria-label"]} aria-labelledby={props["aria-labelledby"]} aria-valuetext={props["aria-valuetext"]} className="block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
+        <SliderPrimitive.Thumb
+          aria-label={props["aria-label"]}
+          aria-labelledby={props["aria-labelledby"]}
+          aria-valuetext={props["aria-valuetext"]}
+          className="block h-4 w-4 rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+        />
       </SliderPrimitive.Root>
     );
   },

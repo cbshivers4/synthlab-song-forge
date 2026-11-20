@@ -7,7 +7,13 @@ import { pasteEndStep } from "./arrangement-edit";
 import { unrollNotes } from "./note-cuts";
 
 /** Bars of music already on the timeline (other channels), rounded to the nearest bar; 0 when it is empty. */
-export function songContentBars(tracks: Track[], barSteps: number, stepDuration: number, songBars: number, skipIds: string[] = []): number {
+export function songContentBars(
+  tracks: Track[],
+  barSteps: number,
+  stepDuration: number,
+  songBars: number,
+  skipIds: string[] = [],
+): number {
   let end = 0;
   const songEnd = Math.max(1, songBars) * barSteps;
   for (const t of tracks) {
@@ -24,7 +30,13 @@ export function songContentBars(tracks: Track[], barSteps: number, stepDuration:
  * Write a repeating bass phrase out across `fillBars`, then stop. The channel keeps the song's
  * length and a cut mark at the end of the fill, so playback and the timeline both end there.
  */
-export function fitBassline(notes: MidiNote[], phraseSteps: number, fillBars: number, songBars: number, barSteps: number): Pick<Track, "steps" | "notes" | "cuts"> {
+export function fitBassline(
+  notes: MidiNote[],
+  phraseSteps: number,
+  fillBars: number,
+  songBars: number,
+  barSteps: number,
+): Pick<Track, "steps" | "notes" | "cuts"> {
   const song = Math.max(1, songBars) * barSteps;
   const fill = Math.min(song, Math.max(1, fillBars) * barSteps);
   const written = unrollNotes(notes, Math.max(1, phraseSteps), fill)

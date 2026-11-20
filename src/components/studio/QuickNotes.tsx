@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, NotebookPen, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
@@ -25,7 +32,8 @@ export function QuickNotes({ className, label }: { className?: string; label?: b
   const timer = useRef<number | null>(null);
   const pending = useRef<{ target: string; text: string } | null>(null);
 
-  const stored = (id: string) => (id === PROJECT ? projectNotes : tracks.find((t) => t.id === id)?.memo ?? "");
+  const stored = (id: string) =>
+    id === PROJECT ? projectNotes : (tracks.find((t) => t.id === id)?.memo ?? "");
 
   const commit = () => {
     if (timer.current) window.clearTimeout(timer.current);
@@ -66,7 +74,13 @@ export function QuickNotes({ className, label }: { className?: string; label?: b
       open={open}
       onOpenChange={(v) => {
         if (!v) commit();
-        else if (selectedId && target === PROJECT && !projectNotes.trim() && tracks.some((t) => t.id === selectedId && t.memo)) setTarget(selectedId);
+        else if (
+          selectedId &&
+          target === PROJECT &&
+          !projectNotes.trim() &&
+          tracks.some((t) => t.id === selectedId && t.memo)
+        )
+          setTarget(selectedId);
         setOpen(v);
       }}
     >
@@ -74,7 +88,12 @@ export function QuickNotes({ className, label }: { className?: string; label?: b
         <Button
           variant="outline"
           size={label ? "sm" : "icon"}
-          className={cn(isMobile ? (label ? "h-11" : "size-11") : label ? "h-7" : "size-8", hasAny && "border-primary/60 text-primary", label && "gap-1.5 font-mono text-[10px] uppercase", className)}
+          className={cn(
+            isMobile ? (label ? "h-11" : "size-11") : label ? "h-7" : "size-8",
+            hasAny && "border-primary/60 text-primary",
+            label && "gap-1.5 font-mono text-[10px] uppercase",
+            className,
+          )}
           aria-label="Open project notes"
           title="Notes"
         >
@@ -82,12 +101,20 @@ export function QuickNotes({ className, label }: { className?: string; label?: b
           {label && "Notes"}
         </Button>
       </SheetTrigger>
-      <SheetContent side={isMobile ? "bottom" : "right"} className={cn("flex flex-col gap-3", isMobile ? "h-[75dvh]" : "w-[min(92vw,420px)] sm:max-w-md")}>
+      <SheetContent
+        side={isMobile ? "bottom" : "right"}
+        className={cn(
+          "flex flex-col gap-3",
+          isMobile ? "h-[75dvh]" : "w-[min(92vw,420px)] sm:max-w-md",
+        )}
+      >
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 font-display">
             <NotebookPen className="size-4 text-primary" /> Notes
           </SheetTitle>
-          <SheetDescription>Ideas, lyrics, arrangement, mix and mastering reminders — saved with this project.</SheetDescription>
+          <SheetDescription>
+            Ideas, lyrics, arrangement, mix and mastering reminders — saved with this project.
+          </SheetDescription>
         </SheetHeader>
         <div className="flex items-center gap-2">
           <select
@@ -99,12 +126,22 @@ export function QuickNotes({ className, label }: { className?: string; label?: b
             <option value={PROJECT}>Whole project{projectNotes.trim() ? " •" : ""}</option>
             {tracks.map((t) => (
               <option key={t.id} value={t.id}>
-                Track · {t.name}{(t.memo ?? "").trim() ? " •" : ""}
+                Track · {t.name}
+                {(t.memo ?? "").trim() ? " •" : ""}
               </option>
             ))}
           </select>
-          <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase text-muted-foreground" aria-live="polite">
-            {status === "saved" ? <><Check className="size-3 text-primary" /> Saved</> : "Saving…"}
+          <span
+            className="flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase text-muted-foreground"
+            aria-live="polite"
+          >
+            {status === "saved" ? (
+              <>
+                <Check className="size-3 text-primary" /> Saved
+              </>
+            ) : (
+              "Saving…"
+            )}
           </span>
         </div>
         <Textarea
@@ -112,7 +149,11 @@ export function QuickNotes({ className, label }: { className?: string; label?: b
           value={draft}
           onChange={(e) => change(e.target.value)}
           onBlur={commit}
-          placeholder={target === PROJECT ? "Song ideas, lyrics, arrangement plan, mastering reminders…" : "Mic, tuning, sound design, what to fix next…"}
+          placeholder={
+            target === PROJECT
+              ? "Song ideas, lyrics, arrangement plan, mastering reminders…"
+              : "Mic, tuning, sound design, what to fix next…"
+          }
           className="min-h-0 flex-1 resize-none text-sm"
         />
         <div className="flex items-center gap-2">
@@ -136,7 +177,9 @@ export function QuickNotes({ className, label }: { className?: string; label?: b
               pending.current = { target, text: draft.trim() };
               commit();
               setOpen(false);
-              toast.success("Note saved", { description: "Save the project to keep it after closing." });
+              toast.success("Note saved", {
+                description: "Save the project to keep it after closing.",
+              });
             }}
           >
             <Save className="size-3.5" /> Save

@@ -470,7 +470,11 @@ export const DRUM_MEASURED_DB: Record<string, number> = {
 /** Linear makeup gain for one built-in voice; unknown voices get the typical boost. */
 export function drumMakeup(kit: string | undefined, kind: string, voice?: string): number {
   const k = kit ?? "909";
-  const measured = DRUM_MEASURED_DB[`${k}:${voice || kind}`] ?? DRUM_MEASURED_DB[`${k}:${kind}`] ?? DRUM_MEASURED_DB[`909:${kind}`] ?? -8;
+  const measured =
+    DRUM_MEASURED_DB[`${k}:${voice || kind}`] ??
+    DRUM_MEASURED_DB[`${k}:${kind}`] ??
+    DRUM_MEASURED_DB[`909:${kind}`] ??
+    -8;
   const db = Math.min(MAX_MAKEUP_DB, Math.max(0, DRUM_TARGET_DB - measured));
   return Math.pow(10, db / 20);
 }

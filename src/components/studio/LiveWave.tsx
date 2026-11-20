@@ -1,10 +1,26 @@
-import { levelColor, peakOf, spectrumColor, dbColor, LEVEL_GREEN, LEVEL_ORANGE, LEVEL_RED } from "@/lib/synclab/level-colors";
+import {
+  levelColor,
+  peakOf,
+  spectrumColor,
+  dbColor,
+  LEVEL_GREEN,
+  LEVEL_ORANGE,
+  LEVEL_RED,
+} from "@/lib/synclab/level-colors";
 import { cssVarOf, elementSize, releaseElementSize } from "@/lib/display-cache";
 import { useEffect, useRef } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 
 /** Live oscilloscope of an incoming microphone stream — used while a pad is recording. */
-export function LiveWave({ stream, color = "hsl(0 85% 62%)", label = "Live input waveform" }: { stream: MediaStream | null; color?: string; label?: string }) {
+export function LiveWave({
+  stream,
+  color = "hsl(0 85% 62%)",
+  label = "Live input waveform",
+}: {
+  stream: MediaStream | null;
+  color?: string;
+  label?: string;
+}) {
   const ref = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -24,7 +40,8 @@ export function LiveWave({ stream, color = "hsl(0 85% 62%)", label = "Live input
       const g = canvas.getContext("2d");
       if (!g) return;
       const size = elementSize(canvas);
-      const w = size.w * 2, h = size.h * 2;
+      const w = size.w * 2,
+        h = size.h * 2;
       if (canvas.width !== w) canvas.width = w;
       if (canvas.height !== h) canvas.height = h;
       analyser.getFloatTimeDomainData(data);

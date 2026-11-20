@@ -77,6 +77,9 @@ const appPaths = await packager({
 const label = platform === "darwin" ? "macOS" : platform === "win32" ? "Windows" : "Linux";
 for (const built of appPaths) {
   const zip = path.join(out, `SYNCLAB-${info.version}-${label}-${arch}.zip`);
-  execFileSync("zip", ["-qry", zip, path.basename(built)], { cwd: path.dirname(built), stdio: "inherit" });
+  execFileSync("zip", ["-qry", zip, path.basename(built)], {
+    cwd: path.dirname(built),
+    stdio: "inherit",
+  });
   console.log(`packaged ${built}\nzipped    ${zip}`);
 }

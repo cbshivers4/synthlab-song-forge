@@ -5,15 +5,23 @@ import { keysPatch } from "./keyboardist";
 
 const rms = (d: Float32Array, from: number, to: number) => {
   let s = 0;
-  const a = Math.round(from * PIANO_RATE), b = Math.min(d.length, Math.round(to * PIANO_RATE));
+  const a = Math.round(from * PIANO_RATE),
+    b = Math.min(d.length, Math.round(to * PIANO_RATE));
   for (let i = a; i < b; i++) s += d[i]! * d[i]!;
   return Math.sqrt(s / Math.max(1, b - a));
 };
 /** brightness: how fast the signal moves relative to its level (rises with the mean frequency) */
 const crossings = (d: Float32Array, from: number, to: number) => {
-  let sd = 0, ss = 0;
-  const a = Math.round(from * PIANO_RATE), b = Math.round(to * PIANO_RATE);
-  for (let i = a + 1; i < b; i++) { const x = d[i]!, y = x - d[i - 1]!; sd += y * y; ss += x * x; }
+  let sd = 0,
+    ss = 0;
+  const a = Math.round(from * PIANO_RATE),
+    b = Math.round(to * PIANO_RATE);
+  for (let i = a + 1; i < b; i++) {
+    const x = d[i]!,
+      y = x - d[i - 1]!;
+    sd += y * y;
+    ss += x * x;
+  }
   return Math.sqrt(sd / Math.max(1e-12, ss));
 };
 
@@ -34,19 +42,36 @@ describe("piano engine", () => {
     expect(crossings(d, 0.01, 0.1)).toBeGreaterThan(crossings(d, 1.5, 1.6));
   });
   it("harder notes are brighter, not just louder", () => {
-    expect(crossings(renderPianoNote("grand", 60, 2), 0.01, 0.1)).toBeGreaterThan(crossings(renderPianoNote("grand", 60, 0), 0.01, 0.1));
-    expect(crossings(renderPianoNote("tine", 60, 2), 0.005, 0.05)).toBeGreaterThan(crossings(renderPianoNote("tine", 60, 0), 0.005, 0.05));
+    expect(crossings(renderPianoNote("grand", 60, 2), 0.01, 0.1)).toBeGreaterThan(
+      crossings(renderPianoNote("grand", 60, 0), 0.01, 0.1),
+    );
+    expect(crossings(renderPianoNote("tine", 60, 2), 0.005, 0.05)).toBeGreaterThan(
+      crossings(renderPianoNote("tine", 60, 0), 0.005, 0.05),
+    );
   });
   it("felt piano is darker than the bright grand", () => {
-    expect(crossings(renderPianoNote("felt", 60, 1), 0.01, 0.1)).toBeLessThan(crossings(renderPianoNote("bright", 60, 1), 0.01, 0.1));
+    expect(crossings(renderPianoNote("felt", 60, 1), 0.01, 0.1)).toBeLessThan(
+      crossings(renderPianoNote("bright", 60, 1), 0.01, 0.1),
+    );
   });
   it("piano presets use the piano engine with the oscillators off", () => {
-    for (const name of ["Grand-ish Piano", "Concert Grand", "Rhodes Soul", "Wurli Warm", "Poly Synth Concert Grand"]) {
+    for (const name of [
+      "Grand-ish Piano",
+      "Concert Grand",
+      "Rhodes Soul",
+      "Wurli Warm",
+      "Poly Synth Concert Grand",
+    ]) {
       const p = applyPreset(name);
       expect(p.piano, name).toBeDefined();
-      expect(p.oscillators.some((o) => o.on), name).toBe(false);
+      expect(
+        p.oscillators.some((o) => o.on),
+        name,
+      ).toBe(false);
     }
-    expect(SYNTH_PRESETS.filter((d) => applyPreset(d.name).piano).length).toBeGreaterThanOrEqual(25);
+    expect(SYNTH_PRESETS.filter((d) => applyPreset(d.name).piano).length).toBeGreaterThanOrEqual(
+      25,
+    );
     expect(keysPatch("grand").piano?.model).toBe("grand");
   });
 });

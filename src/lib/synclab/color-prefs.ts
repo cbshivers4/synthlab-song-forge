@@ -36,13 +36,19 @@ export const LOGO_STRENGTH_MIN = 0.02;
 export const LOGO_STRENGTH_MAX = 0.6;
 
 const HEX = /^#[0-9a-f]{6}$/i;
-const hexOr = (v: unknown, fallback: string) => (typeof v === "string" && HEX.test(v.trim()) ? v.trim().toLowerCase() : fallback);
+const hexOr = (v: unknown, fallback: string) =>
+  typeof v === "string" && HEX.test(v.trim()) ? v.trim().toLowerCase() : fallback;
 
 /** Never trust stored values: bad colours fall back to defaults, strength is clamped. */
 export function sanitizeColorPrefs(raw: unknown): ColorPrefs {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Partial<Record<keyof ColorPrefs, unknown>>;
+  const r = (raw && typeof raw === "object" ? raw : {}) as Partial<
+    Record<keyof ColorPrefs, unknown>
+  >;
   const d = COLOR_PREFS_DEFAULTS;
-  const strength = typeof r.logoStrength === "number" && Number.isFinite(r.logoStrength) ? r.logoStrength : d.logoStrength;
+  const strength =
+    typeof r.logoStrength === "number" && Number.isFinite(r.logoStrength)
+      ? r.logoStrength
+      : d.logoStrength;
   return {
     menuCustom: r.menuCustom === true,
     menuBg: hexOr(r.menuBg, d.menuBg),
@@ -58,7 +64,10 @@ export function sanitizeColorPrefs(raw: unknown): ColorPrefs {
 /** Black or white text, whichever reads better on the given #rrggbb colour. */
 export function inkFor(hex: string): "#000000" | "#ffffff" {
   const n = parseInt(hexOr(hex, "#000000").slice(1), 16);
-  const lin = (c: number) => { const s = c / 255; return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+  const lin = (c: number) => {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
   const L = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
   return L > 0.4 ? "#000000" : "#ffffff";
 }
@@ -82,20 +91,34 @@ const subs = new Set<() => void>();
 
 export function colorPrefs(): ColorPrefs {
   if (cached) return cached;
-  try { cached = sanitizeColorPrefs(JSON.parse(localStorage.getItem(KEY) || "{}")); }
-  catch { cached = { ...COLOR_PREFS_DEFAULTS }; }
+  try {
+    cached = sanitizeColorPrefs(JSON.parse(localStorage.getItem(KEY) || "{}"));
+  } catch {
+    cached = { ...COLOR_PREFS_DEFAULTS };
+  }
   return cached;
 }
 
 export function setColorPrefs(patch: Partial<ColorPrefs>) {
   cached = sanitizeColorPrefs({ ...colorPrefs(), ...patch });
-  try { localStorage.setItem(KEY, JSON.stringify(cached)); } catch { /* storage blocked */ }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(cached));
+  } catch {
+    /* storage blocked */
+  }
   for (const fn of subs) fn();
 }
 
-export function resetColorPrefs() { setColorPrefs({ ...COLOR_PREFS_DEFAULTS }); }
+export function resetColorPrefs() {
+  setColorPrefs({ ...COLOR_PREFS_DEFAULTS });
+}
 
-const subscribe = (fn: () => void) => { subs.add(fn); return () => { subs.delete(fn); }; };
+const subscribe = (fn: () => void) => {
+  subs.add(fn);
+  return () => {
+    subs.delete(fn);
+  };
+};
 
 /** Server render and first paint use the defaults, then the saved colours. */
 export function useColorPrefs(): ColorPrefs {

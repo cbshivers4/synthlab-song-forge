@@ -13,7 +13,9 @@ const require = createRequire(import.meta.url);
 const info = require("../electron/app-info.cjs");
 const { createOfflineStudio } = require("../electron/offline-studio.cjs");
 
-export async function captureOfflineStudio(dir = path.resolve("build-resources", "offline-studio")) {
+export async function captureOfflineStudio(
+  dir = path.resolve("build-resources", "offline-studio"),
+) {
   rmSync(dir, { recursive: true, force: true });
   const studio = createOfflineStudio({
     appUrl: info.website,

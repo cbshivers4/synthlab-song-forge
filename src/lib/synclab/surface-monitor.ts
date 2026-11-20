@@ -39,5 +39,15 @@ export function describeRaw(status: number, d1: number, d2: number): string {
   return `Status ${status.toString(16)} · ${d1} · ${d2}`;
 }
 
-const subscribe = (l: () => void) => { listeners.add(l); return () => { listeners.delete(l); }; };
-export const useSurfaceEvent = () => useSyncExternalStore(subscribe, () => latest, () => null);
+const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => {
+    listeners.delete(l);
+  };
+};
+export const useSurfaceEvent = () =>
+  useSyncExternalStore(
+    subscribe,
+    () => latest,
+    () => null,
+  );

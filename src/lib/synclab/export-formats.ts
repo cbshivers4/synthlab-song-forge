@@ -20,9 +20,13 @@ function pcm(cap: Capture, bits: BitDepth, bigEndian: boolean): Uint8Array {
       else {
         const n = Math.round(s < 0 ? s * 0x800000 : s * 0x7fffff);
         if (le) {
-          out[o] = n & 255; out[o + 1] = (n >> 8) & 255; out[o + 2] = (n >> 16) & 255;
+          out[o] = n & 255;
+          out[o + 1] = (n >> 8) & 255;
+          out[o + 2] = (n >> 16) & 255;
         } else {
-          out[o] = (n >> 16) & 255; out[o + 1] = (n >> 8) & 255; out[o + 2] = n & 255;
+          out[o] = (n >> 16) & 255;
+          out[o + 1] = (n >> 8) & 255;
+          out[o + 2] = n & 255;
         }
       }
       o += bps;
@@ -39,11 +43,19 @@ export function encodeWavDepth(cap: Capture, bits: BitDepth): Blob {
   const data = pcm(cap, bits, false);
   const h = new DataView(new ArrayBuffer(44));
   const ba = 2 * (bits / 8);
-  ascii(h, 0, "RIFF"); h.setUint32(4, 36 + data.length, true); ascii(h, 8, "WAVE");
-  ascii(h, 12, "fmt "); h.setUint32(16, 16, true); h.setUint16(20, bits === 32 ? 3 : 1, true);
-  h.setUint16(22, 2, true); h.setUint32(24, cap.sampleRate, true); h.setUint32(28, cap.sampleRate * ba, true);
-  h.setUint16(32, ba, true); h.setUint16(34, bits, true);
-  ascii(h, 36, "data"); h.setUint32(40, data.length, true);
+  ascii(h, 0, "RIFF");
+  h.setUint32(4, 36 + data.length, true);
+  ascii(h, 8, "WAVE");
+  ascii(h, 12, "fmt ");
+  h.setUint32(16, 16, true);
+  h.setUint16(20, bits === 32 ? 3 : 1, true);
+  h.setUint16(22, 2, true);
+  h.setUint32(24, cap.sampleRate, true);
+  h.setUint32(28, cap.sampleRate * ba, true);
+  h.setUint16(32, ba, true);
+  h.setUint16(34, bits, true);
+  ascii(h, 36, "data");
+  h.setUint32(40, data.length, true);
   return new Blob([h.buffer, data as BlobPart], { type: "audio/wav" });
 }
 
@@ -62,22 +74,40 @@ export function encodeAiff(cap: Capture, bits: 16 | 24): Blob {
   const data = pcm(cap, bits, true);
   const frames = data.length / (2 * (bits / 8));
   const h = new DataView(new ArrayBuffer(54));
-  ascii(h, 0, "FORM"); h.setUint32(4, 46 + data.length); ascii(h, 8, "AIFF");
-  ascii(h, 12, "COMM"); h.setUint32(16, 18); h.setUint16(20, 2); h.setUint32(22, frames); h.setUint16(26, bits);
+  ascii(h, 0, "FORM");
+  h.setUint32(4, 46 + data.length);
+  ascii(h, 8, "AIFF");
+  ascii(h, 12, "COMM");
+  h.setUint32(16, 18);
+  h.setUint16(20, 2);
+  h.setUint32(22, frames);
+  h.setUint16(26, bits);
   ext80(h, 28, cap.sampleRate);
-  ascii(h, 38, "SSND"); h.setUint32(42, 8 + data.length); h.setUint32(46, 0); h.setUint32(50, 0);
+  ascii(h, 38, "SSND");
+  h.setUint32(42, 8 + data.length);
+  h.setUint32(46, 0);
+  h.setUint32(50, 0);
   return new Blob([h.buffer, data as BlobPart], { type: "audio/aiff" });
 }
 
 export function encodeCaf(cap: Capture, bits: BitDepth): Blob {
   const data = pcm(cap, bits, true);
   const h = new DataView(new ArrayBuffer(8 + 12 + 32 + 12 + 4));
-  ascii(h, 0, "caff"); h.setUint16(4, 1); h.setUint16(6, 0);
-  ascii(h, 8, "desc"); h.setBigUint64(12, 32n);
-  h.setFloat64(20, cap.sampleRate); ascii(h, 28, "lpcm");
+  ascii(h, 0, "caff");
+  h.setUint16(4, 1);
+  h.setUint16(6, 0);
+  ascii(h, 8, "desc");
+  h.setBigUint64(12, 32n);
+  h.setFloat64(20, cap.sampleRate);
+  ascii(h, 28, "lpcm");
   h.setUint32(32, bits === 32 ? 1 : 0); // float flag, big-endian
-  h.setUint32(36, 2 * (bits / 8)); h.setUint32(40, 1); h.setUint32(44, 2); h.setUint32(48, bits);
-  ascii(h, 52, "data"); h.setBigUint64(56, BigInt(data.length + 4)); h.setUint32(64, 0);
+  h.setUint32(36, 2 * (bits / 8));
+  h.setUint32(40, 1);
+  h.setUint32(44, 2);
+  h.setUint32(48, bits);
+  ascii(h, 52, "data");
+  h.setBigUint64(56, BigInt(data.length + 4));
+  h.setUint32(64, 0);
   return new Blob([h.buffer, data as BlobPart], { type: "audio/x-caf" });
 }
 
@@ -106,18 +136,28 @@ class BitWriter {
     this.buf[this.pos >> 3]! |= 0x80 >> (this.pos & 7);
     this.pos++;
   }
-  align() { this.pos = (this.pos + 7) & ~7; }
-  bytes() { return this.buf.slice(0, this.pos >> 3); }
+  align() {
+    this.pos = (this.pos + 7) & ~7;
+  }
+  bytes() {
+    return this.buf.slice(0, this.pos >> 3);
+  }
 }
 
 const crc8 = (b: Uint8Array) => {
   let c = 0;
-  for (const x of b) { c ^= x; for (let i = 0; i < 8; i++) c = c & 0x80 ? ((c << 1) ^ 0x07) & 255 : (c << 1) & 255; }
+  for (const x of b) {
+    c ^= x;
+    for (let i = 0; i < 8; i++) c = c & 0x80 ? ((c << 1) ^ 0x07) & 255 : (c << 1) & 255;
+  }
   return c;
 };
 const crc16 = (b: Uint8Array) => {
   let c = 0;
-  for (const x of b) { c ^= x << 8; for (let i = 0; i < 8; i++) c = c & 0x8000 ? ((c << 1) ^ 0x8005) & 0xffff : (c << 1) & 0xffff; }
+  for (const x of b) {
+    c ^= x << 8;
+    for (let i = 0; i < 8; i++) c = c & 0x8000 ? ((c << 1) ^ 0x8005) & 0xffff : (c << 1) & 0xffff;
+  }
   return c;
 };
 
@@ -131,7 +171,10 @@ function residuals(s: Int32Array, order: number) {
 }
 
 function writeSubframe(w: BitWriter, s: Int32Array, bps: number) {
-  let best = 1, bestK = 0, bestCost = Infinity, bestRes: Int32Array = new Int32Array();
+  let best = 1,
+    bestK = 0,
+    bestCost = Infinity,
+    bestRes: Int32Array = new Int32Array();
   for (const order of [0, 1, 2]) {
     if (s.length <= order) continue;
     const r = residuals(s, order);
@@ -140,11 +183,19 @@ function writeSubframe(w: BitWriter, s: Int32Array, bps: number) {
     const mean = sum / Math.max(1, r.length);
     const k = Math.min(14, Math.max(0, Math.floor(Math.log2(mean + 1))));
     const cost = r.length * (k + 1) + sum / 2 ** k;
-    if (cost < bestCost) { bestCost = cost; best = order; bestK = k; bestRes = r; }
+    if (cost < bestCost) {
+      bestCost = cost;
+      best = order;
+      bestK = k;
+      bestRes = r;
+    }
   }
-  w.write(0, 1); w.write(0b001000 | best, 6); w.write(0, 1);
+  w.write(0, 1);
+  w.write(0b001000 | best, 6);
+  w.write(0, 1);
   for (let i = 0; i < best; i++) w.write(s[i]! < 0 ? s[i]! + 2 ** bps : s[i]!, bps);
-  w.write(0, 2); w.write(0, 4); // Rice, partition order 0
+  w.write(0, 2);
+  w.write(0, 4); // Rice, partition order 0
   w.write(bestK, 4);
   for (const x of bestRes) {
     const u = x < 0 ? -2 * x - 1 : 2 * x;
@@ -161,15 +212,24 @@ export function encodeFlac(cap: Capture, bits: 16 | 24): Blob {
     for (let i = 0; i < frames; i++) o[i] = Math.round(clamp(f[i] ?? 0) * scale);
     return o;
   };
-  const L = toInt(cap.left), R = toInt(cap.right);
+  const L = toInt(cap.left),
+    R = toInt(cap.right);
   const block = 4096;
   const parts: BlobPart[] = [];
   const head = new BitWriter();
   head.write(0x664c6143, 32); // fLaC
-  head.write(1, 1); head.write(0, 7); head.write(34, 24); // last STREAMINFO
-  head.write(block, 16); head.write(block, 16); head.write(0, 24); head.write(0, 24);
-  head.write(cap.sampleRate, 20); head.write(1, 3); head.write(bits - 1, 5);
-  head.write(Math.floor(frames / 2 ** 32), 4); head.write(frames >>> 0, 32);
+  head.write(1, 1);
+  head.write(0, 7);
+  head.write(34, 24); // last STREAMINFO
+  head.write(block, 16);
+  head.write(block, 16);
+  head.write(0, 24);
+  head.write(0, 24);
+  head.write(cap.sampleRate, 20);
+  head.write(1, 3);
+  head.write(bits - 1, 5);
+  head.write(Math.floor(frames / 2 ** 32), 4);
+  head.write(frames >>> 0, 32);
   for (let i = 0; i < 4; i++) head.write(0, 32); // MD5 unknown
   parts.push(head.bytes());
   const bpsCode = bits === 16 ? 0b100 : 0b110;
@@ -177,19 +237,33 @@ export function encodeFlac(cap: Capture, bits: 16 | 24): Blob {
   for (let start = 0; start < frames; start += block, fn++) {
     const n = Math.min(block, frames - start);
     const w = new BitWriter();
-    w.write(0b11111111111110, 14); w.write(0, 1); w.write(0, 1);
+    w.write(0b11111111111110, 14);
+    w.write(0, 1);
+    w.write(0, 1);
     w.write(0b0111, 4); // blocksize from end of header (16-bit)
     w.write(0, 4); // sample rate from STREAMINFO
     w.write(0b1000, 4); // left/side stereo
-    w.write(bpsCode, 3); w.write(0, 1);
+    w.write(bpsCode, 3);
+    w.write(0, 1);
     // UTF-8 coded frame number
     if (fn < 0x80) w.write(fn, 8);
-    else if (fn < 0x800) { w.write(0xc0 | (fn >> 6), 8); w.write(0x80 | (fn & 63), 8); }
-    else if (fn < 0x10000) { w.write(0xe0 | (fn >> 12), 8); w.write(0x80 | ((fn >> 6) & 63), 8); w.write(0x80 | (fn & 63), 8); }
-    else { w.write(0xf0 | (fn >> 18), 8); w.write(0x80 | ((fn >> 12) & 63), 8); w.write(0x80 | ((fn >> 6) & 63), 8); w.write(0x80 | (fn & 63), 8); }
+    else if (fn < 0x800) {
+      w.write(0xc0 | (fn >> 6), 8);
+      w.write(0x80 | (fn & 63), 8);
+    } else if (fn < 0x10000) {
+      w.write(0xe0 | (fn >> 12), 8);
+      w.write(0x80 | ((fn >> 6) & 63), 8);
+      w.write(0x80 | (fn & 63), 8);
+    } else {
+      w.write(0xf0 | (fn >> 18), 8);
+      w.write(0x80 | ((fn >> 12) & 63), 8);
+      w.write(0x80 | ((fn >> 6) & 63), 8);
+      w.write(0x80 | (fn & 63), 8);
+    }
     w.write(n - 1, 16);
     w.write(crc8(w.bytes()), 8);
-    const l = L.subarray(start, start + n), r = R.subarray(start, start + n);
+    const l = L.subarray(start, start + n),
+      r = R.subarray(start, start + n);
     const side = new Int32Array(n);
     for (let i = 0; i < n; i++) side[i] = l[i]! - r[i]!;
     writeSubframe(w, l, bits);
@@ -198,7 +272,9 @@ export function encodeFlac(cap: Capture, bits: 16 | 24): Blob {
     const body = w.bytes();
     const crc = crc16(body);
     const full = new Uint8Array(body.length + 2);
-    full.set(body); full[body.length] = crc >> 8; full[body.length + 1] = crc & 255;
+    full.set(body);
+    full[body.length] = crc >> 8;
+    full[body.length + 1] = crc & 255;
     parts.push(full);
   }
   return new Blob(parts, { type: "audio/flac" });
@@ -265,14 +341,20 @@ export async function measureLufs(cap: Capture): Promise<number> {
   const s = off.createBufferSource();
   s.buffer = b;
   const shelf = off.createBiquadFilter();
-  shelf.type = "highshelf"; shelf.frequency.value = 1681; shelf.gain.value = 4;
+  shelf.type = "highshelf";
+  shelf.frequency.value = 1681;
+  shelf.gain.value = 4;
   const hp = off.createBiquadFilter();
-  hp.type = "highpass"; hp.frequency.value = 38; hp.Q.value = 0.5;
+  hp.type = "highpass";
+  hp.frequency.value = 38;
+  hp.Q.value = 0.5;
   s.connect(shelf).connect(hp).connect(off.destination);
   s.start();
   const k = await off.startRendering();
-  const l = k.getChannelData(0), r = k.getChannelData(1);
-  const win = Math.round(0.4 * cap.sampleRate), hop = Math.round(0.1 * cap.sampleRate);
+  const l = k.getChannelData(0),
+    r = k.getChannelData(1);
+  const win = Math.round(0.4 * cap.sampleRate),
+    hop = Math.round(0.1 * cap.sampleRate);
   const blocks: number[] = [];
   for (let i = 0; i + win <= l.length; i += hop) {
     let sum = 0;
@@ -289,7 +371,11 @@ export async function measureLufs(cap: Capture): Promise<number> {
 
 export function applyGain(cap: Capture, db: number): Capture {
   const g = 10 ** (db / 20);
-  const l = new Float32Array(cap.left.length), r = new Float32Array(cap.right.length);
-  for (let i = 0; i < l.length; i++) { l[i] = (cap.left[i] ?? 0) * g; r[i] = (cap.right[i] ?? 0) * g; }
+  const l = new Float32Array(cap.left.length),
+    r = new Float32Array(cap.right.length);
+  for (let i = 0; i < l.length; i++) {
+    l[i] = (cap.left[i] ?? 0) * g;
+    r[i] = (cap.right[i] ?? 0) * g;
+  }
   return { left: l, right: r, sampleRate: cap.sampleRate };
 }

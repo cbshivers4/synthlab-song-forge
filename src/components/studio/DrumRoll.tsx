@@ -12,7 +12,13 @@ import { TimelineVScrollbar } from "./timeline/VScrollbar";
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { DRUM_KIND_LABEL, drumRows, noteName } from "@/lib/synclab/drum-notes";
@@ -29,14 +35,19 @@ import { flamPad, mutateDrumPad, rollPad } from "./drum-fill-actions";
 import { HitMarks } from "./DrumHitMarks";
 import { hasFlam, rollSize } from "@/lib/synclab/drum-fills";
 import { stepsPerBar } from "@/lib/synclab/timebase";
-import { clearAllHits, drumLengthOptions, dropHitsOutsideBlock, trimSilentDrumOverhang } from "@/lib/synclab/drum-roll-length";
+import {
+  clearAllHits,
+  drumLengthOptions,
+  dropHitsOutsideBlock,
+  trimSilentDrumOverhang,
+} from "@/lib/synclab/drum-roll-length";
 
 const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 
 export function DrumRoll({ track, initialFull = false }: { track: Track; initialFull?: boolean }) {
   const isMobile = useIsMobile();
   const fit = useIsLandscapePhone();
-  const [noteScope, setNoteScope] = useState<'one' | 'all'>('all');
+  const [noteScope, setNoteScope] = useState<"one" | "all">("all");
   const { updatePad, updateTrack, setStepCount, transport, setTransport } = useStudio();
   const pads = track.pads ?? [];
   const rows = drumRows(pads);
@@ -45,11 +56,17 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const lengthOptions = drumLengthOptions(total, transport.bars ?? 4, barSteps);
   // A silent stray step past a bar line made the roll one bar longer than its timeline block.
   const overhang = trimSilentDrumOverhang(track, barSteps);
-  useEffect(() => { if (overhang) updateTrack(track.id, overhang); }, [overhang?.steps, track.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (overhang) updateTrack(track.id, overhang);
+  }, [overhang?.steps, track.id]); // eslint-disable-line react-hooks/exhaustive-deps
   // Hits past the end of a cut/looped block never play; the roll ends where the block ends.
   const outside = overhang ? null : dropHitsOutsideBlock(track);
-  const outsideKey = outside ? `${outside.steps}:${track.patternRegion?.join("-")}:${track.pads?.reduce((n, p) => n + p.steps.filter((v) => v > 0).length, 0)}` : "";
-  useEffect(() => { if (outside) updateTrack(track.id, outside); }, [outsideKey, track.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const outsideKey = outside
+    ? `${outside.steps}:${track.patternRegion?.join("-")}:${track.pads?.reduce((n, p) => n + p.steps.filter((v) => v > 0).length, 0)}`
+    : "";
+  useEffect(() => {
+    if (outside) updateTrack(track.id, outside);
+  }, [outsideKey, track.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const { view, updateView, ready } = useDrumEditorView(track.id);
   const selected = view.padId;
   const setSelected = (padId: string | null) => updateView({ padId });
@@ -65,15 +82,28 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const [visibleRows, setVisibleRows] = useState([1, rows.length]);
   const [widePhone, setWidePhone] = useState(false);
   const [full, setFull] = useState(initialFull);
-  useEffect(() => { const query = window.matchMedia("(min-width: 480px)"); const read = () => setWidePhone(query.matches); read(); query.addEventListener("change", read); return () => query.removeEventListener("change", read); }, []);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 480px)");
+    const read = () => setWidePhone(query.matches);
+    read();
+    query.addEventListener("change", read);
+    return () => query.removeEventListener("change", read);
+  }, []);
   const baseSize = widePhone ? 4 : 3;
-  const pageSize = isMobile && !full && !fit ? Math.max(1, Math.floor(baseSize / view.zoom)) : total;
+  const pageSize =
+    isMobile && !full && !fit ? Math.max(1, Math.floor(baseSize / view.zoom)) : total;
   const start = isMobile && !full && !fit ? Math.min(view.start, Math.max(0, total - 1)) : 0;
-  const visibleSteps = Array.from({ length: Math.min(pageSize, total - start) }, (_, i) => start + i);
+  const visibleSteps = Array.from(
+    { length: Math.min(pageSize, total - start) },
+    (_, i) => start + i,
+  );
   const zoomTo = (zoom: number, anchor = view.step) => {
     const next = Math.max(1, Math.min(3, zoom));
     const size = Math.max(1, Math.floor(baseSize / next));
-    updateView({ zoom: next, start: Math.floor(Math.max(0, Math.min(total - 1, anchor)) / size) * size });
+    updateView({
+      zoom: next,
+      start: Math.floor(Math.max(0, Math.min(total - 1, anchor)) / size) * size,
+    });
   };
   const zoomRef = useRef(zoomTo);
   zoomRef.current = zoomTo;
@@ -83,10 +113,12 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     if (!isMobile || !ready || !view.padId) return;
     updateView({ start: Math.floor(Math.min(total - 1, view.step) / pageSize) * pageSize });
     const id = requestAnimationFrame(() => {
-      const grid = gridRef.current, row = rowRefs.current.get(view.padId ?? "");
+      const grid = gridRef.current,
+        row = rowRefs.current.get(view.padId ?? "");
       if (!grid || !row) return;
       const offset = canvasRect(row).top - canvasRect(grid).top;
-      if (offset < 24 || offset + 56 > grid.clientHeight) grid.scrollTop += offset - Math.max(24, grid.clientHeight - 64);
+      if (offset < 24 || offset + 56 > grid.clientHeight)
+        grid.scrollTop += offset - Math.max(24, grid.clientHeight - 64);
     });
     return () => cancelAnimationFrame(id);
   }, [ready, track.id, isMobile, widePhone]);
@@ -95,31 +127,54 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     if (!el || !isMobile) return;
     let initial: { distance: number; zoom: number; anchor: number } | null = null;
     const distance = (e: TouchEvent) => {
-      const first = e.touches.item(0), second = e.touches.item(1);
-      return first && second ? Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY) : 1;
+      const first = e.touches.item(0),
+        second = e.touches.item(1);
+      return first && second
+        ? Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY)
+        : 1;
     };
     const begin = (e: TouchEvent) => {
       if (e.touches.length !== 2) return;
-      const first = e.touches.item(0), second = e.touches.item(1);
+      const first = e.touches.item(0),
+        second = e.touches.item(1);
       if (!first || !second) return;
       e.preventDefault();
       touchStep.current = null;
       const rect = canvasRect(el);
-      const midX = (canvasPoint(first.clientX, first.clientY).x + canvasPoint(second.clientX, second.clientY).x) / 2;
-      const fraction = Math.max(0, Math.min(1, (midX - rect.left - 152) / Math.max(1, rect.width - 152)));
-      initial = { distance: Math.max(1, distance(e)), zoom: viewRef.current.zoom, anchor: viewRef.current.start + Math.floor(fraction * Math.max(1, Math.floor(baseSize / viewRef.current.zoom))) };
+      const midX =
+        (canvasPoint(first.clientX, first.clientY).x +
+          canvasPoint(second.clientX, second.clientY).x) /
+        2;
+      const fraction = Math.max(
+        0,
+        Math.min(1, (midX - rect.left - 152) / Math.max(1, rect.width - 152)),
+      );
+      initial = {
+        distance: Math.max(1, distance(e)),
+        zoom: viewRef.current.zoom,
+        anchor:
+          viewRef.current.start +
+          Math.floor(fraction * Math.max(1, Math.floor(baseSize / viewRef.current.zoom))),
+      };
     };
     const move = (e: TouchEvent) => {
       if (!initial || e.touches.length !== 2) return;
       e.preventDefault();
-      zoomRef.current(initial.zoom * distance(e) / initial.distance, initial.anchor);
+      zoomRef.current((initial.zoom * distance(e)) / initial.distance, initial.anchor);
     };
-    const end = () => { initial = null; };
+    const end = () => {
+      initial = null;
+    };
     el.addEventListener("touchstart", begin, { passive: false });
     el.addEventListener("touchmove", move, { passive: false });
     el.addEventListener("touchend", end);
     el.addEventListener("touchcancel", end);
-    return () => { el.removeEventListener("touchstart", begin); el.removeEventListener("touchmove", move); el.removeEventListener("touchend", end); el.removeEventListener("touchcancel", end); };
+    return () => {
+      el.removeEventListener("touchstart", begin);
+      el.removeEventListener("touchmove", move);
+      el.removeEventListener("touchend", end);
+      el.removeEventListener("touchcancel", end);
+    };
   }, [isMobile, baseSize]);
   const readRows = () => {
     const el = gridRef.current;
@@ -130,7 +185,8 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       const rect = rowEl ? canvasRect(rowEl) : undefined;
       return rect && rect.bottom > bounds.top + 24 && rect.top < bounds.bottom ? [index + 1] : [];
     });
-    const first = visible[0], last = visible[visible.length - 1];
+    const first = visible[0],
+      last = visible[visible.length - 1];
     if (first != null && last != null) setVisibleRows([first, last]);
   };
   useEffect(() => {
@@ -139,7 +195,10 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     const el = gridRef.current;
     const observer = new ResizeObserver(readRows);
     if (el) observer.observe(el);
-    return () => { cancelAnimationFrame(id); observer.disconnect(); };
+    return () => {
+      cancelAnimationFrame(id);
+      observer.disconnect();
+    };
   }, [isMobile, track.id, rows.length, selected]);
 
   const write = (pad: DrumPad, patch: Partial<DrumPad>) => {
@@ -148,10 +207,13 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       updateTrack(track.id, { patternRegion: region });
       const next = patch.steps;
       const count = Math.max(1, next.length);
-      patch = { ...patch, steps: next.map((v, i) => {
-        const first = i + Math.max(0, Math.ceil((region[0] - i) / count)) * count;
-        return first < region[1] ? v : (pad.steps[i] ?? 0);
-      }) };
+      patch = {
+        ...patch,
+        steps: next.map((v, i) => {
+          const first = i + Math.max(0, Math.ceil((region[0] - i) / count)) * count;
+          return first < region[1] ? v : (pad.steps[i] ?? 0);
+        }),
+      };
     }
     updatePad(track.id, pad.id, patch);
   };
@@ -168,7 +230,11 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
 
   const cycle = (pad: DrumPad, i: number) => {
     i = snappedStep(i);
-    updateView({ padId: pad.id, step: i, ...(isMobile ? { start: Math.floor(i / pageSize) * pageSize } : {}) });
+    updateView({
+      padId: pad.id,
+      step: i,
+      ...(isMobile ? { start: Math.floor(i / pageSize) * pageSize } : {}),
+    });
     const current = pad.steps[i] ?? 0;
     const at = VELOCITIES.findIndex((v) => Math.abs(v - current) < 0.08);
     const next = VELOCITIES[(at + 1) % VELOCITIES.length] ?? 0;
@@ -177,8 +243,18 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     return next;
   };
 
-  const boxBounds = box && { rLo: Math.min(box.r0, box.r1), rHi: Math.max(box.r0, box.r1), sLo: Math.min(box.s0, box.s1), sHi: Math.max(box.s0, box.s1) };
-  const inBox = (r: number, i: number) => !!boxBounds && r >= boxBounds.rLo && r <= boxBounds.rHi && i >= boxBounds.sLo && i <= boxBounds.sHi;
+  const boxBounds = box && {
+    rLo: Math.min(box.r0, box.r1),
+    rHi: Math.max(box.r0, box.r1),
+    sLo: Math.min(box.s0, box.s1),
+    sHi: Math.max(box.s0, box.s1),
+  };
+  const inBox = (r: number, i: number) =>
+    !!boxBounds &&
+    r >= boxBounds.rLo &&
+    r <= boxBounds.rHi &&
+    i >= boxBounds.sLo &&
+    i <= boxBounds.sHi;
   const boxRef = useRef({ boxBounds, rows, total, write, step: view.step });
   boxRef.current = { boxBounds, rows, total, write, step: view.step };
   useEffect(() => {
@@ -196,26 +272,53 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
       if (!b) return;
       const key = e.key.toLowerCase();
       const mod = e.ctrlKey || e.metaKey;
-      if (e.key === "Escape") { setBox(null); return; }
+      if (e.key === "Escape") {
+        setBox(null);
+        return;
+      }
       if (e.key === "Delete" || e.key === "Backspace" || (mod && key === "x")) {
-        e.preventDefault(); e.stopImmediatePropagation();
-        if (mod) hitClip.current = { rows: rs.slice(b.rLo, b.rHi + 1).map(({ pad }) => Array.from({ length: b.sHi - b.sLo + 1 }, (_, k) => pad.steps[b.sLo + k] ?? 0)), width: b.sHi - b.sLo + 1 };
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (mod)
+          hitClip.current = {
+            rows: rs
+              .slice(b.rLo, b.rHi + 1)
+              .map(({ pad }) =>
+                Array.from({ length: b.sHi - b.sLo + 1 }, (_, k) => pad.steps[b.sLo + k] ?? 0),
+              ),
+            width: b.sHi - b.sLo + 1,
+          };
         for (let r = b.rLo; r <= b.rHi; r++) {
-          const pad = rs[r]?.pad; if (!pad) continue;
-          const steps = Array.from({ length: n }, (_, k) => (k >= b.sLo && k <= b.sHi ? 0 : pad.steps[k] ?? 0));
+          const pad = rs[r]?.pad;
+          if (!pad) continue;
+          const steps = Array.from({ length: n }, (_, k) =>
+            k >= b.sLo && k <= b.sHi ? 0 : (pad.steps[k] ?? 0),
+          );
           w(pad, { steps });
         }
       } else if (mod && key === "c") {
-        e.preventDefault(); e.stopImmediatePropagation();
-        hitClip.current = { rows: rs.slice(b.rLo, b.rHi + 1).map(({ pad }) => Array.from({ length: b.sHi - b.sLo + 1 }, (_, k) => pad.steps[b.sLo + k] ?? 0)), width: b.sHi - b.sLo + 1 };
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        hitClip.current = {
+          rows: rs
+            .slice(b.rLo, b.rHi + 1)
+            .map(({ pad }) =>
+              Array.from({ length: b.sHi - b.sLo + 1 }, (_, k) => pad.steps[b.sLo + k] ?? 0),
+            ),
+          width: b.sHi - b.sLo + 1,
+        };
       } else if (mod && key === "v" && hitClip.current) {
-        e.preventDefault(); e.stopImmediatePropagation();
+        e.preventDefault();
+        e.stopImmediatePropagation();
         const c = hitClip.current;
         const at = step > b.sHi || step < b.sLo ? step : b.sHi + 1;
         c.rows.forEach((vals, k) => {
-          const pad = rs[b.rLo + k]?.pad; if (!pad) return;
+          const pad = rs[b.rLo + k]?.pad;
+          if (!pad) return;
           const steps = Array.from({ length: n }, (_, j) => pad.steps[j] ?? 0);
-          vals.forEach((v, j) => { if (at + j < n) steps[at + j] = v; });
+          vals.forEach((v, j) => {
+            if (at + j < n) steps[at + j] = v;
+          });
           w(pad, { steps });
         });
         setBox({ r0: b.rLo, r1: b.rHi, s0: at, s1: Math.min(n - 1, at + c.width - 1) });
@@ -228,8 +331,12 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   const rowSteps = (pad: DrumPad) => Array.from({ length: total }, (_, k) => pad.steps[k] ?? 0);
 
   const probabilityOf = (pad: DrumPad) => {
-    const written = rowSteps(pad).map((v, i) => (v > 0 ? (pad.probability?.[i] ?? 1) : null)).filter((v): v is number => v != null);
-    return written.length ? Math.round((written.reduce((a, b) => a + b, 0) / written.length) * 100) : 100;
+    const written = rowSteps(pad)
+      .map((v, i) => (v > 0 ? (pad.probability?.[i] ?? 1) : null))
+      .filter((v): v is number => v != null);
+    return written.length
+      ? Math.round((written.reduce((a, b) => a + b, 0) / written.length) * 100)
+      : 100;
   };
 
   const setProbability = (pad: DrumPad, pct: number) =>
@@ -240,13 +347,19 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     const steps = rowSteps(pad);
     return {
       clear: () => updatePad(track.id, pad.id, { steps: steps.map(() => 0) }), // clearing a row takes all of it, not just the loop
-      accent: () => write(pad, { steps: steps.map((v, i) => (v > 0 ? (i % 4 === 0 ? 1 : Math.min(v, 0.6)) : 0)) }),
+      accent: () =>
+        write(pad, {
+          steps: steps.map((v, i) => (v > 0 ? (i % 4 === 0 ? 1 : Math.min(v, 0.6)) : 0)),
+        }),
       humanize: () =>
         write(pad, {
-          steps: steps.map((v) => (v > 0 ? Math.min(1, Math.max(0.2, v + (Math.random() - 0.5) * 0.3)) : 0)),
+          steps: steps.map((v) =>
+            v > 0 ? Math.min(1, Math.max(0.2, v + (Math.random() - 0.5) * 0.3)) : 0,
+          ),
         }),
       flam: () => flamPad(fillCtx, pad),
-      fill: (every: number, offset = 0) => write(pad, { steps: steps.map((_, i) => (i % every === offset ? 0.7 : 0)) }),
+      fill: (every: number, offset = 0) =>
+        write(pad, { steps: steps.map((_, i) => (i % every === offset ? 0.7 : 0)) }),
       roll: () => rollPad(fillCtx, pad),
       mutate: () => mutateDrumPad(fillCtx, pad),
       repeat: () => write(pad, { steps: steps.map((v, i) => (v > 0 ? v : i % 4 === 0 ? 0.6 : 0)) }),
@@ -254,23 +367,42 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   };
 
   const loadSample = async (pad: DrumPad, file: File) => {
-    if (!file.type.startsWith("audio/") && !/\.(wav|mp3|aiff?|ogg|m4a|flac)$/i.test(file.name)) { toast.error("That file isn't audio"); return; }
+    if (!file.type.startsWith("audio/") && !/\.(wav|mp3|aiff?|ogg|m4a|flac)$/i.test(file.name)) {
+      toast.error("That file isn't audio");
+      return;
+    }
     try {
       const info = await getEngine().loadSampleFile(file, file.name);
       write(pad, { sample: file.name, sampleUrl: info.url, start: 0, end: 1 });
-      getEngine().playDrum(track.id, { ...pad, sample: file.name, sampleUrl: info.url, start: 0, end: 1 }, 1);
-      toast.success(`${file.name} is now on ${pad.name}`, { description: `${info.duration.toFixed(2)}s — this row plays your sample.` });
-    } catch { toast.error("Could not read that audio file"); }
+      getEngine().playDrum(
+        track.id,
+        { ...pad, sample: file.name, sampleUrl: info.url, start: 0, end: 1 },
+        1,
+      );
+      toast.success(`${file.name} is now on ${pad.name}`, {
+        description: `${info.duration.toFixed(2)}s — this row plays your sample.`,
+      });
+    } catch {
+      toast.error("Could not read that audio file");
+    }
   };
   const pickSample = (pad: DrumPad) => {
     const input = document.createElement("input");
-    input.type = "file"; input.accept = "audio/*";
-    input.onchange = () => { const f = input.files?.[0]; if (f) void loadSample(pad, f); };
+    input.type = "file";
+    input.accept = "audio/*";
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (f) void loadSample(pad, f);
+    };
     input.click();
   };
 
   if (pads.length === 0) {
-    return <p className="text-sm text-muted-foreground">This drum track has no pads yet — add one in the drum machine.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        This drum track has no pads yet — add one in the drum machine.
+      </p>
+    );
   }
 
   return (
@@ -281,15 +413,38 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
     >
       {track.clips?.length ? (
         <div className="flex items-center justify-between gap-2 border-b border-border px-2 py-1 text-xs text-muted-foreground">
-          <span>{track.printedAudio ? "Recorded waveform is playing; drum edits remain live here." : "Drum pattern is playing; this track also holds a recorded waveform."}</span>
-          <Button size="sm" variant="secondary" onClick={() => updateTrack(track.id, { printedAudio: !track.printedAudio })}>{track.printedAudio ? "PLAY BEAT" : "PLAY WAVE"}</Button>
+          <span>
+            {track.printedAudio
+              ? "Recorded waveform is playing; drum edits remain live here."
+              : "Drum pattern is playing; this track also holds a recorded waveform."}
+          </span>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => updateTrack(track.id, { printedAudio: !track.printedAudio })}
+          >
+            {track.printedAudio ? "PLAY BEAT" : "PLAY WAVE"}
+          </Button>
         </div>
       ) : null}
-      {fit ? <details className="drum-fit-bulk"><summary className="text-xs font-semibold">All drums</summary><DrumBulkControls track={track} /></details> : <DrumBulkControls track={track} />}
+      {fit ? (
+        <details className="drum-fit-bulk">
+          <summary className="text-xs font-semibold">All drums</summary>
+          <DrumBulkControls track={track} />
+        </details>
+      ) : (
+        <DrumBulkControls track={track} />
+      )}
       <div className="drum-roll-toolbar flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
-        <span className="label-xs whitespace-nowrap px-1" title={track.name}>DRUM ROLL</span>
+        <span className="label-xs whitespace-nowrap px-1" title={track.name}>
+          DRUM ROLL
+        </span>
         <Select value={String(total)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
-          <SelectTrigger className="h-7 w-28 text-[10px]" aria-label="Drum pattern length" title={`Pattern length — your song is ${transport.bars ?? 4} bars`}>
+          <SelectTrigger
+            className="h-7 w-28 text-[10px]"
+            aria-label="Drum pattern length"
+            title={`Pattern length — your song is ${transport.bars ?? 4} bars`}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -309,7 +464,9 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           step={1}
           onValueChange={([v = 0]) => setTransport({ swing: v / 100 })}
         />
-        <span className="w-8 font-mono text-[10px] text-primary">{Math.round((transport.swing ?? 0) * 100)}%</span>
+        <span className="w-8 font-mono text-[10px] text-primary">
+          {Math.round((transport.swing ?? 0) * 100)}%
+        </span>
         <Button
           size="sm"
           variant="ghost"
@@ -326,226 +483,587 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
         >
           CLEAR ALL
         </Button>
-        {fit && <span className="whitespace-nowrap font-mono text-[11px]" aria-label="Visible drum rows" aria-live="polite">Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}</span>}
-        {!fit && <Button size="sm" variant={full ? "secondary" : "ghost"} className="h-7 gap-1 text-[10px]" aria-pressed={full} onClick={() => setFull((f) => !f)}>
-          {full ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />} {full ? "PAGED VIEW" : "FULL VIEW"}
-        </Button>}
+        {fit && (
+          <span
+            className="whitespace-nowrap font-mono text-[11px]"
+            aria-label="Visible drum rows"
+            aria-live="polite"
+          >
+            Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}
+          </span>
+        )}
+        {!fit && (
+          <Button
+            size="sm"
+            variant={full ? "secondary" : "ghost"}
+            className="h-7 gap-1 text-[10px]"
+            aria-pressed={full}
+            onClick={() => setFull((f) => !f)}
+          >
+            {full ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />}{" "}
+            {full ? "PAGED VIEW" : "FULL VIEW"}
+          </Button>
+        )}
       </div>
 
-      {isMobile && !fit && <div className="space-y-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="whitespace-nowrap font-mono text-xs">STEP SNAP</span>
-          <Select value={String(view.snap)} onValueChange={(value) => updateView({ snap: Number(value) })}>
-            <SelectTrigger aria-label="Drum step snap" className="h-12 w-44"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem className="min-h-12" value="1">1/16 · Every step</SelectItem>
-              <SelectItem className="min-h-12" value="2">1/8 · Two steps</SelectItem>
-              <SelectItem className="min-h-12" value="4">1/4 · One beat</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {!full && <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2"><Button variant="outline" size="icon" className="size-12" aria-label="Previous drum steps" disabled={start === 0} onClick={() => updateView({ start: Math.max(0, start - pageSize) })}><ChevronLeft /></Button><span className="min-w-0 text-center font-mono text-sm whitespace-nowrap">Steps {start + 1}–{Math.min(total, start + pageSize)} / {total}</span><Button variant="outline" size="icon" className="size-12" aria-label="Next drum steps" disabled={start + pageSize >= total} onClick={() => updateView({ start: Math.min(total - 1, start + pageSize) })}><ChevronRight /></Button></div>}
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <span className="min-w-0 whitespace-nowrap font-mono text-xs" aria-label="Visible drum rows">Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}</span>
-          <div className="flex shrink-0 items-center gap-1"><Button variant="outline" size="icon" className="size-12" aria-label="Zoom out drum roll" title="Zoom out" disabled={view.zoom <= 1} onClick={() => zoomTo(view.zoom - 0.5)}><Minus /></Button><span className="w-12 text-center font-mono text-xs" aria-label="Drum roll zoom">{Math.round(view.zoom * 100)}%</span><Button variant="outline" size="icon" className="size-12" aria-label="Zoom in drum roll" title="Zoom in" disabled={view.zoom >= 3} onClick={() => zoomTo(view.zoom + 0.5)}><Plus /></Button></div>
-        </div>
-        {boxBounds && <div className="flex items-center gap-2 font-mono text-xs text-primary"><span>{(() => { let c = 0; for (let r = boxBounds.rLo; r <= boxBounds.rHi; r++) for (let k = boxBounds.sLo; k <= boxBounds.sHi; k++) if ((rows[r]?.pad.steps[k] ?? 0) > 0) c++; return `${c} hits selected`; })()}</span><Button size="sm" variant="secondary" className="h-6 px-2 text-[10px]" onClick={() => { for (let r = boxBounds.rLo; r <= boxBounds.rHi; r++) { const pad = rows[r]?.pad; if (pad) write(pad, { steps: Array.from({ length: total }, (_, k) => (k >= boxBounds.sLo && k <= boxBounds.sHi ? 0 : pad.steps[k] ?? 0)) }); } }}>DELETE</Button><Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => setBox(null)}>DESELECT</Button></div>}
-        <div className="truncate font-mono text-xs text-primary" aria-label="Selected drum position">{selected ? `Row ${rows.findIndex(({ pad }) => pad.id === selected) + 1} · ${pads.find((pad) => pad.id === selected)?.name ?? "Drum"} · Step ${Math.min(total, view.step + 1)}` : "No step selected"}</div>
-      </div>}
-
-      <div className={fit ? "drum-roll-grid-wrap" : "contents"}>
-      {/* Sideways phone: both pan axes (the canvas is rotated, so one-axis panning blocks the swipe), plus a visible scroll bar. */}
-      <div ref={gridRef} id={fit ? "drum-roll-scroll" : undefined} onScroll={readRows} aria-label="Drum roll grid" className={`overflow-auto rounded-[2px] border border-border bg-background ${fit ? "" : "mb-1.5 "}${full ? "max-h-[78dvh]" : fit ? "" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}>
-        <div className={fit ? "drum-fit-rows" : isMobile && !full ? "w-full" : isMobile ? "" : "drum-roll-sheet"} style={fit ? { gridTemplateRows: `24px repeat(${rows.length}, minmax(34px, 1fr))`, ["--drum-fit-rows" as string]: rows.length } : isMobile && full ? { minWidth: 212 + total * (50 * view.zoom) } : isMobile ? undefined : { ["--drum-steps" as string]: total }}>
-          {/* bar numbers */}
-          <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
-            <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
-              Drum · note
+      {isMobile && !fit && (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="whitespace-nowrap font-mono text-xs">STEP SNAP</span>
+            <Select
+              value={String(view.snap)}
+              onValueChange={(value) => updateView({ snap: Number(value) })}
+            >
+              <SelectTrigger aria-label="Drum step snap" className="h-12 w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem className="min-h-12" value="1">
+                  1/16 · Every step
+                </SelectItem>
+                <SelectItem className="min-h-12" value="2">
+                  1/8 · Two steps
+                </SelectItem>
+                <SelectItem className="min-h-12" value="4">
+                  1/4 · One beat
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {!full && (
+            <div className="grid grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-12"
+                aria-label="Previous drum steps"
+                disabled={start === 0}
+                onClick={() => updateView({ start: Math.max(0, start - pageSize) })}
+              >
+                <ChevronLeft />
+              </Button>
+              <span className="min-w-0 text-center font-mono text-sm whitespace-nowrap">
+                Steps {start + 1}–{Math.min(total, start + pageSize)} / {total}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-12"
+                aria-label="Next drum steps"
+                disabled={start + pageSize >= total}
+                onClick={() => updateView({ start: Math.min(total - 1, start + pageSize) })}
+              >
+                <ChevronRight />
+              </Button>
             </div>
-            <div className="flex flex-1 gap-[2px] px-1 py-0.5">
-              {visibleSteps.map((i) => (
-                <div key={i} className={`min-w-0 flex-1 text-center font-mono ${i % barSteps === 0 ? "font-semibold text-foreground" : "text-muted-foreground"} ${isMobile ? "text-xs" : i % barSteps === 0 ? "text-[9px]" : "text-[7px]"}`}>
-                  {/* Bar numbers match the timeline ruler; beats are dots, so a 4-bar beat reads 1–4 here too. */}
-                  {i % barSteps === 0 ? Math.floor(i / barSteps) + 1 : isMobile ? (i % barSteps) + 1 : i % 4 === 0 ? "·" : ""}
-                </div>
-              ))}
+          )}
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+            <span
+              className="min-w-0 whitespace-nowrap font-mono text-xs"
+              aria-label="Visible drum rows"
+            >
+              Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}
+            </span>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-12"
+                aria-label="Zoom out drum roll"
+                title="Zoom out"
+                disabled={view.zoom <= 1}
+                onClick={() => zoomTo(view.zoom - 0.5)}
+              >
+                <Minus />
+              </Button>
+              <span className="w-12 text-center font-mono text-xs" aria-label="Drum roll zoom">
+                {Math.round(view.zoom * 100)}%
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-12"
+                aria-label="Zoom in drum roll"
+                title="Zoom in"
+                disabled={view.zoom >= 3}
+                onClick={() => zoomTo(view.zoom + 0.5)}
+              >
+                <Plus />
+              </Button>
             </div>
           </div>
-
-          {rows.map(({ pad, note }, rowIndex) => {
-            const steps = rowSteps(pad);
-            const isSel = selected === pad.id;
-            return (
-              <div key={pad.id} onDragOver={(e) => { if (e.dataTransfer.types.includes("Files")) e.preventDefault(); }} onDrop={(e) => { const f = e.dataTransfer.files?.[0]; if (!f) return; e.preventDefault(); void loadSample(pad, f); }} ref={(el) => { if (el) rowRefs.current.set(pad.id, el); else rowRefs.current.delete(pad.id); }}>
-                <div className={`flex items-center border-b border-border/40 ${isSel ? "bg-surface/60" : ""}`}>
-                  <Button variant="ghost"
-                    className="drum-row-name flex h-auto w-32 shrink-0 items-center justify-between gap-1 border-r border-border px-2 py-1 text-left hover:bg-surface"
-                    onClick={() => {
-                      getEngine().playDrum(track.id, pad, 1);
-                      setSelected(isSel ? null : pad.id);
-                    }}
-                    title={`${pad.name} — MIDI note ${note} (${noteName(note)}). Click for tools.`}
-                  >
-                    <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-wider">
-                      {isMobile ? `${rowIndex + 1}. ` : ""}{pad.name || DRUM_KIND_LABEL[pad.kind]}
-                    </span>
-                    <span className="shrink-0 font-mono text-[8px] text-muted-foreground">{pad.sampleUrl ? <span className="text-primary" title={pad.sample}>SMP</span> : noteName(note)}</span>
-                  </Button>
-                  <Button variant="ghost"
-                    className={`drum-row-mute mx-1 h-5 w-5 shrink-0 rounded-[3px] p-0 font-mono text-[9px] ${pad.muted ? "bg-amber text-background" : "bg-surface text-muted-foreground"}`}
-                    onClick={() => write(pad, { muted: !pad.muted })}
-                    title={pad.muted ? "Muted" : "Mute this drum"}
-                  >
-                    M
-                  </Button>
-                  <div className="flex flex-1 gap-[2px] px-1 py-1">
-                    {visibleSteps.map((i) => {
-                      const v = steps[i] ?? 0;
-                      const chance = pad.probability?.[i] ?? 1;
-                      return (
-                        <Button variant="ghost"
-                          key={i}
-                          data-step-index={i}
-                          data-step-period={total}
-                          aria-label={`${pad.name} step ${i + 1}${v > 0 ? `, velocity ${Math.round(v * 100)}%` : ", empty"}`}
-                           aria-pressed={selected === pad.id && view.step === i}
-                          title={
-                            v > 0
-                              ? `velocity ${Math.round(v * 100)}%${chance < 1 ? ` · ${Math.round(chance * 100)}% chance` : ""}`
-                              : "empty"
-                          }
-                           className={`drum-step relative h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all ${selected === pad.id && view.step === i ? "ring-2 ring-primary ring-inset" : ""} ${inBox(rows.findIndex((row) => row.pad.id === pad.id), i) ? "outline outline-2 -outline-offset-2 outline-primary" : ""}`}
-                          style={{
-                            minWidth: 10,
-                            borderColor: "var(--color-border)",
-                            ...(i % barSteps === 0 && i > 0 ? { borderLeftColor: "var(--color-muted-foreground)", borderLeftWidth: 2 } : {}),
-                            opacity: v > 0 ? 0.4 + v * 0.6 : 1,
-                            background:
-                              v > 0
-                                ? "var(--gradient-neon)"
-                                : i % 4 === 0
-                                  ? "color-mix(in oklab, var(--drum-pad-dark) 78%, var(--surface-2))"
-                                  : "color-mix(in oklab, var(--surface) 80%, transparent)",
-                          }}
-                          onPointerDown={(e) => {
-                            touchStep.current = e.pointerType === "touch" ? `${pad.id}:${i}` : null;
-                            if (e.pointerType === "touch") return;
-                            e.preventDefault();
-                            const r = rows.findIndex((row) => row.pad.id === pad.id);
-                            if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                              (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
-                              setBox({ r0: r, s0: i, r1: r, s1: i });
-                              setBoxing(true);
-                              updateView({ padId: pad.id, step: i });
-                              return;
-                            }
-                            setBox(null);
-                            setSelected(pad.id);
-                            setPaint(cycle(pad, i));
-                          }}
-                          onPointerEnter={() => {
-                            if (boxing) { const r = rows.findIndex((row) => row.pad.id === pad.id); setBox((b) => b && { ...b, r1: r, s1: i }); return; }
-                            if (paint == null) return;
-                            setStep(pad, i, paint);
-                          }}
-                          onClick={(e) => {
-                            if (e.detail === 0 || touchStep.current === `${pad.id}:${i}`) {
-                              touchStep.current = null;
-                              setSelected(pad.id);
-                              cycle(pad, i);
-                            }
-                          }}
-                          onPointerCancel={() => { touchStep.current = null; }}
-                          onContextMenu={(e) => {
-                            e.preventDefault();
-                            setStep(pad, i, 0);
-                          }}
-                        >
-                           {isMobile && <span className={`font-mono text-xs ${i % view.snap === 0 ? "text-primary" : "text-muted-foreground"}`}>{i + 1}</span>}
-                          <HitMarks pad={pad} i={i} />
-                          {v > 0 && chance < 1 && (
-                            <span className="absolute inset-x-0 bottom-0 block h-[2px] bg-background/70" />
-                          )}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {isSel && !fit && (
-                  <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border/40 bg-surface/40 px-2 py-1.5 [&>*]:shrink-0">
-                    <span className="label-xs">{pad.name} tools</span>
-                    <Button size="sm" variant="secondary" className="h-6 gap-1 px-2 text-[10px]" onClick={() => pickSample(pad)}><Upload className="size-3" /> {pad.sampleUrl ? "REPLACE SAMPLE" : "ADD SAMPLE"}</Button>
-                    {pad.sampleUrl && <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => write(pad, { sample: undefined, sampleUrl: undefined })}>REMOVE SAMPLE</Button>}
-                    <span className="label-xs ml-2">QUICK FILL</span>
-                    {([["1/4", 4, 0], ["1/8", 2, 0], ["1/16", 1, 0], ["OFFBEAT", 4, 2], ["2 & 4", 8, 4]] as const).map(([label, every, offset]) => (
-                      <Button key={label} size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => tools(pad).fill(every, offset)}>{label}</Button>
-                    ))}
-                    {(
-                      [
-                        ["ACCENT", tools(pad).accent],
-                        ["HUMANIZE", tools(pad).humanize],
-                        [hasFlam(pad) ? "FLAM ✓" : "FLAM", tools(pad).flam],
-                        [rollSize(pad) > 1 ? `ROLL ×${rollSize(pad)}` : "ROLL", tools(pad).roll],
-                        ["MUTATE", tools(pad).mutate],
-                        ["NOTE REPEAT", tools(pad).repeat],
-                        ["CLEAR", tools(pad).clear],
-                      ] as const
-                    ).map(([label, fn]) => (
-                      <Button key={label} size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={fn}>
-                        {label}
-                      </Button>
-                    ))}
-                    <span className="label-xs ml-2">PROBABILITY</span>
-                    <Slider
-                      className="w-28"
-                      value={[probabilityOf(pad)]}
-                      min={10}
-                      max={100}
-                      step={5}
-                      onValueChange={([v = 100]) => setProbability(pad, v)}
-                    />
-                    <span className="w-9 font-mono text-[10px] text-primary">{probabilityOf(pad)}%</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {boxBounds && (
+            <div className="flex items-center gap-2 font-mono text-xs text-primary">
+              <span>
+                {(() => {
+                  let c = 0;
+                  for (let r = boxBounds.rLo; r <= boxBounds.rHi; r++)
+                    for (let k = boxBounds.sLo; k <= boxBounds.sHi; k++)
+                      if ((rows[r]?.pad.steps[k] ?? 0) > 0) c++;
+                  return `${c} hits selected`;
+                })()}
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-6 px-2 text-[10px]"
+                onClick={() => {
+                  for (let r = boxBounds.rLo; r <= boxBounds.rHi; r++) {
+                    const pad = rows[r]?.pad;
+                    if (pad)
+                      write(pad, {
+                        steps: Array.from({ length: total }, (_, k) =>
+                          k >= boxBounds.sLo && k <= boxBounds.sHi ? 0 : (pad.steps[k] ?? 0),
+                        ),
+                      });
+                  }
+                }}
+              >
+                DELETE
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2 text-[10px]"
+                onClick={() => setBox(null)}
+              >
+                DESELECT
+              </Button>
+            </div>
+          )}
+          <div
+            className="truncate font-mono text-xs text-primary"
+            aria-label="Selected drum position"
+          >
+            {selected
+              ? `Row ${rows.findIndex(({ pad }) => pad.id === selected) + 1} · ${pads.find((pad) => pad.id === selected)?.name ?? "Drum"} · Step ${Math.min(total, view.step + 1)}`
+              : "No step selected"}
+          </div>
         </div>
-      </div>
-      {fit && <TimelineVScrollbar scrollRef={gridRef} controls="drum-roll-scroll" label="Scroll drum rows up and down" />}
+      )}
+
+      <div className={fit ? "drum-roll-grid-wrap" : "contents"}>
+        {/* Sideways phone: both pan axes (the canvas is rotated, so one-axis panning blocks the swipe), plus a visible scroll bar. */}
+        <div
+          ref={gridRef}
+          id={fit ? "drum-roll-scroll" : undefined}
+          onScroll={readRows}
+          aria-label="Drum roll grid"
+          className={`overflow-auto rounded-[2px] border border-border bg-background ${fit ? "" : "mb-1.5 "}${full ? "max-h-[78dvh]" : fit ? "" : isMobile ? "max-h-[45dvh] touch-pan-y" : ""}`}
+        >
+          <div
+            className={
+              fit
+                ? "drum-fit-rows"
+                : isMobile && !full
+                  ? "w-full"
+                  : isMobile
+                    ? ""
+                    : "drum-roll-sheet"
+            }
+            style={
+              fit
+                ? {
+                    gridTemplateRows: `24px repeat(${rows.length}, minmax(34px, 1fr))`,
+                    ["--drum-fit-rows" as string]: rows.length,
+                  }
+                : isMobile && full
+                  ? { minWidth: 212 + total * (50 * view.zoom) }
+                  : isMobile
+                    ? undefined
+                    : { ["--drum-steps" as string]: total }
+            }
+          >
+            {/* bar numbers */}
+            <div className="sticky top-0 z-10 flex border-b border-border bg-surface-2">
+              <div className="drum-roll-label-header w-32 shrink-0 border-r border-border px-2 py-0.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
+                Drum · note
+              </div>
+              <div className="flex flex-1 gap-[2px] px-1 py-0.5">
+                {visibleSteps.map((i) => (
+                  <div
+                    key={i}
+                    className={`min-w-0 flex-1 text-center font-mono ${i % barSteps === 0 ? "font-semibold text-foreground" : "text-muted-foreground"} ${isMobile ? "text-xs" : i % barSteps === 0 ? "text-[9px]" : "text-[7px]"}`}
+                  >
+                    {/* Bar numbers match the timeline ruler; beats are dots, so a 4-bar beat reads 1–4 here too. */}
+                    {i % barSteps === 0
+                      ? Math.floor(i / barSteps) + 1
+                      : isMobile
+                        ? (i % barSteps) + 1
+                        : i % 4 === 0
+                          ? "·"
+                          : ""}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {rows.map(({ pad, note }, rowIndex) => {
+              const steps = rowSteps(pad);
+              const isSel = selected === pad.id;
+              return (
+                <div
+                  key={pad.id}
+                  onDragOver={(e) => {
+                    if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+                  }}
+                  onDrop={(e) => {
+                    const f = e.dataTransfer.files?.[0];
+                    if (!f) return;
+                    e.preventDefault();
+                    void loadSample(pad, f);
+                  }}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(pad.id, el);
+                    else rowRefs.current.delete(pad.id);
+                  }}
+                >
+                  <div
+                    className={`flex items-center border-b border-border/40 ${isSel ? "bg-surface/60" : ""}`}
+                  >
+                    <Button
+                      variant="ghost"
+                      className="drum-row-name flex h-auto w-32 shrink-0 items-center justify-between gap-1 border-r border-border px-2 py-1 text-left hover:bg-surface"
+                      onClick={() => {
+                        getEngine().playDrum(track.id, pad, 1);
+                        setSelected(isSel ? null : pad.id);
+                      }}
+                      title={`${pad.name} — MIDI note ${note} (${noteName(note)}). Click for tools.`}
+                    >
+                      <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-wider">
+                        {isMobile ? `${rowIndex + 1}. ` : ""}
+                        {pad.name || DRUM_KIND_LABEL[pad.kind]}
+                      </span>
+                      <span className="shrink-0 font-mono text-[8px] text-muted-foreground">
+                        {pad.sampleUrl ? (
+                          <span className="text-primary" title={pad.sample}>
+                            SMP
+                          </span>
+                        ) : (
+                          noteName(note)
+                        )}
+                      </span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className={`drum-row-mute mx-1 h-5 w-5 shrink-0 rounded-[3px] p-0 font-mono text-[9px] ${pad.muted ? "bg-amber text-background" : "bg-surface text-muted-foreground"}`}
+                      onClick={() => write(pad, { muted: !pad.muted })}
+                      title={pad.muted ? "Muted" : "Mute this drum"}
+                    >
+                      M
+                    </Button>
+                    <div className="flex flex-1 gap-[2px] px-1 py-1">
+                      {visibleSteps.map((i) => {
+                        const v = steps[i] ?? 0;
+                        const chance = pad.probability?.[i] ?? 1;
+                        return (
+                          <Button
+                            variant="ghost"
+                            key={i}
+                            data-step-index={i}
+                            data-step-period={total}
+                            aria-label={`${pad.name} step ${i + 1}${v > 0 ? `, velocity ${Math.round(v * 100)}%` : ", empty"}`}
+                            aria-pressed={selected === pad.id && view.step === i}
+                            title={
+                              v > 0
+                                ? `velocity ${Math.round(v * 100)}%${chance < 1 ? ` · ${Math.round(chance * 100)}% chance` : ""}`
+                                : "empty"
+                            }
+                            className={`drum-step relative h-6 min-w-0 flex-1 rounded-[3px] border p-0 transition-all ${selected === pad.id && view.step === i ? "ring-2 ring-primary ring-inset" : ""} ${
+                              inBox(
+                                rows.findIndex((row) => row.pad.id === pad.id),
+                                i,
+                              )
+                                ? "outline outline-2 -outline-offset-2 outline-primary"
+                                : ""
+                            }`}
+                            style={{
+                              minWidth: 10,
+                              borderColor: "var(--color-border)",
+                              ...(i % barSteps === 0 && i > 0
+                                ? {
+                                    borderLeftColor: "var(--color-muted-foreground)",
+                                    borderLeftWidth: 2,
+                                  }
+                                : {}),
+                              opacity: v > 0 ? 0.4 + v * 0.6 : 1,
+                              background:
+                                v > 0
+                                  ? "var(--gradient-neon)"
+                                  : i % 4 === 0
+                                    ? "color-mix(in oklab, var(--drum-pad-dark) 78%, var(--surface-2))"
+                                    : "color-mix(in oklab, var(--surface) 80%, transparent)",
+                            }}
+                            onPointerDown={(e) => {
+                              touchStep.current =
+                                e.pointerType === "touch" ? `${pad.id}:${i}` : null;
+                              if (e.pointerType === "touch") return;
+                              e.preventDefault();
+                              const r = rows.findIndex((row) => row.pad.id === pad.id);
+                              if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                                (e.currentTarget as HTMLElement).releasePointerCapture?.(
+                                  e.pointerId,
+                                );
+                                setBox({ r0: r, s0: i, r1: r, s1: i });
+                                setBoxing(true);
+                                updateView({ padId: pad.id, step: i });
+                                return;
+                              }
+                              setBox(null);
+                              setSelected(pad.id);
+                              setPaint(cycle(pad, i));
+                            }}
+                            onPointerEnter={() => {
+                              if (boxing) {
+                                const r = rows.findIndex((row) => row.pad.id === pad.id);
+                                setBox((b) => b && { ...b, r1: r, s1: i });
+                                return;
+                              }
+                              if (paint == null) return;
+                              setStep(pad, i, paint);
+                            }}
+                            onClick={(e) => {
+                              if (e.detail === 0 || touchStep.current === `${pad.id}:${i}`) {
+                                touchStep.current = null;
+                                setSelected(pad.id);
+                                cycle(pad, i);
+                              }
+                            }}
+                            onPointerCancel={() => {
+                              touchStep.current = null;
+                            }}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              setStep(pad, i, 0);
+                            }}
+                          >
+                            {isMobile && (
+                              <span
+                                className={`font-mono text-xs ${i % view.snap === 0 ? "text-primary" : "text-muted-foreground"}`}
+                              >
+                                {i + 1}
+                              </span>
+                            )}
+                            <HitMarks pad={pad} i={i} />
+                            {v > 0 && chance < 1 && (
+                              <span className="absolute inset-x-0 bottom-0 block h-[2px] bg-background/70" />
+                            )}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {isSel && !fit && (
+                    <div className="flex flex-nowrap items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border/40 bg-surface/40 px-2 py-1.5 [&>*]:shrink-0">
+                      <span className="label-xs">{pad.name} tools</span>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="h-6 gap-1 px-2 text-[10px]"
+                        onClick={() => pickSample(pad)}
+                      >
+                        <Upload className="size-3" />{" "}
+                        {pad.sampleUrl ? "REPLACE SAMPLE" : "ADD SAMPLE"}
+                      </Button>
+                      {pad.sampleUrl && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={() => write(pad, { sample: undefined, sampleUrl: undefined })}
+                        >
+                          REMOVE SAMPLE
+                        </Button>
+                      )}
+                      <span className="label-xs ml-2">QUICK FILL</span>
+                      {(
+                        [
+                          ["1/4", 4, 0],
+                          ["1/8", 2, 0],
+                          ["1/16", 1, 0],
+                          ["OFFBEAT", 4, 2],
+                          ["2 & 4", 8, 4],
+                        ] as const
+                      ).map(([label, every, offset]) => (
+                        <Button
+                          key={label}
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={() => tools(pad).fill(every, offset)}
+                        >
+                          {label}
+                        </Button>
+                      ))}
+                      {(
+                        [
+                          ["ACCENT", tools(pad).accent],
+                          ["HUMANIZE", tools(pad).humanize],
+                          [hasFlam(pad) ? "FLAM ✓" : "FLAM", tools(pad).flam],
+                          [rollSize(pad) > 1 ? `ROLL ×${rollSize(pad)}` : "ROLL", tools(pad).roll],
+                          ["MUTATE", tools(pad).mutate],
+                          ["NOTE REPEAT", tools(pad).repeat],
+                          ["CLEAR", tools(pad).clear],
+                        ] as const
+                      ).map(([label, fn]) => (
+                        <Button
+                          key={label}
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-[10px]"
+                          onClick={fn}
+                        >
+                          {label}
+                        </Button>
+                      ))}
+                      <span className="label-xs ml-2">PROBABILITY</span>
+                      <Slider
+                        className="w-28"
+                        value={[probabilityOf(pad)]}
+                        min={10}
+                        max={100}
+                        step={5}
+                        onValueChange={([v = 100]) => setProbability(pad, v)}
+                      />
+                      <span className="w-9 font-mono text-[10px] text-primary">
+                        {probabilityOf(pad)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {fit && (
+          <TimelineVScrollbar
+            scrollRef={gridRef}
+            controls="drum-roll-scroll"
+            label="Scroll drum rows up and down"
+          />
+        )}
       </div>
 
       {(() => {
-        const pad = pads.find(p => p.id === selected);
+        const pad = pads.find((p) => p.id === selected);
         if (!pad) return null;
-        const index = noteScope === 'all' ? Math.max(0, pad.steps.findIndex(v => v > 0)) : view.step;
+        const index =
+          noteScope === "all"
+            ? Math.max(
+                0,
+                pad.steps.findIndex((v) => v > 0),
+              )
+            : view.step;
         const edit = (field: DrumHitField, value: number) => {
-          const next = editInstrumentNotes(pads, pad.id, field, value, noteScope, view.step, transport.loop ? loopRegion(transport) : undefined).find(p => p.id === pad.id);
+          const next = editInstrumentNotes(
+            pads,
+            pad.id,
+            field,
+            value,
+            noteScope,
+            view.step,
+            transport.loop ? loopRegion(transport) : undefined,
+          ).find((p) => p.id === pad.id);
           if (!next) return;
           updatePad(track.id, pad.id, { [field]: next[field] });
           if (transport.loop) updateTrack(track.id, { patternRegion: loopRegion(transport) });
         };
-        return <div className="drum-note-dock" role="group" aria-label="Selected instrument notes">
-          <div className="drum-note-scope"><strong className="truncate text-xs" title={pad.name}>{pad.name}</strong><div className="flex gap-1">
-            <Button size="sm" variant={noteScope === 'one' ? 'default' : 'secondary'} aria-pressed={noteScope === 'one'} onClick={() => setNoteScope('one')}>One note</Button>
-            <Button size="sm" variant={noteScope === 'all' ? 'default' : 'secondary'} aria-pressed={noteScope === 'all'} onClick={() => setNoteScope('all')}>All notes</Button>
-          </div><span className="text-xs text-muted-foreground">{noteScope === 'one' ? `Step ${view.step + 1}` : transport.loop ? 'All loop notes' : 'All instrument notes'}</span></div>
-          <div className="drum-note-knobs">
-            <Knob label="VELOCITY" size={36} min={0.01} value={pad.steps[index] ?? 0.7} onChange={v => edit('steps', v)} />
-            <Knob label="PITCH" size={36} min={-12} max={12} step={1} value={pad.stepPitch?.[index] ?? 0} onChange={v => edit('stepPitch', v)} />
-            <Knob label="DECAY" size={36} min={0.1} max={2} value={pad.stepDecay?.[index] ?? 1} onChange={v => edit('stepDecay', v)} />
-            <Knob label="CHANCE" size={36} value={pad.probability?.[index] ?? 1} onChange={v => edit('probability', v)} />
-            <Knob label="FLAM" size={36} value={pad.flam?.[index] ?? 0} onChange={v => edit('flam', v)} />
-            <Knob label="RETRIG" size={36} min={1} max={4} step={1} value={pad.retrig?.[index] ?? 1} onChange={v => edit('retrig', v)} />
-            <Knob label="GLITCH" size={36} value={pad.glitch?.[index] ?? 0} onChange={v => edit('glitch', v)} />
+        return (
+          <div className="drum-note-dock" role="group" aria-label="Selected instrument notes">
+            <div className="drum-note-scope">
+              <strong className="truncate text-xs" title={pad.name}>
+                {pad.name}
+              </strong>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant={noteScope === "one" ? "default" : "secondary"}
+                  aria-pressed={noteScope === "one"}
+                  onClick={() => setNoteScope("one")}
+                >
+                  One note
+                </Button>
+                <Button
+                  size="sm"
+                  variant={noteScope === "all" ? "default" : "secondary"}
+                  aria-pressed={noteScope === "all"}
+                  onClick={() => setNoteScope("all")}
+                >
+                  All notes
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {noteScope === "one"
+                  ? `Step ${view.step + 1}`
+                  : transport.loop
+                    ? "All loop notes"
+                    : "All instrument notes"}
+              </span>
+            </div>
+            <div className="drum-note-knobs">
+              <Knob
+                label="VELOCITY"
+                size={36}
+                min={0.01}
+                value={pad.steps[index] ?? 0.7}
+                onChange={(v) => edit("steps", v)}
+              />
+              <Knob
+                label="PITCH"
+                size={36}
+                min={-12}
+                max={12}
+                step={1}
+                value={pad.stepPitch?.[index] ?? 0}
+                onChange={(v) => edit("stepPitch", v)}
+              />
+              <Knob
+                label="DECAY"
+                size={36}
+                min={0.1}
+                max={2}
+                value={pad.stepDecay?.[index] ?? 1}
+                onChange={(v) => edit("stepDecay", v)}
+              />
+              <Knob
+                label="CHANCE"
+                size={36}
+                value={pad.probability?.[index] ?? 1}
+                onChange={(v) => edit("probability", v)}
+              />
+              <Knob
+                label="FLAM"
+                size={36}
+                value={pad.flam?.[index] ?? 0}
+                onChange={(v) => edit("flam", v)}
+              />
+              <Knob
+                label="RETRIG"
+                size={36}
+                min={1}
+                max={4}
+                step={1}
+                value={pad.retrig?.[index] ?? 1}
+                onChange={(v) => edit("retrig", v)}
+              />
+              <Knob
+                label="GLITCH"
+                size={36}
+                value={pad.glitch?.[index] ?? 0}
+                onChange={(v) => edit("glitch", v)}
+              />
+            </div>
           </div>
-        </div>;
+        );
       })()}
 
       <p className="font-mono text-[9px] leading-relaxed text-muted-foreground">
-        Click a step to cycle ghost → normal → accent, drag across steps to paint, right-click to clear. Shift- or Ctrl-drag to box-select hits, then Delete, Ctrl+C, Ctrl+X or Ctrl+V (pastes after the box). Tap a drum name for Quick fill and Add sample, or drop an audio file on a row. Each row sends
-        its own MIDI note, so a drum controller on those notes plays and records these same pads.
+        Click a step to cycle ghost → normal → accent, drag across steps to paint, right-click to
+        clear. Shift- or Ctrl-drag to box-select hits, then Delete, Ctrl+C, Ctrl+X or Ctrl+V (pastes
+        after the box). Tap a drum name for Quick fill and Add sample, or drop an audio file on a
+        row. Each row sends its own MIDI note, so a drum controller on those notes plays and records
+        these same pads.
       </p>
     </div>
   );

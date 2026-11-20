@@ -12,7 +12,14 @@ type Props = {
 };
 
 /** Preview-with-song / Stop / Add buttons shared by every generator. */
-export function PreviewButtons({ pv, onPreview, onAdd, addLabel = "Add to project", active = pv.previewing, size = "lg" }: Props) {
+export function PreviewButtons({
+  pv,
+  onPreview,
+  onAdd,
+  addLabel = "Add to project",
+  active = pv.previewing,
+  size = "lg",
+}: Props) {
   const cls = size === "lg" ? "min-h-12" : "min-h-9";
   return (
     <div className="flex flex-wrap gap-2">
@@ -21,11 +28,19 @@ export function PreviewButtons({ pv, onPreview, onAdd, addLabel = "Add to projec
           <Square className="size-4 fill-current" /> Stop preview
         </Button>
       ) : (
-        <Button size={size} variant="secondary" className={cls} onClick={onPreview} title="Plays it along with your song from the playhead">
+        <Button
+          size={size}
+          variant="secondary"
+          className={cls}
+          onClick={onPreview}
+          title="Plays it along with your song from the playhead"
+        >
           <Play className="size-4" /> Preview with song
         </Button>
       )}
-      <Button size={size} className={cls} onClick={onAdd}>{addLabel}</Button>
+      <Button size={size} className={cls} onClick={onAdd}>
+        {addLabel}
+      </Button>
     </div>
   );
 }

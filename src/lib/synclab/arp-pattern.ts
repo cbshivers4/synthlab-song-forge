@@ -47,15 +47,21 @@ export const ARP_NOTE_PATTERNS: { id: string; label: string; notes: number[] }[]
   { id: "two-octaves", label: "Two octaves", notes: [0, 12, 24] },
   { id: "sus", label: "Sus echo", notes: [0, 5, 12, 5] },
   { id: "call-answer", label: "Call & answer", notes: [0, 12, 10, 12, 7, 12, 5, 3] },
-  { id: "electro", label: "Electro riff", notes: [0, 0, 12, 0, 10, 0, 7, 0, 5, 0, 3, 0, 0, 12, 0, 7] },
+  {
+    id: "electro",
+    label: "Electro riff",
+    notes: [0, 0, 12, 0, 10, 0, 7, 0, 5, 0, 3, 0, 0, 12, 0, 7],
+  },
   { id: "dub", label: "Dub drop", notes: [0, -12, -12, 0] },
   { id: "sparkle", label: "Sparkle", notes: [12, 24, 19, 31, 24, 36] },
 ];
 
 export const arpRhythmLabel = (steps: string | undefined) =>
-  !steps ? "Straight" : ARP_RHYTHMS.find((r) => r.steps === steps)?.label ?? "Custom";
+  !steps ? "Straight" : (ARP_RHYTHMS.find((r) => r.steps === steps)?.label ?? "Custom");
 export const arpNotesLabel = (notes: number[] | undefined) =>
-  !notes?.length ? "Held keys only" : ARP_NOTE_PATTERNS.find((n) => n.notes.join(",") === notes.join(","))?.label ?? "Custom";
+  !notes?.length
+    ? "Held keys only"
+    : (ARP_NOTE_PATTERNS.find((n) => n.notes.join(",") === notes.join(","))?.label ?? "Custom");
 
 const isHit = (c: string | undefined) => c === "x" || c === "X";
 
@@ -67,11 +73,16 @@ export function arpSequence(pitches: number[], arp: SynthPatch["arp"]): number[]
   const up: number[] = [];
   for (let o = 0; o < oct; o++) for (const p of base) up.push(p + o * 12);
   switch (arp.direction) {
-    case "down": return [...up].reverse();
-    case "updown": return up.length > 2 ? [...up, ...up.slice(1, -1).reverse()] : up;
-    case "alternate": return up.flatMap((p, i) => (i === 0 ? [p] : [p, up[0] as number]));
-    case "chord": return base;
-    default: return up;
+    case "down":
+      return [...up].reverse();
+    case "updown":
+      return up.length > 2 ? [...up, ...up.slice(1, -1).reverse()] : up;
+    case "alternate":
+      return up.flatMap((p, i) => (i === 0 ? [p] : [p, up[0] as number]));
+    case "chord":
+      return base;
+    default:
+      return up;
   }
 }
 
@@ -110,7 +121,11 @@ export function arpHit(arp: SynthPatch["arp"], pitches: number[], tick: number):
     if (!isHit(c)) return null;
     let perCycle = 0;
     let before = 0;
-    for (let i = 0; i < L; i++) if (isHit(rhythm[i])) { perCycle++; if (i < pos) before++; }
+    for (let i = 0; i < L; i++)
+      if (isHit(rhythm[i])) {
+        perCycle++;
+        if (i < pos) before++;
+      }
     hitIndex = Math.floor(tick / L) * perCycle + before;
     accent = c === "X" ? 1 : 0.72;
     for (let i = 1; i < L && rhythm[(pos + i) % L] === "-"; i++) length++;

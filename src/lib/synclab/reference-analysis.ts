@@ -15,7 +15,8 @@ function monoSamples(buffer: AudioBuffer) {
   const mono = new Float32Array(buffer.length);
   for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
     const data = buffer.getChannelData(channel);
-    for (let index = 0; index < data.length; index++) mono[index] = (mono[index] ?? 0) + (data[index] ?? 0) / buffer.numberOfChannels;
+    for (let index = 0; index < data.length; index++)
+      mono[index] = (mono[index] ?? 0) + (data[index] ?? 0) / buffer.numberOfChannels;
   }
   return mono;
 }
@@ -26,7 +27,8 @@ function waveformPeaks(data: Float32Array, points = 160) {
   return Array.from({ length: width }, (_, point) => {
     let peak = 0;
     const end = Math.min(data.length, (point + 1) * size);
-    for (let index = point * size; index < end; index++) peak = Math.max(peak, Math.abs(data[index] ?? 0));
+    for (let index = point * size; index < end; index++)
+      peak = Math.max(peak, Math.abs(data[index] ?? 0));
     return peak;
   });
 }
@@ -51,7 +53,8 @@ function estimateTempo(data: Float32Array, sampleRate: number) {
   for (let tempo = 70; tempo <= 180; tempo++) {
     const lag = Math.round((60 * sampleRate) / (tempo * hop));
     let score = 0;
-    for (let index = lag; index < centered.length; index++) score += (centered[index] ?? 0) * (centered[index - lag] ?? 0);
+    for (let index = lag; index < centered.length; index++)
+      score += (centered[index] ?? 0) * (centered[index - lag] ?? 0);
     if (score > bestScore) {
       bestScore = score;
       bestTempo = tempo;
@@ -86,8 +89,14 @@ function estimateKey(data: Float32Array, sampleRate: number) {
   const names = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
   let best = { score: 0, label: "" };
   for (let root = 0; root < 12; root++) {
-    for (const [mode, profile] of [["major", major], ["minor", minor]] as const) {
-      const score = profile.reduce((sum, weight, index) => sum + weight * (chroma[(index + root) % 12] ?? 0), 0);
+    for (const [mode, profile] of [
+      ["major", major],
+      ["minor", minor],
+    ] as const) {
+      const score = profile.reduce(
+        (sum, weight, index) => sum + weight * (chroma[(index + root) % 12] ?? 0),
+        0,
+      );
       if (score > best.score) best = { score, label: `${names[root]} ${mode}` };
     }
   }

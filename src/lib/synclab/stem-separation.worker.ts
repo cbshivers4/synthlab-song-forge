@@ -9,11 +9,16 @@ const scope = self as unknown as {
 scope.onmessage = (e) => {
   try {
     const { left, right, sampleRate, ids } = e.data;
-    const out = separateSpectral(left, right, sampleRate, ids, (p) => scope.postMessage({ type: "progress", p }));
+    const out = separateSpectral(left, right, sampleRate, ids, (p) =>
+      scope.postMessage({ type: "progress", p }),
+    );
     const transfer: Transferable[] = [];
     for (const s of Object.values(out)) if (s) transfer.push(s.left.buffer, s.right.buffer);
     scope.postMessage({ type: "done", out }, transfer);
   } catch (err) {
-    scope.postMessage({ type: "error", message: err instanceof Error ? err.message : "Separation failed" });
+    scope.postMessage({
+      type: "error",
+      message: err instanceof Error ? err.message : "Separation failed",
+    });
   }
 };

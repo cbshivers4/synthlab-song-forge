@@ -11,7 +11,10 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
-async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+async function run<T>(
+  mode: IDBTransactionMode,
+  fn: (s: IDBObjectStore) => IDBRequest<T>,
+): Promise<T> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const req = fn(db.transaction(STORE, mode).objectStore(STORE));
@@ -20,8 +23,10 @@ async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRe
   });
 }
 
-export const putAutosaveItem = (key: string, value: unknown) => run("readwrite", (s) => s.put(value, key));
-export const getAutosaveItem = <T,>(key: string) => run<T | undefined>("readonly", (s) => s.get(key) as IDBRequest<T | undefined>);
+export const putAutosaveItem = (key: string, value: unknown) =>
+  run("readwrite", (s) => s.put(value, key));
+export const getAutosaveItem = <T>(key: string) =>
+  run<T | undefined>("readonly", (s) => s.get(key) as IDBRequest<T | undefined>);
 const keys = () => run<IDBValidKey[]>("readonly", (s) => s.getAllKeys());
 const remove = (key: IDBValidKey) => run("readwrite", (s) => s.delete(key));
 
@@ -36,18 +41,40 @@ export async function persistBlobUrls(urls: string[]) {
       const blob = await (await fetch(url)).blob();
       await putAutosaveItem(`url:${url}`, blob);
       stored.add(url);
-    } catch { /* revoked URL — nothing to keep */ }
+    } catch {
+      /* revoked URL — nothing to keep */
+    }
   }
   try {
     for (const key of await keys()) {
       const k = String(key);
-      if (k.startsWith("url:") && !wanted.has(k.slice(4))) { await remove(key); stored.delete(k.slice(4)); }
+      if (k.startsWith("url:") && !wanted.has(k.slice(4))) {
+        await remove(key);
+        stored.delete(k.slice(4));
+      }
     }
-  } catch { /* storage unavailable */ }
+  } catch {
+    /* storage unavailable */
+  }
 }
 
-export const getBlobForUrl = (url: string) => getAutosaveItem<Blob>(`url:${url}`).catch(() => undefined);
+export const getBlobForUrl = (url: string) =>
+  getAutosaveItem<Blob>(`url:${url}`).catch(() => undefined);
 
-export interface VideoSession { blob: Blob; name: string; chops: number[]; sourceBpm: number; targetBpm: number; stretchOn: boolean; noteGrid?: number; chopCount?: number; sensitivity?: number; manualSlice?: boolean; midiNotes?: import("./video-pad-map").VideoPadMidiNote[] }
-export const saveVideoSession = (v: VideoSession) => putAutosaveItem("video-sampler", v).catch(() => undefined);
-export const loadVideoSession = () => getAutosaveItem<VideoSession>("video-sampler").catch(() => undefined);
+export interface VideoSession {
+  blob: Blob;
+  name: string;
+  chops: number[];
+  sourceBpm: number;
+  targetBpm: number;
+  stretchOn: boolean;
+  noteGrid?: number;
+  chopCount?: number;
+  sensitivity?: number;
+  manualSlice?: boolean;
+  midiNotes?: import("./video-pad-map").VideoPadMidiNote[];
+}
+export const saveVideoSession = (v: VideoSession) =>
+  putAutosaveItem("video-sampler", v).catch(() => undefined);
+export const loadVideoSession = () =>
+  getAutosaveItem<VideoSession>("video-sampler").catch(() => undefined);

@@ -27,7 +27,9 @@ export function DrumPads({ track, compact }: { track: Track; compact?: boolean }
       const at = getPlayStep() % total;
       const stale = transport.recording ? neighbourLiveHits(track.id, pad.id, at, total) : [];
       if (transport.recording) markLiveHit(track.id, pad.id, at);
-      updatePad(track.id, pad.id, { steps: pad.steps.map((v, i) => (i === at ? velocity : stale.includes(i) ? 0 : v)) });
+      updatePad(track.id, pad.id, {
+        steps: pad.steps.map((v, i) => (i === at ? velocity : stale.includes(i) ? 0 : v)),
+      });
     },
     [tapRec, transport.playing, transport.recording, track.id, track.steps, updatePad],
   );
@@ -36,7 +38,8 @@ export function DrumPads({ track, compact }: { track: Track; compact?: boolean }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable))
+        return;
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
       const idx = "12345678".indexOf(e.key);
       const pad = idx >= 0 ? pads[idx] : undefined;
@@ -82,10 +85,13 @@ export function DrumPads({ track, compact }: { track: Track; compact?: boolean }
             }`}
             style={{
               background: `linear-gradient(160deg, hsl(${(idx * 41) % 360} 70% 22%), hsl(${(idx * 41) % 360} 60% 12%))`,
-              boxShadow: hitPad === pad.id ? "0 0 18px hsl(var(--neon-hsl, 187 100% 50%) / 0.5)" : undefined,
+              boxShadow:
+                hitPad === pad.id ? "0 0 18px hsl(var(--neon-hsl, 187 100% 50%) / 0.5)" : undefined,
             }}
           >
-            <span className="absolute left-1 top-1 text-[9px] text-muted-foreground">{idx + 1}</span>
+            <span className="absolute left-1 top-1 text-[9px] text-muted-foreground">
+              {idx + 1}
+            </span>
             <span className="text-foreground">{pad.name}</span>
           </button>
         ))}

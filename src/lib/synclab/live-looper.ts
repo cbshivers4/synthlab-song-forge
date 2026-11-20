@@ -46,7 +46,11 @@ export function loopName(slot: Pick<LoopSlot, "index" | "name">) {
 }
 /** Clean a typed loop name: single line, trimmed, length-limited. */
 export function cleanLoopName(raw: string) {
-  return raw.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_LOOP_NAME);
+  return raw
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_LOOP_NAME);
 }
 /** overdubs that can be undone per loop */
 const UNDO_DEPTH = 8;
@@ -108,29 +112,43 @@ export class LiveLooper {
     // master would record the existing loops again on every new layer.
     // A transparent safety limiter stops stacked layers clipping the output.
     const limit = this.ctx.createDynamicsCompressor();
-    limit.threshold.value = -3; limit.knee.value = 2; limit.ratio.value = 20;
-    limit.attack.value = 0.002; limit.release.value = 0.12;
+    limit.threshold.value = -3;
+    limit.knee.value = 2;
+    limit.ratio.value = 20;
+    limit.attack.value = 0.002;
+    limit.release.value = 0.12;
     this.bus.connect(limit).connect(this.ctx.destination);
     let savedColors: string[] = [];
     let savedNames: string[] = [];
     let count = DEFAULT_LOOPS;
     try {
       const stored = window.localStorage.getItem("synclab.looper.colors");
-      savedColors = stored ? JSON.parse(stored) as string[] : [];
+      savedColors = stored ? (JSON.parse(stored) as string[]) : [];
       const names = window.localStorage.getItem("synclab.looper.names");
-      savedNames = names ? (JSON.parse(names) as unknown[]).map((n) => typeof n === "string" ? cleanLoopName(n) : "") : [];
+      savedNames = names
+        ? (JSON.parse(names) as unknown[]).map((n) =>
+            typeof n === "string" ? cleanLoopName(n) : "",
+          )
+        : [];
       const c = Number(window.localStorage.getItem("synclab.looper.count"));
       if (Number.isInteger(c) && c >= 1 && c <= MAX_LOOPS) count = c;
-    } catch { /* use the professional default palette */ }
-    this.slots = Array.from({ length: count }, (_, index) => this.makeSlot(index, savedColors[index], savedNames[index]));
+    } catch {
+      /* use the professional default palette */
+    }
+    this.slots = Array.from({ length: count }, (_, index) =>
+      this.makeSlot(index, savedColors[index], savedNames[index]),
+    );
     try {
       const pc = Number(window.localStorage.getItem("synclab.looper.precount"));
       const raw = window.localStorage.getItem("synclab.looper.precount");
       if (raw === null) this.precount = 1;
       else if ([1, 2, 4].includes(pc)) this.precount = pc;
       const th = window.localStorage.getItem("synclab.looper.threshold");
-      if (th && th !== "off" && Number.isFinite(Number(th))) this.threshold = Math.max(-60, Math.min(0, Number(th)));
-    } catch { /* */ }
+      if (th && th !== "off" && Number.isFinite(Number(th)))
+        this.threshold = Math.max(-60, Math.min(0, Number(th)));
+    } catch {
+      /* */
+    }
     for (let i = 0; i < count; i++) {
       this.gains.push(this.makeGain());
       this.sources.push(null);
@@ -163,12 +181,22 @@ export class LiveLooper {
   private saveLayout() {
     try {
       window.localStorage.setItem("synclab.looper.count", String(this.slots.length));
-      window.localStorage.setItem("synclab.looper.names", JSON.stringify(this.slots.map((s) => s.name)));
-      window.localStorage.setItem("synclab.looper.colors", JSON.stringify(this.slots.map((s) => s.color)));
-    } catch { /* storage full or blocked: names still apply for this session */ }
+      window.localStorage.setItem(
+        "synclab.looper.names",
+        JSON.stringify(this.slots.map((s) => s.name)),
+      );
+      window.localStorage.setItem(
+        "synclab.looper.colors",
+        JSON.stringify(this.slots.map((s) => s.color)),
+      );
+    } catch {
+      /* storage full or blocked: names still apply for this session */
+    }
   }
 
-  get canAddLoop() { return this.slots.length < MAX_LOOPS; }
+  get canAddLoop() {
+    return this.slots.length < MAX_LOOPS;
+  }
 
   /** Adds empty loops at the end (up to MAX_LOOPS). Returns how many were added. */
   addLoops(n = 1) {
@@ -179,14 +207,23 @@ export class LiveLooper {
       this.sources.push(null);
       added++;
     }
-    if (added) { this.saveLayout(); this.emit(); }
+    if (added) {
+      this.saveLayout();
+      this.emit();
+    }
     return added;
   }
 
   /** A loop can be removed when another loop remains and it isn't capturing audio. */
   canRemove(i: number) {
     const s = this.slots[i];
-    return !!s && this.slots.length > 1 && s.state !== "armed" && s.state !== "recording" && !s.overdubbing;
+    return (
+      !!s &&
+      this.slots.length > 1 &&
+      s.state !== "armed" &&
+      s.state !== "recording" &&
+      !s.overdubbing
+    );
   }
 
   /** Deletes a loop (its audio too); later loops move up one place. */
@@ -195,11 +232,19 @@ export class LiveLooper {
     this.clear(i);
     // let the 15 ms stop fade finish before unplugging, so removing a playing loop doesn't click
     const gain = this.gains[i]!;
-    window.setTimeout(() => { try { gain.disconnect(); } catch { /* */ } }, 80);
+    window.setTimeout(() => {
+      try {
+        gain.disconnect();
+      } catch {
+        /* */
+      }
+    }, 80);
     this.slots.splice(i, 1);
     this.gains.splice(i, 1);
     this.sources.splice(i, 1);
-    this.slots.forEach((slot, index) => { slot.index = index; });
+    this.slots.forEach((slot, index) => {
+      slot.index = index;
+    });
     this.saveLayout();
     this.emit();
   }
@@ -250,16 +295,29 @@ export class LiveLooper {
   setPrecount(b: number) {
     if (![0, 1, 2, 4].includes(b)) return;
     this.precount = b;
-    try { window.localStorage.setItem("synclab.looper.precount", String(b)); } catch { /* */ }
+    try {
+      window.localStorage.setItem("synclab.looper.precount", String(b));
+    } catch {
+      /* */
+    }
     this.emit();
   }
 
   setThreshold(db: number | null) {
     this.threshold = db === null ? null : Math.max(-60, Math.min(0, db));
-    try { window.localStorage.setItem("synclab.looper.threshold", this.threshold === null ? "off" : String(this.threshold)); } catch { /* */ }
+    try {
+      window.localStorage.setItem(
+        "synclab.looper.threshold",
+        this.threshold === null ? "off" : String(this.threshold),
+      );
+    } catch {
+      /* */
+    }
     this.emit();
   }
-  get isWaitingForSignal() { return this.waitingSlot !== null; }
+  get isWaitingForSignal() {
+    return this.waitingSlot !== null;
+  }
 
   private click(at: number, accent: boolean) {
     const o = this.ctx.createOscillator();
@@ -286,7 +344,11 @@ export class LiveLooper {
     if (this.proc) return;
     if (this.opening) return this.opening;
     this.opening = this.connectInput();
-    try { await this.opening; } finally { this.opening = null; }
+    try {
+      await this.opening;
+    } finally {
+      this.opening = null;
+    }
   }
 
   private async connectInput() {
@@ -300,7 +362,15 @@ export class LiveLooper {
         this.micBorrowed = true;
       } else {
         // Music capture: browser voice-call processing (echo cancel, noise gate, auto gain) pumps and distorts loops.
-        const res = await openMic({ echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 2 }, "looper");
+        const res = await openMic(
+          {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            channelCount: 2,
+          },
+          "looper",
+        );
         if ("error" in res) throw new Error(res.error);
         stream = res.stream;
         this.micBorrowed = false;
@@ -320,7 +390,8 @@ export class LiveLooper {
       // the input block was rendered one block before its playback time
       const t0 = e.playbackTime - BLOCK / this.ctx.sampleRate;
       this.chunks.push({ t: t0, l: new Float32Array(l), r: new Float32Array(r) });
-      let peak = 0; let hit = -1;
+      let peak = 0;
+      let hit = -1;
       const lin = this.threshold === null ? 2 : Math.pow(10, this.threshold / 20);
       for (let i = 0; i < l.length; i++) {
         const v = Math.max(Math.abs(l[i]!), Math.abs(r[i]!));
@@ -334,7 +405,10 @@ export class LiveLooper {
           // start ~10 ms before the crossing so the attack is kept
           const start = Math.max(this.chunks[0]!.t, t0 + hit / this.ctx.sampleRate - 0.01);
           ws.recStart = start;
-          ws.recEnd = this.mode === "sync" ? start + (this.bars * getBeatsPerBar() * 60) / (this.bpm || 120) : null;
+          ws.recEnd =
+            this.mode === "sync"
+              ? start + (this.bars * getBeatsPerBar() * 60) / (this.bpm || 120)
+              : null;
           ws.state = "recording";
           this.waitingSlot = null;
           this.emit();
@@ -343,9 +417,14 @@ export class LiveLooper {
         }
       }
       // Retain the entire active take, including 32-bar takes at slow tempos.
-      const activeStarts = this.slots.filter((s) => s.state === "armed" || s.state === "recording").map((s) => s.recStart);
-      const oldest = activeStarts.length ? Math.min(...activeStarts) - 0.1 : this.ctx.currentTime - 1;
-      while (this.chunks.length && this.chunks[0]!.t + BLOCK / this.ctx.sampleRate < oldest) this.chunks.shift();
+      const activeStarts = this.slots
+        .filter((s) => s.state === "armed" || s.state === "recording")
+        .map((s) => s.recStart);
+      const oldest = activeStarts.length
+        ? Math.min(...activeStarts) - 0.1
+        : this.ctx.currentTime - 1;
+      while (this.chunks.length && this.chunks[0]!.t + BLOCK / this.ctx.sampleRate < oldest)
+        this.chunks.shift();
     };
     node.connect(proc);
     proc.connect(sink).connect(this.ctx.destination);
@@ -357,10 +436,19 @@ export class LiveLooper {
   private closeInput() {
     if (!this.proc) return;
     this.proc.onaudioprocess = null;
-    try { this.inputNode?.disconnect(this.proc); } catch { /* */ }
+    try {
+      this.inputNode?.disconnect(this.proc);
+    } catch {
+      /* */
+    }
     this.proc.disconnect();
     this.procSink?.disconnect();
-    if (this.inputNode && this.source === "mic") try { this.inputNode.disconnect(); } catch { /* */ }
+    if (this.inputNode && this.source === "mic")
+      try {
+        this.inputNode.disconnect();
+      } catch {
+        /* */
+      }
     if (!this.micBorrowed) releaseMic(this.micStream);
     this.micBorrowed = false;
     this.micStream = null;
@@ -388,8 +476,10 @@ export class LiveLooper {
     const fade = Math.min(Math.round(sr * 0.004), Math.floor(frames / 4));
     for (let i = 0; i < fade; i++) {
       const g = i / fade;
-      L[i]! *= g; R[i]! *= g;
-      L[frames - 1 - i]! *= g; R[frames - 1 - i]! *= g;
+      L[i]! *= g;
+      R[i]! *= g;
+      L[frames - 1 - i]! *= g;
+      R[frames - 1 - i]! *= g;
     }
     return buf;
   }
@@ -410,7 +500,11 @@ export class LiveLooper {
         this.precountStart = null;
         changed = true;
       }
-      if (s.state === "recording" && s.recEnd !== null && now >= s.recEnd + (BLOCK * 2) / this.ctx.sampleRate) {
+      if (
+        s.state === "recording" &&
+        s.recEnd !== null &&
+        now >= s.recEnd + (BLOCK * 2) / this.ctx.sampleRate
+      ) {
         this.finish(s);
         changed = true;
       }
@@ -441,13 +535,17 @@ export class LiveLooper {
     }
     if (s.overdubbing && s.buffer) {
       const original = s.buffer;
-      s.history = [...s.history.slice(-(UNDO_DEPTH - 1)), { buffer: original, reversed: s.reversed }];
+      s.history = [
+        ...s.history.slice(-(UNDO_DEPTH - 1)),
+        { buffer: original, reversed: s.reversed },
+      ];
       const merged = this.ctx.createBuffer(2, original.length, original.sampleRate);
       for (let channel = 0; channel < 2; channel++) {
         const output = merged.getChannelData(channel);
         const old = original.getChannelData(channel);
         const added = buf.getChannelData(channel);
-        for (let j = 0; j < output.length; j++) output[j] = Math.max(-1, Math.min(1, old[j]! + (added[j] ?? 0) * 0.8));
+        for (let j = 0; j < output.length; j++)
+          output[j] = Math.max(-1, Math.min(1, old[j]! + (added[j] ?? 0) * 0.8));
       }
       s.buffer = merged;
       s.overdubbing = false;
@@ -492,34 +590,61 @@ export class LiveLooper {
   /** Record on this slot with a pre-count (at least 1 bar), ignoring start-on-sound. */
   async recordCounted(i: number) {
     if (this.ctx.state === "suspended") await this.ctx.resume();
-    const th = this.threshold, pc = this.precount;
+    const th = this.threshold,
+      pc = this.precount;
     this.threshold = null;
     this.precount = pc || 1;
-    try { await this.record(i); } finally { this.threshold = th; this.precount = pc; }
+    try {
+      await this.record(i);
+    } finally {
+      this.threshold = th;
+      this.precount = pc;
+    }
   }
 
   /** Record immediately on this slot, skipping the pre-count and start-on-sound wait. */
   async recordNow(i: number) {
     if (this.ctx.state === "suspended") await this.ctx.resume();
-    const th = this.threshold, pc = this.precount;
+    const th = this.threshold,
+      pc = this.precount;
     this.threshold = null;
     this.precount = 0;
-    try { await this.record(i); } finally { this.threshold = th; this.precount = pc; }
+    try {
+      await this.record(i);
+    } finally {
+      this.threshold = th;
+      this.precount = pc;
+    }
   }
 
   async record(i: number) {
     const s = this.slots[i];
     if (!s || s.state !== "empty") return;
-    if (this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) throw new Error("Another loop is still recording — finish or cancel it first.");
+    if (this.slots.some((slot) => slot.state === "armed" || slot.state === "recording"))
+      throw new Error("Another loop is still recording — finish or cancel it first.");
     await this.openInput();
-    if (s.state !== "empty" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) { if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput(); return; }
+    if (
+      s.state !== "empty" ||
+      this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")
+    ) {
+      if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording"))
+        this.closeInput();
+      return;
+    }
     let now = this.ctx.currentTime + 0.03;
     // Bar-synced first loop while the song plays: start exactly on a song bar line, so the
     // loop lines up with the song. The song itself counts in (count-in bars = bars to wait).
-    const song = this.mode === "sync" && this.cycle === null && this.threshold === null ? activeSongClock(this.ctx.currentTime) : null;
+    const song =
+      this.mode === "sync" && this.cycle === null && this.threshold === null
+        ? activeSongClock(this.ctx.currentTime)
+        : null;
     if (song) {
       const barLen = song.dur * stepsPerBar();
-      const start = nextSongBarTime(song, now + Math.max(0, this.precount - 1) * barLen, stepsPerBar());
+      const start = nextSongBarTime(
+        song,
+        now + Math.max(0, this.precount - 1) * barLen,
+        stepsPerBar(),
+      );
       s.recStart = start;
       s.recEnd = start + (this.bars * getBeatsPerBar() * 60) / (this.bpm || 120);
       this.songLocked = true;
@@ -570,7 +695,11 @@ export class LiveLooper {
     if (!s) return;
     if (!s.buffer) return;
     if (this.ctx.state === "suspended") void this.ctx.resume();
-    try { this.sources[i]?.stop(); } catch { /* already ended */ }
+    try {
+      this.sources[i]?.stop();
+    } catch {
+      /* already ended */
+    }
     const src = this.ctx.createBufferSource();
     src.buffer = s.buffer;
     src.loop = true;
@@ -607,7 +736,8 @@ export class LiveLooper {
   setVolume(i: number, v: number) {
     const s = this.slots[i]!;
     s.volume = v;
-    if (s.state === "playing" || s.overdubbing) this.gains[i]!.gain.setTargetAtTime(s.muted ? 0 : v, this.ctx.currentTime, 0.02);
+    if (s.state === "playing" || s.overdubbing)
+      this.gains[i]!.gain.setTargetAtTime(s.muted ? 0 : v, this.ctx.currentTime, 0.02);
     this.emit();
   }
 
@@ -630,7 +760,11 @@ export class LiveLooper {
   toggleReverse(i: number) {
     const s = this.slots[i];
     if (!s?.buffer || s.overdubbing || s.state === "recording" || s.state === "armed") return;
-    const reversed = this.ctx.createBuffer(s.buffer.numberOfChannels, s.buffer.length, s.buffer.sampleRate);
+    const reversed = this.ctx.createBuffer(
+      s.buffer.numberOfChannels,
+      s.buffer.length,
+      s.buffer.sampleRate,
+    );
     for (let c = 0; c < s.buffer.numberOfChannels; c++) {
       const input = s.buffer.getChannelData(c);
       const output = reversed.getChannelData(c);
@@ -644,10 +778,21 @@ export class LiveLooper {
 
   async overdub(i: number) {
     const s = this.slots[i];
-    if (!s?.buffer || s.state !== "playing" || !this.cycle || this.source !== "mic" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
+    if (
+      !s?.buffer ||
+      s.state !== "playing" ||
+      !this.cycle ||
+      this.source !== "mic" ||
+      this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")
+    )
+      return;
     if (this.ctx.state === "suspended") await this.ctx.resume();
     await this.openInput();
-    if (s.state !== "playing" || this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) return;
+    if (
+      s.state !== "playing" ||
+      this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")
+    )
+      return;
     s.recStart = this.nextBoundary(this.ctx.currentTime + 0.05);
     s.recEnd = s.recStart + this.cycle;
     s.overdubbing = true;
@@ -683,16 +828,23 @@ export class LiveLooper {
       if (cached) values = cached;
       else {
         // Both channels, so a sound panned to one side still shows on the ring.
-        const chans = Array.from({ length: s.buffer.numberOfChannels }, (_, c) => s.buffer!.getChannelData(c));
+        const chans = Array.from({ length: s.buffer.numberOfChannels }, (_, c) =>
+          s.buffer!.getChannelData(c),
+        );
         const length = chans[0]?.length ?? 0;
         for (let n = 0; n < count; n++) {
           let peak = 0;
-          const from = Math.floor(n * length / count);
-          const to = Math.floor((n + 1) * length / count);
-          for (const data of chans) for (let j = from; j < to; j += Math.max(1, Math.floor((to - from) / 32))) peak = Math.max(peak, Math.abs(data[j] ?? 0));
+          const from = Math.floor((n * length) / count);
+          const to = Math.floor(((n + 1) * length) / count);
+          for (const data of chans)
+            for (let j = from; j < to; j += Math.max(1, Math.floor((to - from) / 32)))
+              peak = Math.max(peak, Math.abs(data[j] ?? 0));
           values[n] = peak;
         }
-        if (!byCount) { byCount = new Map(); this.waveCache.set(s.buffer, byCount); }
+        if (!byCount) {
+          byCount = new Map();
+          this.waveCache.set(s.buffer, byCount);
+        }
         byCount.set(count, values);
       }
     }
@@ -703,7 +855,8 @@ export class LiveLooper {
         const n = Math.floor(((chunk.t - s.recStart) / length) * count);
         if (n < 0 || n >= count) continue;
         let peak = 0;
-        for (let j = 0; j < chunk.l.length; j += 64) peak = Math.max(peak, Math.abs(chunk.l[j] ?? 0), Math.abs(chunk.r[j] ?? 0));
+        for (let j = 0; j < chunk.l.length; j += 64)
+          peak = Math.max(peak, Math.abs(chunk.l[j] ?? 0), Math.abs(chunk.r[j] ?? 0));
         values[n] = Math.max(values[n] ?? 0, peak);
       }
     }
@@ -721,7 +874,8 @@ export class LiveLooper {
     s.muted = false;
     s.reversed = false;
     s.history = [];
-    if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording")) this.closeInput();
+    if (!this.slots.some((slot) => slot.state === "armed" || slot.state === "recording"))
+      this.closeInput();
     if (this.isEmpty) {
       this.cycle = null;
       this.origin = null;
@@ -731,10 +885,12 @@ export class LiveLooper {
   }
 
   stopAll() {
-    for (let i = 0; i < this.slots.length; i++) if (this.slots[i]!.state === "playing") this.stop(i);
+    for (let i = 0; i < this.slots.length; i++)
+      if (this.slots[i]!.state === "playing") this.stop(i);
   }
   playAll() {
-    for (let i = 0; i < this.slots.length; i++) if (this.slots[i]!.state === "stopped") this.play(i);
+    for (let i = 0; i < this.slots.length; i++)
+      if (this.slots[i]!.state === "stopped") this.play(i);
   }
   clearAll() {
     for (let i = 0; i < this.slots.length; i++) this.clear(i);
@@ -744,7 +900,11 @@ export class LiveLooper {
   wav(i: number): Blob | null {
     const b = this.slots[i]!.buffer;
     if (!b) return null;
-    return encodeWav({ left: b.getChannelData(0), right: b.getChannelData(1), sampleRate: b.sampleRate });
+    return encodeWav({
+      left: b.getChannelData(0),
+      right: b.getChannelData(1),
+      sampleRate: b.sampleRate,
+    });
   }
 }
 

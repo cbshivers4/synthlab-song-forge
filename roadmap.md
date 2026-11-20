@@ -287,3 +287,11 @@
 - [ ] Next swappable designs (mixer, synths) — Christopher to choose / send reference pictures
 - [x] Live Drummer: real-looking drum kit that visibly plays
 - [x] Studio View: connected gear shelf + back-view USB/Bluetooth/cable links
+
+## Cleanup & safety pass (Nov 20)
+- [x] 1. Build stability: server functions use validator(); seroval pin skipped (neither 1.6.11 nor 1.6.12 has a ./shared export; build passes on 1.6.12)
+- [x] 2. Lint: 0 errors. Prettier on source; var/const/case/unused-expression fixes; modular.ts anys typed; 4 payment anys left as warnings
+- [x] 3. Image rights: Scan 7 removed (empty frame), license note added
+- [x] 4. Privacy: README/legal pages/Help Center read SUPPORT_EMAIL / FOUNDER_EMAILS; no migration needed
+- [x] 5. Maintainability: moved drum voices + DSP helpers out of audio-engine.ts, take-region helpers out of store.tsx (re-exported)
+- [x] 6. Verify: 905/905 tests, typecheck, build OK

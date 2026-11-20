@@ -12,6 +12,16 @@ describe("docked desktop mixer", () => {
     expect(clampMixerHeight(450, 1000)).toBe(450);
   });
   it("F3 shows or hides the mixer", () => {
-    expect(matchShortcut({ key: "F3", ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, repeat: false, defaultPrevented: false })).toBe("toggleMixer");
+    expect(
+      matchShortcut({
+        key: "F3",
+        ctrlKey: false,
+        metaKey: false,
+        altKey: false,
+        shiftKey: false,
+        repeat: false,
+        defaultPrevented: false,
+      }),
+    ).toBe("toggleMixer");
   });
 });

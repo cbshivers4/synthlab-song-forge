@@ -28,23 +28,46 @@ export const MAX_PLAYLIST_NAME = 40;
 export const MAX_PLAYLIST_TRACKS = 200;
 
 /** "My Song.mp3" -> "My Song" */
-export const trackTitle = (fileName: string) => fileName.replace(/\.[^./\\]+$/, "").trim() || fileName;
+export const trackTitle = (fileName: string) =>
+  fileName.replace(/\.[^./\\]+$/, "").trim() || fileName;
 
 /** Same name and byte size = same file. */
 export const audioKey = (file: { name: string; size: number }) => `${file.name}|${file.size}`;
 
-export interface IncomingTrack { key: string; name: string; size: number; duration?: number | null }
+export interface IncomingTrack {
+  key: string;
+  name: string;
+  size: number;
+  duration?: number | null;
+}
 
 /** Adds files to the end, skipping files already in the list and anything past the size limit. */
-export function addToPlaylist(tracks: PlaylistTrack[], incoming: IncomingTrack[], makeId: () => string) {
+export function addToPlaylist(
+  tracks: PlaylistTrack[],
+  incoming: IncomingTrack[],
+  makeId: () => string,
+) {
   const out = [...tracks];
   const have = new Set(tracks.map((t) => t.key));
   const added: PlaylistTrack[] = [];
-  let duplicates = 0, overLimit = 0;
+  let duplicates = 0,
+    overLimit = 0;
   for (const f of incoming) {
-    if (have.has(f.key)) { duplicates++; continue; }
-    if (out.length >= MAX_PLAYLIST_TRACKS) { overLimit++; continue; }
-    const t: PlaylistTrack = { id: makeId(), key: f.key, name: f.name, size: f.size, duration: f.duration ?? null };
+    if (have.has(f.key)) {
+      duplicates++;
+      continue;
+    }
+    if (out.length >= MAX_PLAYLIST_TRACKS) {
+      overLimit++;
+      continue;
+    }
+    const t: PlaylistTrack = {
+      id: makeId(),
+      key: f.key,
+      name: f.name,
+      size: f.size,
+      duration: f.duration ?? null,
+    };
     have.add(f.key);
     out.push(t);
     added.push(t);
@@ -52,7 +75,8 @@ export function addToPlaylist(tracks: PlaylistTrack[], incoming: IncomingTrack[]
   return { tracks: out, added, duplicates, overLimit };
 }
 
-export const removeFromPlaylist = (tracks: PlaylistTrack[], id: string) => tracks.filter((t) => t.id !== id);
+export const removeFromPlaylist = (tracks: PlaylistTrack[], id: string) =>
+  tracks.filter((t) => t.id !== id);
 
 /** Moves one entry up (-1) or down (+1); the ends stay put. */
 export function moveInPlaylist(tracks: PlaylistTrack[], id: string, delta: number) {
@@ -72,7 +96,7 @@ export function moveInPlaylist(tracks: PlaylistTrack[], id: string, delta: numbe
  */
 export function playlistName(raw: string, otherNames: string[]) {
   const taken = new Set(otherNames.map((n) => n.trim().toLowerCase()));
-  let base = raw.replace(/\s+/g, " ").trim().slice(0, MAX_PLAYLIST_NAME).trim();
+  const base = raw.replace(/\s+/g, " ").trim().slice(0, MAX_PLAYLIST_NAME).trim();
   if (!base) {
     let n = 1;
     while (taken.has(`playlist ${n}`)) n++;
@@ -93,13 +117,18 @@ export function unusedAudio(keys: Iterable<string>, playlists: Playlist[]) {
 }
 
 /** True when the working list differs from what was last saved. */
-export function playlistChanged(name: string, tracks: PlaylistTrack[], saved: Pick<Playlist, "name" | "tracks"> | null) {
+export function playlistChanged(
+  name: string,
+  tracks: PlaylistTrack[],
+  saved: Pick<Playlist, "name" | "tracks"> | null,
+) {
   if (!saved) return tracks.length > 0;
   if (name !== saved.name || tracks.length !== saved.tracks.length) return true;
   return tracks.some((t, i) => t.key !== saved.tracks[i]!.key);
 }
 
-export const playlistSeconds = (tracks: PlaylistTrack[]) => tracks.reduce((s, t) => s + (t.duration ?? 0), 0);
+export const playlistSeconds = (tracks: PlaylistTrack[]) =>
+  tracks.reduce((s, t) => s + (t.duration ?? 0), 0);
 
 /** Saved playlists, newest save first. */
 export const sortPlaylists = (list: Playlist[]) => [...list].sort((a, b) => b.savedAt - a.savedAt);

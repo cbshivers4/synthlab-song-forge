@@ -2,16 +2,27 @@
 export const PREFS_KEY = "synclab.prefs";
 export const PREFS_EVENT = "synclab:preferences";
 export const PLAYBACK_DEFAULTS = {
-  midiThru: true, velocityCurve: "Linear", pitchBendRange: 2,
-  clickSound: "Detroit Rim", clickLevel: 0.6, clickWhilePlaying: false,
-  showTooltips: true, reduceMotion: false,
-  exportFormat: "WAV 24-bit", exportRate: "48 kHz", exportTail: 2, normalizeExport: false,
+  midiThru: true,
+  velocityCurve: "Linear",
+  pitchBendRange: 2,
+  clickSound: "Detroit Rim",
+  clickLevel: 0.6,
+  clickWhilePlaying: false,
+  showTooltips: true,
+  reduceMotion: false,
+  exportFormat: "WAV 24-bit",
+  exportRate: "48 kHz",
+  exportTail: 2,
+  normalizeExport: false,
 };
 let current = { ...PLAYBACK_DEFAULTS };
 export const playbackPreferences = () => current;
 export function refreshPreferences() {
-  try { current = { ...PLAYBACK_DEFAULTS, ...JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") }; }
-  catch { current = { ...PLAYBACK_DEFAULTS }; }
+  try {
+    current = { ...PLAYBACK_DEFAULTS, ...JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") };
+  } catch {
+    current = { ...PLAYBACK_DEFAULTS };
+  }
   document.documentElement.toggleAttribute("data-reduce-motion", current.reduceMotion);
   document.documentElement.toggleAttribute("data-hide-tooltips", !current.showTooltips);
 }

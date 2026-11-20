@@ -35,10 +35,14 @@ export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) 
         <DropdownMenuItem onClick={() => addTrack("instrument", "POLY SYNTH", "Poly Synth Brass")}>
           <Piano className="size-4" /> Poly synth — chords, with notes
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => addTrack("instrument", "MODULAR TECH", "Modular Tech Empty Rack")}>
+        <DropdownMenuItem
+          onClick={() => addTrack("instrument", "MODULAR TECH", "Modular Tech Empty Rack")}
+        >
           <Waves className="size-4" /> Modular Tech Synth — patch cables
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => addTrack("instrument", "GRANULAR SYNTH", "Granular Glass Cloud")}>
+        <DropdownMenuItem
+          onClick={() => addTrack("instrument", "GRANULAR SYNTH", "Granular Glass Cloud")}
+        >
           <Sparkles className="size-4" /> Granular Synth — grain clouds, your samples
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => addTrack("drum", "DRUM MACHINE")}>
@@ -50,7 +54,12 @@ export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) 
         <DropdownMenuItem onClick={() => addTrack("midi", "MIDI", "Deep Keys")}>
           <Piano className="size-4" /> MIDI channel
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => { const id = addTrack("midi", "EXT SYNTH", "Deep Keys"); if (id) window.setTimeout(() => openTrackSettings(id), 50); }}>
+        <DropdownMenuItem
+          onClick={() => {
+            const id = addTrack("midi", "EXT SYNTH", "Deep Keys");
+            if (id) window.setTimeout(() => openTrackSettings(id), 50);
+          }}
+        >
           <Cable className="size-4" /> External MIDI instrument — hardware synth
         </DropdownMenuItem>
         <DropdownMenuSeparator />

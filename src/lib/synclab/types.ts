@@ -1,10 +1,4 @@
-export type TrackKind =
-  | "audio"
-  | "instrument"
-  | "midi"
-  | "drum"
-  | "sampler"
-  | "ai-vocal";
+export type TrackKind = "audio" | "instrument" | "midi" | "drum" | "sampler" | "ai-vocal";
 
 export type BusId = "drums" | "vocals" | "instruments" | "synths" | "fx" | "master";
 export type VcaId = "A" | "B" | "C" | "D";
@@ -94,7 +88,24 @@ export interface FilterStage {
 }
 
 export interface SynthPatch {
-  touch?: { root: number; octave: number; scale: string; rate: number; gate: number; lane?: string; loops?: Record<string, { step: number; pitch: number; length: number; vel: number; tone?: number }[]>; /** One instrument per lane/column, keyed by lane id. */ sounds?: Record<string, string>; /** Drum kit for the drums part. */ kit?: DrumKitId; /** Loop length in bars (1, 2 or 4; missing = 2). */ bars?: number; /** Pad width in octaves (1-4; missing = 2). */ range?: number; /** Gate-arp rhythm played while holding the pad. */ gateArp?: string; /** Parts silenced in loop playback. */ muted?: Record<string, boolean> };
+  touch?: {
+    root: number;
+    octave: number;
+    scale: string;
+    rate: number;
+    gate: number;
+    lane?: string;
+    loops?: Record<
+      string,
+      { step: number; pitch: number; length: number; vel: number; tone?: number }[]
+    >;
+    /** One instrument per lane/column, keyed by lane id. */ sounds?: Record<string, string>;
+    /** Drum kit for the drums part. */ kit?: DrumKitId;
+    /** Loop length in bars (1, 2 or 4; missing = 2). */ bars?: number;
+    /** Pad width in octaves (1-4; missing = 2). */ range?: number;
+    /** Gate-arp rhythm played while holding the pad. */ gateArp?: string;
+    /** Parts silenced in loop playback. */ muted?: Record<string, boolean>;
+  };
   name: string;
   oscillators: OscillatorParams[];
   noise: number;
@@ -194,7 +205,18 @@ export interface DrumPad {
   kit?: DrumKitId;
   /** Kit-specific extra voice (conga, bongo, brush tom...); overrides the kind's sound. */
   voice?: string;
-  kind: "kick" | "snare" | "clap" | "hat" | "openhat" | "tom" | "perc" | "rim" | "crash" | "ride" | "fx";
+  kind:
+    | "kick"
+    | "snare"
+    | "clap"
+    | "hat"
+    | "openhat"
+    | "tom"
+    | "perc"
+    | "rim"
+    | "crash"
+    | "ride"
+    | "fx";
   volume: number;
   pan: number;
   pitch: number;
@@ -299,13 +321,20 @@ export interface AudioClip {
 }
 
 /** Value of a piano-roll lane at a pattern step, linearly interpolated between points; null when the lane is empty. */
-export function laneValueAt(points: { step: number; value: number }[] | undefined, step: number): number | null {
+export function laneValueAt(
+  points: { step: number; value: number }[] | undefined,
+  step: number,
+): number | null {
   if (!points?.length) return null;
   const pts = [...points].sort((a, b) => a.step - b.step);
   let prev = pts[0]!;
   if (step <= prev.step) return prev.value;
   for (const p of pts) {
-    if (p.step > step) return prev.value + ((p.value - prev.value) * (step - prev.step)) / Math.max(1e-6, p.step - prev.step);
+    if (p.step > step)
+      return (
+        prev.value +
+        ((p.value - prev.value) * (step - prev.step)) / Math.max(1e-6, p.step - prev.step)
+      );
     prev = p;
   }
   return prev.value;
@@ -437,11 +466,7 @@ export interface SamplerState {
 }
 
 export type AutomationParam =
-  | "volume"
-  | "pan"
-  | "sendReverb"
-  | "sendDelay"
-  | `plugin:${string}:${string}`;
+  "volume" | "pan" | "sendReverb" | "sendDelay" | `plugin:${string}:${string}`;
 
 export interface AutomationPoint {
   step: number;
@@ -462,7 +487,13 @@ export interface AutomationLane {
 
 /** Rhythm-only snapshot; sound settings and samples remain in Banks A–H. */
 export interface DrumSequence {
-  hits: Record<string, Pick<DrumPad, 'steps' | 'probability' | 'stepPitch' | 'stepDecay' | 'flam' | 'retrig' | 'glitch'>>;
+  hits: Record<
+    string,
+    Pick<
+      DrumPad,
+      "steps" | "probability" | "stepPitch" | "stepDecay" | "flam" | "retrig" | "glitch"
+    >
+  >;
   steps: number;
   patternRegion?: [number, number] | undefined;
 }

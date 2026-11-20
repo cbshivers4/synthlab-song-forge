@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { isPadSamplerTrack } from "@/lib/synclab/track-editor";
 import { effectBrand, effectForm, groupByCategory } from "@/lib/synclab/effect-catalog";
-import { ChevronDown, ChevronUp, SlidersHorizontal, Disc3, AudioLines, Music2, Piano, Plus, Power, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
+  Disc3,
+  AudioLines,
+  Music2,
+  Piano,
+  Plus,
+  Power,
+  X,
+} from "lucide-react";
 import { useStudio } from "@/lib/synclab/store";
 import { setWorkspacePrefs } from "@/lib/synclab/workspace-prefs";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
@@ -14,12 +25,46 @@ import { effectFamily } from "./EffectWorkbench";
 import { EffectPresetMenu } from "./EffectPresetMenu";
 import { BypassButton, HardwareBypass } from "./HardwareBypass";
 
-function instrumentModule(track: Track): { label: string; icon: React.ReactNode; panel: "synth" | "drums" | "sampler" | "pads" | "piano"; tone: string } {
-  if (track.kind === "drum") return { label: "Drum Machine", icon: <Disc3 className="size-3.5" />, panel: "drums", tone: "drums" };
-  if (isPadSamplerTrack(track)) return { label: "Pad Sampler", icon: <AudioLines className="size-3.5" />, panel: "pads", tone: "sampler" };
-  if (track.kind === "sampler") return { label: "Sampler", icon: <AudioLines className="size-3.5" />, panel: "sampler", tone: "sampler" };
-  if (track.kind === "audio" || track.kind === "ai-vocal") return { label: "Audio Track", icon: <AudioLines className="size-3.5" />, panel: "piano", tone: "audio" };
-  return { label: "Synthesizer", icon: <Music2 className="size-3.5" />, panel: "synth", tone: "synth" };
+function instrumentModule(track: Track): {
+  label: string;
+  icon: React.ReactNode;
+  panel: "synth" | "drums" | "sampler" | "pads" | "piano";
+  tone: string;
+} {
+  if (track.kind === "drum")
+    return {
+      label: "Drum Machine",
+      icon: <Disc3 className="size-3.5" />,
+      panel: "drums",
+      tone: "drums",
+    };
+  if (isPadSamplerTrack(track))
+    return {
+      label: "Pad Sampler",
+      icon: <AudioLines className="size-3.5" />,
+      panel: "pads",
+      tone: "sampler",
+    };
+  if (track.kind === "sampler")
+    return {
+      label: "Sampler",
+      icon: <AudioLines className="size-3.5" />,
+      panel: "sampler",
+      tone: "sampler",
+    };
+  if (track.kind === "audio" || track.kind === "ai-vocal")
+    return {
+      label: "Audio Track",
+      icon: <AudioLines className="size-3.5" />,
+      panel: "piano",
+      tone: "audio",
+    };
+  return {
+    label: "Synthesizer",
+    icon: <Music2 className="size-3.5" />,
+    panel: "synth",
+    tone: "synth",
+  };
 }
 
 function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance }) {
@@ -80,10 +125,21 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
           <X className="size-3" />
         </span>
       </button>
-      <EffectPresetMenu plugin={plugin} onParam={(id, value) => setPluginParam(track.id, plugin.id, id, value)} />
-      <BypassButton name={plugin.name} bypassed={plugin.bypass} onToggle={() => togglePluginBypass(track.id, plugin.id)} />
+      <EffectPresetMenu
+        plugin={plugin}
+        onParam={(id, value) => setPluginParam(track.id, plugin.id, id, value)}
+      />
+      <BypassButton
+        name={plugin.name}
+        bypassed={plugin.bypass}
+        onToggle={() => togglePluginBypass(track.id, plugin.id)}
+      />
       <div className="px-1 pt-1">
-        <EffectDisplay plugin={plugin} height={64} onParam={(paramId, v) => setPluginParam(track.id, plugin.id, paramId, v)} />
+        <EffectDisplay
+          plugin={plugin}
+          height={64}
+          onParam={(paramId, v) => setPluginParam(track.id, plugin.id, paramId, v)}
+        />
       </div>
       <div className="flex flex-1 flex-wrap items-start justify-around gap-x-1 gap-y-0.5 px-1 py-1">
         {shown.map((p) => (
@@ -99,9 +155,18 @@ function EffectModule({ track, plugin }: { track: Track; plugin: PluginInstance 
             midiTarget={{ id: track.id, param: `plugin:${plugin.id}:${p.id}` }}
           />
         ))}
-        {shown.length === 0 && <span className="self-center text-[10px] text-muted-foreground">No controls</span>}
+        {shown.length === 0 && (
+          <span className="self-center text-[10px] text-muted-foreground">No controls</span>
+        )}
       </div>
-      <div className="px-1 pb-1"><Scope scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id} height={22} compact effectKind={plugin.kind} /></div>
+      <div className="px-1 pb-1">
+        <Scope
+          scopeId={plugin.bypass ? `bypassed:${plugin.id}` : plugin.id}
+          height={22}
+          compact
+          effectKind={plugin.kind}
+        />
+      </div>
     </div>
   );
 }
@@ -138,7 +203,10 @@ export function DeviceBar() {
   if (!track) return null;
   const inst = instrumentModule(track);
   const plugins = track.plugins ?? [];
-  const addable = [...BUILT_IN_PLUGINS, ...installedPlugins.filter((d) => !BUILT_IN_PLUGINS.some((b) => b.id === d.id))];
+  const addable = [
+    ...BUILT_IN_PLUGINS,
+    ...installedPlugins.filter((d) => !BUILT_IN_PLUGINS.some((b) => b.id === d.id)),
+  ];
 
   return (
     <section className="shrink-0 border-t-2 border-border bg-surface/80" aria-label="Device chain">
@@ -153,7 +221,11 @@ export function DeviceBar() {
         >
           · {track.name}
         </button>
-        <div className="ml-auto flex items-center gap-0.5 rounded-sm border border-border p-0.5" role="group" aria-label="Bottom panel view">
+        <div
+          className="ml-auto flex items-center gap-0.5 rounded-sm border border-border p-0.5"
+          role="group"
+          aria-label="Bottom panel view"
+        >
           <Button
             size="sm"
             variant="secondary"
@@ -170,7 +242,10 @@ export function DeviceBar() {
             className="h-5 gap-1 px-2 font-mono text-[9px] uppercase tracking-wider"
             aria-pressed={false}
             title="Show the mixer under the timeline (F3)"
-            onClick={() => { setWorkspacePrefs({ mixerDock: true }); setPanel("mixer"); }}
+            onClick={() => {
+              setWorkspacePrefs({ mixerDock: true });
+              setPanel("mixer");
+            }}
           >
             <SlidersHorizontal className="size-3" /> Mixer
           </Button>
@@ -191,18 +266,24 @@ export function DeviceBar() {
             data-device-kind={inst.tone}
             className="device-module flex w-[150px] shrink-0 flex-col rounded-md border px-2 py-1.5"
           >
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-auto w-full justify-start gap-1.5 px-0 py-0 text-left hover:bg-transparent"
-            onClick={() => setPanel(inst.panel)}
-            title={`Open the ${inst.label} editor`}
-          >
-            <span className="flex items-center gap-1.5 text-[color:var(--device-accent)]">{inst.icon}</span>
-            <span className="font-mono text-[10px] font-semibold tracking-wide text-foreground">{inst.label}</span>
-          </Button>
-          <div className="mt-auto"><Scope scopeId={`ch:${track.id}`} height={150} compact /></div>
-          <HardwareBypass track={track} />
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto w-full justify-start gap-1.5 px-0 py-0 text-left hover:bg-transparent"
+              onClick={() => setPanel(inst.panel)}
+              title={`Open the ${inst.label} editor`}
+            >
+              <span className="flex items-center gap-1.5 text-[color:var(--device-accent)]">
+                {inst.icon}
+              </span>
+              <span className="font-mono text-[10px] font-semibold tracking-wide text-foreground">
+                {inst.label}
+              </span>
+            </Button>
+            <div className="mt-auto">
+              <Scope scopeId={`ch:${track.id}`} height={150} compact />
+            </div>
+            <HardwareBypass track={track} />
           </div>
           {plugins.map((p) => (
             <EffectModule key={p.id} track={track} plugin={p} />
@@ -214,7 +295,11 @@ export function DeviceBar() {
               className="flex h-full w-[110px] flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted-foreground hover:border-primary/60 hover:text-primary"
               onClick={() => {
                 const r = pickerBtnRef.current?.getBoundingClientRect();
-                if (r) setPickerPos({ left: Math.max(8, Math.min(r.left, window.innerWidth - 232)), bottom: window.innerHeight - r.top + 4 });
+                if (r)
+                  setPickerPos({
+                    left: Math.max(8, Math.min(r.left, window.innerWidth - 232)),
+                    bottom: window.innerHeight - r.top + 4,
+                  });
                 setPickerOpen((o) => !o);
               }}
               aria-expanded={pickerOpen}
@@ -227,25 +312,31 @@ export function DeviceBar() {
                 className="fixed z-50 max-h-64 w-56 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-xl"
                 style={{ left: pickerPos.left, bottom: pickerPos.bottom }}
               >
-                {groupByCategory(addable).map(([category, defs]) => <div key={category} role="group" aria-label={category}>
-                <div className="sticky top-0 bg-popover px-2 py-1 font-mono text-[9px] tracking-widest text-muted-foreground">{category.toUpperCase()}</div>
-                {defs.map((d) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    data-device-kind={d.kind}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-accent"
-                    onClick={() => {
-                      addPlugin(track.id, d);
-                      setPickerOpen(false);
-                    }}
-                  >
-                    <span className="size-2 shrink-0 rounded-full bg-[color:var(--device-accent)]" />
-                    <span className="min-w-0 flex-1 truncate">{effectBrand(d)}</span>
-                    <span className="shrink-0 text-[9px] text-muted-foreground">{d.format === "Built-in" ? d.name : d.format}</span>
-                  </button>
+                {groupByCategory(addable).map(([category, defs]) => (
+                  <div key={category} role="group" aria-label={category}>
+                    <div className="sticky top-0 bg-popover px-2 py-1 font-mono text-[9px] tracking-widest text-muted-foreground">
+                      {category.toUpperCase()}
+                    </div>
+                    {defs.map((d) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        data-device-kind={d.kind}
+                        className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-accent"
+                        onClick={() => {
+                          addPlugin(track.id, d);
+                          setPickerOpen(false);
+                        }}
+                      >
+                        <span className="size-2 shrink-0 rounded-full bg-[color:var(--device-accent)]" />
+                        <span className="min-w-0 flex-1 truncate">{effectBrand(d)}</span>
+                        <span className="shrink-0 text-[9px] text-muted-foreground">
+                          {d.format === "Built-in" ? d.name : d.format}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 ))}
-                </div>)}
               </div>
             )}
           </div>

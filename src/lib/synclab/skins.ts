@@ -72,9 +72,22 @@ export const WALLPANEL_PANELS: { key: SkinKey; label: string }[] = [
 ];
 /** Panels added after the shared picture existed: they only show it once ticked in Appearance,
  *  so an existing "all panels" shared wallpaper never changes how they look by itself. */
-export const OPT_IN_PANELS: SkinKey[] = ["coproducer", "stemgen", "stemsplit", "converter", "voice", "reel", "video", "hum", "bass", "mastering", "reference"];
+export const OPT_IN_PANELS: SkinKey[] = [
+  "coproducer",
+  "stemgen",
+  "stemsplit",
+  "converter",
+  "voice",
+  "reel",
+  "video",
+  "hum",
+  "bass",
+  "mastering",
+  "reference",
+];
 /** Panels a shared picture covers before any tick is changed in Appearance. */
-export const defaultSharedPanels = (): SkinKey[] => WALLPANEL_PANELS.map((p) => p.key).filter((k) => !OPT_IN_PANELS.includes(k));
+export const defaultSharedPanels = (): SkinKey[] =>
+  WALLPANEL_PANELS.map((p) => p.key).filter((k) => !OPT_IN_PANELS.includes(k));
 export type Skins = Partial<Record<SkinKey, Skin>>;
 export type SkinPreset = { id: string; name: string; skins: Skins };
 
@@ -111,7 +124,11 @@ export function setSkin(key: SkinKey, patch: Partial<Skin>) {
 
 export function savePreset(name: string) {
   const list = readPresets();
-  list.push({ id: crypto.randomUUID(), name: name.trim() || `Theme ${list.length + 1}`, skins: readSkins() });
+  list.push({
+    id: crypto.randomUUID(),
+    name: name.trim() || `Theme ${list.length + 1}`,
+    skins: readSkins(),
+  });
   write(PRESET_KEY, list);
 }
 /** Replace every panel skin at once (used when loading a look pack). */
@@ -123,7 +140,10 @@ export function applyPreset(id: string) {
   if (p) write(KEY, p.skins);
 }
 export function deletePreset(id: string) {
-  write(PRESET_KEY, readPresets().filter((x) => x.id !== id));
+  write(
+    PRESET_KEY,
+    readPresets().filter((x) => x.id !== id),
+  );
 }
 
 /**

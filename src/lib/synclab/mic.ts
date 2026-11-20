@@ -35,7 +35,8 @@ function inFrame() {
 /** The preview is embedded; embedded pages only get the mic if the frame allows it. */
 export function micBlockedByFrame(): boolean {
   if (typeof document === "undefined" || !inFrame()) return false;
-  const fp = (document as unknown as { featurePolicy?: { allowsFeature(f: string): boolean } }).featurePolicy;
+  const fp = (document as unknown as { featurePolicy?: { allowsFeature(f: string): boolean } })
+    .featurePolicy;
   if (fp?.allowsFeature) {
     try {
       return !fp.allowsFeature("microphone");
@@ -61,7 +62,9 @@ export function micUnavailableReason(): string | null {
 export function isAppleMobile(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
-  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints ?? 0) > 1);
+  return (
+    /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints ?? 0) > 1)
+  );
 }
 
 /**
@@ -118,7 +121,8 @@ export const INPUT_CHANGED_EVENT = "synclab:input-changed";
 
 export function setPreferredInput(deviceId: string | null) {
   const before = getPreferredInput();
-  if (before !== deviceId && typeof window !== "undefined") queueMicrotask(() => window.dispatchEvent(new CustomEvent(INPUT_CHANGED_EVENT)));
+  if (before !== deviceId && typeof window !== "undefined")
+    queueMicrotask(() => window.dispatchEvent(new CustomEvent(INPUT_CHANGED_EVENT)));
   try {
     if (deviceId) localStorage.setItem(INPUT_KEY, deviceId);
     else localStorage.removeItem(INPUT_KEY);
@@ -134,23 +138,42 @@ const CH_KEY = "synclab.input.channel";
 const GAIN_KEY = "synclab.input.gainDb";
 const OUT_KEY = "synclab.output.device";
 
-const readLs = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
+const readLs = (k: string) => {
+  try {
+    return localStorage.getItem(k);
+  } catch {
+    return null;
+  }
+};
 const writeLs = (k: string, v: string | null) => {
-  try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* blocked */ }
+  try {
+    if (v === null) localStorage.removeItem(k);
+    else localStorage.setItem(k, v);
+  } catch {
+    /* blocked */
+  }
 };
 
 export function getInputChannel(): InputChannel {
   const v = readLs(CH_KEY);
   return v === "in1" || v === "in2" ? v : "stereo";
 }
-export function setInputChannel(c: InputChannel) { writeLs(CH_KEY, c); }
+export function setInputChannel(c: InputChannel) {
+  writeLs(CH_KEY, c);
+}
 export function getInputGainDb(): number {
   const n = Number(readLs(GAIN_KEY));
   return Number.isFinite(n) ? Math.max(-24, Math.min(24, n)) : 0;
 }
-export function setInputGainDb(db: number) { writeLs(GAIN_KEY, String(db)); }
-export function getOutputDevice(): string | null { return readLs(OUT_KEY) || null; }
-export function setOutputDevice(id: string | null) { writeLs(OUT_KEY, id); }
+export function setInputGainDb(db: number) {
+  writeLs(GAIN_KEY, String(db));
+}
+export function getOutputDevice(): string | null {
+  return readLs(OUT_KEY) || null;
+}
+export function setOutputDevice(id: string | null) {
+  writeLs(OUT_KEY, id);
+}
 
 /** List audio inputs and outputs. Names only appear once microphone access is allowed. */
 export async function listAudioDevices(): Promise<AudioDeviceInfo[]> {
@@ -186,16 +209,27 @@ export const INPUT_FALLBACK_EVENT = "synclab:input-fallback";
 function adopt(stream: MediaStream, owner: string) {
   activeStream = stream;
   activeOwner = owner;
-  stream.getAudioTracks()[0]?.addEventListener("ended", () => {
-    if (activeStream === stream) {
-      activeStream = null;
-      activeOwner = null;
-    }
-    window.dispatchEvent(new CustomEvent(INPUT_LOST_EVENT, { detail: { owner, label: stream.getAudioTracks()[0]?.label } }));
-  }, { once: true });
+  stream.getAudioTracks()[0]?.addEventListener(
+    "ended",
+    () => {
+      if (activeStream === stream) {
+        activeStream = null;
+        activeOwner = null;
+      }
+      window.dispatchEvent(
+        new CustomEvent(INPUT_LOST_EVENT, {
+          detail: { owner, label: stream.getAudioTracks()[0]?.label },
+        }),
+      );
+    },
+    { once: true },
+  );
 }
 
-export async function openMic(constraints?: MediaTrackConstraints, owner = "shared"): Promise<MicResult> {
+export async function openMic(
+  constraints?: MediaTrackConstraints,
+  owner = "shared",
+): Promise<MicResult> {
   const blocked = micUnavailableReason();
   if (blocked) return { error: blocked, canOpenTab: inFrame() };
   const base: MediaTrackConstraints = constraints ?? {};
@@ -213,7 +247,10 @@ export async function openMic(constraints?: MediaTrackConstraints, owner = "shar
     });
     if (generation !== requestGeneration) {
       releaseMic(stream);
-      return { error: "Another recording tool took control of the audio input.", canOpenTab: false };
+      return {
+        error: "Another recording tool took control of the audio input.",
+        canOpenTab: false,
+      };
     }
     adopt(stream, owner);
     return { stream };
@@ -227,7 +264,10 @@ export async function openMic(constraints?: MediaTrackConstraints, owner = "shar
         });
         if (generation !== requestGeneration) {
           releaseMic(stream);
-          return { error: "Another recording tool took control of the audio input.", canOpenTab: false };
+          return {
+            error: "Another recording tool took control of the audio input.",
+            canOpenTab: false,
+          };
         }
         adopt(stream, owner);
         // Say so instead of silently recording from a different microphone.
@@ -244,16 +284,20 @@ export async function openMic(constraints?: MediaTrackConstraints, owner = "shar
 
 /** Prefer the recording container supported by the current browser (Safari uses MP4). */
 export function preferredRecordingMime(): string | undefined {
-  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") return undefined;
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function")
+    return undefined;
   // WebM/Opus first: Chrome can record MP4 but often can't decode its own fragmented MP4 back.
   // Safari only records MP4, so it falls through to that.
-  return ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find((type) =>
-    MediaRecorder.isTypeSupported(type),
+  return ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"].find(
+    (type) => MediaRecorder.isTypeSupported(type),
   );
 }
 
 /** Throwing flavour for code paths that already handle failures. */
-export async function openMicOrThrow(constraints?: MediaTrackConstraints, owner?: string): Promise<MediaStream> {
+export async function openMicOrThrow(
+  constraints?: MediaTrackConstraints,
+  owner?: string,
+): Promise<MediaStream> {
   const r = await openMic(constraints, owner);
   if ("stream" in r) return r.stream;
   throw new Error(r.error);

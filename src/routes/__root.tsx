@@ -44,7 +44,10 @@ function ErrorComponent({ error, reset }: import("@tanstack/react-router").Error
   const router = useRouter();
   const message = error instanceof Error ? error.message : String(error ?? "");
   // Old and new app code mixed after an update (page left open across a publish): a fresh load fixes it.
-  const stale = /is not a function|dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk/i.test(message);
+  const stale =
+    /is not a function|dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk/i.test(
+      message,
+    );
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
     if (!stale) return;
@@ -68,12 +71,16 @@ function ErrorComponent({ error, reset }: import("@tanstack/react-router").Error
             : "Something went wrong on our end. You can try refreshing or head back home."}
         </p>
         <p className="mt-3 break-words rounded-md border border-border bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
-          Details: {error instanceof Error ? error.message || error.name : String(error ?? "Unknown error")}
+          Details:{" "}
+          {error instanceof Error ? error.message || error.name : String(error ?? "Unknown error")}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              if (stale) { window.location.reload(); return; }
+              if (stale) {
+                window.location.reload();
+                return;
+              }
               router.invalidate();
               reset();
             }}
@@ -143,7 +150,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  useEffect(() => { installSidewaysModalScroll(); }, []);
+  useEffect(() => {
+    installSidewaysModalScroll();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

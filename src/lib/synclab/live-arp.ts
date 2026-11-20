@@ -10,10 +10,21 @@ import { arpHit, arpSequence as walk } from "./arp-pattern";
 export interface ArpEngine {
   ctx: AudioContext | null;
   tempo: number;
-  playNote(trackId: string, patch: SynthPatch, midi: number, duration: number, velocity?: number, when?: number): void;
+  playNote(
+    trackId: string,
+    patch: SynthPatch,
+    midi: number,
+    duration: number,
+    velocity?: number,
+    when?: number,
+  ): void;
 }
 
-interface Held { vel: number; until: number; order: number }
+interface Held {
+  vel: number;
+  until: number;
+  order: number;
+}
 interface Pool {
   engine: ArpEngine;
   patch: SynthPatch;
@@ -28,7 +39,11 @@ const pools = new Map<string, Pool>();
 let orderSeq = 0;
 
 /** Ordered list of pitches the arp walks through for the currently held notes. */
-export function arpSequence(pitches: number[], arp: SynthPatch["arp"], _playedOrder?: number[]): number[] {
+export function arpSequence(
+  pitches: number[],
+  arp: SynthPatch["arp"],
+  _playedOrder?: number[],
+): number[] {
   return walk(pitches, arp);
 }
 
@@ -49,13 +64,25 @@ function tick(trackId: string) {
   while (pool.next < now + 0.1) {
     const live = [...pool.held.entries()].filter(([, h]) => h.until > pool.next);
     if (live.length === 0) break;
-    const hit = arpHit(arp, live.map(([p]) => p), pool.index);
+    const hit = arpHit(
+      arp,
+      live.map(([p]) => p),
+      pool.index,
+    );
     if (hit) {
       const vel = Math.max(...live.map(([, h]) => h.vel)) * hit.accent;
       const swing = Math.min(1, Math.max(0, arp.swing ?? 0));
       const at = pool.next + (pool.seq % 2 === 1 ? swing * step * 0.5 : 0);
       const gate = Math.max(0.05, arp.gate || 0.5);
-      for (const pitch of hit.pitches) pool.engine.playNote(trackId, pool.patch, pitch, Math.max(0.02, step * (hit.length - 1 + gate)), vel, at);
+      for (const pitch of hit.pitches)
+        pool.engine.playNote(
+          trackId,
+          pool.patch,
+          pitch,
+          Math.max(0.02, step * (hit.length - 1 + gate)),
+          vel,
+          at,
+        );
     }
     pool.index++;
     pool.seq++;
@@ -67,7 +94,14 @@ function tick(trackId: string) {
  * Adds a hand-played note to the channel's arp. Returns false when the patch's ARP is off,
  * so the caller plays the note normally. `hold` is how long the key counts as held.
  */
-export function arpLiveNote(engine: ArpEngine, trackId: string, patch: SynthPatch, pitch: number, hold: number, vel: number): boolean {
+export function arpLiveNote(
+  engine: ArpEngine,
+  trackId: string,
+  patch: SynthPatch,
+  pitch: number,
+  hold: number,
+  vel: number,
+): boolean {
   if (!patch.arp?.on || patch.modular) return false;
   const ctx = engine.ctx;
   if (!ctx) return false;

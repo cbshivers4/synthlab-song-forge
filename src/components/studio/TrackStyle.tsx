@@ -68,13 +68,19 @@ export function hexToOklch(hex: string): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return hex;
   const n = parseInt(m[1]!, 16);
-  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const r = ((n >> 16) & 255) / 255,
+    g = ((n >> 8) & 255) / 255,
+    b = (n & 255) / 255;
   const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-  const R = lin(r), G = lin(g), B = lin(b);
+  const R = lin(r),
+    G = lin(g),
+    B = lin(b);
   const l = 0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B;
   const m2 = 0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B;
   const s = 0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B;
-  const l3 = Math.cbrt(l), m3 = Math.cbrt(m2), s3 = Math.cbrt(s);
+  const l3 = Math.cbrt(l),
+    m3 = Math.cbrt(m2),
+    s3 = Math.cbrt(s);
   const L = 0.2104542553 * l3 + 0.793617785 * m3 - 0.0040720468 * s3;
   const a = 1.9779984951 * l3 - 2.428592205 * m3 + 0.4505937099 * s3;
   const b2 = 0.0259040371 * l3 + 0.7827717662 * m3 - 0.808675766 * s3;
@@ -88,22 +94,34 @@ export function hexToOklch(hex: string): string {
 export function oklchToHex(color: string): string {
   const m = /oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/.exec(color);
   if (!m) return "#22c1c3";
-  const L = parseFloat(m[1]!), C = parseFloat(m[2]!), H = (parseFloat(m[3]!) * Math.PI) / 180;
-  const a = C * Math.cos(H), b2 = C * Math.sin(H);
+  const L = parseFloat(m[1]!),
+    C = parseFloat(m[2]!),
+    H = (parseFloat(m[3]!) * Math.PI) / 180;
+  const a = C * Math.cos(H),
+    b2 = C * Math.sin(H);
   const l3 = L + 0.3963377774 * a + 0.2158037573 * b2;
   const m3 = L - 0.1055613458 * a - 0.0638541728 * b2;
   const s3 = L - 0.0894841775 * a - 1.291485548 * b2;
-  const l = l3 ** 3, mm = m3 ** 3, s = s3 ** 3;
+  const l = l3 ** 3,
+    mm = m3 ** 3,
+    s = s3 ** 3;
   const R = 4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s;
   const G = -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s;
   const B = -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s;
   const gam = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
-  const to = (c: number) => Math.round(Math.min(1, Math.max(0, gam(c))) * 255).toString(16).padStart(2, "0");
+  const to = (c: number) =>
+    Math.round(Math.min(1, Math.max(0, gam(c))) * 255)
+      .toString(16)
+      .padStart(2, "0");
   return `#${to(R)}${to(G)}${to(B)}`;
 }
 
 /** Musical icons a track can be badged with. */
-export const TRACK_ICONS: { id: string; label: string; Icon: ComponentType<{ className?: string | undefined }> }[] = [
+export const TRACK_ICONS: {
+  id: string;
+  label: string;
+  Icon: ComponentType<{ className?: string | undefined }>;
+}[] = [
   { id: "note", label: "Note", Icon: Music2 },
   { id: "notes", label: "Notes", Icon: Music3 },
   { id: "score", label: "Score", Icon: Music4 },
@@ -145,84 +163,113 @@ type IconProps = { className?: string | undefined };
 const svg = (children: React.ReactNode) =>
   function BandIcon({ className }: IconProps) {
     return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-        strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden="true"
+      >
         {children}
       </svg>
     );
   };
 
 /** Trumpet / horn */
-const HornIcon = svg(<>
-  <path d="M3 10h8l7-4v12l-7-4H3z" />
-  <path d="M18 6c2 1.5 3 3.5 3 6s-1 4.5-3 6" />
-  <path d="M7 10v4M10 10v4" />
-</>);
+const HornIcon = svg(
+  <>
+    <path d="M3 10h8l7-4v12l-7-4H3z" />
+    <path d="M18 6c2 1.5 3 3.5 3 6s-1 4.5-3 6" />
+    <path d="M7 10v4M10 10v4" />
+  </>,
+);
 
 /** Saxophone */
-const SaxIcon = svg(<>
-  <path d="M6 3v9a5 5 0 0 0 10 0v-1" />
-  <path d="M16 11h4l-1.5 3H16" />
-  <path d="M6 3c0 1.5 1 2 2 2" />
-  <circle cx="9" cy="13" r="0.6" />
-  <circle cx="11" cy="15" r="0.6" />
-</>);
+const SaxIcon = svg(
+  <>
+    <path d="M6 3v9a5 5 0 0 0 10 0v-1" />
+    <path d="M16 11h4l-1.5 3H16" />
+    <path d="M6 3c0 1.5 1 2 2 2" />
+    <circle cx="9" cy="13" r="0.6" />
+    <circle cx="11" cy="15" r="0.6" />
+  </>,
+);
 
 /** Violin */
-const ViolinIcon = svg(<>
-  <path d="M14 3l7 7" />
-  <path d="M15.5 8.5c2-2 2-2 0 0z" />
-  <path d="M13 9c-2-1.5-5-1-6.5 1C5 12 5.5 13.5 5 14.5 4 16.5 5 19 7.5 19.5c1.5.3 2.5-.5 3-1.5.5-1.5 2-2 3.5-1 2 1 4.5.5 5.5-1.5.7-1.5.3-3.5-1.5-4.5" />
-  <path d="M13 9l5-5" />
-  <circle cx="10" cy="14" r="0.6" />
-</>);
+const ViolinIcon = svg(
+  <>
+    <path d="M14 3l7 7" />
+    <path d="M15.5 8.5c2-2 2-2 0 0z" />
+    <path d="M13 9c-2-1.5-5-1-6.5 1C5 12 5.5 13.5 5 14.5 4 16.5 5 19 7.5 19.5c1.5.3 2.5-.5 3-1.5.5-1.5 2-2 3.5-1 2 1 4.5.5 5.5-1.5.7-1.5.3-3.5-1.5-4.5" />
+    <path d="M13 9l5-5" />
+    <circle cx="10" cy="14" r="0.6" />
+  </>,
+);
 
 /** Bass guitar (4 tuners, longer neck) */
-const BassGuitarIcon = svg(<>
-  <path d="M4 20c-1.5-1.5-1.5-4 0-5.5 1-1 2.5-1.3 3.7-.8L19 2.5 21.5 5l-11.2 11.3c.5 1.2.2 2.7-.8 3.7-1.5 1.5-4 1.5-5.5 0z" />
-  <circle cx="7" cy="17" r="1.6" />
-  <path d="M17 5l2 2M15 3.5l1.5 1.5M20.5 8.5L19 7" />
-</>);
+const BassGuitarIcon = svg(
+  <>
+    <path d="M4 20c-1.5-1.5-1.5-4 0-5.5 1-1 2.5-1.3 3.7-.8L19 2.5 21.5 5l-11.2 11.3c.5 1.2.2 2.7-.8 3.7-1.5 1.5-4 1.5-5.5 0z" />
+    <circle cx="7" cy="17" r="1.6" />
+    <path d="M17 5l2 2M15 3.5l1.5 1.5M20.5 8.5L19 7" />
+  </>,
+);
 
 /** Lead guitar (electric, pointed headstock) */
-const LeadGuitarIcon = svg(<>
-  <path d="M5 19c-2-2-2-5 .5-6.5 1.2-.7 2.7-.6 3.8.1L20 2l2 2-10.6 10.7c.7 1.1.8 2.6.1 3.8C10 21 7 21 5 19z" />
-  <circle cx="8" cy="16" r="1.6" />
-  <path d="M20 2l-3 1 1 2.5" />
-  <path d="M12.5 11.5l2 2" />
-</>);
+const LeadGuitarIcon = svg(
+  <>
+    <path d="M5 19c-2-2-2-5 .5-6.5 1.2-.7 2.7-.6 3.8.1L20 2l2 2-10.6 10.7c.7 1.1.8 2.6.1 3.8C10 21 7 21 5 19z" />
+    <circle cx="8" cy="16" r="1.6" />
+    <path d="M20 2l-3 1 1 2.5" />
+    <path d="M12.5 11.5l2 2" />
+  </>,
+);
 
 /** Drum set (kick + toms + cymbal) */
-const DrumSetIcon = svg(<>
-  <circle cx="12" cy="15" r="5" />
-  <circle cx="12" cy="15" r="1.2" />
-  <path d="M5 8h5M7.5 8v3M15 8h5M17.5 8v3" />
-  <path d="M3 5h8M19 5h-6" />
-  <path d="M7 5L5 15M19 5l2 10" />
-</>);
+const DrumSetIcon = svg(
+  <>
+    <circle cx="12" cy="15" r="5" />
+    <circle cx="12" cy="15" r="1.2" />
+    <path d="M5 8h5M7.5 8v3M15 8h5M17.5 8v3" />
+    <path d="M3 5h8M19 5h-6" />
+    <path d="M7 5L5 15M19 5l2 10" />
+  </>,
+);
 
 /** Congas / hand drums */
-const CongaIcon = svg(<>
-  <path d="M6 4h6l-1 16H7z" />
-  <path d="M14 6h5l-.8 14h-3.4z" />
-  <path d="M6 6h6M14 8h5" />
-</>);
+const CongaIcon = svg(
+  <>
+    <path d="M6 4h6l-1 16H7z" />
+    <path d="M14 6h5l-.8 14h-3.4z" />
+    <path d="M6 6h6M14 8h5" />
+  </>,
+);
 
 /** Tambourine */
-const TambourineIcon = svg(<>
-  <circle cx="12" cy="12" r="8" />
-  <circle cx="12" cy="12" r="4.5" />
-  <circle cx="12" cy="4" r="0.8" /><circle cx="19" cy="9" r="0.8" />
-  <circle cx="16" cy="18" r="0.8" /><circle cx="8" cy="18" r="0.8" /><circle cx="5" cy="9" r="0.8" />
-</>);
+const TambourineIcon = svg(
+  <>
+    <circle cx="12" cy="12" r="8" />
+    <circle cx="12" cy="12" r="4.5" />
+    <circle cx="12" cy="4" r="0.8" />
+    <circle cx="19" cy="9" r="0.8" />
+    <circle cx="16" cy="18" r="0.8" />
+    <circle cx="8" cy="18" r="0.8" />
+    <circle cx="5" cy="9" r="0.8" />
+  </>,
+);
 
 /** Cello / upright strings */
-const CelloIcon = svg(<>
-  <path d="M12 2v4" />
-  <path d="M10 3h4" />
-  <path d="M12 6c-3 0-4 2-3.5 3.5C9 11 8 12 8 14c0 4 2 8 4 8s4-4 4-8c0-2-1-3-.5-4.5C16 8 15 6 12 6z" />
-  <path d="M12 6v16" />
-</>);
+const CelloIcon = svg(
+  <>
+    <path d="M12 2v4" />
+    <path d="M10 3h4" />
+    <path d="M12 6c-3 0-4 2-3.5 3.5C9 11 8 12 8 14c0 4 2 8 4 8s4-4 4-8c0-2-1-3-.5-4.5C16 8 15 6 12 6z" />
+    <path d="M12 6v16" />
+  </>,
+);
 
 TRACK_ICONS.push(
   { id: "horn", label: "Horn / trumpet", Icon: HornIcon },
@@ -297,80 +344,93 @@ export function TrackStylePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      {open && <PopoverContent
-        align={align}
-        className="track-tinted-menu w-[268px] space-y-3 p-3"
-        style={trackMenuStyle(track.color)}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <div className="space-y-1.5">
-          <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Track colour</p>
-          <div className="grid grid-cols-9 gap-1.5">
-            {TRACK_PALETTE.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                title={c.name}
-                aria-label={`${c.name} colour`}
-                onClick={() => updateTrack(track.id, { color: c.value })}
-                className={cn(
-                  "size-6 rounded-full border transition-transform hover:scale-110",
-                  c.value === track.color ? "border-foreground ring-2 ring-foreground/40" : "border-black/40",
-                )}
-                style={{ background: c.value }}
+      {open && (
+        <PopoverContent
+          align={align}
+          className="track-tinted-menu w-[268px] space-y-3 p-3"
+          style={trackMenuStyle(track.color)}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <div className="space-y-1.5">
+            <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+              Track colour
+            </p>
+            <div className="grid grid-cols-9 gap-1.5">
+              {TRACK_PALETTE.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  title={c.name}
+                  aria-label={`${c.name} colour`}
+                  onClick={() => updateTrack(track.id, { color: c.value })}
+                  className={cn(
+                    "size-6 rounded-full border transition-transform hover:scale-110",
+                    c.value === track.color
+                      ? "border-foreground ring-2 ring-foreground/40"
+                      : "border-black/40",
+                  )}
+                  style={{ background: c.value }}
+                />
+              ))}
+            </div>
+            <label className="flex items-center gap-2 rounded-md border border-border px-2 py-1.5">
+              <input
+                type="color"
+                aria-label="Custom track colour"
+                value={oklchToHex(track.color)}
+                onChange={(e) => updateTrack(track.id, { color: hexToOklch(e.target.value) })}
+                className="size-6 cursor-pointer rounded border-0 bg-transparent p-0"
               />
-            ))}
+              <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+                Custom colour — pick any shade
+              </span>
+            </label>
           </div>
-          <label className="flex items-center gap-2 rounded-md border border-border px-2 py-1.5">
-            <input
-              type="color"
-              aria-label="Custom track colour"
-              value={oklchToHex(track.color)}
-              onChange={(e) => updateTrack(track.id, { color: hexToOklch(e.target.value) })}
-              className="size-6 cursor-pointer rounded border-0 bg-transparent p-0"
-            />
-            <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-              Custom colour — pick any shade
-            </span>
-          </label>
-        </div>
-        <div className="space-y-1.5">
-          <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">Track icon</p>
-          <div className="grid max-h-[168px] grid-cols-6 gap-1.5 overflow-y-auto pr-1">
-            {TRACK_ICONS.map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                title={label}
-                aria-label={`${label} icon`}
-                onClick={() => updateTrack(track.id, { icon: id })}
-                className={cn(
-                  "flex size-9 items-center justify-center rounded-md border transition-colors",
-                  track.icon === id ? "border-foreground bg-foreground/10" : "border-border hover:border-primary",
-                )}
-                style={track.icon === id ? { color: track.color } : undefined}
-              >
-                <Icon className="size-4.5" />
-              </button>
-            ))}
+          <div className="space-y-1.5">
+            <p className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+              Track icon
+            </p>
+            <div className="grid max-h-[168px] grid-cols-6 gap-1.5 overflow-y-auto pr-1">
+              {TRACK_ICONS.map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  title={label}
+                  aria-label={`${label} icon`}
+                  onClick={() => updateTrack(track.id, { icon: id })}
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-md border transition-colors",
+                    track.icon === id
+                      ? "border-foreground bg-foreground/10"
+                      : "border-border hover:border-primary",
+                  )}
+                  style={track.icon === id ? { color: track.color } : undefined}
+                >
+                  <Icon className="size-4.5" />
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => updateTrack(track.id, { icon: undefined })}
+              className="w-full rounded-md border border-border py-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:border-primary hover:text-foreground"
+            >
+              Automatic icon
+            </button>
           </div>
           <button
             type="button"
-            onClick={() => updateTrack(track.id, { icon: undefined })}
+            onClick={() => {
+              setOpen(false);
+              setPanel("appearance");
+            }}
             className="w-full rounded-md border border-border py-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:border-primary hover:text-foreground"
           >
-            Automatic icon
+            Menu &amp; logo colours…
           </button>
-        </div>
-        <button
-          type="button"
-          onClick={() => { setOpen(false); setPanel("appearance"); }}
-          className="w-full rounded-md border border-border py-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground hover:border-primary hover:text-foreground"
-        >
-          Menu &amp; logo colours…
-        </button>
-      </PopoverContent>}
+        </PopoverContent>
+      )}
     </Popover>
   );
 }

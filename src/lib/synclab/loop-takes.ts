@@ -13,7 +13,21 @@ export interface LoopPass {
  * recording is never stopped between passes, so no audio is lost at the loop start.
  * `start`/`offset` are where the first pass begins (it may begin mid-loop).
  */
-export function splitLoopPasses({ start, offset, duration, lo, hi, stepDur }: { start: number; offset: number; duration: number; lo: number; hi: number; stepDur: number }): LoopPass[] {
+export function splitLoopPasses({
+  start,
+  offset,
+  duration,
+  lo,
+  hi,
+  stepDur,
+}: {
+  start: number;
+  offset: number;
+  duration: number;
+  lo: number;
+  hi: number;
+  stepDur: number;
+}): LoopPass[] {
   const passSec = Math.max(0.001, (hi - lo) * stepDur);
   const out: LoopPass[] = [];
   const firstLen = Math.max(0, (hi - Math.max(lo, start)) * stepDur);
@@ -32,7 +46,12 @@ export function splitLoopPasses({ start, offset, duration, lo, hi, stepDur }: { 
  * Which pass is shown on the track: the newest, unless it's a short tail you stopped early in,
  * then the last full pass. The others stay as takes to choose from.
  */
-export function shownPassIndex(passes: LoopPass[], lo: number, hi: number, stepDur: number): number {
+export function shownPassIndex(
+  passes: LoopPass[],
+  lo: number,
+  hi: number,
+  stepDur: number,
+): number {
   if (passes.length < 2) return passes.length - 1;
   const passSec = (hi - lo) * stepDur;
   const last = passes[passes.length - 1]!;

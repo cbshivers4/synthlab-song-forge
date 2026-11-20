@@ -7,7 +7,7 @@ const envSchema = z.enum(["sandbox", "live"]);
 
 /** Resolve a human-readable price id to the provider-internal id for checkout. */
 export const resolvePaddlePrice = createServerFn({ method: "GET" })
-  .inputValidator((data) => z.object({ priceId: z.string(), environment: envSchema }).parse(data))
+  .validator((data) => z.object({ priceId: z.string(), environment: envSchema }).parse(data))
   .handler(async ({ data }) => {
     return resolveInternalPriceId(data.environment as PaddleEnv, data.priceId);
   });
@@ -18,7 +18,7 @@ export const resolvePaddlePrice = createServerFn({ method: "GET" })
  */
 export const changePlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ priceId: z.string(), environment: envSchema }).parse(data))
+  .validator((data) => z.object({ priceId: z.string(), environment: envSchema }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as unknown as { supabase: any; userId: string };
     const { data: sub } = await supabase
@@ -52,7 +52,7 @@ export const changePlan = createServerFn({ method: "POST" })
 /** Create a customer-portal session so the user can cancel or update billing. */
 export const createPortalLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ environment: envSchema }).parse(data))
+  .validator((data) => z.object({ environment: envSchema }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as unknown as { supabase: any; userId: string };
     const { data: sub } = await supabase

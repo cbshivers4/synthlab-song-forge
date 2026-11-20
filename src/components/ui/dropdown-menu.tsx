@@ -18,14 +18,20 @@ type GuardProps = {
  * Stops the finger that opened a menu from also choosing the item that appears under it
  * when it lifts (phone menus open on touch-down). Choices must start with a press inside.
  */
-export function useGhostTapGuard<T extends HTMLDivElement>(forwarded: React.ForwardedRef<T>, props: GuardProps) {
+export function useGhostTapGuard<T extends HTMLDivElement>(
+  forwarded: React.ForwardedRef<T>,
+  props: GuardProps,
+) {
   const state = React.useRef({ downInside: false, blockUntil: 0 });
-  const ref = React.useCallback((node: T | null) => {
-    // The menu panel mounts fresh each time it opens: start with no press inside.
-    if (node) state.current = { downInside: false, blockUntil: 0 };
-    if (typeof forwarded === "function") forwarded(node);
-    else if (forwarded) forwarded.current = node;
-  }, [forwarded]);
+  const ref = React.useCallback(
+    (node: T | null) => {
+      // The menu panel mounts fresh each time it opens: start with no press inside.
+      if (node) state.current = { downInside: false, blockUntil: 0 };
+      if (typeof forwarded === "function") forwarded(node);
+      else if (forwarded) forwarded.current = node;
+    },
+    [forwarded],
+  );
   const handlers = {
     onPointerDownCapture: (e: React.PointerEvent<HTMLDivElement>) => {
       state.current.downInside = true;
@@ -41,13 +47,15 @@ export function useGhostTapGuard<T extends HTMLDivElement>(forwarded: React.Forw
     },
     onClickCapture: (e: React.MouseEvent<HTMLDivElement>) => {
       const native = e.nativeEvent as MouseEvent & { pointerType?: string };
-      if (shouldBlockMenuClick({
-        downInside: state.current.downInside,
-        detail: native.detail,
-        pointerType: native.pointerType ?? "",
-        now: performance.now(),
-        blockUntil: state.current.blockUntil,
-      })) {
+      if (
+        shouldBlockMenuClick({
+          downInside: state.current.downInside,
+          detail: native.detail,
+          pointerType: native.pointerType ?? "",
+          now: performance.now(),
+          blockUntil: state.current.blockUntil,
+        })
+      ) {
         e.preventDefault();
         e.stopPropagation();
         return;
@@ -95,18 +103,22 @@ const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
 >(({ className, ...props }, forwardedRef) => {
-  const placed = useSidewaysPopper(forwardedRef, { side: "right", align: "start", sideOffset: props.sideOffset ?? 0 });
+  const placed = useSidewaysPopper(forwardedRef, {
+    side: "right",
+    align: "start",
+    sideOffset: props.sideOffset ?? 0,
+  });
   const { ref, handlers } = useGhostTapGuard(placed, props);
   return (
-  <DropdownMenuPrimitive.SubContent
-    ref={ref}
-    className={cn(
-      "app-menu z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
-      className,
-    )}
-    {...props}
-    {...handlers}
-  />
+    <DropdownMenuPrimitive.SubContent
+      ref={ref}
+      className={cn(
+        "app-menu z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
+        className,
+      )}
+      {...props}
+      {...handlers}
+    />
   );
 });
 DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName;
@@ -115,22 +127,26 @@ const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
 >(({ className, sideOffset = 4, ...props }, forwardedRef) => {
-  const placed = useSidewaysPopper(forwardedRef, { side: props.side, align: props.align, sideOffset });
+  const placed = useSidewaysPopper(forwardedRef, {
+    side: props.side,
+    align: props.align,
+    sideOffset,
+  });
   const { ref, handlers } = useGhostTapGuard(placed, props);
   return (
-  <DropdownMenuPrimitive.Portal>
-    <DropdownMenuPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(
-        "app-menu z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
-        className,
-      )}
-      {...props}
-      {...handlers}
-    />
-  </DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        className={cn(
+          "app-menu z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
+          className,
+        )}
+        {...props}
+        {...handlers}
+      />
+    </DropdownMenuPrimitive.Portal>
   );
 });
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;

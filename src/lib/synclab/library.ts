@@ -34,18 +34,23 @@ function openDb(): Promise<IDBDatabase> {
     const req = indexedDB.open(DB, 1);
     req.onupgradeneeded = () => req.result.createObjectStore(STORE, { keyPath: "id" });
     req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error ?? new Error("This browser can't store files on this computer."));
+    req.onerror = () =>
+      reject(req.error ?? new Error("This browser can't store files on this computer."));
   });
 }
 
-async function tx<T>(mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+async function tx<T>(
+  mode: IDBTransactionMode,
+  run: (s: IDBObjectStore) => IDBRequest<T>,
+): Promise<T> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     // Resolve only once the transaction has committed, so "saved" really means stored.
     const transaction = db.transaction(STORE, mode);
     const req = run(transaction.objectStore(STORE));
     transaction.oncomplete = () => resolve(req.result);
-    transaction.onabort = () => reject(transaction.error ?? req.error ?? new Error("Saving on this computer was cancelled."));
+    transaction.onabort = () =>
+      reject(transaction.error ?? req.error ?? new Error("Saving on this computer was cancelled."));
     transaction.onerror = () => reject(transaction.error ?? req.error);
   });
 }
@@ -65,7 +70,10 @@ export async function listLibrary(location: LibraryLocation): Promise<LibraryIte
     const all = await tx<LibraryItem[]>("readonly", (s) => s.getAll() as IDBRequest<LibraryItem[]>);
     return all.sort((a, b) => b.createdAt - a.createdAt);
   }
-  const { data, error } = await supabase.from("library_items").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase
+    .from("library_items")
+    .select("*")
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((r) => ({
     id: r.id,
@@ -79,11 +87,27 @@ export async function listLibrary(location: LibraryLocation): Promise<LibraryIte
   }));
 }
 
-export async function saveToLibrary(input: { kind: LibraryKind; folder: string; name: string; data: unknown; audio?: Blob | null; location: LibraryLocation }) {
+export async function saveToLibrary(input: {
+  kind: LibraryKind;
+  folder: string;
+  name: string;
+  data: unknown;
+  audio?: Blob | null;
+  location: LibraryLocation;
+}) {
   const folder = input.folder.trim() || "Unsorted";
   const name = input.name.trim() || "Untitled";
   if (input.location === "device") {
-    const item: LibraryItem = { id: crypto.randomUUID(), kind: input.kind, folder, name, data: input.data, audio: input.audio ?? null, location: "device", createdAt: Date.now() };
+    const item: LibraryItem = {
+      id: crypto.randomUUID(),
+      kind: input.kind,
+      folder,
+      name,
+      data: input.data,
+      audio: input.audio ?? null,
+      location: "device",
+      createdAt: Date.now(),
+    };
     await tx("readwrite", (s) => s.put(item));
     emit();
     return;
@@ -92,10 +116,19 @@ export async function saveToLibrary(input: { kind: LibraryKind; folder: string; 
   let audioPath: string | null = null;
   if (input.audio) {
     audioPath = `${uid}/library/${Date.now()}-${safe(name)}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(audioPath, input.audio, { contentType: input.audio.type || "audio/wav" });
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(audioPath, input.audio, { contentType: input.audio.type || "audio/wav" });
     if (error) throw error;
   }
-  const { error } = await supabase.from("library_items").insert({ user_id: uid, kind: input.kind, folder, name, data: (input.data ?? {}) as Json, audio_path: audioPath });
+  const { error } = await supabase.from("library_items").insert({
+    user_id: uid,
+    kind: input.kind,
+    folder,
+    name,
+    data: (input.data ?? {}) as Json,
+    audio_path: audioPath,
+  });
   if (error) {
     if (audioPath) await supabase.storage.from(BUCKET).remove([audioPath]);
     throw error;
@@ -126,8 +159,18 @@ export async function libraryAudio(item: LibraryItem): Promise<Blob | null> {
 /** Downloads the item as a real file to the computer's Downloads folder. */
 export async function downloadLibraryItem(item: LibraryItem) {
   const audio = item.kind === "sample" ? await libraryAudio(item) : null;
-  const blob = audio ?? new Blob([JSON.stringify({ synclab: item.kind, name: item.name, data: item.data }, null, 2)], { type: "application/json" });
-  const ext = audio ? (audio.type.includes("wav") ? "wav" : audio.type.includes("mpeg") ? "mp3" : "webm") : "synclab.json";
+  const blob =
+    audio ??
+    new Blob([JSON.stringify({ synclab: item.kind, name: item.name, data: item.data }, null, 2)], {
+      type: "application/json",
+    });
+  const ext = audio
+    ? audio.type.includes("wav")
+      ? "wav"
+      : audio.type.includes("mpeg")
+        ? "mp3"
+        : "webm"
+    : "synclab.json";
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   const metadata = item.data as { filename?: string; mimeType?: string } | null;
@@ -142,4 +185,9 @@ export async function blobFromUrl(url: string) {
   return r.blob();
 }
 
-export const KIND_LABEL: Record<LibraryKind, string> = { sample: "Samples", synth: "Synth sounds", drum: "Drum kits", notes: "Notes (MIDI)" };
+export const KIND_LABEL: Record<LibraryKind, string> = {
+  sample: "Samples",
+  synth: "Synth sounds",
+  drum: "Drum kits",
+  notes: "Notes (MIDI)",
+};

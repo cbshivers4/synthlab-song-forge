@@ -68,9 +68,20 @@ export function applyArpDesign(p: SynthPatch, d: ArpDesign) {
   const [rate, direction, octaves, gate, swing, rhythmId, notesId] = d;
   const rhythm = ARP_RHYTHMS.find((r) => r.id === rhythmId)?.steps ?? "";
   const notes = ARP_NOTE_PATTERNS.find((n) => n.id === notesId)?.notes ?? [];
-  p.arp = { on: true, rate, direction, octaves, gate, sync: true, ...(swing ? { swing } : {}), ...(rhythm ? { rhythm } : {}), ...(notes.length ? { notes: [...notes] } : {}) };
+  p.arp = {
+    on: true,
+    rate,
+    direction,
+    octaves,
+    gate,
+    sync: true,
+    ...(swing ? { swing } : {}),
+    ...(rhythm ? { rhythm } : {}),
+    ...(notes.length ? { notes: [...notes] } : {}),
+  };
   // chord hits stack voices: keep each one a bit lower so stabs don't overload the channel
-  if (direction === "chord") p.oscillators = p.oscillators.map((o) => ({ ...o, level: o.level * 0.7 }));
+  if (direction === "chord")
+    p.oscillators = p.oscillators.map((o) => ({ ...o, level: o.level * 0.7 }));
 }
 
 /* ---------------- pianos ---------------- */
@@ -100,7 +111,7 @@ export const PIANO_DESIGNS: Record<string, PianoDesign & { poly?: boolean; fresh
   "Rhodes Soul": { model: "tine", pan: [3.5, 0.4], reverb: 0.25 },
   "Crystal EP": { model: "tine", chorus: 0.4, delay: 0.18, reverb: 0.3 },
   "Wurli Warm": { model: "reed", cutoff: 5000, trem: [5.5, 0.12], reverb: 0.2 },
-  "Wurly": { model: "reed", trem: [6, 0.18], reverb: 0.15 },
+  Wurly: { model: "reed", trem: [6, 0.18], reverb: 0.15 },
   "Toy Piano": { model: "toy", reverb: 0.3 },
   "Poly Synth Stage Piano": { model: "bright", chorus: 0.1, reverb: 0.2, poly: true },
   "Poly Synth Analog EP": { model: "tine", chorus: 0.25, reverb: 0.25, poly: true },
@@ -119,11 +130,24 @@ export const PIANO_DESIGNS: Record<string, PianoDesign & { poly?: boolean; fresh
   "Reed EP Bark": { model: "reed", trem: [5, 0.08], reverb: 0.12, fresh: true },
   "Music Box Toy Piano": { model: "toy", reverb: 0.45, delay: 0.15, fresh: true },
   // new Poly Synth pianos
-  "Poly Synth Concert Grand": { model: "grand", release: 0.4, reverb: 0.3, poly: true, fresh: true },
+  "Poly Synth Concert Grand": {
+    model: "grand",
+    release: 0.4,
+    reverb: 0.3,
+    poly: true,
+    fresh: true,
+  },
   "Poly Synth Felt Piano": { model: "felt", cutoff: 5000, reverb: 0.4, poly: true, fresh: true },
   "Poly Synth Upright Piano": { model: "upright", reverb: 0.22, poly: true, fresh: true },
   "Poly Synth Honky-Tonk Piano": { model: "honky", reverb: 0.18, poly: true, fresh: true },
-  "Poly Synth Suitcase EP": { model: "tine", pan: [4.2, 0.5], chorus: 0.15, reverb: 0.22, poly: true, fresh: true },
+  "Poly Synth Suitcase EP": {
+    model: "tine",
+    pan: [4.2, 0.5],
+    chorus: 0.15,
+    reverb: 0.22,
+    poly: true,
+    fresh: true,
+  },
   "Poly Synth Reed EP": { model: "reed", trem: [5.8, 0.14], reverb: 0.18, poly: true, fresh: true },
 };
 
@@ -140,15 +164,45 @@ export function applyPiano(p: SynthPatch, c: PianoDesign) {
   p.filterEnv = { attack: 0.001, decay: 0.3, sustain: 1, release: 0.3, amount: 0 };
   p.amp = { attack: 0.001, decay: 1, sustain: 1, release: c.release ?? 0.32 };
   p.lfos = p.lfos.map((l, i) =>
-    i === 0 && c.pan ? { ...l, on: true, destination: "pan", rate: c.pan[0], wave: "sine", amount: c.pan[1], sync: false }
-      : i === 1 && c.trem ? { ...l, on: true, destination: "volume", rate: c.trem[0], wave: "sine", amount: c.trem[1], sync: false }
-      : { ...l, on: false });
+    i === 0 && c.pan
+      ? {
+          ...l,
+          on: true,
+          destination: "pan",
+          rate: c.pan[0],
+          wave: "sine",
+          amount: c.pan[1],
+          sync: false,
+        }
+      : i === 1 && c.trem
+        ? {
+            ...l,
+            on: true,
+            destination: "volume",
+            rate: c.trem[0],
+            wave: "sine",
+            amount: c.trem[1],
+            sync: false,
+          }
+        : { ...l, on: false },
+  );
   p.unison = { voices: 1, detune: 0, width: 0 };
   p.glide = 0;
   p.voiceMode = "poly";
   p.analog = 0.05;
   p.velocitySens = 0.7;
-  p.fx = { ...p.fx, distortion: 0, saturation: 0, chorus: c.chorus ?? 0, flanger: 0, phaser: 0, delay: c.delay ?? 0, delayFeedback: 0.3, reverb: c.reverb ?? 0.18, bitcrush: c.crush ?? 0 };
+  p.fx = {
+    ...p.fx,
+    distortion: 0,
+    saturation: 0,
+    chorus: c.chorus ?? 0,
+    flanger: 0,
+    phaser: 0,
+    delay: c.delay ?? 0,
+    delayFeedback: 0.3,
+    reverb: c.reverb ?? 0.18,
+    bitcrush: c.crush ?? 0,
+  };
   p.arp = { ...p.arp, on: false };
   p.clean = true;
 }

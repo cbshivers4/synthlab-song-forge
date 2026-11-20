@@ -20,12 +20,29 @@ export interface DeckFrame {
   phones: boolean;
   rpm: 33 | 45;
 }
-export interface MixFrame { t: number; A: DeckFrame; B: DeckFrame; crossfader: number; master: number }
+export interface MixFrame {
+  t: number;
+  A: DeckFrame;
+  B: DeckFrame;
+  crossfader: number;
+  master: number;
+}
 
 const sameDeck = (a: DeckFrame, b: DeckFrame) =>
-  a.load === b.load && a.name === b.name && a.playing === b.playing && a.pitch === b.pitch && a.gain === b.gain &&
-  a.eq.high === b.eq.high && a.eq.mid === b.eq.mid && a.eq.low === b.eq.low && a.filter === b.filter && a.fader === b.fader &&
-  a.phones === b.phones && a.rpm === b.rpm && (a.loop?.beats ?? 0) === (b.loop?.beats ?? 0) && (a.loop?.start ?? 0) === (b.loop?.start ?? 0);
+  a.load === b.load &&
+  a.name === b.name &&
+  a.playing === b.playing &&
+  a.pitch === b.pitch &&
+  a.gain === b.gain &&
+  a.eq.high === b.eq.high &&
+  a.eq.mid === b.eq.mid &&
+  a.eq.low === b.eq.low &&
+  a.filter === b.filter &&
+  a.fader === b.fader &&
+  a.phones === b.phones &&
+  a.rpm === b.rpm &&
+  (a.loop?.beats ?? 0) === (b.loop?.beats ?? 0) &&
+  (a.loop?.start ?? 0) === (b.loop?.start ?? 0);
 
 /** Positions within this of the expected spot are smooth playing, not a jump (seek/scratch). */
 const JUMP = 0.08;
@@ -37,28 +54,52 @@ const JUMP = 0.08;
 export function pushFrame(frames: MixFrame[], f: MixFrame): MixFrame[] {
   const last = frames[frames.length - 1];
   if (last && f.t < last.t) return frames;
-  if (last && !f.A.playing && !f.B.playing && !last.A.playing && !last.B.playing && sameDeck(last.A, f.A) && sameDeck(last.B, f.B)
-    && last.A.pos === f.A.pos && last.B.pos === f.B.pos && last.crossfader === f.crossfader && last.master === f.master) return frames;
+  if (
+    last &&
+    !f.A.playing &&
+    !f.B.playing &&
+    !last.A.playing &&
+    !last.B.playing &&
+    sameDeck(last.A, f.A) &&
+    sameDeck(last.B, f.B) &&
+    last.A.pos === f.A.pos &&
+    last.B.pos === f.B.pos &&
+    last.crossfader === f.crossfader &&
+    last.master === f.master
+  )
+    return frames;
   frames.push(f);
   return frames;
 }
 
 /** Index of the last frame at or before t (−1 before the first). */
 export function frameIndexAt(frames: MixFrame[], t: number): number {
-  let lo = 0, hi = frames.length - 1, ans = -1;
+  let lo = 0,
+    hi = frames.length - 1,
+    ans = -1;
   while (lo <= hi) {
     const m = (lo + hi) >> 1;
-    if (frames[m]!.t <= t) { ans = m; lo = m + 1; } else hi = m - 1;
+    if (frames[m]!.t <= t) {
+      ans = m;
+      lo = m + 1;
+    } else hi = m - 1;
   }
   return ans;
 }
 
-function deckAt(a: DeckFrame, b: DeckFrame | undefined, f: number, dt: number, rate: number): DeckFrame {
+function deckAt(
+  a: DeckFrame,
+  b: DeckFrame | undefined,
+  f: number,
+  dt: number,
+  rate: number,
+): DeckFrame {
   if (!a.playing) return a;
   if (b && b.load === a.load && b.playing) {
     // smooth playing between the two snapshots: glide; a jump (cue, scratch, seek) holds until the next one
     const expected = a.pos + dt * rate;
-    if (Math.abs(b.pos - expected) < JUMP + dt * 0.05) return { ...a, pos: a.pos + (b.pos - a.pos) * f };
+    if (Math.abs(b.pos - expected) < JUMP + dt * 0.05)
+      return { ...a, pos: a.pos + (b.pos - a.pos) * f };
     return a;
   }
   return { ...a, pos: a.pos + dt * f * rate };
@@ -86,6 +127,9 @@ export function frameAt(frames: MixFrame[], t: number): MixFrame | null {
 /** Load numbers that appear in the recording — their records/waveforms must be kept for replay. */
 export function loadsUsed(frames: MixFrame[]): Set<number> {
   const out = new Set<number>();
-  for (const f of frames) { out.add(f.A.load); out.add(f.B.load); }
+  for (const f of frames) {
+    out.add(f.A.load);
+    out.add(f.B.load);
+  }
   return out;
 }

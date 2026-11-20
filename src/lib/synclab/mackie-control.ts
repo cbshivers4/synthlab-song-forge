@@ -18,9 +18,16 @@ export type SurfaceAction =
 export const PAN_STEP = 0.03;
 
 const BUTTON_NOTES: Record<number, RemoteButton> = {
-  46: "bank-prev", 47: "bank-next", // BANK ◀ / ▶
-  48: "bank-prev", 49: "bank-next", // CHANNEL ◀ / ▶ (the Korg's TRACK buttons send these in some modes)
-  86: "loop", 91: "rewind", 92: "forward", 93: "stop", 94: "play", 95: "record",
+  46: "bank-prev",
+  47: "bank-next", // BANK ◀ / ▶
+  48: "bank-prev",
+  49: "bank-next", // CHANNEL ◀ / ▶ (the Korg's TRACK buttons send these in some modes)
+  86: "loop",
+  91: "rewind",
+  92: "forward",
+  93: "stop",
+  94: "play",
+  95: "record",
 };
 
 /** True for messages only a Mackie-mode surface sends (fader pitch bend or button notes). */
@@ -81,14 +88,22 @@ export function jogTicks(value: number, last: number | undefined): number {
 }
 
 /** Where the playhead lands after a jog: whole beats, inside the song. */
-export function joggedStep(step: number, ticks: number, beatSteps: number, songSteps: number): number {
+export function joggedStep(
+  step: number,
+  ticks: number,
+  beatSteps: number,
+  songSteps: number,
+): number {
   const beat = Math.max(1, beatSteps);
   const next = (Math.round(step / beat) + ticks) * beat;
   return Math.max(0, Math.min(Math.max(0, songSteps - 1), next));
 }
 
 /** Korg STOP: the first press stops where you are; pressing it again while stopped goes back to the start. */
-export function stopPress(t: { playing: boolean; recording: boolean }): "end-take" | "stop-here" | "to-start" {
+export function stopPress(t: {
+  playing: boolean;
+  recording: boolean;
+}): "end-take" | "stop-here" | "to-start" {
   if (t.recording) return "end-take";
   return t.playing ? "stop-here" : "to-start";
 }

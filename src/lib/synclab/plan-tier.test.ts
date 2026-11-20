@@ -45,3 +45,13 @@ describe("SYNCLAB plan", () => {
     expect(planTier("CBShivers@gmail.com", null, false, now).tier).toBe("founder");
   });
 });
+
+describe("founder email list", () => {
+  it("recognises both founder logins in any letter case and nobody else", async () => {
+    const { isFounderEmail } = await import("./plan-tier");
+    expect(isFounderEmail("CBShivers@gmail.com")).toBe(true);
+    expect(isFounderEmail("christophershivers@synclabsapp.com")).toBe(true);
+    expect(isFounderEmail("someone@gmail.com")).toBe(false);
+    expect(isFounderEmail(null)).toBe(false);
+  });
+});

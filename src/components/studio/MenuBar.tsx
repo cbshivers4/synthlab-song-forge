@@ -80,20 +80,37 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
   const [qwertyOn, setQwertyOn] = useState(false);
   useEffect(() => {
     const sync = () => setQwertyOn(qwertyEnabled());
-    sync(); window.addEventListener("synclab:qwerty", sync);
+    sync();
+    window.addEventListener("synclab:qwerty", sync);
     return () => window.removeEventListener("synclab:qwerty", sync);
   }, []);
   const nextEvent = (dir: 1 | -1) => {
-    const pts = [...new Set(tracks.flatMap((t) => [...(t.clips ?? []).map((c) => Math.floor(c.start ?? 0)), ...(t.notes ?? []).map((n) => Math.floor(n.step))]))].sort((a, b) => a - b);
-    const p = dir > 0 ? pts.find((x) => x > getPlayStep()) : [...pts].reverse().find((x) => x < getPlayStep());
-    if (p != null) setTransport({ step: p }); else toast("No more clips or notes that way");
+    const pts = [
+      ...new Set(
+        tracks.flatMap((t) => [
+          ...(t.clips ?? []).map((c) => Math.floor(c.start ?? 0)),
+          ...(t.notes ?? []).map((n) => Math.floor(n.step)),
+        ]),
+      ),
+    ].sort((a, b) => a - b);
+    const p =
+      dir > 0
+        ? pts.find((x) => x > getPlayStep())
+        : [...pts].reverse().find((x) => x < getPlayStep());
+    if (p != null) setTransport({ step: p });
+    else toast("No more clips or notes that way");
   };
   const spb = stepsPerBar();
-  const go = (step: number) => setTransport({ step: Math.max(0, Math.min(step, transport.bars * spb - 1)) });
+  const go = (step: number) =>
+    setTransport({ step: Math.max(0, Math.min(step, transport.bars * spb - 1)) });
   const marks = [...sections].sort((a, b) => a.start - b.start);
   const nextMark = (dir: 1 | -1) => {
-    const m = dir > 0 ? marks.find((x) => x.start > getPlayStep()) : [...marks].reverse().find((x) => x.start < getPlayStep());
-    if (m) go(m.start); else toast(dir > 0 ? "No marker after the playhead" : "No marker before the playhead");
+    const m =
+      dir > 0
+        ? marks.find((x) => x.start > getPlayStep())
+        : [...marks].reverse().find((x) => x.start < getPlayStep());
+    if (m) go(m.start);
+    else toast(dir > 0 ? "No marker after the playhead" : "No marker before the playhead");
   };
   const gotoBar = () => {
     const v = window.prompt("Go to bar", String(Math.floor(getPlayStep() / spb) + 1));
@@ -118,7 +135,10 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
       });
     } catch (error) {
       toast.error("Could not read that MIDI file", {
-        description: error instanceof Error ? error.message : "Try exporting it again as a standard MIDI file.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Try exporting it again as a standard MIDI file.",
       });
     }
   };
@@ -217,7 +237,9 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
 
   const needTrack = (fn: (id: string) => void) => () => {
     if (!selected) {
-      toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
+      toast("Select a track first", {
+        description: "Click a track name in the timeline, then try again.",
+      });
       return;
     }
     fn(selected.id);
@@ -226,12 +248,16 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
   /** Runs a clip action on the selected track's active clip. */
   const needClip = (fn: (trackId: string, clipId: string) => void) => () => {
     if (!selected) {
-      toast("Select a track first", { description: "Click a track name in the timeline, then try again." });
+      toast("Select a track first", {
+        description: "Click a track name in the timeline, then try again.",
+      });
       return;
     }
     const clipId = selected.activeClipId ?? selected.clips?.[0]?.id;
     if (!clipId) {
-      toast("No clip on this track", { description: "Click a clip in the timeline first, then try again." });
+      toast("No clip on this track", {
+        description: "Click a clip in the timeline first, then try again.",
+      });
       return;
     }
     fn(selected.id, clipId);
@@ -249,7 +275,9 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
     "edit:undo": undo,
     "edit:redo": redo,
     "edit:cut": needTrack((id) => (selectedIds.length > 1 ? cutTracks(selectedIds) : cutTrack(id))),
-    "edit:copy": needTrack((id) => (selectedIds.length > 1 ? copyTracks(selectedIds) : copyTrack(id))),
+    "edit:copy": needTrack((id) =>
+      selectedIds.length > 1 ? copyTracks(selectedIds) : copyTrack(id),
+    ),
     "edit:paste": pasteTrack,
     "edit:duplicate": needTrack((id) => duplicateTrack(id)),
     "edit:delete": needTrack((id) => removeTrack(id)),
@@ -278,7 +306,10 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
     "panel:stems": () => setPanel("stems"),
     "panel:voice": () => setPanel("voice"),
     "help:center": () => openHelp("help"),
-    "help:shortcuts": () => { openShortcutSettings(); setPanel("settings"); },
+    "help:shortcuts": () => {
+      openShortcutSettings();
+      setPanel("settings");
+    },
     "help:problem": () => openHelp("problem"),
     "help:about": () => openHelp("about"),
     "app:check-updates": () =>
@@ -289,10 +320,17 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
       }),
   });
 
-
-  const trig = phone ? "phone-menubar-trigger min-h-10 shrink-0 touch-manipulation font-semibold" : "text-xs";
+  const trig = phone
+    ? "phone-menubar-trigger min-h-10 shrink-0 touch-manipulation font-semibold"
+    : "text-xs";
   return (
-    <div className={phone ? "phone-menubar flex h-11 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b border-border bg-surface px-0.5 [scrollbar-width:none]" : "flex min-h-11 items-center gap-2 overflow-x-auto border-b border-border bg-surface/70 px-2 [scrollbar-width:none]"}>
+    <div
+      className={
+        phone
+          ? "phone-menubar flex h-11 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b border-border bg-surface px-0.5 [scrollbar-width:none]"
+          : "flex min-h-11 items-center gap-2 overflow-x-auto border-b border-border bg-surface/70 px-2 [scrollbar-width:none]"
+      }
+    >
       <input
         ref={importRef}
         type="file"
@@ -319,9 +357,13 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
           e.target.value = "";
         }}
       />
-      <Menubar className={`h-10 min-w-max border-0 bg-transparent p-0 [&_[role=menuitem]]:min-h-11 [&_[role=menuitem]]:touch-manipulation ${phone ? "space-x-0" : ""}`}>
+      <Menubar
+        className={`h-10 min-w-max border-0 bg-transparent p-0 [&_[role=menuitem]]:min-h-11 [&_[role=menuitem]]:touch-manipulation ${phone ? "space-x-0" : ""}`}
+      >
         <MenubarMenu>
-          <MenubarTrigger className={phone ? trig : "min-h-10 touch-manipulation px-3 text-xs"}>File</MenubarTrigger>
+          <MenubarTrigger className={phone ? trig : "min-h-10 touch-manipulation px-3 text-xs"}>
+            File
+          </MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setStage("start")}>New Project</MenubarItem>
             <MenubarItem onClick={() => setStage("start")}>Open Project</MenubarItem>
@@ -330,12 +372,8 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
             <MenubarItem onClick={() => void save()}>
               Save <MenubarShortcut>⌘S</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={openSaveAs}>
-              Save As…
-            </MenubarItem>
-            <MenubarItem onClick={openSaveTemplate}>
-              Save Template…
-            </MenubarItem>
+            <MenubarItem onClick={openSaveAs}>Save As…</MenubarItem>
+            <MenubarItem onClick={openSaveTemplate}>Save Template…</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={() => importRef.current?.click()}>Import Audio…</MenubarItem>
             <MenubarItem onClick={() => midiRef.current?.click()}>Import MIDI…</MenubarItem>
@@ -358,14 +396,24 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
               Redo <MenubarShortcut>⇧⌘Z</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={needTrack((id) => (selectedIds.length > 1 ? cutTracks(selectedIds) : cutTrack(id)))}>
+            <MenubarItem
+              onClick={needTrack((id) =>
+                selectedIds.length > 1 ? cutTracks(selectedIds) : cutTrack(id),
+              )}
+            >
               Cut <MenubarShortcut>⌘X</MenubarShortcut>
             </MenubarItem>
-            <MenubarItem onClick={needTrack((id) => (selectedIds.length > 1 ? copyTracks(selectedIds) : copyTrack(id)))}>
-              {selectedIds.length > 1 ? `Copy ${selectedIds.length} Tracks` : "Copy Track"} <MenubarShortcut>⌘C</MenubarShortcut>
+            <MenubarItem
+              onClick={needTrack((id) =>
+                selectedIds.length > 1 ? copyTracks(selectedIds) : copyTrack(id),
+              )}
+            >
+              {selectedIds.length > 1 ? `Copy ${selectedIds.length} Tracks` : "Copy Track"}{" "}
+              <MenubarShortcut>⌘C</MenubarShortcut>
             </MenubarItem>
             <MenubarItem onClick={() => pasteTrack()}>
-              Paste{clipboardName ? ` “${clipboardName}”` : ""} <MenubarShortcut>⌘V</MenubarShortcut>
+              Paste{clipboardName ? ` “${clipboardName}”` : ""}{" "}
+              <MenubarShortcut>⌘V</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={needTrack((id) => duplicateTrack(id))}>
@@ -417,10 +465,18 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
           <MenubarTrigger className={trig}>Track</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => addTrack("audio", "AUDIO")}>Add Audio Track</MenubarItem>
-            <MenubarItem onClick={() => addTrack("instrument", "INSTRUMENT", "Cybotron Lead")}>Add Instrument</MenubarItem>
-            <MenubarItem onClick={() => addTrack("midi", "MIDI", "Deep Keys")}>Add MIDI Track</MenubarItem>
-            <MenubarItem onClick={() => addTrack("drum", "DRUM MACHINE")}>Add Drum Machine</MenubarItem>
-            <MenubarItem onClick={() => addTrack("sampler", "SAMPLER", "Metro Pluck")}>Add Sampler</MenubarItem>
+            <MenubarItem onClick={() => addTrack("instrument", "INSTRUMENT", "Cybotron Lead")}>
+              Add Instrument
+            </MenubarItem>
+            <MenubarItem onClick={() => addTrack("midi", "MIDI", "Deep Keys")}>
+              Add MIDI Track
+            </MenubarItem>
+            <MenubarItem onClick={() => addTrack("drum", "DRUM MACHINE")}>
+              Add Drum Machine
+            </MenubarItem>
+            <MenubarItem onClick={() => addTrack("sampler", "SAMPLER", "Metro Pluck")}>
+              Add Sampler
+            </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -434,8 +490,12 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
               Select All <MenubarShortcut>⌘A</MenubarShortcut>
             </MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={needClip((t, c) => updateClip(t, c, { fadeIn: 0.25 }))}>Fade In</MenubarItem>
-            <MenubarItem onClick={needClip((t, c) => updateClip(t, c, { fadeOut: 0.25 }))}>Fade Out</MenubarItem>
+            <MenubarItem onClick={needClip((t, c) => updateClip(t, c, { fadeIn: 0.25 }))}>
+              Fade In
+            </MenubarItem>
+            <MenubarItem onClick={needClip((t, c) => updateClip(t, c, { fadeOut: 0.25 }))}>
+              Fade Out
+            </MenubarItem>
             <MenubarItem onClick={needClip((t, c) => previewClip(t, c))}>Preview Clip</MenubarItem>
             <MenubarSeparator />
             <MenubarItem onClick={needClip((t, c) => removeClip(t, c))}>Delete Clip</MenubarItem>
@@ -449,8 +509,12 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
             <MenubarItem onClick={stop}>Stop</MenubarItem>
             <MenubarItem onClick={toggleRecord}>Record</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => setTransport({ metronome: !transport.metronome })}>Metronome</MenubarItem>
-            <MenubarItem onClick={() => setTransport({ countIn: !transport.countIn })}>Count-in</MenubarItem>
+            <MenubarItem onClick={() => setTransport({ metronome: !transport.metronome })}>
+              Metronome
+            </MenubarItem>
+            <MenubarItem onClick={() => setTransport({ countIn: !transport.countIn })}>
+              Count-in
+            </MenubarItem>
             <MenubarItem onClick={() => setPanel("settings")}>Audio Settings</MenubarItem>
             <MenubarItem onClick={() => setPanel("audio-converter")}>Audio Converter</MenubarItem>
           </MenubarContent>
@@ -459,31 +523,73 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
         <MenubarMenu>
           <MenubarTrigger className={trig}>Transport</MenubarTrigger>
           <MenubarContent className="max-h-[80vh] overflow-y-auto">
-            <MenubarItem onClick={togglePlay}>{transport.playing ? "Pause" : "Start"} <MenubarShortcut>Space</MenubarShortcut></MenubarItem>
+            <MenubarItem onClick={togglePlay}>
+              {transport.playing ? "Pause" : "Start"} <MenubarShortcut>Space</MenubarShortcut>
+            </MenubarItem>
             <MenubarItem onClick={stop}>Stop</MenubarItem>
-            <MenubarItem onClick={() => go(0)}>Return to Zero <MenubarShortcut>Home</MenubarShortcut></MenubarItem>
+            <MenubarItem onClick={() => go(0)}>
+              Return to Zero <MenubarShortcut>Home</MenubarShortcut>
+            </MenubarItem>
             <MenubarItem onClick={gotoBar}>Go to Bar…</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => setTransport({ loop: !transport.loop })}>{transport.loop ? "✓ " : ""}Loop Active <MenubarShortcut>L</MenubarShortcut></MenubarItem>
-            <MenubarItem disabled={transport.loopStart == null} onClick={() => go(transport.loopStart ?? 0)}>Go to Loop Start</MenubarItem>
-            <MenubarItem disabled={transport.loopEnd == null} onClick={() => go(transport.loopEnd ?? 0)}>Go to Loop End</MenubarItem>
-            <MenubarItem onClick={() => { const s = Math.floor(getPlayStep() / spb) * spb; setTransport({ loopStart: s, loopEnd: s + spb * 4, loop: true }); }}>Loop 4 Bars from Playhead</MenubarItem>
+            <MenubarItem onClick={() => setTransport({ loop: !transport.loop })}>
+              {transport.loop ? "✓ " : ""}Loop Active <MenubarShortcut>L</MenubarShortcut>
+            </MenubarItem>
+            <MenubarItem
+              disabled={transport.loopStart == null}
+              onClick={() => go(transport.loopStart ?? 0)}
+            >
+              Go to Loop Start
+            </MenubarItem>
+            <MenubarItem
+              disabled={transport.loopEnd == null}
+              onClick={() => go(transport.loopEnd ?? 0)}
+            >
+              Go to Loop End
+            </MenubarItem>
+            <MenubarItem
+              onClick={() => {
+                const s = Math.floor(getPlayStep() / spb) * spb;
+                setTransport({ loopStart: s, loopEnd: s + spb * 4, loop: true });
+              }}
+            >
+              Loop 4 Bars from Playhead
+            </MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => { addSection(undefined, Math.floor(getPlayStep() / spb) * spb, spb * 4); toast("Marker added at the playhead"); }}>Insert Marker</MenubarItem>
-            <MenubarItem disabled={!marks.length} onClick={() => nextMark(1)}>Go to Next Marker</MenubarItem>
-            <MenubarItem disabled={!marks.length} onClick={() => nextMark(-1)}>Go to Previous Marker</MenubarItem>
+            <MenubarItem
+              onClick={() => {
+                addSection(undefined, Math.floor(getPlayStep() / spb) * spb, spb * 4);
+                toast("Marker added at the playhead");
+              }}
+            >
+              Insert Marker
+            </MenubarItem>
+            <MenubarItem disabled={!marks.length} onClick={() => nextMark(1)}>
+              Go to Next Marker
+            </MenubarItem>
+            <MenubarItem disabled={!marks.length} onClick={() => nextMark(-1)}>
+              Go to Previous Marker
+            </MenubarItem>
             <MenubarItem onClick={() => nextEvent(1)}>Go to Next Event</MenubarItem>
             <MenubarItem onClick={() => nextEvent(-1)}>Go to Previous Event</MenubarItem>
             {marks.length > 0 && <MenubarSeparator />}
             {marks.map((m) => (
               <MenubarItem key={m.id} onClick={() => go(m.start)}>
-                <span className="mr-2 inline-block size-2 rounded-full" style={{ background: m.color }} />{m.name}
+                <span
+                  className="mr-2 inline-block size-2 rounded-full"
+                  style={{ background: m.color }}
+                />
+                {m.name}
                 <MenubarShortcut>bar {Math.floor(m.start / spb) + 1}</MenubarShortcut>
               </MenubarItem>
             ))}
             <MenubarSeparator />
-            <MenubarItem onClick={() => setTransport({ metronome: !transport.metronome })}>{transport.metronome ? "✓ " : ""}Metronome</MenubarItem>
-            <MenubarItem onClick={() => setTransport({ countIn: !transport.countIn })}>{transport.countIn ? "✓ " : ""}Count-in</MenubarItem>
+            <MenubarItem onClick={() => setTransport({ metronome: !transport.metronome })}>
+              {transport.metronome ? "✓ " : ""}Metronome
+            </MenubarItem>
+            <MenubarItem onClick={() => setTransport({ countIn: !transport.countIn })}>
+              {transport.countIn ? "✓ " : ""}Count-in
+            </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -494,13 +600,19 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
             <MenubarItem onClick={() => setPanel("keys")}>Virtual Keyboard</MenubarItem>
             <MenubarItem onClick={() => setPanel("settings")}>MIDI Devices</MenubarItem>
             <MenubarSeparator />
-            <MenubarItem onClick={() => {
-              const on = !qwertyEnabled();
-              setQwertyEnabled(on);
-              toast(on ? "Computer keyboard plays notes" : "Computer keyboard notes off", {
-                description: on ? "Arm or select a synth or sampler track. A W S E D F T G Y H U J K play notes; Z / X change octave; Space plays and stops." : "Space still plays and stops the song.",
-              });
-            }}>Computer Keyboard as Controller{qwertyOn ? " ✓" : ""}</MenubarItem>
+            <MenubarItem
+              onClick={() => {
+                const on = !qwertyEnabled();
+                setQwertyEnabled(on);
+                toast(on ? "Computer keyboard plays notes" : "Computer keyboard notes off", {
+                  description: on
+                    ? "Arm or select a synth or sampler track. A W S E D F T G Y H U J K play notes; Z / X change octave; Space plays and stops."
+                    : "Space still plays and stops the song.",
+                });
+              }}
+            >
+              Computer Keyboard as Controller{qwertyOn ? " ✓" : ""}
+            </MenubarItem>
           </MenubarContent>
         </MenubarMenu>
 
@@ -521,7 +633,14 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
           <MenubarTrigger className={trig}>Settings</MenubarTrigger>
           <MenubarContent>
             <MenubarItem onClick={() => setPanel("settings")}>Preferences</MenubarItem>
-            <MenubarItem onClick={() => { requestBluetoothSettings(); setPanel("settings"); }}>Bluetooth devices</MenubarItem>
+            <MenubarItem
+              onClick={() => {
+                requestBluetoothSettings();
+                setPanel("settings");
+              }}
+            >
+              Bluetooth devices
+            </MenubarItem>
             <MenubarItem onClick={() => setPanel("appearance")}>Appearance & Themes</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
@@ -529,7 +648,9 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
         <MenubarMenu>
           <MenubarTrigger className={trig}>Window</MenubarTrigger>
           <MenubarContent>
-            <MenubarItem onClick={() => setPanel("mixer")}>{phone ? "Mixer" : "Mixer (pop out from its header)"}</MenubarItem>
+            <MenubarItem onClick={() => setPanel("mixer")}>
+              {phone ? "Mixer" : "Mixer (pop out from its header)"}
+            </MenubarItem>
             <MenubarItem onClick={() => setPanel(null)}>Close Editor</MenubarItem>
           </MenubarContent>
         </MenubarMenu>
@@ -543,7 +664,10 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
             <MenubarItem onClick={() => openHelp("about")}>About SYNCLAB</MenubarItem>
             <MenubarSeparator />
             <MenubarItem
-              onClick={() => { openShortcutSettings(); setPanel("settings"); }}
+              onClick={() => {
+                openShortcutSettings();
+                setPanel("settings");
+              }}
             >
               Keyboard Shortcuts
             </MenubarItem>
@@ -561,31 +685,43 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
           </MenubarContent>
         </MenubarMenu>
       </Menubar>
-      {!phone && <>
-      <button
-        type="button"
-        onClick={() => setPanel("live")}
-        className="ml-2 h-8 shrink-0 rounded-[3px] border border-primary/60 px-3 font-mono text-[10px] font-semibold tracking-widest text-primary uppercase hover:bg-primary hover:text-primary-foreground"
-      >
-        ● Live
-      </button>
+      {!phone && (
+        <>
+          <button
+            type="button"
+            onClick={() => setPanel("live")}
+            className="ml-2 h-8 shrink-0 rounded-[3px] border border-primary/60 px-3 font-mono text-[10px] font-semibold tracking-widest text-primary uppercase hover:bg-primary hover:text-primary-foreground"
+          >
+            ● Live
+          </button>
 
-      <h1 className="mx-auto min-w-0 truncate px-3 text-sm font-semibold tracking-wide" title="Song title">
-        {project?.name ?? "Untitled song"}
-        {project && !project.id && <span className="ml-2 font-mono text-[9px] tracking-widest text-muted-foreground uppercase">not saved yet</span>}
-      </h1>
-      <span className="hidden min-w-0 shrink-0 truncate pl-2 pr-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase xl:inline">
-        {project ? `${project.key} · ${project.timeSig}` : ""} · {mode} mode
-      </span>
-      <div className="ml-2 shrink-0"><DeviceClock /></div>
-      </>}
+          <h1
+            className="mx-auto min-w-0 truncate px-3 text-sm font-semibold tracking-wide"
+            title="Song title"
+          >
+            {project?.name ?? "Untitled song"}
+            {project && !project.id && (
+              <span className="ml-2 font-mono text-[9px] tracking-widest text-muted-foreground uppercase">
+                not saved yet
+              </span>
+            )}
+          </h1>
+          <span className="hidden min-w-0 shrink-0 truncate pl-2 pr-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase xl:inline">
+            {project ? `${project.key} · ${project.timeSig}` : ""} · {mode} mode
+          </span>
+          <div className="ml-2 shrink-0">
+            <DeviceClock />
+          </div>
+        </>
+      )}
 
       <Dialog open={saveAsOpen} onOpenChange={setSaveAsOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Save As</DialogTitle>
             <DialogDescription>
-              Name this copy of the project. It saves as a new project and keeps the original untouched.
+              Name this copy of the project. It saves as a new project and keeps the original
+              untouched.
             </DialogDescription>
           </DialogHeader>
           <Input
@@ -600,7 +736,9 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
             }}
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setSaveAsOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={() => void confirmSaveAs()}>Save</Button>
           </DialogFooter>
         </DialogContent>
@@ -609,7 +747,9 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Save as Template</DialogTitle>
-            <DialogDescription>Give this template a name. A template with the same name is replaced.</DialogDescription>
+            <DialogDescription>
+              Give this template a name. A template with the same name is replaced.
+            </DialogDescription>
           </DialogHeader>
           <Input
             value={tplName}
@@ -623,7 +763,9 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
             }}
           />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setTplOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setTplOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={confirmSaveTemplate}>Save template</Button>
           </DialogFooter>
         </DialogContent>

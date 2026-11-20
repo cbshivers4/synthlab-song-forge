@@ -23,7 +23,15 @@ function GenericInterface({ active }: { active: boolean }) {
     <svg viewBox="0 0 224 120" aria-hidden className="h-full w-full">
       {/* body */}
       <rect x="22" y="22" width="180" height="76" rx="8" className={body} strokeWidth="1.5" />
-      <rect x="30" y="30" width="164" height="60" rx="5" className="fill-background/40 stroke-border" strokeWidth="1" />
+      <rect
+        x="30"
+        y="30"
+        width="164"
+        height="60"
+        rx="5"
+        className="fill-background/40 stroke-border"
+        strokeWidth="1"
+      />
       {/* XLR combo input */}
       <circle cx="58" cy="60" r="13" className={metal} strokeWidth="1.5" />
       <circle cx="58" cy="60" r="6" className="fill-background stroke-border" strokeWidth="1" />
@@ -31,14 +39,38 @@ function GenericInterface({ active }: { active: boolean }) {
       <circle cx="63" cy="64" r="2" className="fill-foreground/40" />
       {/* gain knob */}
       <circle cx="106" cy="60" r="15" className={metal} strokeWidth="1.5" />
-      <circle cx="106" cy="60" r="10" className="fill-background/50 stroke-border" strokeWidth="1" />
-      <line x1="106" y1="46" x2="106" y2="54" className={cn("stroke-foreground", active ? "opacity-80" : "opacity-40")} strokeWidth="2" strokeLinecap="round" />
+      <circle
+        cx="106"
+        cy="60"
+        r="10"
+        className="fill-background/50 stroke-border"
+        strokeWidth="1"
+      />
+      <line
+        x1="106"
+        y1="46"
+        x2="106"
+        y2="54"
+        className={cn("stroke-foreground", active ? "opacity-80" : "opacity-40")}
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
       {/* headphone jack */}
       <circle cx="146" cy="60" r="8" className={metal} strokeWidth="1.5" />
       <circle cx="146" cy="60" r="4" className="fill-background stroke-border" strokeWidth="1" />
       {/* monitor knob + power LED */}
-      <circle cx="174" cy="54" r="7" className={cn("fill-[oklch(0.72_0.17_60)]", active ? "opacity-90" : "opacity-40")} />
-      <circle cx="174" cy="72" r="2.5" className={cn("fill-primary", active ? "animate-pulse" : "opacity-30")} />
+      <circle
+        cx="174"
+        cy="54"
+        r="7"
+        className={cn("fill-[oklch(0.72_0.17_60)]", active ? "opacity-90" : "opacity-40")}
+      />
+      <circle
+        cx="174"
+        cy="72"
+        r="2.5"
+        className={cn("fill-primary", active ? "animate-pulse" : "opacity-30")}
+      />
     </svg>
   );
 }
@@ -46,7 +78,9 @@ function GenericInterface({ active }: { active: boolean }) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <div className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="font-mono text-[8px] uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
       <div className="truncate font-mono text-[11px] text-foreground">{value}</div>
     </div>
   );
@@ -58,7 +92,15 @@ function Stat({ label, value }: { label: string; value: string }) {
  * picture shows when the label matches, otherwise a generic front panel is
  * drawn with the real name.
  */
-export function AudioInterfaceCard({ inputs, outputs, inputDevice, interfaceName, channel, sampleRate, scanning }: Props) {
+export function AudioInterfaceCard({
+  inputs,
+  outputs,
+  inputDevice,
+  interfaceName,
+  channel,
+  sampleRate,
+  scanning,
+}: Props) {
   const apple = useIsAppleMobile();
   const current = inputs.find((d) => d.label === inputDevice) ?? null;
   const label = interfaceName;
@@ -68,14 +110,23 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, interfaceName
     <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface sm:flex-row">
       <div className="relative h-36 w-full shrink-0 overflow-hidden bg-background sm:h-44 sm:w-60">
         {isVolt ? (
-          <img src={voltFace} alt="Audio interface" loading="lazy" width={1024} height={768} className="h-full w-full object-cover" />
+          <img
+            src={voltFace}
+            alt="Audio interface"
+            loading="lazy"
+            width={1024}
+            height={768}
+            className="h-full w-full object-cover"
+          />
         ) : (
           <GenericInterface active={active} />
         )}
         <span
           className={cn(
             "absolute left-2 top-2 rounded-sm border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest",
-            active ? "border-primary/60 bg-primary/15 text-primary" : "border-border bg-surface text-muted-foreground"
+            active
+              ? "border-primary/60 bg-primary/15 text-primary"
+              : "border-border bg-surface text-muted-foreground",
           )}
         >
           {isVolt ? "Volt · 1 in / 2 out" : "Interface connected"}
@@ -101,8 +152,14 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, interfaceName
               which inflated the counts — show the real hardware instead. */}
           <Stat label="Inputs" value={isVolt ? "1 (mic / line)" : String(inputs.length)} />
           <Stat label="Outputs" value={isVolt ? "2 (line out)" : String(outputs.length)} />
-          <Stat label="Record ch" value={channel === "in1" ? "1 (mono)" : channel === "in2" ? "2 (mono)" : "1+2 stereo"} />
-          <Stat label="Sample rate" value={sampleRate > 0 ? `${sampleRate} Hz` : "Not started yet"} />
+          <Stat
+            label="Record ch"
+            value={channel === "in1" ? "1 (mono)" : channel === "in2" ? "2 (mono)" : "1+2 stereo"}
+          />
+          <Stat
+            label="Sample rate"
+            value={sampleRate > 0 ? `${sampleRate} Hz` : "Not started yet"}
+          />
         </div>
         <div className="truncate text-[10px] text-muted-foreground">
           {scanning
@@ -112,7 +169,8 @@ export function AudioInterfaceCard({ inputs, outputs, inputDevice, interfaceName
         {/* iPad/iPhone route audio per app in Control Centre, so the picker above cannot move sound there. */}
         {apple && (
           <div className="text-[10px] text-muted-foreground">
-            On iPad, iPadOS routes audio itself: open Control Centre, tap the audio card, and pick this interface for SYNCLAB.
+            On iPad, iPadOS routes audio itself: open Control Centre, tap the audio card, and pick
+            this interface for SYNCLAB.
           </div>
         )}
       </div>

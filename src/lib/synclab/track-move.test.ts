@@ -41,8 +41,36 @@ describe("moveTrackToNewIn", () => {
       clips: [{ id: "c1", name: "take", peaks: [1], duration: 2, url: "blob:x" }],
       notes: [{ id: "n1", step: 0, length: 1, pitch: 60, velocity: 1 }],
       printedAudio: true,
-      pads: [{ id: "p1", name: "KICK", kind: "kick", volume: 1, pan: 0, pitch: 0, decay: 1, muted: false, solo: false, steps: [1, 0] }],
-      patch: { name: "Acid", oscillators: [], noise: 0, filterType: "lowpass", cutoff: 1000, resonance: 0, drive: 0, amp: { attack: 0, decay: 1, sustain: 1, release: 0 }, filterEnv: { attack: 0, decay: 1, sustain: 1, release: 0, amount: 1 }, lfos: [], unison: { voices: 1, detune: 0, width: 0 }, glide: 0, fx: { distortion: 0, chorus: 0, delay: 0, delayFeedback: 0, reverb: 0, bitcrush: 0 }, arp: { on: false, rate: 1, direction: "up", octaves: 1, gate: 1 } },
+      pads: [
+        {
+          id: "p1",
+          name: "KICK",
+          kind: "kick",
+          volume: 1,
+          pan: 0,
+          pitch: 0,
+          decay: 1,
+          muted: false,
+          solo: false,
+          steps: [1, 0],
+        },
+      ],
+      patch: {
+        name: "Acid",
+        oscillators: [],
+        noise: 0,
+        filterType: "lowpass",
+        cutoff: 1000,
+        resonance: 0,
+        drive: 0,
+        amp: { attack: 0, decay: 1, sustain: 1, release: 0 },
+        filterEnv: { attack: 0, decay: 1, sustain: 1, release: 0, amount: 1 },
+        lfos: [],
+        unison: { voices: 1, detune: 0, width: 0 },
+        glide: 0,
+        fx: { distortion: 0, chorus: 0, delay: 0, delayFeedback: 0, reverb: 0, bitcrush: 0 },
+        arp: { on: false, rate: 1, direction: "up", octaves: 1, gate: 1 },
+      },
     });
     const { tracks, movedId } = moveTrackToNewIn([src, track("other")], "kick");
     expect(movedId).toBeTruthy();
@@ -75,36 +103,66 @@ describe("moveTrackToNewIn", () => {
   });
 });
 
-describe('moveClipToNewIn', () => {
-  it('moves only the dragged recording to a new channel and retains other takes', () => {
-    const clip = { id: 'take', name: 'Synth take', peaks: [0.5], duration: 2, start: 32, url: 'blob:take' };
-    const other = { ...clip, id: 'other', start: 64 };
-    const src = track('synth', { clips: [clip, other], folderId: 'collapsed', printedAudio: true,
-      notes: [{ id: 'under', pitch: 60, step: 0, length: 2, velocity: 1 }, { id: 'later', pitch: 64, step: 64, length: 2, velocity: 1 }] });
-    const result = moveClipToNewIn([src, track('bass')], 'synth', 'take', 0, 0.125);
+describe("moveClipToNewIn", () => {
+  it("moves only the dragged recording to a new channel and retains other takes", () => {
+    const clip = {
+      id: "take",
+      name: "Synth take",
+      peaks: [0.5],
+      duration: 2,
+      start: 32,
+      url: "blob:take",
+    };
+    const other = { ...clip, id: "other", start: 64 };
+    const src = track("synth", {
+      clips: [clip, other],
+      folderId: "collapsed",
+      printedAudio: true,
+      notes: [
+        { id: "under", pitch: 60, step: 0, length: 2, velocity: 1 },
+        { id: "later", pitch: 64, step: 64, length: 2, velocity: 1 },
+      ],
+    });
+    const result = moveClipToNewIn([src, track("bass")], "synth", "take", 0, 0.125);
     expect(result.tracks).toHaveLength(3);
     expect(result.tracks[2]?.clips).toEqual([clip]);
-    expect(result.tracks[2]?.kind).toBe('audio');
+    expect(result.tracks[2]?.kind).toBe("audio");
     expect(result.tracks[2]?.folderId).toBeUndefined();
     expect(result.tracks[0]?.clips).toEqual([other]);
-    expect(result.tracks[0]?.notes?.map(note => note.id)).toEqual(['later']);
-    expect(result.tracks[1]?.id).toBe('bass');
+    expect(result.tracks[0]?.notes?.map((note) => note.id)).toEqual(["later"]);
+    expect(result.tracks[1]?.id).toBe("bass");
   });
-  it('leaves no notes or repeated drum hits beneath a moved recording', () => {
-    const src = track('drums', { kind: 'drum', printedAudio: true,
-      clips: [{ id: 'take', name: 'Beat', peaks: [1], duration: 4, url: 'blob:beat' }],
-      notes: [{ id: 'n', pitch: 36, step: 0, length: 1, velocity: 1 }],
-      pads: [{ id: 'p', name: 'Kick', kind: 'kick', volume: 1, pan: 0, pitch: 0, decay: 1, muted: false, solo: false, steps: [1, 0, 1, 0] }] });
-    const result = moveClipToNewIn([src], 'drums', 'take', 0, 0.125);
+  it("leaves no notes or repeated drum hits beneath a moved recording", () => {
+    const src = track("drums", {
+      kind: "drum",
+      printedAudio: true,
+      clips: [{ id: "take", name: "Beat", peaks: [1], duration: 4, url: "blob:beat" }],
+      notes: [{ id: "n", pitch: 36, step: 0, length: 1, velocity: 1 }],
+      pads: [
+        {
+          id: "p",
+          name: "Kick",
+          kind: "kick",
+          volume: 1,
+          pan: 0,
+          pitch: 0,
+          decay: 1,
+          muted: false,
+          solo: false,
+          steps: [1, 0, 1, 0],
+        },
+      ],
+    });
+    const result = moveClipToNewIn([src], "drums", "take", 0, 0.125);
     expect(result.tracks[0]?.clips).toEqual([]);
     expect(result.tracks[0]?.notes).toEqual([]);
     expect(result.tracks[0]?.pads?.[0]?.steps).toEqual([0, 0, 0, 0]);
     expect(result.tracks[0]?.printedAudio).toBe(false);
     expect(result.tracks[1]?.clips?.[0]?.duration).toBe(4);
   });
-  it('does not create a channel when the recording is missing', () => {
-    const tracks = [track('a')];
-    expect(moveClipToNewIn(tracks, 'a', 'missing', 0, 0.125)).toEqual({ tracks, movedId: null });
+  it("does not create a channel when the recording is missing", () => {
+    const tracks = [track("a")];
+    expect(moveClipToNewIn(tracks, "a", "missing", 0, 0.125)).toEqual({ tracks, movedId: null });
   });
 });
 
@@ -123,17 +181,40 @@ describe("moving one block to another track", () => {
   });
   it("lands the block at the new bar when dragged sideways as well", async () => {
     const { movePartBetweenTracks } = await import("./track-move");
-    const tracks = [track("a", { steps: 64, notes: [note("x", 0)], cuts: [16] }), track("b", { steps: 64, notes: [] })];
+    const tracks = [
+      track("a", { steps: 64, notes: [note("x", 0)], cuts: [16] }),
+      track("b", { steps: 64, notes: [] }),
+    ];
     const r = movePartBetweenTracks(tracks, "a", "b", 0, 16, 32, 64)!;
     expect(r.tracks[1]!.notes!.map((n) => n.step)).toEqual([32]);
     expect(r.tracks[0]!.notes).toEqual([]);
   });
   it("moves a beat part onto the matching drums of another drum track", async () => {
     const { movePartBetweenTracks } = await import("./track-move");
-    const pad = (id: string, kind: "kick" | "snare", steps: number[]) => ({ id, name: kind, kind, volume: 1, pan: 0, pitch: 0, decay: 1, muted: false, solo: false, steps });
+    const pad = (id: string, kind: "kick" | "snare", steps: number[]) => ({
+      id,
+      name: kind,
+      kind,
+      volume: 1,
+      pan: 0,
+      pitch: 0,
+      decay: 1,
+      muted: false,
+      solo: false,
+      steps,
+    });
     const tracks = [
-      track("d1", { kind: "drum", steps: 16, pads: [pad("k1", "kick", [1, 0, 0, 0]), pad("s1", "snare", [0, 0, 1, 0])], cuts: [16] }),
-      track("d2", { kind: "drum", steps: 16, pads: [pad("s2", "snare", [0, 0, 0, 0]), pad("k2", "kick", [0, 0, 0, 0])] }),
+      track("d1", {
+        kind: "drum",
+        steps: 16,
+        pads: [pad("k1", "kick", [1, 0, 0, 0]), pad("s1", "snare", [0, 0, 1, 0])],
+        cuts: [16],
+      }),
+      track("d2", {
+        kind: "drum",
+        steps: 16,
+        pads: [pad("s2", "snare", [0, 0, 0, 0]), pad("k2", "kick", [0, 0, 0, 0])],
+      }),
     ];
     const r = movePartBetweenTracks(tracks, "d1", "d2", 16, 32, 16, 64)!;
     const [src, dest] = r.tracks;
@@ -145,7 +226,11 @@ describe("moving one block to another track", () => {
   });
   it("never moves a note block onto a drum track", async () => {
     const { movePartBetweenTracks, neighbourPartTarget } = await import("./track-move");
-    const tracks = [track("a", { notes: [note("x", 0)] }), track("d", { kind: "drum", pads: [] }), track("c", { notes: [] })];
+    const tracks = [
+      track("a", { notes: [note("x", 0)] }),
+      track("d", { kind: "drum", pads: [] }),
+      track("c", { notes: [] }),
+    ];
     expect(movePartBetweenTracks(tracks, "a", "d", 0, 16, 0, 64)).toBeNull();
     expect(neighbourPartTarget(tracks, "a", 1)?.id).toBe("c");
     expect(neighbourPartTarget(tracks, "a", -1)).toBeNull();

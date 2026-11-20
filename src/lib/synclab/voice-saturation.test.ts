@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { defaultPatch } from "./presets";
-import { voiceDriveAmount, voiceSaturate, voiceSaturationCurve, VOICE_SHAPER_IN } from "./voice-saturation";
+import {
+  voiceDriveAmount,
+  voiceSaturate,
+  voiceSaturationCurve,
+  VOICE_SHAPER_IN,
+} from "./voice-saturation";
 
 /** How much louder quiet parts come out than loud ones (1 = untouched dynamics). */
-const squash = (amount: number) => (voiceSaturate(0.1, amount) / 0.1) / (voiceSaturate(1, amount) / 1);
+const squash = (amount: number) =>
+  voiceSaturate(0.1, amount) / 0.1 / (voiceSaturate(1, amount) / 1);
 
 describe("synth voice warmth", () => {
   it("leaves the default patch's dynamics nearly untouched so presets keep their own character", () => {
@@ -22,7 +28,9 @@ describe("synth voice warmth", () => {
   });
   it("keeps clean voices clean until a grit knob is used", () => {
     const p = defaultPatch();
-    p.clean = true; p.drive = 0; p.fx.distortion = 0;
+    p.clean = true;
+    p.drive = 0;
+    p.fx.distortion = 0;
     expect(squash(voiceDriveAmount(p))).toBeCloseTo(1, 5);
   });
 });

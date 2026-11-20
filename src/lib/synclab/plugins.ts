@@ -3,7 +3,14 @@ import { uid } from "./presets";
 import { CREATIVE_DEVICES, CREATIVE_KINDS, CREATIVE_PARAMS } from "./creative-fx";
 import { deviceExtras } from "./device-params";
 
-const p = (id: string, name: string, value: number, min: number, max: number, unit?: string): PluginParam => ({
+const p = (
+  id: string,
+  name: string,
+  value: number,
+  min: number,
+  max: number,
+  unit?: string,
+): PluginParam => ({
   id,
   name,
   value,
@@ -31,17 +38,19 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
       [0, 2, 5000, 0, 1],
       [0, 4, 9000, 0, 0.7], // high shelf
       [1, 5, 19000, 0, 0.7], // high cut, off
-    ].flatMap((b, i) => {
-      const n = i + 1;
-      const [on, type, freq, gain, q] = b as [number, number, number, number, number];
-      return [
-        p(`b${n}on`, `Band ${n} On`, on, 0, 1),
-        p(`b${n}type`, `Band ${n} Type`, type, 0, 5),
-        p(`b${n}freq`, `Band ${n} Freq`, freq, 20, 20000, "Hz"),
-        p(`b${n}gain`, `Band ${n} Gain`, gain, -30, 30, "dB"),
-        p(`b${n}q`, `Band ${n} Q`, q, 0.1, 18, "Q"),
-      ];
-    }).concat([p("output", "Output", 0, -24, 24, "dB")]),
+    ]
+      .flatMap((b, i) => {
+        const n = i + 1;
+        const [on, type, freq, gain, q] = b as [number, number, number, number, number];
+        return [
+          p(`b${n}on`, `Band ${n} On`, on, 0, 1),
+          p(`b${n}type`, `Band ${n} Type`, type, 0, 5),
+          p(`b${n}freq`, `Band ${n} Freq`, freq, 20, 20000, "Hz"),
+          p(`b${n}gain`, `Band ${n} Gain`, gain, -30, 30, "dB"),
+          p(`b${n}q`, `Band ${n} Q`, q, 0.1, 18, "Q"),
+        ];
+      })
+      .concat([p("output", "Output", 0, -24, 24, "dB")]),
   filter: () => [
     p("cutoff", "Cutoff", 2600, 60, 18000, "Hz"),
     p("resonance", "Resonance", 3, 0.1, 20, "Q"),
@@ -76,8 +85,16 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("lowcut", "Low Cut", 40, 20, 2000, "Hz"),
     p("output", "Output", 0, -18, 6, "dB"),
   ],
-  gain: () => [p("gain", "Gain", 0, -24, 12, "dB"), p("pan", "Pan", 0, -1, 1, ""), p("phase", "Phase Invert", 0, 0, 1, "")],
-  width: () => [p("width", "Width", 1, 0, 2, ""), p("output", "Output", 0, -12, 6, "dB"), p("pan", "Pan", 0, -1, 1, "")],
+  gain: () => [
+    p("gain", "Gain", 0, -24, 12, "dB"),
+    p("pan", "Pan", 0, -1, 1, ""),
+    p("phase", "Phase Invert", 0, 0, 1, ""),
+  ],
+  width: () => [
+    p("width", "Width", 1, 0, 2, ""),
+    p("output", "Output", 0, -12, 6, "dB"),
+    p("pan", "Pan", 0, -1, 1, ""),
+  ],
   reverb: () => [
     p("decay", "Decay", 1.8, 0.2, 8, "s"),
     p("predelay", "Pre-Delay", 20, 0, 200, "ms"),
@@ -170,7 +187,9 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
     p("mix", "Mix", 1, 0, 1, ""),
     p("mode", "Mode", 0, 0, 2, ""),
     p("steps", "Steps", 16, 16, 32, ""),
-    ...Array.from({ length: 32 }, (_, i) => p(`s${i + 1}`, `Step ${i + 1}`, i % 4 === 0 ? 0.9 : i % 2 === 0 ? 0.58 : 0.28, 0, 1, "")),
+    ...Array.from({ length: 32 }, (_, i) =>
+      p(`s${i + 1}`, `Step ${i + 1}`, i % 4 === 0 ? 0.9 : i % 2 === 0 ? 0.58 : 0.28, 0, 1, ""),
+    ),
   ],
   resonator: () => [
     p("root", "Root", 48, 24, 84, "MIDI"),
@@ -198,7 +217,12 @@ export const PARAMS_BY_KIND: Record<PluginKind, () => PluginParam[]> = {
   ...CREATIVE_PARAMS,
 };
 
-const def = (name: string, vendor: string, format: PluginDef["format"], kind: PluginKind): PluginDef => ({
+const def = (
+  name: string,
+  vendor: string,
+  format: PluginDef["format"],
+  kind: PluginKind,
+): PluginDef => ({
   id: `${vendor}-${name}`.toLowerCase().replace(/\s+/g, "-"),
   name,
   vendor,
@@ -208,7 +232,10 @@ const def = (name: string, vendor: string, format: PluginDef["format"], kind: Pl
 });
 
 /** A device's full control set: its kind's knobs plus any knobs only that device has. */
-export const deviceParams = (kind: PluginKind, name?: string): PluginParam[] => [...PARAMS_BY_KIND[kind](), ...deviceExtras({ kind, name })];
+export const deviceParams = (kind: PluginKind, name?: string): PluginParam[] => [
+  ...PARAMS_BY_KIND[kind](),
+  ...deviceExtras({ kind, name }),
+];
 
 export const BUILT_IN_PLUGINS: PluginDef[] = [
   def("Channel EQ", "SYNCLAB", "Built-in", "eq"),
@@ -237,8 +264,12 @@ export const BUILT_IN_PLUGINS: PluginDef[] = [
   ...CREATIVE_DEVICES.map(([name, kind]) => def(name, "SYNCLAB", "Built-in", kind)),
 ];
 
-export const makeDef = (name: string, vendor: string, format: PluginDef["format"], kind: PluginKind) =>
-  def(name, vendor, format, kind);
+export const makeDef = (
+  name: string,
+  vendor: string,
+  format: PluginDef["format"],
+  kind: PluginKind,
+) => def(name, vendor, format, kind);
 
 export const instantiate = (d: PluginDef): PluginInstance => ({
   id: uid(),
@@ -260,16 +291,24 @@ const SCALE_INTERVALS = [
   [0, 1, 3, 5, 7, 8, 10],
 ] as const;
 
-const CHORD_INTERVALS = [[0], [0, 4, 7], [0, 3, 7], [0, 4, 7, 11], [0, 3, 7, 10], [0, 7, 12]] as const;
+const CHORD_INTERVALS = [
+  [0],
+  [0, 4, 7],
+  [0, 3, 7],
+  [0, 4, 7, 11],
+  [0, 3, 7, 10],
+  [0, 7, 12],
+] as const;
 
 /** Applies the active Chord Compass insert to a note before playback or recording. */
 export function processMidiThroughPlugins(note: number, plugins: PluginInstance[] = []): number[] {
   const device = plugins.find((plugin) => plugin.kind === "scalechord" && !plugin.bypass);
   if (!device) return [note];
-  const value = (id: string, fallback: number) => device.params.find((param) => param.id === id)?.value ?? fallback;
+  const value = (id: string, fallback: number) =>
+    device.params.find((param) => param.id === id)?.value ?? fallback;
   const root = Math.round(value("root", 0)) % 12;
   const scale = SCALE_INTERVALS[Math.round(value("scale", 0))] ?? SCALE_INTERVALS[0];
-  const pitchClass = ((note - root) % 12 + 12) % 12;
+  const pitchClass = (((note - root) % 12) + 12) % 12;
   let base = note;
   if (value("filter", 1) >= 0.5 && !scale.includes(pitchClass as never)) {
     let best: number = scale[0] ?? 0;
@@ -286,7 +325,13 @@ export function processMidiThroughPlugins(note: number, plugins: PluginInstance[
   const chord = CHORD_INTERVALS[Math.round(value("chord", 0))] ?? CHORD_INTERVALS[0];
   const inversion = Math.min(Math.round(value("inversion", 0)), chord.length - 1);
   const range = Math.round(value("range", 1));
-  return chord.map((interval, index) => base + interval + (index < inversion ? 12 : 0) + (range > 1 && index === chord.length - 1 ? (range - 1) * 12 : 0));
+  return chord.map(
+    (interval, index) =>
+      base +
+      interval +
+      (index < inversion ? 12 : 0) +
+      (range > 1 && index === chord.length - 1 ? (range - 1) * 12 : 0),
+  );
 }
 
 export const PLUGIN_KINDS: PluginKind[] = [
@@ -374,14 +419,24 @@ export function defsFromFiles(files: File[], existingNames: string[] = []): Plug
     const pluginName = bundle.replace(/\.[^.]+$/, "");
     if (!pluginName || seen.has(pluginName.toLowerCase())) continue;
     seen.add(pluginName.toLowerCase());
-    const vendorGuess = parts.length > 1 && parts[0] !== bundle ? (parts[0] as string) : "3RD PARTY";
-    out.push(def(pluginName, vendorGuess.toUpperCase(), PLUGIN_EXT[ext] ?? "VST3", guessPluginKind(pluginName)));
+    const vendorGuess =
+      parts.length > 1 && parts[0] !== bundle ? (parts[0] as string) : "3RD PARTY";
+    out.push(
+      def(
+        pluginName,
+        vendorGuess.toUpperCase(),
+        PLUGIN_EXT[ext] ?? "VST3",
+        guessPluginKind(pluginName),
+      ),
+    );
   }
   return out;
 }
 
 /** Fills in knobs added after a device was saved, so older projects show every control. */
-export function withDefaultParams<T extends { kind: PluginKind; name?: string; params: PluginParam[] }>(pl: T): PluginParam[] {
+export function withDefaultParams<
+  T extends { kind: PluginKind; name?: string; params: PluginParam[] },
+>(pl: T): PluginParam[] {
   const defaults = PARAMS_BY_KIND[pl.kind] ? deviceParams(pl.kind, pl.name) : [];
   const missing = defaults.filter((d) => !pl.params.some((x) => x.id === d.id));
   return missing.length ? [...pl.params, ...missing] : pl.params;

@@ -4,10 +4,13 @@ import type { AudioClip } from "./types";
 const LEGACY_SPLIT = /-[ab]\d{12,}$/;
 
 /** Source-file seconds the clip's stored peaks cover. */
-export function peaksSpanOf(clip: Pick<AudioClip, "id" | "duration" | "offset" | "length" | "peaksSpan">): [number, number] {
+export function peaksSpanOf(
+  clip: Pick<AudioClip, "id" | "duration" | "offset" | "length" | "peaksSpan">,
+): [number, number] {
   if (clip.peaksSpan) return clip.peaksSpan;
   const offset = clip.offset ?? 0;
-  if (LEGACY_SPLIT.test(clip.id)) return [offset, offset + (clip.length ?? Math.max(0, clip.duration - offset))];
+  if (LEGACY_SPLIT.test(clip.id))
+    return [offset, offset + (clip.length ?? Math.max(0, clip.duration - offset))];
   return [0, clip.duration];
 }
 
@@ -16,7 +19,12 @@ export function peaksSpanOf(clip: Pick<AudioClip, "id" | "duration" | "offset" |
  * so the drawn waveform lines up with what is heard (a trimmed lead-in is not drawn).
  * Parts of the window outside the stored peaks are drawn as silence.
  */
-export function visibleClipPeaks(clip: Pick<AudioClip, "id" | "peaks" | "duration" | "offset" | "length" | "reverse" | "peaksSpan">): number[] {
+export function visibleClipPeaks(
+  clip: Pick<
+    AudioClip,
+    "id" | "peaks" | "duration" | "offset" | "length" | "reverse" | "peaksSpan"
+  >,
+): number[] {
   const peaks = clip.peaks;
   if (peaks.length === 0) return peaks;
   const [s0, s1] = peaksSpanOf(clip);

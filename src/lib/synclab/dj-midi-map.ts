@@ -7,13 +7,25 @@
  */
 export type DjDeck = "A" | "B";
 export type DjActionKind = "button" | "knob" | "jog" | "touch" | "browse";
-export type DjActionDef = { id: string; label: string; group: "Deck A" | "Deck B" | "Mixer"; kind: DjActionKind; hidden?: boolean };
+export type DjActionDef = {
+  id: string;
+  label: string;
+  group: "Deck A" | "Deck B" | "Mixer";
+  kind: DjActionKind;
+  hidden?: boolean;
+};
 
 const LOOPS = [1, 2, 4, 8] as const;
 
 function deckActions(d: DjDeck): DjActionDef[] {
   const group = d === "A" ? "Deck A" : "Deck B";
-  const a = (id: string, label: string, kind: DjActionKind, hidden = false): DjActionDef => ({ id: `${d}:${id}`, label, group, kind, ...(hidden ? { hidden } : {}) });
+  const a = (id: string, label: string, kind: DjActionKind, hidden = false): DjActionDef => ({
+    id: `${d}:${id}`,
+    label,
+    group,
+    kind,
+    ...(hidden ? { hidden } : {}),
+  });
   return [
     a("play", "Play / pause", "button"),
     a("cue", "Cue", "button"),
@@ -81,37 +93,74 @@ function pioneerDdj(): DjProfile {
   const map: Record<string, string> = {};
   const leds: Record<string, string> = {};
   (["A", "B"] as DjDeck[]).forEach((d, ch) => {
-    const n = (num: number, id: string, c = ch) => { map[`n:${c}:${num}`] = `${d}:${id}`; };
-    const cc = (num: number, id: string, c = ch) => { map[`c:${c}:${num}`] = `${d}:${id}`; };
-    n(0x0b, "play"); n(0x0c, "cue"); n(0x48, "start"); n(0x58, "sync"); n(0x54, "phones");
-    n(0x10, "loop:4"); n(0x11, "loopoff"); n(0x4d, "loopoff");
-    n(0x36, "touch"); n(0x67, "touch");
-    cc(0x04, "gain"); cc(0x07, "eqHigh"); cc(0x0b, "eqMid"); cc(0x0f, "eqLow"); cc(0x13, "fader");
-    cc(0x00, "pitch"); cc(0x20, "pitchFine");
-    cc(0x21, "nudge"); cc(0x22, "jog"); cc(0x23, "jog"); cc(0x29, "search");
-    const pads = d === "A" ? 7 : 9, shiftPads = pads + 1;
-    [1, 2, 3, 4].forEach((k) => { n(k - 1, `hotcue${k}`, pads); n(k - 1, `clearcue${k}`, shiftPads); leds[`${d}:hotcue${k}`] = `n:${pads}:${k - 1}`; });
-    [0.25, 0.5, 1, 2, 4, 8, 16, 32].forEach((beats, k) => { n(0x60 + k, `loop:${beats}`, pads); leds[`${d}:loop:${beats}`] = `n:${pads}:${0x60 + k}`; });
+    const n = (num: number, id: string, c = ch) => {
+      map[`n:${c}:${num}`] = `${d}:${id}`;
+    };
+    const cc = (num: number, id: string, c = ch) => {
+      map[`c:${c}:${num}`] = `${d}:${id}`;
+    };
+    n(0x0b, "play");
+    n(0x0c, "cue");
+    n(0x48, "start");
+    n(0x58, "sync");
+    n(0x54, "phones");
+    n(0x10, "loop:4");
+    n(0x11, "loopoff");
+    n(0x4d, "loopoff");
+    n(0x36, "touch");
+    n(0x67, "touch");
+    cc(0x04, "gain");
+    cc(0x07, "eqHigh");
+    cc(0x0b, "eqMid");
+    cc(0x0f, "eqLow");
+    cc(0x13, "fader");
+    cc(0x00, "pitch");
+    cc(0x20, "pitchFine");
+    cc(0x21, "nudge");
+    cc(0x22, "jog");
+    cc(0x23, "jog");
+    cc(0x29, "search");
+    const pads = d === "A" ? 7 : 9,
+      shiftPads = pads + 1;
+    [1, 2, 3, 4].forEach((k) => {
+      n(k - 1, `hotcue${k}`, pads);
+      n(k - 1, `clearcue${k}`, shiftPads);
+      leds[`${d}:hotcue${k}`] = `n:${pads}:${k - 1}`;
+    });
+    [0.25, 0.5, 1, 2, 4, 8, 16, 32].forEach((beats, k) => {
+      n(0x60 + k, `loop:${beats}`, pads);
+      leds[`${d}:loop:${beats}`] = `n:${pads}:${0x60 + k}`;
+    });
     map[`c:6:${d === "A" ? 0x17 : 0x18}`] = `${d}:filter`;
     map[`n:6:${d === "A" ? 0x46 : 0x47}`] = `${d}:load`;
-    leds[`${d}:play`] = `n:${ch}:${0x0b}`; leds[`${d}:cue`] = `n:${ch}:${0x0c}`; leds[`${d}:phones`] = `n:${ch}:${0x54}`;
+    leds[`${d}:play`] = `n:${ch}:${0x0b}`;
+    leds[`${d}:cue`] = `n:${ch}:${0x0c}`;
+    leds[`${d}:phones`] = `n:${ch}:${0x54}`;
   });
   map["c:6:31"] = "mix:crossfader";
   map["c:6:13"] = "mix:phonesLevel";
   map["c:6:64"] = "mix:browse";
-  return { id: "pioneer-ddj-400", name: "Pioneer DDJ-400 / DDJ-FLX4", port: /DDJ[-\s]?(400|FLX4)/i, map, leds, source: "Pioneer's rekordbox MIDI layout (as used by the open-source Mixxx mapping)" };
+  return {
+    id: "pioneer-ddj-400",
+    name: "Pioneer DDJ-400 / DDJ-FLX4",
+    port: /DDJ[-\s]?(400|FLX4)/i,
+    map,
+    leds,
+    source: "Pioneer's rekordbox MIDI layout (as used by the open-source Mixxx mapping)",
+  };
 }
 
 export const DJ_PROFILES: DjProfile[] = [pioneerDdj()];
-export const djProfileFor = (portName: string | undefined | null) => (portName ? DJ_PROFILES.find((p) => p.port.test(portName)) ?? null : null);
+export const djProfileFor = (portName: string | undefined | null) =>
+  portName ? (DJ_PROFILES.find((p) => p.port.test(portName)) ?? null) : null;
 
 export type DjEvent =
-  | { key: string; type: "press" | "release" }
-  | { key: string; type: "value"; raw: number };
+  { key: string; type: "press" | "release" } | { key: string; type: "value"; raw: number };
 
 /** Turns raw MIDI bytes into a binding key and press/release/value. Pitch-bend and other messages are ignored. */
 export function djEvent(status: number, d1: number, d2: number): DjEvent | null {
-  const cmd = status & 0xf0, ch = status & 0x0f;
+  const cmd = status & 0xf0,
+    ch = status & 0x0f;
   if (cmd === 0x90) return { key: `n:${ch}:${d1}`, type: d2 > 0 ? "press" : "release" };
   if (cmd === 0x80) return { key: `n:${ch}:${d1}`, type: "release" };
   if (cmd === 0xb0) return { key: `c:${ch}:${d1}`, type: "value", raw: d2 };
@@ -119,7 +168,11 @@ export function djEvent(status: number, d1: number, d2: number): DjEvent | null 
 }
 
 /** Learned bindings win over the controller's built-in layout. */
-export function resolveDjAction(key: string, learned: Record<string, string>, profile: DjProfile | null): string | null {
+export function resolveDjAction(
+  key: string,
+  learned: Record<string, string>,
+  profile: DjProfile | null,
+): string | null {
   return learned[key] ?? profile?.map[key] ?? null;
 }
 
@@ -130,7 +183,12 @@ export function relativeDelta(raw: number, style: "centre" | "signed"): number {
 }
 
 /** Tempo slider (7-bit, or 14-bit with the fine message) to a pitch offset within ±range. Top of the slider = slower. */
-export function tempoPitch(msb: number, lsb: number | null, range: number, reverse: boolean): number {
+export function tempoPitch(
+  msb: number,
+  lsb: number | null,
+  range: number,
+  reverse: boolean,
+): number {
   const v = lsb == null ? msb / 127 : ((msb << 7) | lsb) / 16383;
   const p = (v * 2 - 1) * range;
   return Math.round((reverse ? -p : p) * 10000) / 10000;
@@ -143,7 +201,11 @@ export function djKeyLabel(key: string): string {
 }
 
 /** One key per action for learned controls: learning X onto a key replaces that key's old job and X's old key. */
-export function learnBinding(learned: Record<string, string>, key: string, actionId: string): Record<string, string> {
+export function learnBinding(
+  learned: Record<string, string>,
+  key: string,
+  actionId: string,
+): Record<string, string> {
   const next: Record<string, string> = {};
   for (const [k, v] of Object.entries(learned)) if (k !== key && v !== actionId) next[k] = v;
   next[key] = actionId;

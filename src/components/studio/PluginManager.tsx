@@ -1,9 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { FolderPlus, FolderMinus, Loader2, PlugZap, RefreshCw, RotateCcw, ScanSearch, Star } from "lucide-react";
+import {
+  FolderPlus,
+  FolderMinus,
+  Loader2,
+  PlugZap,
+  RefreshCw,
+  RotateCcw,
+  ScanSearch,
+  Star,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { bridge, customPluginFolders, setCustomPluginFolders, type BridgePlugin } from "@/lib/synclab/bridge";
+import {
+  bridge,
+  customPluginFolders,
+  setCustomPluginFolders,
+  type BridgePlugin,
+} from "@/lib/synclab/bridge";
 import { useBridge } from "@/components/studio/PluginBridge";
 
 const VIEWS = ["Installed", "Failed", "Unsupported", "Favorites"] as const;
@@ -95,39 +109,79 @@ export function PluginManager() {
             ? p.status === "unsupported"
             : favs.includes(p.uid),
     )
-    .filter((p) => (q ? `${p.name} ${p.vendor} ${p.format}`.toLowerCase().includes(q.toLowerCase()) : true));
+    .filter((p) =>
+      q ? `${p.name} ${p.vendor} ${p.format}`.toLowerCase().includes(q.toLowerCase()) : true,
+    );
 
   return (
     <section className="mt-6 space-y-3 border-t border-border pt-4" aria-label="Plug-ins">
       <div className="flex flex-wrap items-center gap-2">
         <p className="label-xs">PLUG-INS</p>
         <span className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
-          {connected ? `${state.host ?? "Scanner"} · ${state.formats.join(" / ")}` : desktop ? "scanner not connected" : "desktop app required"}
+          {connected
+            ? `${state.host ?? "Scanner"} · ${state.formats.join(" / ")}`
+            : desktop
+              ? "scanner not connected"
+              : "desktop app required"}
         </span>
         <div className="ml-auto flex flex-wrap gap-1.5">
           {connected ? (
             <>
-              <Button size="sm" className="h-8 gap-1.5 text-[11px]" disabled={state.scanning} onClick={() => bridge.scan()}>
-                {state.scanning ? <Loader2 className="size-3.5 animate-spin" /> : <ScanSearch className="size-3.5" />}
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 text-[11px]"
+                disabled={state.scanning}
+                onClick={() => bridge.scan()}
+              >
+                {state.scanning ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <ScanSearch className="size-3.5" />
+                )}
                 Scan all
               </Button>
-              <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-[11px]" disabled={state.scanning} onClick={() => bridge.scan()}>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-8 gap-1.5 text-[11px]"
+                disabled={state.scanning}
+                onClick={() => bridge.scan()}
+              >
                 <RefreshCw className="size-3.5" />
                 Rescan
               </Button>
-              <Button size="sm" variant="secondary" className="h-8 gap-1.5 text-[11px]" onClick={addFolder}>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="h-8 gap-1.5 text-[11px]"
+                onClick={addFolder}
+              >
                 <FolderPlus className="size-3.5" />
                 Add folder
               </Button>
-              <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-[11px]" onClick={resetFailed} disabled={counts.Failed === 0}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 gap-1.5 text-[11px]"
+                onClick={resetFailed}
+                disabled={counts.Failed === 0}
+              >
                 <RotateCcw className="size-3.5" />
                 Reset failed
               </Button>
             </>
           ) : (
             desktop && (
-              <Button size="sm" className="h-8 gap-1.5 text-[11px]" onClick={() => bridge.connect()}>
-                {state.status === "connecting" ? <Loader2 className="size-3.5 animate-spin" /> : <PlugZap className="size-3.5" />}
+              <Button
+                size="sm"
+                className="h-8 gap-1.5 text-[11px]"
+                onClick={() => bridge.connect()}
+              >
+                {state.status === "connecting" ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <PlugZap className="size-3.5" />
+                )}
                 Connect scanner
               </Button>
             )
@@ -137,17 +191,25 @@ export function PluginManager() {
 
       {!desktop && (
         <p className="rounded-[4px] border border-dashed border-border p-3 text-[11px] text-muted-foreground">
-          Web browsers can't see the plug-ins installed on your computer. Open the SYNCLAB desktop app for Windows or Mac to scan your
-          VST3, Audio Unit and CLAP folders.
+          Web browsers can't see the plug-ins installed on your computer. Open the SYNCLAB desktop
+          app for Windows or Mac to scan your VST3, Audio Unit and CLAP folders.
         </p>
       )}
       {state.message && <p className="text-[11px] text-destructive">{state.message}</p>}
 
       {state.scanning && (
         <div className="space-y-1">
-          <Progress value={state.progress && state.progress.total ? (state.progress.done / state.progress.total) * 100 : 5} />
+          <Progress
+            value={
+              state.progress && state.progress.total
+                ? (state.progress.done / state.progress.total) * 100
+                : 5
+            }
+          />
           <p className="truncate font-mono text-[9px] text-muted-foreground">
-            {state.progress ? `${state.progress.done} / ${state.progress.total} · ${state.progress.current}` : "Looking through plug-in folders…"}
+            {state.progress
+              ? `${state.progress.done} / ${state.progress.total} · ${state.progress.current}`
+              : "Looking through plug-in folders…"}
           </p>
         </div>
       )}
@@ -155,11 +217,22 @@ export function PluginManager() {
       {connected && (
         <>
           <div className="space-y-1">
-            <p className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">Folders scanned</p>
-            {(state.folders.length ? state.folders : folders.map((f) => ({ path: f, exists: true, count: 0, custom: true }))).map((f) => (
+            <p className="font-mono text-[9px] tracking-wider text-muted-foreground uppercase">
+              Folders scanned
+            </p>
+            {(state.folders.length
+              ? state.folders
+              : folders.map((f) => ({ path: f, exists: true, count: 0, custom: true }))
+            ).map((f) => (
               <div key={f.path} className="flex items-center gap-2 text-[11px]">
-                <span className={`min-w-0 flex-1 truncate font-mono text-[10px] ${f.exists ? "" : "text-muted-foreground line-through"}`}>{f.path}</span>
-                <span className="font-mono text-[9px] text-muted-foreground">{f.exists ? `${f.count} found` : "not on this computer"}</span>
+                <span
+                  className={`min-w-0 flex-1 truncate font-mono text-[10px] ${f.exists ? "" : "text-muted-foreground line-through"}`}
+                >
+                  {f.path}
+                </span>
+                <span className="font-mono text-[9px] text-muted-foreground">
+                  {f.exists ? `${f.count} found` : "not on this computer"}
+                </span>
                 {f.custom && (
                   <Button
                     size="icon"
@@ -190,7 +263,12 @@ export function PluginManager() {
                 {v} ({counts[v]})
               </button>
             ))}
-            <Input className="ml-auto h-8 w-44 text-[11px]" placeholder="Search plug-ins" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input
+              className="ml-auto h-8 w-44 text-[11px]"
+              placeholder="Search plug-ins"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
           </div>
 
           <div className="max-h-80 overflow-auto rounded-[4px] border border-border">
@@ -213,23 +291,54 @@ export function PluginManager() {
                     <td className="p-1.5">{p.vendor}</td>
                     <td className="p-1.5 font-mono">{p.format}</td>
                     <td className="p-1.5 font-mono">{p.version ?? "—"}</td>
-                    <td className="max-w-[14rem] truncate p-1.5 font-mono text-[9px] text-muted-foreground" title={p.path}>
-                      <button type="button" className="hover:text-primary" onClick={() => window.synclab?.revealFile?.(p.path)}>
+                    <td
+                      className="max-w-[14rem] truncate p-1.5 font-mono text-[9px] text-muted-foreground"
+                      title={p.path}
+                    >
+                      <button
+                        type="button"
+                        className="hover:text-primary"
+                        onClick={() => window.synclab?.revealFile?.(p.path)}
+                      >
                         {p.path}
                       </button>
                     </td>
                     <td className="p-1.5">
-                      <span className={p.status === "failed" ? "text-destructive" : p.status === "unsupported" ? "text-muted-foreground" : "text-primary"}>
+                      <span
+                        className={
+                          p.status === "failed"
+                            ? "text-destructive"
+                            : p.status === "unsupported"
+                              ? "text-muted-foreground"
+                              : "text-primary"
+                        }
+                      >
                         {statusLabel(p)}
                       </span>
                       {p.error && <p className="text-[10px] text-muted-foreground">{p.error}</p>}
                     </td>
                     <td className="flex gap-1 p-1.5">
-                      <Button size="icon" variant="ghost" className="size-6" aria-label={`Rescan ${p.name}`} title="Scan this plug-in again" onClick={() => bridge.scanOne(p.path)}>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-6"
+                        aria-label={`Rescan ${p.name}`}
+                        title="Scan this plug-in again"
+                        onClick={() => bridge.scanOne(p.path)}
+                      >
                         <RefreshCw className="size-3" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="size-6" aria-label="Favorite" aria-pressed={favs.includes(p.uid)} onClick={() => toggleFav(p.uid)}>
-                        <Star className={`size-3 ${favs.includes(p.uid) ? "fill-primary text-primary" : ""}`} />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-6"
+                        aria-label="Favorite"
+                        aria-pressed={favs.includes(p.uid)}
+                        onClick={() => toggleFav(p.uid)}
+                      >
+                        <Star
+                          className={`size-3 ${favs.includes(p.uid) ? "fill-primary text-primary" : ""}`}
+                        />
                       </Button>
                     </td>
                   </tr>
@@ -237,7 +346,8 @@ export function PluginManager() {
                 {!state.scanning && list.length === 0 && (
                   <tr>
                     <td colSpan={7} className="p-3 text-center text-muted-foreground">
-                      Nothing here. Add a folder if your plug-ins live somewhere unusual, then press Rescan.
+                      Nothing here. Add a folder if your plug-ins live somewhere unusual, then press
+                      Rescan.
                     </td>
                   </tr>
                 )}
@@ -245,8 +355,9 @@ export function PluginManager() {
             </table>
           </div>
           <p className="text-[10px] text-muted-foreground">
-            "Found" means the plug-in is installed and its details could be read. SYNCLAB does not load or play these plug-ins yet — that
-            needs a native audio bridge which isn't built. Scanning never runs plug-in code, so a bad plug-in can't crash SYNCLAB.
+            "Found" means the plug-in is installed and its details could be read. SYNCLAB does not
+            load or play these plug-ins yet — that needs a native audio bridge which isn't built.
+            Scanning never runs plug-in code, so a bad plug-in can't crash SYNCLAB.
           </p>
         </>
       )}

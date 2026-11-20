@@ -7,7 +7,10 @@ export interface SwitchEvent {
   on: boolean;
 }
 
-export function switchStateAt(events: SwitchEvent[] | undefined, step: number): boolean | undefined {
+export function switchStateAt(
+  events: SwitchEvent[] | undefined,
+  step: number,
+): boolean | undefined {
   if (!events?.length) return undefined;
   let state = events[0]!.on;
   for (const e of events) {
@@ -34,11 +37,20 @@ export function writeSwitchStep(
   const list = events ?? [];
   if (!list.length) {
     if (live === baseline) return null;
-    return takeStart < to ? [{ step: takeStart, on: baseline }, { step: to, on: live }] : [{ step: to, on: live }];
+    return takeStart < to
+      ? [
+          { step: takeStart, on: baseline },
+          { step: to, on: live },
+        ]
+      : [{ step: to, on: live }];
   }
   const kept = list.filter((e) => e.step <= from || e.step > to);
   const removed = kept.length !== list.length;
-  const implied = switchStateAt(kept.filter((e) => e.step <= to), to) ?? kept[0]?.on;
+  const implied =
+    switchStateAt(
+      kept.filter((e) => e.step <= to),
+      to,
+    ) ?? kept[0]?.on;
   if (implied === live && !removed) return null;
   const next = implied === live ? kept : [...kept, { step: to, on: live }];
   next.sort((a, b) => a.step - b.step);
@@ -57,7 +69,14 @@ export function switchEdge(events: SwitchEvent[] | undefined, prev: number, at: 
  * A mute/solo press made by hand outside a recording take wins over recorded presses:
  * it clears that button's recorded presses so playback can't flip it back.
  */
-export function manualSwitchPatch<P extends { muted?: boolean; solo?: boolean; muteEvents?: SwitchEvent[] | undefined; soloEvents?: SwitchEvent[] | undefined }>(patch: P, taking: boolean): P {
+export function manualSwitchPatch<
+  P extends {
+    muted?: boolean;
+    solo?: boolean;
+    muteEvents?: SwitchEvent[] | undefined;
+    soloEvents?: SwitchEvent[] | undefined;
+  },
+>(patch: P, taking: boolean): P {
   if (taking) return patch;
   let next = patch;
   if ("muted" in patch && !("muteEvents" in patch)) next = { ...next, muteEvents: undefined };

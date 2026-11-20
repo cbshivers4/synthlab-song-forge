@@ -2,7 +2,8 @@
  * Type-to-find library search (Logic-style): one ranked list across instruments, synth presets,
  * drum kits, effects, effect presets, tracks, panels and help. Pure so ranking is tested.
  */
-export type LibraryKind = "instrument" | "preset" | "kit" | "effect" | "effect-preset" | "track" | "panel" | "help";
+export type LibraryKind =
+  "instrument" | "preset" | "kit" | "effect" | "effect-preset" | "track" | "panel" | "help";
 
 export interface LibraryEntry {
   id: string;
@@ -47,8 +48,15 @@ const SYNONYMS: Record<string, string[]> = {
   mic: ["mic", "microphone", "audio"],
 };
 
-const norm = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "");
-const words = (s: string) => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
+const norm = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+const words = (s: string) =>
+  norm(s)
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
 
 /** letters of term appear in order in text (fuzzy typo-friendly fallback) */
 function subsequence(term: string, text: string) {
@@ -57,7 +65,13 @@ function subsequence(term: string, text: string) {
   return false;
 }
 
-function termScore(term: string, title: string, titleWords: string[], rest: string, restWords: string[]): number {
+function termScore(
+  term: string,
+  title: string,
+  titleWords: string[],
+  rest: string,
+  restWords: string[],
+): number {
   if (title === term) return 100;
   if (title.startsWith(term)) return 80;
   if (titleWords.some((w) => w === term)) return 70;
@@ -71,21 +85,28 @@ function termScore(term: string, title: string, titleWords: string[], rest: stri
 /** typo-friendly fallback for the typed word only: letters in order, starting a title word ("grnd" → Grand) */
 function fuzzy(term: string, titleWords: string[]) {
   if (term.length < 4) return 0;
-  return titleWords.some((w, i) => w[0] === term[0] && subsequence(term, titleWords.slice(i).join(""))) ? 6 : 0;
+  return titleWords.some(
+    (w, i) => w[0] === term[0] && subsequence(term, titleWords.slice(i).join("")),
+  )
+    ? 6
+    : 0;
 }
 
 /** 0 means no match. Every typed word must match the entry (directly or via a synonym). */
 export function scoreEntry(entry: LibraryEntry, query: string): number {
   const terms = words(query);
   if (!terms.length) return 1;
-  const title = norm(entry.title).replace(/[^a-z0-9]+/g, " ").trim();
+  const title = norm(entry.title)
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
   const titleWords = words(entry.title);
   const rest = norm(`${entry.sub ?? ""} ${entry.tags ?? ""}`);
   const restWords = words(rest);
   let total = 0;
   for (const term of terms) {
     let best = termScore(term, title, titleWords, rest, restWords) || fuzzy(term, titleWords);
-    for (const alt of SYNONYMS[term] ?? []) best = Math.max(best, Math.round(termScore(alt, title, titleWords, rest, restWords) * 0.8));
+    for (const alt of SYNONYMS[term] ?? [])
+      best = Math.max(best, Math.round(termScore(alt, title, titleWords, rest, restWords) * 0.8));
     if (!best) return 0;
     total += best;
   }
@@ -93,7 +114,12 @@ export function scoreEntry(entry: LibraryEntry, query: string): number {
   return total + Math.max(0, 10 - title.length / 6);
 }
 
-export function searchLibrary(entries: LibraryEntry[], query: string, kind: LibraryKind | "all" = "all", limit = 150): LibraryEntry[] {
+export function searchLibrary(
+  entries: LibraryEntry[],
+  query: string,
+  kind: LibraryKind | "all" = "all",
+  limit = 150,
+): LibraryEntry[] {
   const pool = kind === "all" ? entries : entries.filter((e) => e.kind === kind);
   if (!words(query).length) return pool.slice(0, limit);
   return pool
@@ -106,7 +132,10 @@ export function searchLibrary(entries: LibraryEntry[], query: string, kind: Libr
 
 /** How many entries of each kind match, for the category column counts. */
 export function countByKind(entries: LibraryEntry[], query: string): Record<LibraryKind, number> {
-  const out = Object.fromEntries(LIBRARY_KINDS.map((k) => [k.id, 0])) as Record<LibraryKind, number>;
+  const out = Object.fromEntries(LIBRARY_KINDS.map((k) => [k.id, 0])) as Record<
+    LibraryKind,
+    number
+  >;
   const any = words(query).length > 0;
   for (const e of entries) if (!any || scoreEntry(e, query) > 0) out[e.kind]++;
   return out;
