@@ -61,7 +61,7 @@ export function MobileNav({
   }, [moreSignal]);
 
   const create: Item[] = [
-    { label: "Reel-to-Reel Recorder", icon: <Disc3 />, panel: "reel-recorder" },
+    { label: "Tape & CD Recorder", icon: <Disc3 />, panel: "reel-recorder" },
     { label: "Video Sampler", icon: <Film />, panel: "video-sampler" },
     { label: "Sounds", icon: <FolderOpen />, panel: "browser" },
     {
@@ -91,7 +91,7 @@ export function MobileNav({
   ];
   const more: Item[] = [
     { label: "Studio View", icon: <Home />, panel: "studio-view" },
-    { label: "Reel-to-Reel Recorder", icon: <Disc3 />, panel: "reel-recorder" },
+    { label: "Tape & CD Recorder", icon: <Disc3 />, panel: "reel-recorder" },
     { label: "Video Sampler", icon: <Film />, panel: "video-sampler" },
     { label: "Separate Stems", icon: <Scissors />, panel: "stems" },
     { label: "Hum to Beat", icon: <Mic />, panel: "humbeat" },

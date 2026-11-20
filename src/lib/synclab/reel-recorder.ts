@@ -1,7 +1,7 @@
 import { getEngine } from "./audio-engine";
 import { openMic, releaseMic, getInputChannel } from "./mic";
 import type { Capture } from "./bounce";
-import { clampTapePosition, joinTapeChunks, tapeCurve } from "./reel-audio";
+import { clampTapePosition, joinTapeChunks, punchTape, tapeCurve } from "./reel-audio";
 import { decodeAudioFile } from "./aiff-decode";
 
 export type TapeMode = "stopped" | "recording" | "playing" | "paused" | "rewinding";
@@ -25,7 +25,13 @@ export interface TapeState {
   name: string;
   error: string | null;
   hasTape: boolean;
+  /** Longest the tape can record (a cassette side, the space left on a CD); null = no limit. */
+  limit: number | null;
+  /** True after a recording stopped because the tape/disc ran out. */
+  full: boolean;
 }
+/** Why the tape changed: a finished recording, a loaded file, or a medium swapped in by code. */
+export type TapeChange = "record" | "load" | "set";
 const processorCode = `class TapeCapture extends AudioWorkletProcessor {
   constructor() { super(); this.active = false; this.left = []; this.right = []; this.frames = 0;
     this.port.onmessage = ({data}) => {
@@ -67,7 +73,13 @@ class ReelRecorder {
     name: "Untitled tape",
     error: null,
     hasTape: false,
+    limit: null,
+    full: false,
   };
+  private tapeListeners = new Set<(capture: Capture | null, why: TapeChange) => void>();
+  /** Frame the current recording started at (punch-in), 0 for a fresh tape. */
+  private recordFrom = 0;
+  private recordBase: Capture | null = null;
   private listeners = new Set<() => void>();
   private ctx: AudioContext | null = null;
   private stream: MediaStream | null = null;
@@ -116,6 +128,33 @@ class ReelRecorder {
     };
   };
   getSnapshot = () => this.state;
+  /** Hear about every new tape (finished take, loaded file); used to keep cassettes and CDs in step. */
+  onTapeChange = (fn: (capture: Capture | null, why: TapeChange) => void) => {
+    this.tapeListeners.add(fn);
+    return () => this.tapeListeners.delete(fn);
+  };
+  private tapeChanged(why: TapeChange) {
+    for (const fn of this.tapeListeners) fn(this.capture, why);
+  }
+  /** Put a different tape (cassette side, CD track, stored reel) in the machine. */
+  setTape = (capture: Capture | null, name: string, limit: number | null = null) => {
+    if (this.state.mode === "recording") return false;
+    this.stopPlayer();
+    this.capture = capture;
+    this.reversed = null;
+    this.update({
+      name,
+      limit,
+      full: false,
+      mode: "stopped",
+      position: 0,
+      duration: capture ? capture.left.length / capture.sampleRate : 0,
+      hasTape: !!capture,
+      error: null,
+    });
+    this.tapeChanged("set");
+    return true;
+  };
   private update(patch: Partial<TapeState>) {
     this.state = { ...this.state, ...patch };
     for (const listener of this.listeners) listener();
@@ -141,7 +180,7 @@ class ReelRecorder {
   private tick() {
     let position = this.state.position;
     if (this.state.mode === "recording" && this.ctx)
-      position = this.chunks.frames / this.ctx.sampleRate;
+      position = (this.recordFrom + this.chunks.frames) / this.ctx.sampleRate;
     if (this.state.mode === "playing" && this.ctx) {
       position =
         this.playbackOffset + (this.ctx.currentTime - this.playbackStarted) * this.state.speed;
@@ -169,11 +208,26 @@ class ReelRecorder {
     });
     this.update({
       position,
-      ...(this.state.mode === "recording" ? { duration: position } : {}),
+      ...(this.state.mode === "recording"
+        ? {
+            duration: Math.max(
+              position,
+              (this.recordBase?.left.length ?? 0) / (this.ctx?.sampleRate ?? 1),
+            ),
+          }
+        : {}),
       levelL: levels[0] ?? 0,
       levelR: levels[1] ?? 0,
       clipped: this.state.clipped || levels.some((peak) => peak >= 0.985),
     });
+    if (
+      this.state.mode === "recording" &&
+      this.state.limit != null &&
+      position >= this.state.limit
+    ) {
+      this.update({ full: true });
+      void this.stop();
+    }
   }
   private disconnectInput() {
     if (this.sourceNode && this.input) {
@@ -348,14 +402,31 @@ class ReelRecorder {
       }
     }
   };
-  record = async () => {
+  /** Record a new tape, or with punchIn record over the tape from the counter position (cassette). */
+  record = async (options: { punchIn?: boolean } = {}) => {
     if (this.state.busy || this.state.mode === "recording") return;
+    if (this.state.limit != null && this.state.limit <= 0) {
+      this.update({ full: true, error: "There's no room left to record." });
+      return;
+    }
+    const from = options.punchIn && this.capture ? this.state.position : 0;
     this.stopPlayer();
     await this.enable();
-    if (!this.worklet || !this.state.ready) return;
+    if (!this.worklet || !this.state.ready || !this.ctx) return;
+    const sameRate = this.capture?.sampleRate === this.ctx.sampleRate;
+    this.recordBase = options.punchIn && sameRate ? this.capture : null;
+    this.recordFrom = this.recordBase ? Math.floor(from * this.ctx.sampleRate) : 0;
     this.chunks = { left: [], right: [], frames: 0 };
     this.worklet.port.postMessage("start");
-    this.update({ mode: "recording", position: 0, duration: 0, clipped: false, error: null });
+    const position = this.recordFrom / this.ctx.sampleRate;
+    this.update({
+      mode: "recording",
+      position,
+      duration: this.recordBase ? this.state.duration : 0,
+      clipped: false,
+      full: false,
+      error: null,
+    });
   };
   stop = async () => {
     if (this.state.busy) return;
@@ -374,18 +445,27 @@ class ReelRecorder {
       });
       const left = joinTapeChunks(this.chunks.left),
         right = joinTapeChunks(this.chunks.right);
-      if (left.length) {
-        this.capture = { left, right, sampleRate: this.ctx.sampleRate };
+      const recorded = left.length > 0;
+      if (recorded) {
+        this.capture = punchTape(
+          this.recordBase,
+          { left, right, sampleRate: this.ctx.sampleRate },
+          this.recordFrom,
+        );
         this.reversed = null;
       }
+      this.recordBase = null;
+      this.recordFrom = 0;
       this.chunks = { left: [], right: [], frames: 0 };
       this.update({
         busy: false,
         mode: "stopped",
         position: 0,
-        duration: (this.capture?.left.length ?? 0) / this.ctx.sampleRate,
+        duration:
+          (this.capture?.left.length ?? 0) / (this.capture?.sampleRate ?? this.ctx.sampleRate),
         hasTape: !!this.capture,
       });
+      if (recorded) this.tapeChanged("record");
     } else if (this.state.mode === "rewinding") {
       this.tick();
       this.stopPlayer();
@@ -539,6 +619,7 @@ class ReelRecorder {
         hasTape: true,
         clipped: false,
       });
+      this.tapeChanged("load");
     } catch {
       this.update({
         mode: "stopped",

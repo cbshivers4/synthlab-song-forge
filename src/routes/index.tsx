@@ -108,7 +108,7 @@ import { AudioConverter } from "@/components/studio/AudioConverter";
 import { CoProducer } from "@/components/studio/CoProducer";
 import { StemGenerator } from "@/components/studio/StemGenerator";
 import { StemSplitter } from "@/components/studio/StemSplitter";
-import { ReelRecorder } from "@/components/studio/ReelRecorder";
+import { TapeCdRecorder } from "@/components/studio/TapeCdRecorder";
 import { Bot, Film, Guitar } from "lucide-react";
 import { VideoSampler } from "@/components/studio/VideoSampler";
 import { StudioView } from "@/components/studio/StudioView";
@@ -398,7 +398,7 @@ function Panels({
     livekeys: { title: "LIVE KEYS", icon: <Piano className="size-4" /> },
     dj: { title: "DJ DECKS", icon: <Disc3 className="size-4" /> },
     amprig: { title: "AMPS & PEDALS", icon: <Guitar className="size-4" /> },
-    "reel-recorder": { title: "REEL-TO-REEL RECORDER", icon: <Disc3 className="size-4" /> },
+    "reel-recorder": { title: "TAPE & CD RECORDER", icon: <Disc3 className="size-4" /> },
     "video-sampler": { title: "VIDEO SAMPLER", icon: <Film className="size-4" /> },
     "studio-view": { title: "STUDIO VIEW", icon: <Music2 className="size-4" /> },
   };
@@ -532,7 +532,7 @@ function Panels({
               scrollbar={panel === "drummer" || panel === "livekeys" || panel === "dj"}
             >
               <div className="phone-editor-content min-h-0 space-y-3 p-3">
-                {panel === "reel-recorder" && <ReelRecorder />}
+                {panel === "reel-recorder" && <TapeCdRecorder />}
                 {panel === "video-sampler" && <VideoSampler />}
                 {panel === "mixer" && <Mixer desktopLayout />}
                 {panel === "synth" &&
@@ -617,7 +617,7 @@ function Panels({
             </PhonePages>
           ) : (
             <div className="editor-body min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
-              {panel === "reel-recorder" && <ReelRecorder />}
+              {panel === "reel-recorder" && <TapeCdRecorder />}
               {panel === "video-sampler" && <VideoSampler />}
               {panel === "mixer" && (
                 <Mixer

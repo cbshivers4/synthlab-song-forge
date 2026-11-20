@@ -35,7 +35,7 @@ export const LIBRARY_PANELS: { id: Exclude<PanelId, null>; label: string }[] = [
   { id: "livekeys", label: "Live Keys (keyboard player)" },
   { id: "dj", label: "DJ Decks" },
   { id: "amprig", label: "Amps & Pedals (Amp Room)" },
-  { id: "reel-recorder", label: "Reel-to-Reel Recorder" },
+  { id: "reel-recorder", label: "Tape & CD Recorder" },
 ];
 
 const NEW_TRACKS: { kind: TrackKind; title: string; tags: string }[] = [

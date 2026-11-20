@@ -260,7 +260,7 @@ export function StudioAgentTools() {
   useWebMCP({
     name: "open_panel",
     description:
-      "Open a studio screen such as the mixer, synth editor, drum machine, piano roll, FX rack, reel-to-reel recorder or DJ Decks.",
+      "Open a studio screen such as the mixer, synth editor, drum machine, piano roll, FX rack, Tape & CD Recorder (reel-to-reel, cassette deck, CD burner) or DJ Decks.",
     inputSchema: {
       type: "object",
       properties: {

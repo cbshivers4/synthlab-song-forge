@@ -45,7 +45,7 @@ Legacy SYNCPADS bank cleanup is versioned in each track: preserve A, clear B–H
 Learned drum triggers resolve saved track/pad IDs in the single MIDI subscription and consume mapped messages before normal note routing, preventing duplicate playback and recording.
 MP3/MP4 imports/exports retain originals in the private library with content hashes to avoid duplicates; saved videos open Video Sampler.
 Cloud deletion reads raw sessions, confirms deletion, then cleans owned files; missing assets cannot block removal.
-Reel recorder: singleton worklet; playback bypasses master. Meters use post-master taps; exit releases input, keeps tape. Shared winding math uses capture duration and conserved tape area to match song length. Tape transport is independent of the song transport (never starts, stops or follows it).
+Reel recorder: singleton worklet; playback bypasses master. Meters use post-master taps; exit releases input, keeps tape. Shared winding math uses capture duration and conserved tape area to match song length. Tape transport is independent of the song transport (never starts, stops or follows it). Cassette deck and CD burner reuse that one recorder via tape-media.ts (setTape swaps the medium, limit stops at side/disc end); CD burning exports WAV+CUE ZIP for the OS burner because browsers cannot drive optical drives.
 
 Video cuts use source seconds/grid/clamp; kits save MIDI notes. Keyboard/learned MIDI share pad triggers; MIDI consumers prevent doubled track notes.
 

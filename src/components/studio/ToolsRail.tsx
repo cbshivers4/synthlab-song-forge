@@ -65,7 +65,7 @@ const TOOLS: Tool[] = [
   },
   {
     id: "reel-recorder",
-    label: "Reel-to-Reel Recorder",
+    label: "Tape & CD Recorder",
     icon: <Disc3 className="size-4" />,
     panel: "reel-recorder",
   },

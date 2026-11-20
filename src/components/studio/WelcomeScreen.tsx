@@ -41,8 +41,8 @@ const FEATURES: { icon: React.ReactNode; title: string; body: string }[] = [
   },
   {
     icon: <Disc3 className="size-4" />,
-    title: "Reel-to-Reel Recorder",
-    body: "16 input channels with analog meters, mute and solo, tape saturation and WAV/MP3 export.",
+    title: "Tape & CD Recorder",
+    body: "Reel-to-reel, a cassette deck with named cassettes you can flip, and a CD burner for live CDs — with analog meters and WAV/MP3 export.",
   },
   {
     icon: <SlidersHorizontal className="size-4" />,

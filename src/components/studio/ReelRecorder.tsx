@@ -3,7 +3,7 @@ import { useSkin } from "@/lib/synclab/skins";
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { VuFace } from "./VuFace";
 import { ReelInputChannels } from "./ReelInputChannels";
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import {
   Circle,
   Download,
@@ -128,7 +128,7 @@ function Reel({
     </div>
   );
 }
-function TapeMeter({
+export function TapeMeter({
   level,
   channel,
   clipped,
@@ -175,30 +175,16 @@ export function ReelRecorder() {
     recorder.getSnapshot,
     recorder.getSnapshot,
   );
-  const { addTrack, addClip, transport } = useStudio();
+  const { transport } = useStudio();
   const [look, setLook] = useState<"reel" | "simple">("reel");
   const designId = useReelDesign();
   const design = reelDesign(designId);
   // The deck is always an independent tape machine; "Song master" is only an audio source.
   const songSource = state.source === "song";
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [format, setFormat] = useState("wav24");
-  const [quality, setQuality] = useState(320);
-  const [saving, setSaving] = useState(false);
-  useEffect(
-    () => () => {
-      void recorder.release();
-    },
-    [recorder],
-  );
-  useEffect(() => {
-    recorder.setMasterMetering(songSource);
-    return () => recorder.setMasterMetering(false);
-  }, [recorder, songSource]);
   const rewinding = state.mode === "rewinding";
   // The tape runs on its own clock: only its own transport moves the reels, never the song transport.
   const active = rewinding || state.mode === "recording" || state.mode === "playing";
-  const locked = state.busy || saving;
+  const locked = state.busy;
   const recording = state.mode === "recording";
   /** Tape progress 0..1: supply reel starts full and empties as the song/tape plays or records. */
   // While recording, the reels hold the song's length (song master) or a 30-minute reel (mic/line).
@@ -216,43 +202,6 @@ export function ReelRecorder() {
     tapeMoving: rewinding || state.mode === "playing" || state.mode === "paused",
   });
   const angles = reelAngles(progress, reelSeconds || 1);
-  const save = async (toProject: boolean) => {
-    if (locked || recording || !state.hasTape) return;
-    setSaving(true);
-    try {
-      const capture = await recorder.render();
-      const name = state.name.trim() || "SYNCLAB tape";
-      if (toProject) {
-        const audio = await getEngine().loadSampleFile(encodeWav(capture), name);
-        const id = addTrack("audio", name, undefined, { keepPanel: true });
-        addClip(id, {
-          ...audio,
-          id: uid(),
-          name,
-          start: getPlayStep(),
-          offset: 0,
-          length: audio.duration,
-        });
-        toast.success("Tape added to project");
-      } else {
-        const blob =
-          format === "mp3"
-            ? encodeMp3(capture, quality)
-            : format === "flac"
-              ? encodeFlac(capture, 24)
-              : format === "aiff"
-                ? encodeAiff(capture, 24)
-                : encodeWavDepth(capture, format === "wav16" ? 16 : format === "wav32" ? 32 : 24);
-        const extension = format.startsWith("wav") ? "wav" : format;
-        downloadBlob(blob, `${name.replace(/[\\/:*?"<>|]/g, "-")}.${extension}`);
-        toast.success(`${extension.toUpperCase()} exported`);
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not save tape.");
-    } finally {
-      setSaving(false);
-    }
-  };
   return (
     <section
       className={`reel-recorder mx-auto w-full max-w-[900px]${skinned ? " studio-wallpaper" : ""}`}
@@ -275,13 +224,7 @@ export function ReelRecorder() {
           role="status"
           className={`font-mono text-xs ${recording ? "text-destructive" : "text-primary"}`}
         >
-          {state.busy
-            ? "PREPARING"
-            : saving
-              ? "SAVING"
-              : recording
-                ? "RECORDING"
-                : state.mode.toUpperCase()}
+          {state.busy ? "PREPARING" : recording ? "RECORDING" : state.mode.toUpperCase()}
         </span>
         <div className="flex gap-1" role="group" aria-label="Recorder look">
           <Button
@@ -640,84 +583,153 @@ export function ReelRecorder() {
           </div>
         </>
       )}
-      <footer className="flex flex-wrap items-end gap-2 border-t border-border px-4 py-4">
+      <TapeExportBar />
+    </section>
+  );
+}
+
+/** Save / export / add-to-project bar shared by the reel and cassette machines. */
+export function TapeExportBar({
+  nameLabel = "Tape name",
+  canLoad = true,
+}: {
+  nameLabel?: string | null;
+  canLoad?: boolean;
+}) {
+  const recorder = getReelRecorder();
+  const state = useSyncExternalStore(
+    recorder.subscribe,
+    recorder.getSnapshot,
+    recorder.getSnapshot,
+  );
+  const { addTrack, addClip } = useStudio();
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [format, setFormat] = useState("wav24");
+  const [quality, setQuality] = useState(320);
+  const [saving, setSaving] = useState(false);
+  const locked = state.busy || saving;
+  const recording = state.mode === "recording";
+  const save = async (toProject: boolean) => {
+    if (locked || recording || !state.hasTape) return;
+    setSaving(true);
+    try {
+      const capture = await recorder.render();
+      const name = state.name.trim() || "SYNCLAB tape";
+      if (toProject) {
+        const audio = await getEngine().loadSampleFile(encodeWav(capture), name);
+        const id = addTrack("audio", name, undefined, { keepPanel: true });
+        addClip(id, {
+          ...audio,
+          id: uid(),
+          name,
+          start: getPlayStep(),
+          offset: 0,
+          length: audio.duration,
+        });
+        toast.success("Tape added to project");
+      } else {
+        const blob =
+          format === "mp3"
+            ? encodeMp3(capture, quality)
+            : format === "flac"
+              ? encodeFlac(capture, 24)
+              : format === "aiff"
+                ? encodeAiff(capture, 24)
+                : encodeWavDepth(capture, format === "wav16" ? 16 : format === "wav32" ? 32 : 24);
+        const extension = format.startsWith("wav") ? "wav" : format;
+        downloadBlob(blob, `${name.replace(/[\\/:*?"<>|]/g, "-")}.${extension}`);
+        toast.success(`${extension.toUpperCase()} exported`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save tape.");
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <footer className="flex flex-wrap items-end gap-2 border-t border-border px-4 py-4">
+      {nameLabel ? (
         <label className="flex min-w-[120px] flex-1 flex-col gap-1 text-xs text-muted-foreground">
-          Tape name
+          {nameLabel}
           <input
             className="h-11 w-full rounded border border-input bg-background px-2 text-foreground"
             value={state.name}
             onChange={(e) => recorder.configure({ name: e.target.value })}
           />
         </label>
+      ) : (
+        <p className="min-w-[120px] flex-1 truncate pb-3 font-mono text-xs text-muted-foreground">
+          {state.name}
+        </p>
+      )}
+      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+        Export format
+        <select
+          className="h-11 rounded border border-input bg-background px-2 text-foreground"
+          value={format}
+          onChange={(e) => setFormat(e.target.value)}
+        >
+          <option value="wav16">WAV · 16-bit</option>
+          <option value="wav24">WAV · 24-bit</option>
+          <option value="wav32">WAV · 32-bit float</option>
+          <option value="mp3">MP3</option>
+          <option value="flac">FLAC · 24-bit</option>
+          <option value="aiff">AIFF · 24-bit</option>
+        </select>
+      </label>
+      {format === "mp3" && (
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-          Export format
+          MP3 quality
           <select
             className="h-11 rounded border border-input bg-background px-2 text-foreground"
-            value={format}
-            onChange={(e) => setFormat(e.target.value)}
+            value={quality}
+            onChange={(e) => setQuality(Number(e.target.value))}
           >
-            <option value="wav16">WAV · 16-bit</option>
-            <option value="wav24">WAV · 24-bit</option>
-            <option value="wav32">WAV · 32-bit float</option>
-            <option value="mp3">MP3</option>
-            <option value="flac">FLAC · 24-bit</option>
-            <option value="aiff">AIFF · 24-bit</option>
+            {[128, 192, 256, 320].map((k) => (
+              <option key={k} value={k}>
+                {k} kbps
+              </option>
+            ))}
           </select>
         </label>
-        {format === "mp3" && (
-          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-            MP3 quality
-            <select
-              className="h-11 rounded border border-input bg-background px-2 text-foreground"
-              value={quality}
-              onChange={(e) => setQuality(Number(e.target.value))}
-            >
-              {[128, 192, 256, 320].map((k) => (
-                <option key={k} value={k}>
-                  {k} kbps
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        <Button
-          variant="outline"
-          className="h-11"
-          disabled={locked || recording}
-          onClick={() => fileInput.current?.click()}
-        >
-          <Upload />
-          Load audio
-        </Button>
-        <input
-          ref={fileInput}
-          hidden
-          type="file"
-          accept="audio/*,.wav,.mp3,.flac,.aiff,.aif,.m4a"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void recorder.load(file);
-            e.target.value = "";
-          }}
-        />
-        <Button
-          variant="outline"
-          className="h-11"
-          disabled={locked || recording || !state.hasTape}
-          onClick={() => void save(false)}
-        >
-          <Download />
-          Save file
-        </Button>
-        <Button
-          className="h-11"
-          disabled={locked || recording || !state.hasTape}
-          onClick={() => void save(true)}
-        >
-          <Plus />
-          Add to project
-        </Button>
-      </footer>
-    </section>
+      )}
+      <Button
+        variant="outline"
+        className="h-11"
+        disabled={locked || recording || !canLoad}
+        onClick={() => fileInput.current?.click()}
+      >
+        <Upload />
+        Load audio
+      </Button>
+      <input
+        ref={fileInput}
+        hidden
+        type="file"
+        accept="audio/*,.wav,.mp3,.flac,.aiff,.aif,.m4a"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void recorder.load(file);
+          e.target.value = "";
+        }}
+      />
+      <Button
+        variant="outline"
+        className="h-11"
+        disabled={locked || recording || !state.hasTape}
+        onClick={() => void save(false)}
+      >
+        <Download />
+        Save file
+      </Button>
+      <Button
+        className="h-11"
+        disabled={locked || recording || !state.hasTape}
+        onClick={() => void save(true)}
+      >
+        <Plus />
+        Add to project
+      </Button>
+    </footer>
   );
 }

@@ -66,7 +66,7 @@ const tools = [
   { label: "Audio Converter", icon: AudioLines, panel: "audio-converter" },
   { label: "Mixer", icon: SlidersHorizontal, panel: "mixer" },
   { label: "Studio View", icon: Home, panel: "studio-view" },
-  { label: "Reel-to-Reel Recorder", icon: Disc3, panel: "reel-recorder" },
+  { label: "Tape & CD Recorder", icon: Disc3, panel: "reel-recorder" },
   { label: "Video Sampler", icon: Film, panel: "video-sampler" },
   { label: "Separate Stems", icon: Scissors, panel: "stems" },
   { label: "Hum to Beat", icon: Mic, panel: "humbeat" },

@@ -85,3 +85,26 @@ export function reelAngles(fillTakeUp: number, totalSeconds: number) {
     takeUp: (((takeR - hub) / h) * 360) % 360,
   };
 }
+
+/**
+ * Records a take over a tape from startFrame, like a real deck: the take replaces what was
+ * under it, anything after the take stays, and recording past the end makes the tape longer.
+ * Different sample rates can't be lined up, so the take then replaces the tape.
+ */
+export function punchTape(old: Capture | null, take: Capture, startFrame: number): Capture {
+  const start = Math.max(0, Math.floor(startFrame));
+  if (
+    !old ||
+    old.sampleRate !== take.sampleRate ||
+    (start === 0 && old.left.length <= take.left.length)
+  )
+    return take;
+  const length = Math.max(old.left.length, start + take.left.length);
+  const left = new Float32Array(length);
+  const right = new Float32Array(length);
+  left.set(old.left);
+  right.set(old.right.length ? old.right : old.left);
+  left.set(take.left, start);
+  right.set(take.right, start);
+  return { left, right, sampleRate: take.sampleRate };
+}

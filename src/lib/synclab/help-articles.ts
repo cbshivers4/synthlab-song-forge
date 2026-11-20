@@ -166,18 +166,23 @@ export const KNOWLEDGE_BASE: Article[] = [
   {
     id: "reel",
     category: "Recording",
-    title: "Reel-to-Reel Recorder",
-    tags: "reel tape recorder quicktime record capture export",
+    title: "Tape & CD Recorder (reel, cassette, CD)",
+    tags: "reel tape recorder quicktime cassette deck mixtape side flip eject cd burner burn cd-r live cd cue wav record capture export",
     body: [
-      "Open Reel-to-Reel Recorder from PERFORM. Press record to capture your input or the studio, watch the reels and meters move, then export the tape as a file.",
-      "Switch between the reel look and the QuickTime-style look at the top.",
+      "Open Tape & CD Recorder from PERFORM (phone: Tools). The tabs at the top switch between three machines: Reel-to-reel, Cassette deck and CD burner. They all record your input or the studio, with live meters.",
+      "Cassette deck: pick a cassette from the shelf (12 kinds — Normal, Chrome and Metal, C46 to C90 — each with its real side length), name it, and press Put in deck. You'll see it go in, the door close and the reels turn. FLIP turns it over to side B, EJECT takes it out. REC records onto the side from the counter, like a real deck: what was under it is replaced and the rest stays. Recording stops by itself at the end of the side.",
+      "CD burner: load a blank CD from the spindle (74 or 80 minutes, six colours) and name it. Press REC for a live CD — every take becomes the next track until you press STOP. You can also add your song, copy a cassette side or the reel tape, or add an audio file. Rename, reorder, play or remove tracks, and the display shows how much room is left.",
+      "Burn CD makes a ZIP with CD-quality tracks (44.1 kHz, 16-bit WAV, padded to whole CD sectors), a CUE sheet with the track names and 2-second gaps, and a HOW TO BURN guide. Open the CUE sheet in your computer's burning app (Music on Mac, Windows Media Player, ImgBurn, Burn and others) with a blank CD-R in the drive to make a real audio CD that plays in any CD player.",
     ],
     can: [
-      "Record, play back and export the tape as an audio file.",
-      "Use working knobs and live meters on phone and computer.",
+      "Record, play back and export each tape, cassette side or CD track as an audio file, or add it to your project.",
+      "Keep many named cassettes and CDs while SYNCLAB is open, and dub from tape to CD.",
+      "Make a burn-ready audio CD package with track names for any computer with a CD drive.",
     ],
     cant: [
-      "The tape has its own transport — it doesn't start, stop or follow the song's Play button.",
+      "A web page can't control your computer's CD drive, so the last step — the physical burn — happens in your computer's burning app. Phones and tablets have no CD drive.",
+      "Cassettes and CDs on the shelf are kept only while SYNCLAB is open. Use Save file, Add to project or Burn CD to keep them.",
+      "The machines have their own transport — they don't start, stop or follow the song's Play button.",
     ],
   },
 
