@@ -1,4 +1,5 @@
 import { multiPitchVoiceKeys, notePitches } from "./multi-pitch";
+import { applyChopSound } from "./mpc-pad";
 import { chainedPads } from "./drum-chain";
 import { arpStepSeconds } from "./synth-timing";
 import { arpHit } from "./arp-pattern";
@@ -59,10 +60,15 @@ export function triggerNote(
           ? { start: chops[chop] as number, end: (chops[chop + 1] ?? s.end) as number, loop: false }
           : {};
       const keys = multiPitchVoiceKeys(`mp-${midi}`);
+      const sound = applyChopSound(
+        { ...s, ...region },
+        chop >= 0 ? s.chopSounds?.[chop] : undefined,
+      );
+      if (!sound) return;
       notePitches(idx, mp).forEach((p, k) =>
         engine.playSample(
           t.id,
-          { ...s, ...region },
+          sound,
           s.rootNote + p + (t.octave ?? 0) * 12,
           dur,
           vel,
@@ -76,9 +82,12 @@ export function triggerNote(
       // each key from the root upwards plays one chop at its original pitch
       const start = chops[idx] as number;
       const end = (chops[idx + 1] ?? s.end) as number;
+      // Each chop can carry its own tune, level, pan, reverse and mute (MPC per-pad edit).
+      const sound = applyChopSound({ ...s, start, end, loop: false }, s.chopSounds?.[idx]);
+      if (!sound) return;
       engine.playSample(
         t.id,
-        { ...s, start, end, loop: false },
+        sound,
         s.rootNote,
         dur,
         vel,

@@ -73,6 +73,7 @@ export interface VideoSession {
   sensitivity?: number;
   manualSlice?: boolean;
   midiNotes?: import("./video-pad-map").VideoPadMidiNote[];
+  chopSounds?: (Partial<import("./mpc-pad").PadSound> | null)[];
 }
 export const saveVideoSession = (v: VideoSession) =>
   putAutosaveItem("video-sampler", v).catch(() => undefined);

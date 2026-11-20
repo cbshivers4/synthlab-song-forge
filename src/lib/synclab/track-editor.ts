@@ -4,12 +4,17 @@ import type { Track } from "./types";
 export const isPadSamplerTrack = (t: Pick<Track, "kind" | "name" | "padSampler">) =>
   t.kind === "sampler" && (t.padSampler === true || /\bpad sampler\b/i.test(t.name));
 
+/** The channel the Video Sampler plays through: it opens the Video Sampler, never the Sampler. */
+export const isVideoSamplerTrack = (t: Pick<Track, "kind" | "name">) =>
+  t.kind === "sampler" && /\bvideo sampler\b/i.test(t.name);
+
 /** Which editor a channel opens: drums → drum machine, pad-sampler channel → pad sampler, sampler → sampler, synths → synth. */
 export function editorPanelFor(
   t: Pick<Track, "kind" | "name" | "padSampler">,
-): "drums" | "pads" | "sampler" | "synth" | null {
+): "drums" | "pads" | "sampler" | "video-sampler" | "synth" | null {
   if (t.kind === "drum") return "drums";
-  if (t.kind === "sampler") return isPadSamplerTrack(t) ? "pads" : "sampler";
+  if (t.kind === "sampler")
+    return isPadSamplerTrack(t) ? "pads" : isVideoSamplerTrack(t) ? "video-sampler" : "sampler";
   if (t.kind === "instrument" || t.kind === "midi") return "synth";
   return null;
 }

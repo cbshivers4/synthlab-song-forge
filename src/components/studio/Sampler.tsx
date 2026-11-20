@@ -1,4 +1,6 @@
-import { isPadSamplerTrack } from "@/lib/synclab/track-editor";
+import { isPadSamplerTrack as isPadTrack, isVideoSamplerTrack } from "@/lib/synclab/track-editor";
+/** Pad and Video Sampler channels have their own editors, so the Sampler never takes them over. */
+const isPadSamplerTrack = (t: Track) => isPadTrack(t) || isVideoSamplerTrack(t);
 import { SamplerModelPicker } from "./SamplerModelPicker";
 import { WaveformZoom, waveformFraction, useWaveformDetail } from "./WaveformZoom";
 import { SampleExportButtons } from "./SampleExportButtons";
@@ -64,6 +66,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
+import { NoteRepeatBar } from "./NoteRepeatBar";
+import {
+  DEFAULT_NOTE_REPEAT,
+  DEFAULT_PAD_SOUND,
+  PAD_SOUND_RANGES,
+  createNoteRepeater,
+  type ChopSound,
+  type NoteRepeatSettings,
+} from "@/lib/synclab/mpc-pad";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const noteName = (m: number) => `${NOTE_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
@@ -284,6 +295,84 @@ function Waveform({
         ))}
       </div>
     </WaveformZoom>
+  );
+}
+
+/** Note Repeat stays set while the app is open. */
+let samplerNoteRepeat: NoteRepeatSettings = DEFAULT_NOTE_REPEAT;
+
+/** MPC per-pad edit for one chop: tune, fine, level and pan on top of the whole sample. */
+function ChopEdit({
+  index,
+  sound,
+  onChange,
+  onReset,
+}: {
+  index: number;
+  sound: ChopSound;
+  onChange: (next: ChopSound) => void;
+  onReset: () => void;
+}) {
+  const knob = (
+    field: "pitch" | "fine" | "gain" | "pan",
+    label: string,
+    min: number,
+    max: number,
+    step: number,
+    def: number,
+    fmt: (v: number) => string,
+  ) => (
+    <SK
+      key={field}
+      label={label}
+      aria={`Chop ${index + 1} ${label.toLowerCase()}`}
+      v={sound[field] ?? def}
+      min={min}
+      max={max}
+      step={step}
+      def={def}
+      fmt={fmt}
+      set={(v) => onChange({ [field]: v })}
+    />
+  );
+  return (
+    <div
+      className="flex flex-wrap items-center gap-x-2 gap-y-2 rounded-md border border-border bg-card/60 p-2"
+      role="group"
+      aria-label={`Chop ${index + 1} edit`}
+    >
+      <span className="label-xs w-full sm:w-auto">CHOP {index + 1} EDIT</span>
+      {knob("pitch", "TUNE", -24, 24, 1, 0, (v) => `${v > 0 ? "+" : ""}${Math.round(v)} st`)}
+      {knob("fine", "FINE", -100, 100, 1, 0, (v) => `${v > 0 ? "+" : ""}${Math.round(v)} ct`)}
+      {knob("gain", "LEVEL", 0, 2, 0.01, 1, (v) => `${Math.round(v * 100)}%`)}
+      {knob("pan", "PAN", -1, 1, 0.01, 0, (v) =>
+        Math.abs(v) < 0.01 ? "C" : `${v < 0 ? "L" : "R"}${Math.round(Math.abs(v) * 100)}`,
+      )}
+      <div className="flex flex-col gap-1.5">
+        <label className="flex items-center justify-between gap-2">
+          <span className="label-xs">Reverse</span>
+          <Switch
+            aria-label={`Chop ${index + 1} reverse`}
+            checked={!!sound.reverse}
+            onCheckedChange={(reverse) => onChange({ reverse })}
+          />
+        </label>
+        <label className="flex items-center justify-between gap-2">
+          <span className="label-xs">Mute</span>
+          <Switch
+            aria-label={`Chop ${index + 1} mute`}
+            checked={!!sound.mute}
+            onCheckedChange={(mute) => onChange({ mute })}
+          />
+        </label>
+      </div>
+      <Button size="sm" variant="ghost" className="h-8 text-[10px]" onClick={onReset}>
+        Reset chop
+      </Button>
+      <span className="text-[11px] text-muted-foreground">
+        Tap a chop pad to edit it. These add to the sample's own tune and level.
+      </span>
+    </div>
   );
 }
 
@@ -684,9 +773,102 @@ export function Sampler() {
       setChopBusy(false);
     }
   };
+  /* MPC extras: note repeat on the chop pads, per-chop sound, and the extra sound knobs. */
+  const [repeat, setRepeatState] = useState<NoteRepeatSettings>(() => samplerNoteRepeat);
+  const repeatRef = useRef(repeat);
+  repeatRef.current = repeat;
+  const setRepeat = (next: NoteRepeatSettings) => {
+    samplerNoteRepeat = next;
+    setRepeatState(next);
+    if (!next.on) repeaterRef.current?.releaseAll();
+  };
+  const playRef = useRef<(key: string) => void>(() => {});
+  playRef.current = (key) => {
+    if (!track || !s) return;
+    const [kind, n] = key.split(":");
+    const i = Number(n);
+    if (kind === "mp") previewNote(track.id, s.rootNote + (padPitches(i, mp)[0] ?? 0), s.duration);
+    else previewNote(track.id, s.rootNote + i, s.duration);
+  };
+  /** Repeat hits waiting for their moment; letting go of the pad cancels them. */
+  const pendingRef = useRef(new Map<string, Set<number>>());
+  const releaseRepeat = (key: string) => {
+    repeaterRef.current?.release(key);
+    for (const timer of pendingRef.current.get(key) ?? []) window.clearTimeout(timer);
+    pendingRef.current.delete(key);
+  };
+  const repeaterRef = useRef<ReturnType<typeof createNoteRepeater> | null>(null);
+  if (!repeaterRef.current)
+    repeaterRef.current = createNoteRepeater({
+      now: () => getEngine().init().currentTime,
+      bpm: () => getEngine().tempo || 120,
+      settings: () => repeatRef.current,
+      // previewNote both sounds and records the hit, so each repeat waits for its moment.
+      fire: (key, when) => {
+        const delay = Math.max(0, (when - getEngine().init().currentTime) * 1000);
+        if (delay < 5) return playRef.current(key);
+        const timer = window.setTimeout(() => {
+          pendingRef.current.get(key)?.delete(timer);
+          playRef.current(key);
+        }, delay);
+        const set = pendingRef.current.get(key) ?? new Set<number>();
+        set.add(timer);
+        pendingRef.current.set(key, set);
+      },
+    });
+  useEffect(() => () => repeaterRef.current?.releaseAll(), []);
+  /** Press a chop pad ("chop:3") or a multi pitch pad ("mp:5"). */
+  const pressChopKey = (key: string) => {
+    if (repeatRef.current.on) repeaterRef.current?.press(key);
+    else playRef.current(key);
+  };
+  const chopSound = (i: number): ChopSound => s?.chopSounds?.[i] ?? {};
+  const setChopSound = (i: number, next: ChopSound) => {
+    if (!track || !s) return;
+    updateSampler(track.id, {
+      chopSounds: { ...(s.chopSounds ?? {}), [i]: { ...chopSound(i), ...next } },
+    });
+  };
+  const mpcKnob = (
+    field:
+      | "fine"
+      | "pan"
+      | "velSens"
+      | "filterEnv"
+      | "filterDecay"
+      | "velFilter"
+      | "pitchEnv"
+      | "pitchDecay",
+    label: string,
+    aria: string,
+    fmt: (v: number) => string,
+    disabled = false,
+  ) => {
+    if (!track || !s) return null;
+    const [min, max, step] = PAD_SOUND_RANGES[field];
+    const def = DEFAULT_PAD_SOUND[field] as number;
+    return (
+      <SK
+        key={field}
+        label={label}
+        aria={aria}
+        mt={{ id: track.id, param: `sampler:${field}` }}
+        v={(s[field] as number | undefined) ?? def}
+        min={min}
+        max={max}
+        step={step}
+        def={def}
+        disabled={disabled}
+        fmt={fmt}
+        set={(v) => updateSampler(track.id, { [field]: v })}
+      />
+    );
+  };
   const releaseChop = (index: number) => {
     setHeld(null);
-    if (track && s)
+    releaseRepeat(`chop:${index}`);
+    // One-shot chops play to their end after you let go; Gate stops them.
+    if (track && s && !s.oneShot)
       getEngine().stopVoiceKey(
         track.id,
         s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${index}`,
@@ -699,13 +881,19 @@ export function Sampler() {
       if (!track || !s) return;
       void velocity;
       if (mpOn) {
-        previewNote(track.id, s.rootNote + (padPitches(i, mp)[0] ?? 0), s.duration);
+        pressChopKey(`mp:${i}`);
         return;
       }
       setHeld(i);
-      previewNote(track.id, s.rootNote + i, s.duration);
+      setPickChop(i);
+      pressChopKey(`chop:${i}`);
     },
-    (i) => (mpOn ? releaseMulti(padPitches(i, mp)) : releaseChop(i)),
+    (i) => {
+      if (mpOn) {
+        releaseRepeat(`mp:${i}`);
+        releaseMulti(padPitches(i, mp));
+      } else releaseChop(i);
+    },
   );
 
   /** Cuts the trimmed region into n equal chops. */
@@ -1401,6 +1589,7 @@ export function Sampler() {
               />
             </div>
 
+            <NoteRepeatBar settings={repeat} onChange={setRepeat} />
             <MultiPitchModeSwitch
               settings={mp}
               onChange={(next) =>
@@ -1417,10 +1606,11 @@ export function Sampler() {
                     ...chops.map((_, i) => ({ value: i, label: `Chop ${i + 1}` })),
                   ]}
                   rootNote={s.rootNote}
-                  onPress={(_, pitches) =>
-                    previewNote(track.id, s.rootNote + (pitches[0] ?? 0), s.duration)
-                  }
-                  onRelease={(_, pitches) => releaseMulti(pitches)}
+                  onPress={(pad) => pressChopKey(`mp:${pad}`)}
+                  onRelease={(pad, pitches) => {
+                    releaseRepeat(`mp:${pad}`);
+                    releaseMulti(pitches);
+                  }}
                 />
                 <p className="text-xs text-muted-foreground">
                   The keyboard, piano roll and your MIDI controller also play{" "}
@@ -1483,7 +1673,8 @@ export function Sampler() {
                             if ((e.key === " " || e.key === "Enter") && !e.repeat) {
                               e.preventDefault();
                               setHeld(i);
-                              previewNote(track.id, s.rootNote + i, s.duration);
+                              setPickChop(i);
+                              pressChopKey(`chop:${i}`);
                             }
                           }}
                           onKeyUp={(e) => {
@@ -1497,7 +1688,8 @@ export function Sampler() {
                               /* pointer capture is unavailable in a few mobile webviews */
                             }
                             setHeld(i);
-                            previewNote(track.id, s.rootNote + i, s.duration);
+                            setPickChop(i);
+                            pressChopKey(`chop:${i}`);
                           }}
                           onPointerUp={() => releaseChop(i)}
                           onPointerCancel={() => releaseChop(i)}
@@ -1521,12 +1713,24 @@ export function Sampler() {
                             />
                           </span>
                           <span className="relative z-10 text-[9px] text-foreground/80">
+                            {s.chopSounds?.[i]?.mute ? "MUTED · " : ""}
                             {(c * s.duration).toFixed(2)}s
                           </span>
                         </Button>
                       );
                     })}
                 </div>
+                <ChopEdit
+                  index={Math.min(pickChop, chops.length - 1)}
+                  sound={chopSound(Math.min(pickChop, chops.length - 1))}
+                  onChange={(next) => setChopSound(Math.min(pickChop, chops.length - 1), next)}
+                  onReset={() => {
+                    const i = Math.min(pickChop, chops.length - 1);
+                    const rest = { ...(s.chopSounds ?? {}) };
+                    delete rest[i];
+                    updateSampler(track.id, { chopSounds: rest });
+                  }}
+                />
                 <p className="text-xs text-muted-foreground">
                   {chops.length} chops · {s.oneShot ? "One-shot" : "Gate"} ·{" "}
                   {s.chopChoke ? `Choke ${s.chopChoke}` : "Overlap"} · {noteName(s.rootNote)}
@@ -1633,6 +1837,16 @@ export function Sampler() {
                 fmt={(v) => noteName(Math.round(v))}
                 set={(v) => updateSampler(track.id, { rootNote: Math.round(v) })}
               />
+              {mpcKnob(
+                "fine",
+                "FINE",
+                "Fine tune",
+                (v) => `${v > 0 ? "+" : ""}${Math.round(v)} ct`,
+              )}
+              {mpcKnob("pan", "PAN", "Pan", (v) =>
+                Math.abs(v) < 0.01 ? "C" : `${v < 0 ? "L" : "R"}${Math.round(Math.abs(v) * 100)}`,
+              )}
+              {mpcKnob("velSens", "VEL→LVL", "Velocity to level", (v) => `${Math.round(v * 100)}%`)}
               <SK
                 label="ATTACK"
                 aria="Attack"
@@ -1764,6 +1978,40 @@ export function Sampler() {
                 fmt={(v) => v.toFixed(1)}
                 set={(v) => updateSampler(track.id, { resonance: v })}
               />
+              {mpcKnob(
+                "filterEnv",
+                "ENV AMT",
+                "Filter envelope amount",
+                (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)} oct`,
+                (s.filterType ?? "off") === "off",
+              )}
+              {mpcKnob(
+                "filterDecay",
+                "ENV DEC",
+                "Filter envelope decay",
+                (v) => `${Math.round(v * 1000)} ms`,
+                (s.filterType ?? "off") === "off",
+              )}
+              {mpcKnob(
+                "velFilter",
+                "VEL→FLT",
+                "Velocity to filter",
+                (v) => `${v.toFixed(1)} oct`,
+                (s.filterType ?? "off") === "off",
+              )}
+              {mpcKnob(
+                "pitchEnv",
+                "P.ENV",
+                "Pitch envelope amount",
+                (v) => `${v > 0 ? "+" : ""}${v.toFixed(1)} st`,
+              )}
+              {mpcKnob(
+                "pitchDecay",
+                "P.DEC",
+                "Pitch envelope decay",
+                (v) => `${Math.round(v * 1000)} ms`,
+                !s.pitchEnv,
+              )}
               <SK
                 label="SMP BPM"
                 aria="Sample BPM"

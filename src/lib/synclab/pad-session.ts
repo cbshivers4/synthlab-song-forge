@@ -1,4 +1,9 @@
-export interface SavedPad {
+import type { PadSound } from "./mpc-pad";
+
+/** Every MPC pad setting beyond the original ones is optional, so older saves keep loading. */
+export interface SavedPad extends Partial<Omit<PadSound, keyof SavedPadCore>>, SavedPadCore {}
+
+interface SavedPadCore {
   name: string;
   url: string;
   cloudPath?: string | undefined;

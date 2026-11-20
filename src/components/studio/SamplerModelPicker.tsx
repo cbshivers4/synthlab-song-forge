@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio } from "@/lib/synclab/store";
-import { isPadSamplerTrack } from "@/lib/synclab/track-editor";
+import { isPadSamplerTrack, isVideoSamplerTrack } from "@/lib/synclab/track-editor";
 
 /**
  * The sampler models, picked the same way as the SYNTHS row in the synth editor: each opens its
@@ -10,7 +10,7 @@ import { isPadSamplerTrack } from "@/lib/synclab/track-editor";
 export function SamplerModelPicker({ current }: { current: "sampler" | "pads" }) {
   const { tracks, select, addTrack, setPanel } = useStudio();
   const samplers = tracks.filter((t) => t.kind === "sampler");
-  const oneShot = samplers.find((t) => !isPadSamplerTrack(t));
+  const oneShot = samplers.find((t) => !isPadSamplerTrack(t) && !isVideoSamplerTrack(t));
   const pads = samplers.find((t) => isPadSamplerTrack(t));
   const models = [
     {

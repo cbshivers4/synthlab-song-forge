@@ -465,6 +465,17 @@ export interface SamplerState {
   fadeOut?: number | undefined;
   /** Multi pitch: one chop (or the whole sample) played across pads/keys as pitches or chords. */
   multiPitch?: import("./multi-pitch").MultiPitchSettings | undefined;
+  /** MPC extras for the whole sample (fine tune in cents, pan, envelopes, velocity response). */
+  fine?: number | undefined;
+  pan?: number | undefined;
+  filterEnv?: number | undefined;
+  filterDecay?: number | undefined;
+  pitchEnv?: number | undefined;
+  pitchDecay?: number | undefined;
+  velSens?: number | undefined;
+  velFilter?: number | undefined;
+  /** Per-chop sound on top of the sample settings, keyed by chop number (MPC per-pad edit). */
+  chopSounds?: Record<number, import("./mpc-pad").ChopSound> | undefined;
 }
 
 export type AutomationParam =

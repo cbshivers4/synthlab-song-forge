@@ -39,7 +39,6 @@ import {
 } from "@/lib/synclab/sample-sources";
 import { SampleSourcePicker } from "./SampleSourcePicker";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { useStudio } from "@/lib/synclab/store";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { toast } from "sonner";
@@ -67,6 +66,15 @@ import {
   type MultiPitchSettings,
 } from "@/lib/synclab/multi-pitch";
 import { qwertyEnabled } from "@/lib/synclab/qwerty";
+import { NoteRepeatBar } from "./NoteRepeatBar";
+import { PadSoundEditor } from "./PadSoundEditor";
+import {
+  DEFAULT_NOTE_REPEAT,
+  clampSwing,
+  createNoteRepeater,
+  swungStepTime,
+  type NoteRepeatSettings,
+} from "@/lib/synclab/mpc-pad";
 import { SavePadsDialog } from "./SavePadsDialog";
 import { PadSampleTools } from "./PadSampleTools";
 import { cropPadPeaks } from "@/lib/synclab/pad-chops";
@@ -109,6 +117,37 @@ interface Pad extends SavedPad {
 
 /** Multi pitch stays set while the app is open, so switching panels never turns it off. */
 let padMultiPitch: MultiPitchSettings = DEFAULT_MULTI_PITCH;
+/** Note Repeat and pattern swing also stay set while the app is open. */
+let padNoteRepeat: NoteRepeatSettings = DEFAULT_NOTE_REPEAT;
+let padPatternSwing = 50;
+
+/** Sound settings a pad passes to the engine (everything except its sample and trim). */
+const padSoundOptions = (pad: Pad) => ({
+  gain: pad.gain,
+  pitch: pad.pitch,
+  fine: pad.fine,
+  pan: pad.pan,
+  loop: pad.loop,
+  reverse: pad.reverse,
+  oneShot: pad.oneShot,
+  attack: pad.attack,
+  decay: pad.decay,
+  sustain: pad.sustain,
+  release: pad.release,
+  fadeIn: pad.fadeIn,
+  fadeOut: pad.fadeOut,
+  filterType: pad.filterType,
+  cutoff: pad.cutoff,
+  resonance: pad.resonance,
+  filterEnv: pad.filterEnv,
+  filterDecay: pad.filterDecay,
+  pitchEnv: pad.pitchEnv,
+  pitchDecay: pad.pitchDecay,
+  velSens: pad.velSens,
+  velFilter: pad.velFilter,
+  sampleBpm: pad.sampleBpm,
+  syncToBpm: pad.syncToBpm,
+});
 
 const emptySteps = () => Array.from({ length: STEPS }, () => 0);
 
@@ -419,6 +458,19 @@ export function PadSampler() {
   const index = (i: number) => bank * PADS_PER_BANK + i;
   const selPad = pads[sel];
 
+  /** Poly pads get a fresh voice per hit so repeats ring over each other; mono pads reuse one. */
+  const polyKeysRef = useRef<Map<number, string[]>>(new Map());
+  const polyCountRef = useRef(0);
+  const padVoiceKey = (i: number, pad: Pad) => {
+    if (pad.choke) return `choke${pad.choke}`;
+    if (!pad.poly) return `pad${i}`;
+    const key = `pad${i}~${polyCountRef.current++}`;
+    const keys = polyKeysRef.current.get(i) ?? [];
+    keys.push(key);
+    polyKeysRef.current.set(i, keys.slice(-32));
+    return key;
+  };
+
   const trigger = useCallback(
     (
       i: number,
@@ -429,35 +481,35 @@ export function PadSampler() {
     ) => {
       const pad = padsRef.current[i];
       if (!pad) return;
+      // A muted pad stays loaded but makes no sound (preview from the edit panel still plays).
+      if (pad.mute && !region) return;
       const id = ensureTrack();
       const engine = getEngine();
+      const delay = Math.max(
+        0,
+        ((when ?? engine.init().currentTime) - engine.init().currentTime) * 1000,
+      );
       engine.playSample(
         id,
         {
           url: pad.url,
           start: region?.start ?? pad.start,
           end: region?.end ?? pad.end,
-          gain: pad.gain,
-          pitch: pad.pitch,
           rootNote: 60,
-          loop: pad.loop,
-          reverse: pad.reverse,
-          oneShot: pad.oneShot,
-          attack: pad.attack,
-          release: pad.release,
+          ...padSoundOptions(pad),
         },
         midi,
-        when,
-        velocity,
         undefined,
-        pad.choke ? `choke${pad.choke}` : `pad${i}`,
+        velocity,
+        when,
+        padVoiceKey(i, pad),
       );
-      // While the transport records, drop the hit into the sampler track's take on the timeline.
-      if (!region) captureNote(id, midi, velocity);
-      const delay = Math.max(
-        0,
-        ((when ?? engine.init().currentTime) - engine.init().currentTime) * 1000,
-      );
+      // While the transport records, drop the hit into the sampler track's take on the timeline
+      // at the moment it sounds (Note Repeat and patterns queue hits a little ahead).
+      if (!region) {
+        if (delay < 10) captureNote(id, midi, velocity);
+        else window.setTimeout(() => captureNote(id, midi, velocity), delay);
+      }
       window.setTimeout(() => {
         setHit(i);
         window.setTimeout(() => setHit((h) => (h === i ? null : h)), 120);
@@ -487,61 +539,101 @@ export function PadSampler() {
   }, []);
   /** Plays the multi pitch sound at the given semitone offsets (one for SPREAD, a chord for CHORD). */
   const playPitches = useCallback(
-    (voice: string, pitches: number[], velocity = 1) => {
+    (voice: string, pitches: number[], velocity = 1, when?: number) => {
       const m = multiRef.current;
       const pad = padsRef.current[m.source];
       if (!pad || !pitches.length) return;
       const id = ensureTrack();
       const engine = getEngine();
       const keys = multiPitchVoiceKeys(voice);
+      const delay = Math.max(
+        0,
+        ((when ?? engine.init().currentTime) - engine.init().currentTime) * 1000,
+      );
       pitches.forEach((p, k) => {
         engine.playSample(
           id,
-          {
-            url: pad.url,
-            start: pad.start,
-            end: pad.end,
-            gain: pad.gain,
-            pitch: pad.pitch,
-            rootNote: 60,
-            loop: pad.loop,
-            reverse: pad.reverse,
-            oneShot: pad.oneShot,
-            attack: pad.attack,
-            release: pad.release,
-          },
+          { url: pad.url, start: pad.start, end: pad.end, rootNote: 60, ...padSoundOptions(pad) },
           60 + p,
           undefined,
           velocity,
-          undefined,
+          when,
           keys[k],
         );
-        captureNote(id, 60 + p, velocity);
+        if (delay < 10) captureNote(id, 60 + p, velocity);
+        else window.setTimeout(() => captureNote(id, 60 + p, velocity), delay);
       });
       setHit(m.source);
       window.setTimeout(() => setHit((h) => (h === m.source ? null : h)), 120);
     },
     [captureNote, ensureTrack],
   );
-  const pressMulti = useCallback(
-    (pad: number, velocity = 1) =>
-      playPitches(`mp${pad}`, padPitches(pad, multiRef.current), velocity),
+  const firePitches = useCallback(
+    (pad: number, velocity = 1, when?: number) =>
+      playPitches(`mp${pad}`, padPitches(pad, multiRef.current), velocity, when),
     [playPitches],
   );
+
+  /* Note Repeat: holding a pad keeps hitting it at the chosen rate and swing. */
+  const [repeat, setRepeatState] = useState<NoteRepeatSettings>(() => padNoteRepeat);
+  const repeatRef = useRef(repeat);
+  repeatRef.current = repeat;
+  const setRepeat = (next: NoteRepeatSettings) => {
+    padNoteRepeat = next;
+    setRepeatState(next);
+    if (!next.on) repeaterRef.current?.releaseAll();
+  };
+  const fireRef = useRef<(id: string, when: number, velocity: number) => void>(() => {});
+  fireRef.current = (key, when, velocity) => {
+    const [kind, n] = key.split(":");
+    if (kind === "mp") firePitches(Number(n), velocity, when);
+    else trigger(Number(n), velocity, when);
+  };
+  const repeaterRef = useRef<ReturnType<typeof createNoteRepeater> | null>(null);
+  if (!repeaterRef.current)
+    repeaterRef.current = createNoteRepeater({
+      now: () => getEngine().init().currentTime,
+      bpm: () => getEngine().tempo || 120,
+      settings: () => repeatRef.current,
+      fire: (key, when, velocity) => fireRef.current(key, when, velocity),
+    });
+  useEffect(() => () => repeaterRef.current?.releaseAll(), []);
+  /** Press a pad (absolute pad id): one hit, or repeating hits while Note Repeat is on. */
+  const pressPad = (i: number, velocity = 1) => {
+    if (repeatRef.current.on) repeaterRef.current?.press(`pad:${i}`, velocity);
+    else trigger(i, velocity);
+  };
+  const pressMulti = (pad: number, velocity = 1) => {
+    if (repeatRef.current.on) repeaterRef.current?.press(`mp:${pad}`, velocity);
+    else firePitches(pad, velocity);
+  };
   const releaseMulti = useCallback((pad: number) => {
+    repeaterRef.current?.release(`mp:${pad}`);
     const id = voiceTrackRef.current;
     if (!id) return;
+    // One-shot sounds keep ringing after you let go, like the normal pads.
+    const src = padsRef.current[multiRef.current.source];
+    if (src?.oneShot && !src.loop) return;
     for (const key of multiPitchVoiceKeys(`mp${pad}`)) getEngine().stopVoiceKey(id, key);
   }, []);
   const padMidi = useMidiPads(
     "pad-sampler",
     16,
     (i, velocity) =>
-      multiRef.current.mode !== "off" ? pressMulti(i, velocity) : trigger(index(i), velocity),
+      multiRef.current.mode !== "off" ? pressMulti(i, velocity) : pressPad(index(i), velocity),
     (i) => {
       if (multiRef.current.mode !== "off") releaseMulti(i);
+      else releasePad(index(i));
     },
   );
+
+  const [swing, setSwingState] = useState(() => padPatternSwing);
+  const swingRef = useRef(swing);
+  swingRef.current = swing;
+  const setSwing = (v: number) => {
+    padPatternSwing = clampSwing(Math.round(v));
+    setSwingState(padPatternSwing);
+  };
 
   /* pad step sequencer */
   useEffect(() => {
@@ -558,11 +650,16 @@ export function PadSampler() {
       if (nextTime < now - 0.2) nextTime = now + 0.04;
       while (nextTime < now + 0.12) {
         const scheduledStep = nextStep;
+        // MPC swing pushes every second 16th later; the grid itself stays straight.
+        const at =
+          nextTime +
+          swungStepTime(scheduledStep % 2, stepDuration, swingRef.current) -
+          (scheduledStep % 2) * stepDuration;
         for (const [key, pad] of Object.entries(padsRef.current)) {
           const velocity = pad.steps[scheduledStep] ?? 0;
-          if (velocity > 0) trigger(Number(key), velocity, nextTime);
+          if (velocity > 0) trigger(Number(key), velocity, at);
         }
-        const delay = Math.max(0, (nextTime - now) * 1000);
+        const delay = Math.max(0, (at - now) * 1000);
         window.setTimeout(() => {
           if (!cancelled) {
             stepRef.current = scheduledStep;
@@ -600,14 +697,24 @@ export function PadSampler() {
       if (k < 0) return;
       // Claim the key so the typing-keys instrument doesn't also play (and record) it.
       e.preventDefault();
-      // A held key auto-repeats; only the first press is a hit.
+      // A held key auto-repeats; only the first press is a hit (Note Repeat does its own timing).
       if (e.repeat) return;
       if (multiRef.current.mode !== "off") pressMulti(k);
-      else trigger(index(k));
+      else pressPad(index(k));
+    };
+    const up = (e: KeyboardEvent) => {
+      const k = KEYMAP.indexOf(e.key.toLowerCase());
+      if (k < 0) return;
+      if (multiRef.current.mode !== "off") releaseMulti(k);
+      else releasePad(index(k));
     };
     // capture phase: pads win over the global typing keys, so one press = one note
     window.addEventListener("keydown", down, true);
-    return () => window.removeEventListener("keydown", down, true);
+    window.addEventListener("keyup", up, true);
+    return () => {
+      window.removeEventListener("keydown", down, true);
+      window.removeEventListener("keyup", up, true);
+    };
   });
 
   /** Stop just one pad's voice (and its choke group) without touching the others. */
@@ -617,10 +724,18 @@ export function PadSampler() {
       const id = voiceTrackRef.current ?? trackId;
       if (!pad || !id) return;
       getEngine().stopVoiceKey(id, `pad${i}`);
+      for (const key of polyKeysRef.current.get(i) ?? []) getEngine().stopVoiceKey(id, key);
+      polyKeysRef.current.delete(i);
       if (pad.choke) getEngine().stopVoiceKey(id, `choke${pad.choke}`);
     },
     [trackId],
   );
+  /** Letting go of a pad: Note Repeat stops, and note-on (or looping) pads stop sounding. */
+  const releasePad = (i: number) => {
+    repeaterRef.current?.release(`pad:${i}`);
+    const pad = padsRef.current[i];
+    if (pad && (!pad.oneShot || pad.loop)) stopPad(i);
+  };
 
   const loadInto = async (i: number, file: File | undefined) => {
     if (!file) return;
@@ -887,7 +1002,7 @@ export function PadSampler() {
           [Play, "16-step patterns"],
           [Circle, "Record taps live"],
           [Square, "Choke groups"],
-          [Copy, "Trim · tune · choke"],
+          [Copy, "Tune · fine · pan · ADSR · filter"],
         ].map(([Icon, label]) => {
           const I = Icon as typeof Upload;
           return (
@@ -950,6 +1065,7 @@ export function PadSampler() {
           setMulti({ ...next, source: multi.mode === "off" ? (pads[sel] ? sel : loaded) : loaded });
         }}
       />
+      <NoteRepeatBar settings={repeat} onChange={setRepeat} />
       <MidiPadLearnBar pads={padMidi} label="pads" names={(i) => `pad ${i + 1} (current bank)`} />
       {multiOn ? (
         <MultiPitchPads
@@ -987,7 +1103,7 @@ export function PadSampler() {
                 return;
               }
               if (pad) {
-                stopPad(id);
+                releasePad(id);
                 setPlaying((current) => (current === id ? null : current));
               }
             };
@@ -1016,7 +1132,7 @@ export function PadSampler() {
                     } catch {
                       /* pointer capture is unavailable in a few mobile webviews */
                     }
-                    trigger(id);
+                    pressPad(id);
                     setPlaying(id);
                     startSweep(id);
                   }
@@ -1147,6 +1263,11 @@ export function PadSampler() {
                 >
                   {recording ? "RECORDING…" : pad ? pad.name : "HOLD TO RECORD"}
                 </span>
+                {pad?.mute && (
+                  <span className="absolute left-1 bottom-1 z-10 rounded-sm bg-destructive px-1 font-mono text-[8px] text-destructive-foreground">
+                    MUTE
+                  </span>
+                )}
                 {pad && pad.choke > 0 && (
                   <span className="absolute right-1 top-1 rounded-sm bg-accent px-1 font-mono text-[8px] text-accent-foreground">
                     C{pad.choke}
@@ -1203,6 +1324,19 @@ export function PadSampler() {
           <span className="font-mono text-[10px] text-muted-foreground">
             {transport.bpm} BPM · 16 steps
           </span>
+          <Knob
+            label="SWING"
+            ariaLabel="Pattern swing"
+            layout="inline"
+            size={30}
+            value={swing}
+            min={50}
+            max={75}
+            step={1}
+            defaultValue={50}
+            format={(v) => `${Math.round(v)}%`}
+            onChange={setSwing}
+          />
           {selPad && (
             <Button
               size="sm"
@@ -1377,127 +1511,55 @@ export function PadSampler() {
             onStopTarget={stopPad}
           />
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div
-              className="col-span-full flex flex-wrap items-start gap-x-2 gap-y-3 sm:col-span-1 lg:col-span-3"
-              role="group"
-              aria-label={`Pad ${sel + 1} sound`}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="label-xs">
+              PAD EDIT · {BANKS[Math.floor(sel / PADS_PER_BANK)]}
+              {(sel % PADS_PER_BANK) + 1}
+            </span>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 px-2 text-[10px]"
+              title="Set LEVEL so the loudest point of this pad's trimmed part reaches −1 dB (up to 200%)"
+              onClick={() => {
+                const peak = getEngine().samplePeak(selPad.url, selPad.start, selPad.end);
+                if (!(peak > 0)) {
+                  toast("Nothing to normalize", {
+                    description:
+                      "This pad's trimmed part is silent or not loaded yet — play it once first.",
+                  });
+                  return;
+                }
+                const gain = Math.min(2, 0.89 / peak);
+                patch(sel, { gain: Math.round(gain * 100) / 100 });
+                toast.success("Pad normalized to −1 dB", {
+                  description:
+                    gain >= 2
+                      ? "Level set to the 200% maximum — the sample is very quiet."
+                      : `Level ${Math.round(gain * 100)}%`,
+                });
+              }}
             >
-              <Knob
-                label="LEVEL"
-                ariaLabel={`Pad ${sel + 1} level`}
-                size={46}
-                value={selPad.gain}
-                min={0}
-                max={2}
-                step={0.01}
-                defaultValue={1}
-                format={(v) => `${Math.round(v * 100)}%`}
-                midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:gain" }}
-                onChange={(v) => patch(sel, { gain: v })}
-              />
-              <Knob
-                label="TUNE"
-                ariaLabel={`Pad ${sel + 1} tune`}
-                size={46}
-                value={selPad.pitch}
-                min={-24}
-                max={24}
-                step={0.1}
-                defaultValue={0}
-                format={(v) => `${v > 0 ? "+" : ""}${v.toFixed(1)} st`}
-                midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:pitch" }}
-                onChange={(v) => patch(sel, { pitch: v })}
-              />
-              <Knob
-                label="ATTACK"
-                ariaLabel={`Pad ${sel + 1} attack`}
-                size={46}
-                value={selPad.attack}
-                min={0}
-                max={1}
-                step={0.001}
-                defaultValue={0}
-                format={(v) => `${Math.round(v * 1000)} ms`}
-                midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:attack" }}
-                onChange={(v) => patch(sel, { attack: v })}
-              />
-              <Knob
-                label="RELEASE"
-                ariaLabel={`Pad ${sel + 1} release`}
-                size={46}
-                value={selPad.release}
-                min={0.005}
-                max={4}
-                step={0.005}
-                defaultValue={0.08}
-                format={(v) => `${Math.round(v * 1000)} ms`}
-                midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:release" }}
-                onChange={(v) => patch(sel, { release: v })}
-              />
-              <Knob
-                label="CHOKE"
-                ariaLabel={`Pad ${sel + 1} choke group`}
-                size={46}
-                value={selPad.choke}
-                min={0}
-                max={4}
-                step={1}
-                defaultValue={0}
-                format={(v) => (Math.round(v) ? `GRP ${Math.round(v)}` : "OFF")}
-                midiTarget={{ id: `sampler-pad:${sel}`, param: "pad:choke" }}
-                onChange={(v) => patch(sel, { choke: Math.round(v) })}
-              />
-              <div className="flex flex-col items-center gap-1 pt-1">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="h-8 px-2 text-[10px]"
-                  title="Set LEVEL so the loudest point of this pad's trimmed part reaches −1 dB (up to 200%)"
-                  onClick={() => {
-                    const peak = getEngine().samplePeak(selPad.url, selPad.start, selPad.end);
-                    if (!(peak > 0)) {
-                      toast("Nothing to normalize", {
-                        description:
-                          "This pad's trimmed part is silent or not loaded yet — play it once first.",
-                      });
-                      return;
-                    }
-                    const gain = Math.min(2, 0.89 / peak);
-                    patch(sel, { gain: Math.round(gain * 100) / 100 });
-                    toast.success("Pad normalized to −1 dB", {
-                      description:
-                        gain >= 2
-                          ? "Level set to the 200% maximum — the sample is very quiet."
-                          : `Level ${Math.round(gain * 100)}%`,
-                    });
-                  }}
-                >
-                  NORMALIZE
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="label-xs">Loop</span>
-                <Switch checked={selPad.loop} onCheckedChange={(v) => patch(sel, { loop: v })} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="label-xs">Reverse</span>
-                <Switch
-                  checked={selPad.reverse}
-                  onCheckedChange={(v) => patch(sel, { reverse: v })}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="label-xs">One shot</span>
-                <Switch
-                  checked={selPad.oneShot}
-                  onCheckedChange={(v) => patch(sel, { oneShot: v })}
-                />
-              </div>
-            </div>
+              NORMALIZE
+            </Button>
+            {selPad.mute && (
+              <span className="rounded-sm bg-destructive/20 px-1.5 py-0.5 font-mono text-[10px] text-destructive">
+                MUTED
+              </span>
+            )}
           </div>
+          <PadSoundEditor
+            key={`edit-${sel}`}
+            name={`Pad ${BANKS[Math.floor(sel / PADS_PER_BANK)]}${(sel % PADS_PER_BANK) + 1}`}
+            sound={selPad}
+            midiTarget={(field) => ({ id: `sampler-pad:${sel}`, param: `pad:${field}` })}
+            onChange={(next) => {
+              // Changing how a pad plays (mute group, poly, playback) stops what it is ringing.
+              if ("choke" in next || "poly" in next || "mute" in next || "loop" in next)
+                stopPad(sel);
+              patch(sel, next);
+            }}
+          />
         </>
       )}
 

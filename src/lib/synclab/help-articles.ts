@@ -527,6 +527,30 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
+    id: "mpc-pad-tools",
+    category: "Samplers & video",
+    title: "MPC-style pad tools: note repeat, swing and pad edit",
+    tags: "mpc note repeat swing pad edit tune fine pan envelope filter velocity mono poly mute group choke one shot note on chop video",
+    body: [
+      "NOTE REPEAT (Sampler, Pad Sampler and Video Sampler): turn it on, pick a rate from 1/4 to 1/32T and set SWING (50% is straight, up to 75%). Hold a pad and it keeps hitting in time with the song tempo; let go to stop.",
+      "Pad Sampler and Video Sampler: tap a pad or chop, then use its edit panel — TUNE and FINE, LEVEL, PAN, VEL→LVL, the amp envelope (attack, decay, sustain, release, fades), a filter with its own envelope and VEL→FLT, a pitch envelope, One-shot or Note on, Mono or Poly, Mute group, Loop, Reverse and Mute pad.",
+      "Pad Sampler patterns have their own SWING knob, and each pad can follow the song tempo (Warp, repitch).",
+      "Sampler: every chop has its own TUNE, FINE, LEVEL, PAN, Reverse and Mute on top of the sample. The sample itself also has FINE, PAN, VEL→LVL, filter envelope, VEL→FLT and pitch envelope knobs.",
+    ],
+    can: [
+      "Hold several pads at once with Note Repeat on — each repeats on its own.",
+      "Video Sampler chops now play through their own VIDEO SAMPLER mixer channel, so faders, sends and effects work on them.",
+      "Copy one video chop's sound to all chops, or reset a chop.",
+      "One-shot pads keep ringing after you let go; Note on pads stop when you let go.",
+    ],
+    cant: [
+      "Note Repeat starts from the moment you press the pad; it doesn't wait for the song's beat grid.",
+      "Video picture plays forward even when a chop's sound is reversed, and envelopes shape only the sound.",
+      "Video Sampler hits aren't recorded onto the timeline; use Add to timeline or Open in Sampler for that.",
+      "There are no velocity layers (several samples on one pad) yet.",
+    ],
+  },
+  {
     id: "multi-pitch",
     category: "Samplers & video",
     title: "Multi pitch: one sound on every pad, as notes or chords",
@@ -544,7 +568,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     cant: [
       "Higher pads play faster and shorter, lower pads slower and longer, the way a hardware sampler repitches.",
       "In the Pad Sampler and Video Sampler, multi pitch stays on while the app is open but isn't saved with the project.",
-      "Video Sampler multi pitch plays the video's sound straight to your speakers like its normal pads, not through the mixer, and the picture follows the first note of a chord.",
+      "In the Video Sampler the picture follows the first note of a chord.",
     ],
   },
 

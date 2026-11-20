@@ -91,6 +91,7 @@ import {
   subscribe,
   type MidiPortInfo,
 } from "./midi";
+import { PAD_SOUND_RANGES, reconcileChopSounds } from "./mpc-pad";
 import { getPadBank, setPadBank } from "./pad-session";
 import { getLooper } from "./live-looper";
 import { getReelRecorder } from "./reel-recorder";
@@ -1469,6 +1470,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               fadeOut: [0, 2, 0.005],
               resonance: [0.1, 20, 0.1],
               sampleBpm: [60, 200, 1],
+              fine: [-100, 100, 1],
+              pan: [-1, 1, 0.01],
+              filterEnv: [-4, 4, 0.05],
+              filterDecay: [0.01, 3, 0.01],
+              pitchEnv: [-24, 24, 0.5],
+              pitchDecay: [0.01, 2, 0.01],
+              velSens: [0, 1, 0.01],
+              velFilter: [0, 4, 0.05],
             };
             const range = ranges[field];
             if (field === "cutoff" || range)
@@ -1541,18 +1550,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           if (target.id.startsWith("sampler-pad:") && target.param.startsWith("pad:")) {
             const index = Number(target.id.slice("sampler-pad:".length));
             const field = target.param.slice(4);
-            const ranges: Record<string, [number, number, number?]> = {
-              gain: [0, 2, 0.01],
-              pitch: [-24, 24, 0.1],
-              attack: [0, 1, 0.001],
-              release: [0.005, 4, 0.005],
-              choke: [0, 4, 1],
-            };
-            const range = ranges[field];
-            if (Number.isInteger(index) && range) {
+            // Every MPC pad knob shares its range with the pad editor (mpc-pad.ts).
+            const range = (PAD_SOUND_RANGES as Record<string, readonly [number, number, number]>)[
+              field
+            ];
+            if (Number.isInteger(index) && (range || field === "cutoff")) {
               const pads = getPadBank();
               const pad = pads[index];
-              if (pad) setPadBank({ ...pads, [index]: { ...pad, [field]: ccRange(v, ...range) } });
+              const value =
+                field === "cutoff"
+                  ? Math.round(Math.pow(10, ccRange(v, Math.log10(20), Math.log10(20000))))
+                  : range
+                    ? ccRange(v, range[0], range[1], range[2])
+                    : 0;
+              if (pad) setPadBank({ ...pads, [index]: { ...pad, [field]: value } });
             }
             return;
           }
@@ -4725,7 +4736,25 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       updateSampler: (trackId, patch) =>
         setTracks((ts) =>
           ts.map((t) =>
-            t.id === trackId && t.sampler ? { ...t, sampler: { ...t.sampler, ...patch } } : t,
+            t.id === trackId && t.sampler
+              ? {
+                  ...t,
+                  sampler: {
+                    ...t.sampler,
+                    ...patch,
+                    // Re-chopping keeps each surviving chop's own tune/level/pan/mute.
+                    ...("slices" in patch && !("chopSounds" in patch)
+                      ? {
+                          chopSounds: reconcileChopSounds(
+                            t.sampler.slices,
+                            patch.slices,
+                            t.sampler.chopSounds,
+                          ),
+                        }
+                      : {}),
+                  },
+                }
+              : t,
           ),
         ),
       clearSample: (trackId) => {

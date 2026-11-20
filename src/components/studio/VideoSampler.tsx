@@ -40,10 +40,25 @@ import {
   padPitches,
   type MultiPitchSettings,
 } from "@/lib/synclab/multi-pitch";
+import { NoteRepeatBar } from "./NoteRepeatBar";
+import { PadSoundEditor } from "./PadSoundEditor";
+import {
+  DEFAULT_NOTE_REPEAT,
+  DEFAULT_PAD_SOUND,
+  createNoteRepeater,
+  padTune,
+  type NoteRepeatSettings,
+  type PadSound,
+} from "@/lib/synclab/mpc-pad";
+import { isVideoSamplerTrack } from "@/lib/synclab/track-editor";
 
 const PAD_KEYS = VIDEO_PAD_KEYS;
 /** Multi pitch stays set while the app is open, so switching panels never turns it off. */
 let videoMultiPitch: MultiPitchSettings = DEFAULT_MULTI_PITCH;
+let videoNoteRepeat: NoteRepeatSettings = DEFAULT_NOTE_REPEAT;
+
+type ChopSounds = (Partial<PadSound> | null)[];
+const clampRate = (r: number) => Math.max(0.0625, Math.min(16, r));
 
 /** Video sampler: load or film a clip, chop its audio at real attacks, trigger chops as pads (video + sound), and print chops to the timeline. */
 export function VideoSampler() {
@@ -51,6 +66,7 @@ export function VideoSampler() {
   const skinDrop = useImageDrop("video");
   const skinned = !!(skin.image || skin.color);
   const {
+    tracks,
     addTrack,
     addClip,
     transport,
@@ -86,6 +102,9 @@ export function VideoSampler() {
   const [url, setUrl] = useState<string | null>(null);
   const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
   const [chops, setChops] = useState<number[]>([]);
+  /** Each chop's own sound (MPC pad edit), kept in the same order as the chops. */
+  const [chopSounds, setChopSounds] = useState<ChopSounds>([]);
+  const [editIdx, setEditIdx] = useState(0);
   const [sensitivity, setSensitivity] = useState(0.5);
   const [filming, setFilming] = useState(false);
   const [active, setActive] = useState<number | null>(null);
@@ -184,7 +203,14 @@ export function VideoSampler() {
       toast.info("All 16 chop pads are filled");
       return;
     }
+    const atIndex = chops.filter((c) => c < at).length;
     setChops((current) => [...current, at].sort((a, b) => a - b));
+    setChopSounds((current) => {
+      const next = [...current];
+      while (next.length < atIndex) next.push(null);
+      next.splice(atIndex, 0, null);
+      return next;
+    });
   };
   const seek = (time: number) => {
     window.clearTimeout(stopTimer.current);
@@ -209,6 +235,7 @@ export function VideoSampler() {
   const chopAll = (buf: AudioBuffer, sens: number) => {
     const fractions = detectSampleChops([buf.getChannelData(0)], buf.sampleRate, 0, 1, sens);
     setChops(fractions.map((f) => f * buf.duration));
+    setChopSounds([]);
   };
 
   const loadBlob = async (
@@ -223,6 +250,7 @@ export function VideoSampler() {
     video.current?.pause();
     setBuffer(null);
     setChops([]);
+    setChopSounds([]);
     setPosition(0);
     setActive(null);
     const next = URL.createObjectURL(blob);
@@ -249,6 +277,7 @@ export function VideoSampler() {
         setSensitivity(kit.sensitivity ?? 0.5);
         setManualSlice(kit.manualSlice ?? false);
         setMidiNotes(kit.midiNotes ?? []);
+        setChopSounds(kit.chopSounds ?? []);
         setLearnPad(null);
       } else {
         setNoteGrid(0);
@@ -292,6 +321,7 @@ export function VideoSampler() {
         sensitivity,
         manualSlice,
         midiNotes,
+        chopSounds,
       });
     const id = window.setTimeout(persist, 500);
     const onHide = () => {
@@ -316,6 +346,7 @@ export function VideoSampler() {
     sensitivity,
     manualSlice,
     midiNotes,
+    chopSounds,
   ]);
 
   const kitName = () => (blobRef.current?.name ?? "Video").replace(/\.[^.]+$/, "");
@@ -344,6 +375,7 @@ export function VideoSampler() {
             sensitivity,
             manualSlice,
             midiNotes,
+            chopSounds,
           },
         },
       });
@@ -366,9 +398,30 @@ export function VideoSampler() {
     const name = kitName().toUpperCase().slice(0, 16) || "VIDEO";
     const id = addTrack("sampler", name, undefined, { keepPanel: true });
     await loadSample(id, new File([encodeWav(cap)], `${name}.wav`, { type: "audio/wav" }));
+    // Each chop's tune, fine, level, pan, reverse and mute go along as Sampler chop edits.
+    const chopEdits = Object.fromEntries(
+      chopSounds.flatMap((c, i) =>
+        c
+          ? [
+              [
+                i,
+                {
+                  pitch: c.pitch,
+                  fine: c.fine,
+                  gain: c.gain,
+                  pan: c.pan,
+                  reverse: c.reverse,
+                  mute: c.mute,
+                },
+              ],
+            ]
+          : [],
+      ),
+    );
     updateSampler(id, {
       slices: chops.map((c) => c / buffer.duration),
       sampleBpm: stretchOn ? targetBpm : sourceBpm,
+      chopSounds: chopEdits,
     });
     select(id);
     setPanel("sampler");
@@ -378,11 +431,13 @@ export function VideoSampler() {
       seek(0);
       setChopCount(n);
       setChops(Array.from({ length: n }, (_, i) => (i * buffer.duration) / n));
+      setChopSounds([]);
     }
   };
   const removeChop = (i: number) => {
     seek(position);
     setChops((c) => c.filter((_, j) => j !== i));
+    setChopSounds((c) => c.filter((_, j) => j !== i));
     setMidiNotes((notes) => notes.filter((_, j) => j !== i));
     setLearnPad(null);
   };
@@ -423,102 +478,284 @@ export function VideoSampler() {
   };
 
   const range = (i: number) => [chops[i] ?? 0, chops[i + 1] ?? buffer?.duration ?? 0] as const;
-  const trigger = (i: number) => {
-    const v = video.current;
-    if (!v || !url || filming || i < 0 || i >= chops.length) return;
-    const [a, b] = range(i);
-    window.clearTimeout(stopTimer.current);
-    v.preservesPitch = true;
-    v.playbackRate = speed;
-    v.currentTime = a;
-    void v.play();
-    setActive(i);
-    stopTimer.current = window.setTimeout(
-      () => {
+
+  /* ── Sound: the video's audio plays through its own mixer channel like a loaded sample ── */
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!buffer) {
+      setAudioUrl(null);
+      return;
+    }
+    const engine = getEngine();
+    const registered = engine.registerBuffer(buffer, "video");
+    setAudioUrl(registered);
+    return () => engine.releaseBuffer(registered);
+  }, [buffer]);
+  /** Pitch-kept time stretch is rendered once (in a worker) and the pads play the result. */
+  const [stretched, setStretched] = useState<{ url: string; speed: number } | null>(null);
+  const [stretching, setStretching] = useState(false);
+  useEffect(() => {
+    if (!buffer || !stretchOn || speed === 1) {
+      setStretched(null);
+      setStretching(false);
+      return;
+    }
+    let worker: Worker | null = null;
+    let registered: string | null = null;
+    let cancelled = false;
+    setStretching(true);
+    const timer = window.setTimeout(() => {
+      const left = buffer.getChannelData(0).slice();
+      const right = buffer.getChannelData(Math.min(1, buffer.numberOfChannels - 1)).slice();
+      worker = new Worker(new URL("../../lib/synclab/pad-stretch.worker.ts", import.meta.url), {
+        type: "module",
+      });
+      worker.onmessage = (
+        e: MessageEvent<{ left?: Float32Array; right?: Float32Array; error?: string }>,
+      ) => {
+        worker?.terminate();
+        worker = null;
+        if (cancelled) return;
+        setStretching(false);
+        if (e.data.error || !e.data.left || !e.data.right) {
+          toast.error("Couldn't time stretch the video sound", { description: e.data.error });
+          return;
+        }
+        const ctx = getEngine().init();
+        const out = ctx.createBuffer(2, e.data.left.length, buffer.sampleRate);
+        out.copyToChannel(e.data.left as Float32Array<ArrayBuffer>, 0);
+        out.copyToChannel(e.data.right as Float32Array<ArrayBuffer>, 1);
+        registered = getEngine().registerBuffer(out, "video-stretch");
+        setStretched({ url: registered, speed });
+      };
+      worker.onerror = () => {
+        if (!cancelled) setStretching(false);
+      };
+      worker.postMessage({ left, right, speed }, [left.buffer, right.buffer]);
+    }, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      worker?.terminate();
+      if (registered) getEngine().releaseBuffer(registered);
+    };
+  }, [buffer, stretchOn, speed]);
+  const playUrl =
+    stretchOn && speed !== 1 ? (stretched?.speed === speed ? stretched.url : null) : audioUrl;
+
+  /** The mixer channel every video pad plays through (made on first hit, never armed). */
+  const tracksRef = useRef(tracks);
+  tracksRef.current = tracks;
+  const madeTrack = useRef<{ id: string; at: number } | null>(null);
+  const ensureTrack = () => {
+    const existing = tracksRef.current.find((t) => isVideoSamplerTrack(t));
+    if (existing) return existing.id;
+    const made = madeTrack.current;
+    if (made && Date.now() - made.at < 1500) return made.id;
+    const id = addTrack("sampler", "VIDEO SAMPLER", undefined, { keepPanel: true });
+    madeTrack.current = { id, at: Date.now() };
+    return id;
+  };
+  const chopSound = (i: number): PadSound => ({ ...DEFAULT_PAD_SOUND, ...(chopSounds[i] ?? {}) });
+  const polyKeys = useRef(new Map<string, string[]>());
+  const polyCount = useRef(0);
+  const voiceKey = (base: string, sound: PadSound) => {
+    if (sound.choke) return `vchoke${sound.choke}`;
+    if (!sound.poly) return base;
+    const key = `${base}~${polyCount.current++}`;
+    polyKeys.current.set(base, [...(polyKeys.current.get(base) ?? []), key].slice(-32));
+    return key;
+  };
+  const stopVoices = (base: string, sound: PadSound) => {
+    const id = tracksRef.current.find((t) => isVideoSamplerTrack(t))?.id ?? madeTrack.current?.id;
+    if (!id) return;
+    const engine = getEngine();
+    engine.stopVoiceKey(id, base);
+    for (const key of polyKeys.current.get(base) ?? []) engine.stopVoiceKey(id, key);
+    polyKeys.current.delete(base);
+    if (sound.choke) engine.stopVoiceKey(id, `vchoke${sound.choke}`);
+  };
+
+  /** The picture follows the hit: it jumps to the chop and plays at the hit's speed. */
+  const padDriven = useRef(false);
+  const showPicture = (
+    i: number | null,
+    a: number,
+    b: number,
+    rate: number,
+    delay: number,
+    loop: boolean,
+  ) => {
+    window.setTimeout(() => {
+      const v = video.current;
+      if (!v) return;
+      window.clearTimeout(stopTimer.current);
+      padDriven.current = true;
+      v.muted = true;
+      v.playbackRate = clampRate(rate);
+      v.currentTime = a;
+      void v.play().catch(() => undefined);
+      setActive(i);
+      const span = Math.max(0.05, (b - a) / clampRate(rate));
+      const end = () => {
+        if (loop) {
+          v.currentTime = a;
+          stopTimer.current = window.setTimeout(end, span * 1000);
+          return;
+        }
         v.pause();
         setActive(null);
-      },
-      Math.max(50, ((b - a) / speed) * 1000),
-    );
+      };
+      stopTimer.current = window.setTimeout(end, span * 1000);
+    }, delay);
+  };
+  const stopPicture = () => {
+    window.clearTimeout(stopTimer.current);
+    video.current?.pause();
+    setActive(null);
+  };
+
+  /** One hit of chop i (at `when` on the audio clock, or now). */
+  const trigger = (i: number, velocity = 1, when?: number) => {
+    if (!buffer || !url || filming || i < 0 || i >= chops.length) return;
+    const sound = chopSound(i);
+    if (sound.mute) return;
+    const [a, b] = range(i);
+    if (b - a <= 0.005) return;
+    const engine = getEngine();
+    const now = engine.init().currentTime;
+    const delay = Math.max(0, ((when ?? now) - now) * 1000);
+    const source = playUrl ?? audioUrl;
+    if (!bypassed && source) {
+      engine.playSample(
+        ensureTrack(),
+        {
+          ...sound,
+          url: source,
+          start: a / buffer.duration,
+          end: b / buffer.duration,
+          rootNote: 60,
+          sampleBpm: undefined,
+          syncToBpm: false,
+        },
+        60,
+        undefined,
+        velocity,
+        when,
+        voiceKey(`vchop${i}`, sound),
+      );
+    }
+    showPicture(i, a, b, speed * Math.pow(2, padTune(sound) / 12), delay, sound.loop);
+  };
+  const releaseChop = (i: number) => {
+    repeater.current?.release(`chop:${i}`);
+    const sound = chopSound(i);
+    if (sound.oneShot && !sound.loop) return;
+    stopVoices(`vchop${i}`, sound);
+    if (active === i) stopPicture();
   };
 
   const [multi, setMultiState] = useState<MultiPitchSettings>(() => videoMultiPitch);
   const multiOn = multi.mode !== "off";
-  const multiVoices = useRef<Map<string, AudioBufferSourceNode[]>>(new Map());
-  const stopMultiVoice = (voice: string) => {
-    for (const node of multiVoices.current.get(voice) ?? []) {
-      try {
-        node.stop();
-      } catch {
-        /* already stopped */
-      }
-    }
-    multiVoices.current.delete(voice);
-  };
-  const stopAllMulti = () => {
-    for (const voice of [...multiVoices.current.keys()]) stopMultiVoice(voice);
-  };
-  useEffect(() => () => stopAllMulti(), []);
   const setMulti = (next: MultiPitchSettings) => {
     videoMultiPitch = next;
     setMultiState(next);
-    stopAllMulti();
+    const id = tracksRef.current.find((t) => isVideoSamplerTrack(t))?.id;
+    if (id) getEngine().stopSamples(id);
   };
   /**
-   * Multi pitch plays the chosen chop from the decoded audio at each pitch (the picture follows
-   * the first note). Pitch and speed move together here, like a hardware sampler.
+   * Multi pitch plays the chosen chop (with its own sound) at each pitch through the same
+   * channel; the picture follows the first note. Pitch and speed move together, like an MPC.
    */
-  const playMulti = (voice: string, pitches: number[]) => {
-    const v = video.current;
+  const playMulti = (voice: string, pitches: number[], velocity = 1, when?: number) => {
     if (!buffer || !url || filming || !pitches.length) return;
     const src = multi.source;
     if (src >= chops.length) return;
     const [a, b] = src < 0 ? ([0, buffer.duration] as const) : range(src);
     if (b - a <= 0.005) return;
-    stopMultiVoice(voice);
-    const ctx = getEngine().init();
-    const t0 = ctx.currentTime + 0.005;
-    const level = bypassed ? 0 : 0.9 / Math.sqrt(pitches.length);
-    const nodes = pitches.map((p) => {
-      const node = ctx.createBufferSource();
-      node.buffer = buffer;
-      node.playbackRate.value = Math.max(0.0625, Math.min(16, speed * Math.pow(2, p / 12)));
-      const amp = ctx.createGain();
-      amp.gain.value = level;
-      node.connect(amp).connect(ctx.destination);
-      node.onended = () => {
-        node.disconnect();
-        amp.disconnect();
-        const list = multiVoices.current.get(voice);
-        if (list)
-          multiVoices.current.set(
-            voice,
-            list.filter((x) => x !== node),
-          );
-      };
-      node.start(t0, a, b - a);
-      return node;
-    });
-    multiVoices.current.set(voice, nodes);
-    if (v) {
-      const rate = Math.max(0.0625, Math.min(16, speed * Math.pow(2, (pitches[0] ?? 0) / 12)));
-      window.clearTimeout(stopTimer.current);
-      v.muted = true;
-      v.playbackRate = rate;
-      v.currentTime = a;
-      void v.play();
-      setActive(src >= 0 ? src : null);
-      stopTimer.current = window.setTimeout(
-        () => {
-          v.pause();
-          setActive(null);
-        },
-        Math.max(50, ((b - a) / rate) * 1000),
+    const sound = src >= 0 ? chopSound(src) : DEFAULT_PAD_SOUND;
+    if (sound.mute) return;
+    const engine = getEngine();
+    const now = engine.init().currentTime;
+    const delay = Math.max(0, ((when ?? now) - now) * 1000);
+    const source = playUrl ?? audioUrl;
+    const keys = multiPitchVoiceKeys(voice);
+    if (!bypassed && source) {
+      const id = ensureTrack();
+      pitches.forEach((p, k) =>
+        engine.playSample(
+          id,
+          {
+            ...sound,
+            url: source,
+            start: a / buffer.duration,
+            end: b / buffer.duration,
+            rootNote: 60,
+            sampleBpm: undefined,
+            syncToBpm: false,
+          },
+          60 + p,
+          undefined,
+          velocity,
+          when,
+          keys[k],
+        ),
       );
     }
+    showPicture(
+      src >= 0 ? src : null,
+      a,
+      b,
+      speed * Math.pow(2, (padTune(sound) + (pitches[0] ?? 0)) / 12),
+      delay,
+      sound.loop,
+    );
   };
-  const pressMulti = (pad: number) => playMulti(`mp${pad}`, padPitches(pad, multi));
+  const releaseMulti = (pad: number) => {
+    repeater.current?.release(`mp:${pad}`);
+    const sound = multi.source >= 0 ? chopSound(multi.source) : DEFAULT_PAD_SOUND;
+    if (sound.oneShot && !sound.loop) return;
+    const id = tracksRef.current.find((t) => isVideoSamplerTrack(t))?.id;
+    if (id) for (const key of multiPitchVoiceKeys(`mp${pad}`)) getEngine().stopVoiceKey(id, key);
+    stopPicture();
+  };
 
+  /* Note Repeat: holding a chop pad keeps hitting it at the chosen rate and swing. */
+  const [repeat, setRepeatState] = useState<NoteRepeatSettings>(() => videoNoteRepeat);
+  const repeatRef = useRef(repeat);
+  repeatRef.current = repeat;
+  const setRepeat = (next: NoteRepeatSettings) => {
+    videoNoteRepeat = next;
+    setRepeatState(next);
+    if (!next.on) repeater.current?.releaseAll();
+  };
+  const fireRef = useRef<(key: string, when: number, velocity: number) => void>(() => {});
+  fireRef.current = (key, when, velocity) => {
+    const [kind, n] = key.split(":");
+    const i = Number(n);
+    if (kind === "mp") playMulti(`mp${i}`, padPitches(i, multi), velocity, when);
+    else trigger(i, velocity, when);
+  };
+  const repeater = useRef<ReturnType<typeof createNoteRepeater> | null>(null);
+  if (!repeater.current)
+    repeater.current = createNoteRepeater({
+      now: () => getEngine().init().currentTime,
+      bpm: () => getEngine().tempo || 120,
+      settings: () => repeatRef.current,
+      fire: (key, when, velocity) => fireRef.current(key, when, velocity),
+    });
+  useEffect(() => () => repeater.current?.releaseAll(), []);
+  const pressChop = (i: number, velocity = 1) => {
+    setEditIdx(i);
+    if (repeatRef.current.on) repeater.current?.press(`chop:${i}`, velocity);
+    else trigger(i, velocity);
+  };
+  const pressMulti = (pad: number, velocity = 1) => {
+    if (repeatRef.current.on) repeater.current?.press(`mp:${pad}`, velocity);
+    else playMulti(`mp${pad}`, padPitches(pad, multi), velocity);
+  };
+
+  const heldMidi = useRef(new Map<string, { index: number; multi: boolean }>());
   const learnNote = (index: number, pitch: number, channel: number) => {
     setMidiNotes((notes) => assignVideoPadNote(notes, index, { pitch, channel }));
     setLearnPad(null);
@@ -528,7 +765,15 @@ export function VideoSampler() {
     claimMidiNotes((msg) => {
       if (msg.type !== "on" && msg.type !== "off") return false;
       const key = `${msg.channel}:${msg.pitch}`;
-      if (msg.type === "off") return consumedNotes.current.delete(key);
+      if (msg.type === "off") {
+        const held = heldMidi.current.get(key);
+        heldMidi.current.delete(key);
+        if (held !== undefined) {
+          if (held.multi) releaseMulti(held.index);
+          else releaseChop(held.index);
+        }
+        return consumedNotes.current.delete(key);
+      }
       if (filming || !chops.length) return false;
       if (learnPad !== null && learnPad < chops.length) {
         consumedNotes.current.add(key);
@@ -540,8 +785,10 @@ export function VideoSampler() {
       );
       if (index < 0) return false;
       consumedNotes.current.add(key);
-      if (multiOn) pressMulti(index);
-      else trigger(index);
+      heldMidi.current.set(key, { index, multi: multiOn });
+      const velocity = Math.max(0.05, Math.min(1, msg.velocity / 127));
+      if (multiOn) pressMulti(index, velocity);
+      else pressChop(index, velocity);
       return true;
     }),
   );
@@ -567,11 +814,21 @@ export function VideoSampler() {
       if (i >= 0 && i < chops.length && !filming) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        if (!e.repeat) trigger(i);
+        if (!e.repeat) pressChop(i);
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      const i = PAD_KEYS.indexOf(e.key.toLowerCase());
+      if (i < 0) return;
+      if (multiOn && i < 16) releaseMulti(i);
+      else if (i < chops.length) releaseChop(i);
+    };
     window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    window.addEventListener("keyup", onKeyUp, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      window.removeEventListener("keyup", onKeyUp, true);
+    };
   });
 
   const slice = (from: number, to: number) => {
@@ -673,7 +930,7 @@ export function VideoSampler() {
         <video
           ref={video}
           src={url ?? undefined}
-          muted={bypassed || filming || multiOn}
+          muted={bypassed || filming}
           playsInline
           style={{ height: `${videoHeight}px` }}
           className="w-full bg-background object-contain"
@@ -682,6 +939,14 @@ export function VideoSampler() {
           onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
           onSeeked={(e) => setPosition(e.currentTarget.currentTime)}
           onEnded={() => setActive(null)}
+          onPlay={(e) => {
+            // Pads play their sound through the mixer, so the picture stays silent for them;
+            // playing the video yourself with its controls brings its own sound back.
+            if (!padDriven.current) e.currentTarget.muted = bypassed || filming;
+          }}
+          onPause={() => {
+            padDriven.current = false;
+          }}
         />
       </div>
       {buffer && (
@@ -972,7 +1237,10 @@ export function VideoSampler() {
             variant="ghost"
             className="h-9"
             disabled={!chops.length}
-            onClick={() => setChops([])}
+            onClick={() => {
+              setChops([]);
+              setChopSounds([]);
+            }}
           >
             Clear chops
           </Button>
@@ -990,6 +1258,12 @@ export function VideoSampler() {
           }
         />
       )}
+      {buffer && <NoteRepeatBar settings={repeat} onChange={setRepeat} disabled={filming} />}
+      {buffer && stretching && (
+        <p className="font-mono text-[11px] text-muted-foreground" role="status">
+          Rendering the time stretch for the pads… they play at the original tempo until it's ready.
+        </p>
+      )}
       {buffer && multiOn && (
         <MultiPitchPads
           settings={multi}
@@ -999,6 +1273,7 @@ export function VideoSampler() {
             ...chops.map((t, i) => ({ value: i, label: `Chop ${i + 1} · ${t.toFixed(2)}s` })),
           ]}
           onPress={(pad) => pressMulti(pad)}
+          onRelease={(pad) => releaseMulti(pad)}
           padKeys={PAD_KEYS}
           disabled={filming}
         />
@@ -1013,8 +1288,28 @@ export function VideoSampler() {
                 data-pad-color={i % 4}
                 aria-pressed={active === i}
                 disabled={filming}
-                className="video-chop-pad h-36 min-w-0 flex-col gap-2 border px-3 py-2 text-xs"
-                onClick={() => trigger(i)}
+                className={`video-chop-pad h-36 min-w-0 touch-none flex-col gap-2 border px-3 py-2 text-xs ${editIdx === i ? "ring-2 ring-primary" : ""} ${chopSounds[i]?.mute ? "opacity-50" : ""}`}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch {
+                    /* pointer capture is unavailable in a few mobile webviews */
+                  }
+                  pressChop(i);
+                }}
+                onPointerUp={() => releaseChop(i)}
+                onPointerCancel={() => releaseChop(i)}
+                onLostPointerCapture={() => releaseChop(i)}
+                onKeyDown={(e) => {
+                  if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+                    e.preventDefault();
+                    pressChop(i);
+                  }
+                }}
+                onKeyUp={(e) => {
+                  if (e.key === " " || e.key === "Enter") releaseChop(i);
+                }}
                 aria-label={`Play video chop ${i + 1}`}
               >
                 <span className="flex w-full justify-between font-mono text-sm">
@@ -1054,6 +1349,7 @@ export function VideoSampler() {
                   />
                 </span>
                 <span className="font-mono text-[10px]">
+                  {chopSounds[i]?.mute ? "MUTED · " : ""}
                   {t.toFixed(2)}–{(chops[i + 1] ?? buffer?.duration ?? 0).toFixed(2)}s
                 </span>
               </Button>
@@ -1132,6 +1428,58 @@ export function VideoSampler() {
           ))}
         </div>
       )}
+      {chops.length > 0 && !multiOn && (
+        <section
+          className="space-y-2 rounded-md border border-border bg-surface-2/40 p-2"
+          aria-label="Video chop edit"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="label-xs">CHOP {Math.min(editIdx, chops.length - 1) + 1} EDIT</span>
+            <span className="text-[11px] text-muted-foreground">Tap a chop pad to edit it.</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="ml-auto h-8 text-[11px]"
+              onClick={() => {
+                const i = Math.min(editIdx, chops.length - 1);
+                const sound = chopSounds[i] ?? null;
+                setChopSounds(chops.map(() => (sound ? { ...sound } : null)));
+                toast.success(`Chop ${i + 1}'s sound copied to all ${chops.length} chops`);
+              }}
+            >
+              Copy to all chops
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-[11px]"
+              onClick={() => {
+                const i = Math.min(editIdx, chops.length - 1);
+                setChopSounds((c) => c.map((x, j) => (j === i ? null : x)));
+              }}
+            >
+              Reset chop
+            </Button>
+          </div>
+          <PadSoundEditor
+            key={`video-chop-${Math.min(editIdx, chops.length - 1)}`}
+            name={`Video chop ${Math.min(editIdx, chops.length - 1) + 1}`}
+            sound={chopSounds[Math.min(editIdx, chops.length - 1)] ?? {}}
+            sections={["tune", "amp", "filter", "pitchEnv", "playback"]}
+            onChange={(next) => {
+              const i = Math.min(editIdx, chops.length - 1);
+              if ("choke" in next || "poly" in next || "mute" in next || "loop" in next)
+                stopVoices(`vchop${i}`, chopSound(i));
+              setChopSounds((c) => {
+                const out = [...c];
+                while (out.length <= i) out.push(null);
+                out[i] = { ...(out[i] ?? {}), ...next };
+                return out;
+              });
+            }}
+          />
+        </section>
+      )}
       {chops.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" className="h-10" onClick={() => enableMidi()}>
@@ -1187,7 +1535,10 @@ export function VideoSampler() {
                 return;
               }
               const index = videoPadForNote(note, chops.length);
-              if (index !== null) trigger(index);
+              if (index !== null) {
+                setEditIdx(index);
+                trigger(index);
+              }
             }}
           />
         </section>
@@ -1198,8 +1549,10 @@ export function VideoSampler() {
         </p>
       )}
       <p className="text-[11px] text-muted-foreground">
-        Video itself is not exported with the song. Audio decoding and pitch-preserving video
-        playback depend on browser codec support. Account saving requires sign-in.
+        Chop pads play the video's sound through its own VIDEO SAMPLER mixer channel, so faders,
+        sends and effects apply. The picture plays forward at the hit's speed (reverse and envelopes
+        are sound-only). Video itself is not exported with the song. Audio decoding depends on
+        browser codec support. Account saving requires sign-in.
       </p>
     </section>
   );

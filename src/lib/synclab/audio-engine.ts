@@ -3022,6 +3022,21 @@ export class SyncLabEngine {
   }
 
   /** Decodes a dropped audio file, keeps the buffer and returns its display data. */
+  /** Registers decoded audio (e.g. a video's sound) so pads can play it like a loaded sample. */
+  registerBuffer(buf: AudioBuffer, name = "buffer"): string {
+    const url = `synclab-buffer:${name.replace(/[^a-z0-9]+/gi, "-").slice(0, 24)}:${Math.random()
+      .toString(36)
+      .slice(2)}`;
+    this.sampleBuffers.set(url, this.centered(buf));
+    return url;
+  }
+  /** Frees audio registered with registerBuffer once nothing plays it any more. */
+  releaseBuffer(url: string) {
+    if (!url.startsWith("synclab-buffer:")) return;
+    this.sampleBuffers.delete(url);
+    this.reversedBuffers.delete(url);
+  }
+
   async loadSampleFile(file: File | Blob, name: string) {
     const ctx = this.init();
     const raw = await (file as File).arrayBuffer();
@@ -3143,6 +3158,15 @@ export class SyncLabEngine {
       syncToBpm?: boolean | undefined;
       fadeIn?: number | undefined;
       fadeOut?: number | undefined;
+      /** MPC pad extras (see mpc-pad.ts); all optional so older sounds play exactly as before */
+      fine?: number | undefined;
+      pan?: number | undefined;
+      filterEnv?: number | undefined;
+      filterDecay?: number | undefined;
+      pitchEnv?: number | undefined;
+      pitchDecay?: number | undefined;
+      velSens?: number | undefined;
+      velFilter?: number | undefined;
     },
     midi: number,
     duration?: number,
@@ -3179,14 +3203,23 @@ export class SyncLabEngine {
     const src = ctx.createBufferSource();
     src.buffer = base;
     const sync = s.syncToBpm && s.sampleBpm && s.sampleBpm > 0 ? this.tempo / s.sampleBpm : 1;
-    const rate = Math.pow(2, (midi - s.rootNote + s.pitch) / 12) * sync;
+    const rate = Math.pow(2, (midi - s.rootNote + s.pitch + (s.fine ?? 0) / 100) / 12) * sync;
     src.playbackRate.value = clamp(rate, 0.0625, 16);
+    const pEnv = clamp(s.pitchEnv ?? 0, -24, 24);
+    const pDec = Math.max(0.01, s.pitchDecay ?? 0.15);
+    if (pEnv) {
+      // Pitch envelope: start pEnv semitones away and glide back to the played pitch.
+      src.playbackRate.setValueAtTime(clamp(rate * Math.pow(2, pEnv / 12), 0.0625, 16), t0);
+      src.playbackRate.exponentialRampToValueAtTime(clamp(rate, 0.0625, 16), t0 + pDec);
+    }
 
     // Reverse plays the trimmed part backwards: in the flipped buffer that part sits at [1 − end, 1 − start].
     const [a, b] = sampleWindow(s.start, s.end, !!s.reverse);
     const offset = base.duration * a;
     const window = base.duration * (b - a);
-    const playable = window / src.playbackRate.value;
+    // A downward pitch envelope plays the start slower, so the sample takes a little longer.
+    const playable =
+      window / src.playbackRate.value + (pEnv < 0 ? pDec * (1 - Math.pow(2, pEnv / 12)) : 0);
     const len = s.loop
       ? (duration ?? playable)
       : s.oneShot
@@ -3200,7 +3233,9 @@ export class SyncLabEngine {
     }
 
     const amp = ctx.createGain();
-    const peak = clamp(s.gain, 0, 2) * clamp(velocity, 0, 1);
+    const vel = clamp(velocity, 0, 1);
+    const sens = s.velSens === undefined ? 1 : clamp(s.velSens, 0, 1);
+    const peak = clamp(s.gain, 0, 2) * (1 - sens + sens * vel);
     const atk = Math.max(0.001, s.attack);
     const rel = Math.max(0.005, s.release);
     const dec = Math.max(0, s.decay ?? 0);
@@ -3224,13 +3259,31 @@ export class SyncLabEngine {
     if (s.filterType && s.filterType !== "off") {
       const f = ctx.createBiquadFilter();
       f.type = s.filterType;
-      f.frequency.value = clamp(s.cutoff ?? 18000, 20, 20000);
+      const base = clamp(
+        (s.cutoff ?? 18000) * Math.pow(2, Math.max(0, s.velFilter ?? 0) * vel),
+        20,
+        20000,
+      );
+      f.frequency.value = base;
+      const fEnv = clamp(s.filterEnv ?? 0, -4, 4);
+      if (fEnv) {
+        // Filter envelope: the cutoff starts fEnv octaves away and sweeps back to its setting.
+        f.frequency.setValueAtTime(clamp(base * Math.pow(2, fEnv), 20, 20000), t0);
+        f.frequency.exponentialRampToValueAtTime(base, t0 + Math.max(0.01, s.filterDecay ?? 0.3));
+      }
       f.Q.value = clamp(s.resonance ?? 0.7, 0.1, 24);
       src.connect(f);
       head = f;
     }
     head.connect(amp);
-    amp.connect(ch.input);
+    let out: AudioNode = amp;
+    if (s.pan) {
+      const panner = ctx.createStereoPanner();
+      panner.pan.value = clamp(s.pan, -1, 1);
+      amp.connect(panner);
+      out = panner;
+    }
+    out.connect(ch.input);
     src.start(t0, offset, s.loop ? undefined : window);
     src.stop(t0 + len + rel + 0.02);
 
@@ -3243,6 +3296,7 @@ export class SyncLabEngine {
       try {
         src.disconnect();
         amp.disconnect();
+        if (out !== amp) out.disconnect();
       } catch {
         /* already gone */
       }

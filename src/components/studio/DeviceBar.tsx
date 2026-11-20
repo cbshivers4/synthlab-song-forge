@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { isPadSamplerTrack } from "@/lib/synclab/track-editor";
+import { isPadSamplerTrack, isVideoSamplerTrack } from "@/lib/synclab/track-editor";
 import { effectBrand, effectForm, groupByCategory } from "@/lib/synclab/effect-catalog";
 import {
   ChevronDown,
@@ -28,7 +28,7 @@ import { BypassButton, HardwareBypass } from "./HardwareBypass";
 function instrumentModule(track: Track): {
   label: string;
   icon: React.ReactNode;
-  panel: "synth" | "drums" | "sampler" | "pads" | "piano";
+  panel: "synth" | "drums" | "sampler" | "pads" | "video-sampler" | "piano";
   tone: string;
 } {
   if (track.kind === "drum")
@@ -43,6 +43,13 @@ function instrumentModule(track: Track): {
       label: "Pad Sampler",
       icon: <AudioLines className="size-3.5" />,
       panel: "pads",
+      tone: "sampler",
+    };
+  if (isVideoSamplerTrack(track))
+    return {
+      label: "Video Sampler",
+      icon: <AudioLines className="size-3.5" />,
+      panel: "video-sampler",
       tone: "sampler",
     };
   if (track.kind === "sampler")

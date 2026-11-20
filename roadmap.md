@@ -297,3 +297,4 @@
 - [x] 6. Verify: 905/905 tests, typecheck, build OK
 
 - [x] Multi pitch (SPREAD one-sound-per-pad and CHORD modes, scale, chord type, original-pitch pad) on Sampler, Pad Sampler and Video Sampler. 14 tests; signed-in browser checks measured the played pitches on all three. Pad/Video setting is session-only; phone layout unverified.
+- [x] MPC tools on all three samplers: Note Repeat (rates + swing), pad/chop edit (tune, fine, level, pan, ADSR, filter + envelope, pitch envelope, velocity, mono/poly, mute groups, one-shot/note-on, mute), Pad Sampler pattern swing and tempo follow, Video Sampler through its own mixer channel with pitch-kept stretch. Velocity layers not built.

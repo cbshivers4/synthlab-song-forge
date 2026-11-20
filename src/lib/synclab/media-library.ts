@@ -72,6 +72,8 @@ export interface VideoKit {
   sensitivity?: number;
   manualSlice?: boolean;
   midiNotes?: import("./video-pad-map").VideoPadMidiNote[];
+  /** each chop's own sound (tune, level, pan, envelopes, filter, playback), aligned with chops */
+  chopSounds?: (Partial<import("./mpc-pad").PadSound> | null)[];
 }
 export function selectLibraryVideo(blob: Blob, name: string, kit?: VideoKit) {
   videoSelection = { blob, name, ...(kit ? { kit } : {}) };
