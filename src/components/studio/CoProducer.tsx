@@ -39,6 +39,9 @@ export function CoProducer() {
   const [busy, setBusy] = useState(false);
   const pending = useRef<{ id: string; r: CoProducerResult; steps: number } | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  // A fast second tap on the phone's Tools tile lands on an idea button as the panel opens,
+  // which would send a question (and use AI) the person never chose. Ignore taps that early.
+  const openedAt = useRef(performance.now());
   useEffect(() => endRef.current?.scrollIntoView({ block: "nearest" }), [msgs]);
 
   useEffect(() => {
@@ -191,7 +194,10 @@ export function CoProducer() {
               <button
                 key={q}
                 type="button"
-                onClick={() => void send(q)}
+                onClick={() => {
+                  if (performance.now() - openedAt.current < 700) return;
+                  void send(q);
+                }}
                 className="min-h-11 rounded-md border border-border px-3 text-left text-xs text-muted-foreground hover:border-primary hover:text-foreground"
               >
                 {q}
