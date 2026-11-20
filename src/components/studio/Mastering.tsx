@@ -1,7 +1,7 @@
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
 import { useSkin } from "@/lib/synclab/skins";
-import { useEffect, useRef, useState } from "react";
-import { Download, Gauge, Play, Square } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Download, Gauge, Play, Share2, Square } from "lucide-react";
 import { MasterDevices } from "@/components/studio/mastering/MasterDevices";
 import { ListenRooms } from "@/components/studio/mastering/ListenRooms";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,14 @@ import { cn } from "@/lib/utils";
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { getEngine } from "@/lib/synclab/audio-engine";
-import { downloadBlob, encodeMp3, encodeWav, type Capture } from "@/lib/synclab/bounce";
+import {
+  canShareFile,
+  downloadBlob,
+  encodeMp3,
+  encodeWav,
+  shareFile,
+  type Capture,
+} from "@/lib/synclab/bounce";
 import { usePlan } from "@/lib/synclab/plan";
 import {
   MASTER_DEFAULTS,
@@ -237,6 +244,27 @@ export function Mastering() {
     downloadBlob(blob, `${safeName}-master.${format}`);
   };
 
+  // Phones and tablets expose a share sheet; desktops usually don't. Probe once
+  // per master with a tiny file instead of encoding the whole MP3 up front.
+  const canShare = useMemo(() => {
+    if (!result) return false;
+    const probe = new File([new Uint8Array(16)], "master.mp3", { type: "audio/mpeg" });
+    return canShareFile(probe);
+  }, [result]);
+
+  const share = async () => {
+    if (!result) return;
+    if (!requirePro("Sharing mastered files")) return;
+    const file = new File([encodeMp3(result.audio, 320)], `${safeName}-master.mp3`, {
+      type: "audio/mpeg",
+    });
+    try {
+      await shareFile(file, safeName);
+    } catch {
+      toast("Sharing was cancelled");
+    }
+  };
+
   const busy = phase === "capturing" || phase === "working";
 
   return (
@@ -399,6 +427,16 @@ export function Mastering() {
           <Button size="sm" variant="outline" className="h-8 gap-1.5" onClick={() => save("mp3")}>
             <Download className="size-3.5" /> MP3
           </Button>
+          {canShare && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-1.5"
+              onClick={() => void share()}
+            >
+              <Share2 className="size-3.5" /> Share
+            </Button>
+          )}
         </div>
       )}
 

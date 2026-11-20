@@ -659,9 +659,11 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Mastering measures loudness and peaks, then applies EQ, width, glue, drive and limiting. Presets cover streaming, club and vocal-forward targets.",
       "Mastering devices add a 4-band Master EQ, 3-band Multiband dynamics (replaces Glue while on), a Stereo Imager with width per band, an Exciter for top-end harmonics and Maximizer timing with a gain-reduction readout. Switch each device On, then turn its knobs; the master re-renders when you let go.",
       "Sound Check plays the original or mastered song as it would sound on studio monitors, a car stereo, club PA, Walkman, home stereo, movie theater, phone, earbuds, laptop, TV, FM radio or Bluetooth speaker. Switch places while it plays, loop it, tap the bar to jump, and turn background noise on or off.",
+      "When the master is ready, the Mastered file row saves it as WAV or MP3 (a copy is also kept in your account library). On phones and tablets a Share button appears there so you can send the MP3 straight from the app; on computers, save the file and share it from your device.",
     ],
     can: [
       "Master your song and export the mastered file.",
+      "Share the master straight from the panel on phones and tablets.",
       "Check how the master holds up on other systems before you release it.",
     ],
     cant: [
