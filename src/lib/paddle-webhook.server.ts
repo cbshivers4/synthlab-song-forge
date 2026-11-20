@@ -1,86 +1,82 @@
-import { createHmac, timingSafeEqual } from "crypto";
+/** Shared Paddle webhook handling (server-only). Both webhook URLs call handlePaddleWebhook. */
+import { createClient } from '@supabase/supabase-js';
+import { verifyWebhook, EventName, type PaddleEnv } from '@/lib/paddle.server';
 
-/**
- * Shared Paddle webhook handling (server-only).
- *
- * Business rules implemented here:
- * - Purchase / renewal  -> subscription row active -> Pro unlocks immediately.
- * - Cancel              -> status 'canceled'; access continues until
- *                          current_period_end (enforced by the client check).
- * - Plan switch         -> subscription.updated rewrites price_id (prorated).
- */
-
-export type Env = "sandbox" | "live";
-
-function verifySignature(rawBody: string, header: string | null, secret: string): boolean {
-  if (!header) return false;
-  const parts = Object.fromEntries(
-    header.split(";").map((kv) => {
-      const i = kv.indexOf("=");
-      return [kv.slice(0, i).trim(), kv.slice(i + 1).trim()];
-    })
-  );
-  const ts = parts["ts"];
-  const h1 = parts["h1"];
-  if (!ts || !h1) return false;
-  // Reject events older than 5 minutes.
-  if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;
-  const expected = createHmac("sha256", secret).update(`${ts}:${rawBody}`).digest("hex");
-  const a = Buffer.from(expected);
-  const b = Buffer.from(h1);
-  return a.length === b.length && timingSafeEqual(a, b);
+// Public by design: every request is authenticated by its Paddle signature.
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) _supabase = createClient(process.env['SUPABASE_URL']!, process.env['SUPABASE_SERVICE_ROLE_KEY']!);
+  return _supabase;
 }
 
+// Supabase returns { error } instead of throwing. Throwing here makes the route answer 400,
+// so Paddle retries the event instead of treating a failed write as delivered.
+function assertOk(error: { message: string } | null, what: string) {
+  if (error) throw new Error(`${what} failed: ${error.message}`);
+}
+
+async function handleSubscriptionCreated(data: any, env: PaddleEnv) {
+  const { id, customerId, items, status, currentBillingPeriod, customData } = data;
+  const userId = customData?.userId;
+  if (!userId) { console.error('No userId in customData'); return; }
+  const item = items[0];
+  const priceId = item.price.importMeta?.externalId;
+  const productId = item.product.importMeta?.externalId;
+  if (!priceId || !productId) {
+    console.warn('Skipping subscription: missing importMeta.externalId', { rawPriceId: item.price.id, rawProductId: item.product.id });
+    return;
+  }
+  const { error } = await getSupabase().from('subscriptions').upsert({
+    user_id: userId,
+    paddle_subscription_id: id,
+    paddle_customer_id: customerId,
+    product_id: productId,
+    price_id: priceId,
+    status,
+    current_period_start: currentBillingPeriod?.startsAt,
+    current_period_end: currentBillingPeriod?.endsAt,
+    cancel_at_period_end: data.scheduledChange?.action === 'cancel',
+    environment: env,
+    updated_at: new Date().toISOString(),
+  } as never, { onConflict: 'paddle_subscription_id' });
+  assertOk(error, 'Subscription upsert');
+}
+
+async function handleSubscriptionUpdated(data: any, env: PaddleEnv) {
+  const { id, status, currentBillingPeriod, scheduledChange } = data;
+  const { data: existing, error: lookupError } = await getSupabase().from('subscriptions').select('id').eq('paddle_subscription_id', id).maybeSingle();
+  assertOk(lookupError, 'Subscription lookup');
+  if (!existing) return handleSubscriptionCreated(data, env);
+  const { error } = await getSupabase().from('subscriptions').update({
+    status,
+    current_period_start: currentBillingPeriod?.startsAt,
+    current_period_end: currentBillingPeriod?.endsAt,
+    cancel_at_period_end: scheduledChange?.action === 'cancel',
+    updated_at: new Date().toISOString(),
+  } as never).eq('paddle_subscription_id', id).eq('environment', env);
+  assertOk(error, 'Subscription update');
+}
+
+async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
+  const { error } = await getSupabase().from('subscriptions').update({ status: 'canceled', cancel_at_period_end: false, current_period_end: data.canceledAt ?? new Date().toISOString(), updated_at: new Date().toISOString() } as never)
+    .eq('paddle_subscription_id', data.id).eq('environment', env);
+  assertOk(error, 'Subscription cancel');
+}
+
+/** Verifies the Paddle signature, records the subscription change, and answers Paddle. */
 export async function handlePaddleWebhook(request: Request): Promise<Response> {
-  const env: Env = new URL(request.url).searchParams.get("env") === "live" ? "live" : "sandbox";
-  const secret =
-    env === "live" ? process.env['PAYMENTS_LIVE_WEBHOOK_SECRET'] : process.env['PAYMENTS_SANDBOX_WEBHOOK_SECRET'];
-  if (!secret) return new Response("webhook not configured", { status: 500 });
-
-  const rawBody = await request.text();
-  if (!verifySignature(rawBody, request.headers.get("paddle-signature"), secret)) {
-    return new Response("invalid signature", { status: 401 });
-  }
-
-  const event = JSON.parse(rawBody) as {
-    event_type?: string;
-    data?: any;
-  };
-  const type = event.event_type ?? "";
-  const d = event.data ?? {};
-
-  if (type.startsWith("subscription.")) {
-    const userId = d.custom_data?.userId as string | undefined;
-    if (!userId) {
-      // Cannot attribute this subscription to an account; acknowledge and skip.
-      return new Response("ok (no user)", { status: 200 });
+  const env = (new URL(request.url).searchParams.get('env') || 'sandbox') as PaddleEnv;
+  try {
+    const event = await verifyWebhook(request, env);
+    switch (event.eventType) {
+      case EventName.SubscriptionCreated: await handleSubscriptionCreated(event.data, env); break;
+      case EventName.SubscriptionUpdated: await handleSubscriptionUpdated(event.data, env); break;
+      case EventName.SubscriptionCanceled: await handleSubscriptionCanceled(event.data, env); break;
+      default: console.log('Unhandled event:', event.eventType);
     }
-    const item = Array.isArray(d.items) ? d.items[0] : undefined;
-    const priceId =
-      item?.price?.import_meta?.externalId ??
-      item?.price?.importMeta?.externalId ??
-      (d.custom_data?.priceId as string | undefined) ??
-      "synclab_monthly";
-    const productId =
-      item?.product?.import_meta?.externalId ?? item?.product?.importMeta?.externalId ?? "synclab_pro";
-    const period = d.current_billing_period ?? {};
-    const row = {
-      user_id: userId,
-      paddle_subscription_id: String(d.id),
-      paddle_customer_id: String(d.customer_id ?? ""),
-      product_id: productId,
-      price_id: priceId,
-      status: String(d.status ?? "active"),
-      current_period_start: period.starts_at ?? null,
-      current_period_end: period.ends_at ?? null,
-      cancel_at_period_end: d.scheduled_change?.action === "cancel",
-      environment: env,
-      updated_at: new Date().toISOString(),
-    };
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("subscriptions").upsert(row, { onConflict: "paddle_subscription_id" });
-    if (error) return new Response(`db error: ${error.message}`, { status: 500 });
+    return Response.json({ received: true });
+  } catch (e) {
+    console.error('Webhook error:', e);
+    return new Response('Webhook error', { status: 400 });
   }
-
-  return new Response("ok", { status: 200 });
 }

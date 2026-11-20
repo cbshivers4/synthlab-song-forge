@@ -1,4 +1,5 @@
 /** Server-only Paddle API access via the connector gateway. Never import from client components. */
+import { Environment, Paddle, EventName } from "@paddle/paddle-node-sdk";
 
 export type PaddleEnv = "sandbox" | "live";
 
@@ -72,4 +73,40 @@ export async function resolveInternalPriceId(env: PaddleEnv, priceId: string): P
     );
   if (!match) throw new Error(`Price ${priceId} not found in ${env} catalog`);
   return match.id;
+}
+
+// ---- Webhook verification (official Paddle SDK) ----
+
+export { EventName };
+
+function getEnvVar(key: string): string {
+  const value = process.env[key];
+  if (!value) throw new Error(`${key} is not configured`);
+  return value;
+}
+
+export function getPaddleClient(env: PaddleEnv): Paddle {
+  const { lovableKey, connectionKey } = keys(env);
+  return new Paddle(connectionKey, {
+    environment: GATEWAY_BASE as unknown as Environment,
+    customHeaders: {
+      "X-Connection-Api-Key": connectionKey,
+      "Lovable-API-Key": lovableKey,
+    },
+  });
+}
+
+export function getWebhookSecret(env: PaddleEnv): string {
+  return env === "sandbox"
+    ? getEnvVar("PAYMENTS_SANDBOX_WEBHOOK_SECRET")
+    : getEnvVar("PAYMENTS_LIVE_WEBHOOK_SECRET");
+}
+
+/** Verifies the Paddle signature over the raw body and returns the parsed event. */
+export async function verifyWebhook(req: Request, env: PaddleEnv) {
+  const signature = req.headers.get("paddle-signature");
+  const body = await req.text();
+  const secret = getWebhookSecret(env);
+  if (!signature || !body) throw new Error("Missing signature or body");
+  return await getPaddleClient(env).webhooks.unmarshal(body, secret, signature);
 }
