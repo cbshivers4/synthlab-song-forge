@@ -11,14 +11,33 @@ type Props = { name: string; children: ReactNode; onClose?: () => void; classNam
 /** Keeps a crash inside one tool panel from taking down the whole studio. */
 export class ToolErrorBoundary extends Component<Props, { error: Error | null }> {
   override state: { error: Error | null } = { error: null };
+  /** One silent reopen per mount: a crash caused by a passing glitch (state changing mid-open)
+   *  fixes itself instead of showing the red box. A second crash shows the box. */
+  private retried = false;
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
   override componentDidCatch(error: Error) {
     console.error(`[${this.props.name}] crashed:`, error);
+    // Record the real message in the app's error log so a crash on someone's phone can be traced.
+    try {
+      const report = new Error(`[${this.props.name}] ${error?.message || "Unknown error"}`);
+      if (error?.stack) report.stack = error.stack;
+      window.reportError?.(report);
+    } catch {
+      /* reporting must never cause a second crash */
+    }
+    if (!this.retried && !STALE.test(error?.message ?? "")) {
+      this.retried = true;
+      // Not cleared on unmount: React's development double-mount would cancel it, and a
+      // state update on an unmounted boundary is simply ignored.
+      window.setTimeout(() => this.setState({ error: null }), 150);
+    }
   }
   override render() {
     if (!this.state.error) return this.props.children;
+    // Hold back the red box until the one silent reopen has been tried.
+    if (!this.retried && !STALE.test(this.state.error.message ?? "")) return null;
     const { name, onClose, className } = this.props;
     return (
       <section
