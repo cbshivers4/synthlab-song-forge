@@ -1,3 +1,4 @@
+import { multiPitchVoiceKeys, notePitches } from "./multi-pitch";
 import { chainedPads } from "./drum-chain";
 import { arpStepSeconds } from "./synth-timing";
 import { arpHit } from "./arp-pattern";
@@ -48,6 +49,29 @@ export function triggerNote(
     const chops = s.slices ?? [];
     const idx = midi - s.rootNote;
     const shifted = midi + (t.octave ?? 0) * 12;
+    const mp = s.multiPitch;
+    if (mp && mp.mode !== "off") {
+      // Multi pitch: every note plays the chosen chop (or the whole sample) at its pitch, and
+      // CHORD mode rebuilds the chord from the note, so pads, keys and recordings all agree.
+      const chop = mp.source >= 0 && mp.source < chops.length ? mp.source : -1;
+      const region =
+        chop >= 0
+          ? { start: chops[chop] as number, end: (chops[chop + 1] ?? s.end) as number, loop: false }
+          : {};
+      const keys = multiPitchVoiceKeys(`mp-${midi}`);
+      notePitches(idx, mp).forEach((p, k) =>
+        engine.playSample(
+          t.id,
+          { ...s, ...region },
+          s.rootNote + p + (t.octave ?? 0) * 12,
+          dur,
+          vel,
+          when,
+          keys[k],
+        ),
+      );
+      return;
+    }
     if (chops.length > 0 && idx >= 0 && idx < chops.length) {
       // each key from the root upwards plays one chop at its original pitch
       const start = chops[idx] as number;

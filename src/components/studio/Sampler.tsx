@@ -30,6 +30,14 @@ import {
   type SampleSource,
 } from "@/lib/synclab/sample-sources";
 import { Keyboard } from "./Keyboard";
+import { MultiPitchModeSwitch, MultiPitchPads } from "./MultiPitchPads";
+import {
+  MULTI_PITCH_PADS,
+  multiPitchVoiceKeys,
+  normalizeMultiPitch,
+  padPitches,
+  type MultiPitchSettings,
+} from "@/lib/synclab/multi-pitch";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
@@ -632,6 +640,20 @@ export function Sampler() {
 
   const s = track?.sampler;
   const chops = s?.slices ?? [];
+  const savedMp = normalizeMultiPitch(s?.multiPitch);
+  /** Multi pitch falls back to the whole sample when its chop no longer exists. */
+  const mp = { ...savedMp, source: savedMp.source < chops.length ? savedMp.source : -1 };
+  const mpOn = mp.mode !== "off";
+  const setMultiPitch = (next: MultiPitchSettings) => {
+    if (!track) return;
+    stopSamples(track.id);
+    updateSampler(track.id, { multiPitch: next });
+  };
+  const releaseMulti = (pitches: number[]) => {
+    if (!track || !s) return;
+    for (const key of multiPitchVoiceKeys(`mp-${s.rootNote + (pitches[0] ?? 0)}`))
+      getEngine().stopVoiceKey(track.id, key);
+  };
   const [pickChop, setPickChop] = useState(0);
   const [padTarget, setPadTarget] = useState(0);
   const chopFileRef = useRef<HTMLInputElement>(null);
@@ -672,14 +694,18 @@ export function Sampler() {
   };
   const chopPads = useMidiPads(
     `sampler:${track?.id ?? "none"}`,
-    Math.min(64, chops.length),
+    mpOn ? MULTI_PITCH_PADS : Math.min(64, chops.length),
     (i, velocity) => {
       if (!track || !s) return;
+      void velocity;
+      if (mpOn) {
+        previewNote(track.id, s.rootNote + (padPitches(i, mp)[0] ?? 0), s.duration);
+        return;
+      }
       setHeld(i);
       previewNote(track.id, s.rootNote + i, s.duration);
-      void velocity;
     },
-    releaseChop,
+    (i) => (mpOn ? releaseMulti(padPitches(i, mp)) : releaseChop(i)),
   );
 
   /** Cuts the trimmed region into n equal chops. */
@@ -1375,7 +1401,35 @@ export function Sampler() {
               />
             </div>
 
-            {chops.length > 0 ? (
+            <MultiPitchModeSwitch
+              settings={mp}
+              onChange={(next) =>
+                setMultiPitch({ ...next, source: next.source < chops.length ? next.source : -1 })
+              }
+            />
+            {mpOn ? (
+              <>
+                <MultiPitchPads
+                  settings={mp}
+                  onChange={setMultiPitch}
+                  sources={[
+                    { value: -1, label: "Whole sample" },
+                    ...chops.map((_, i) => ({ value: i, label: `Chop ${i + 1}` })),
+                  ]}
+                  rootNote={s.rootNote}
+                  onPress={(_, pitches) =>
+                    previewNote(track.id, s.rootNote + (pitches[0] ?? 0), s.duration)
+                  }
+                  onRelease={(_, pitches) => releaseMulti(pitches)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The keyboard, piano roll and your MIDI controller also play{" "}
+                  {mp.source >= 0 ? `chop ${mp.source + 1}` : "the whole sample"}
+                  {mp.mode === "chord" ? " as chords" : " at every pitch"}; turn multi pitch OFF to
+                  play the chops one per pad again.
+                </p>
+              </>
+            ) : chops.length > 0 ? (
               <>
                 <MidiPadLearnBar pads={chopPads} label="chops" names={(i) => `chop ${i + 1}`} />
                 <div className="flex items-center gap-2" role="group" aria-label="Chop banks">

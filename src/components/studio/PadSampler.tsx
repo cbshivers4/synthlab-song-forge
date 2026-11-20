@@ -58,6 +58,14 @@ import { MidiLearnButton } from "./MidiLearn";
 import { Knob } from "./Knob";
 import { MidiPadLearnBar, useMidiPads } from "./MidiPadLearn";
 import { Keyboard } from "./Keyboard";
+import { MultiPitchModeSwitch, MultiPitchPads } from "./MultiPitchPads";
+import {
+  DEFAULT_MULTI_PITCH,
+  multiPitchVoiceKeys,
+  notePitches,
+  padPitches,
+  type MultiPitchSettings,
+} from "@/lib/synclab/multi-pitch";
 import { qwertyEnabled } from "@/lib/synclab/qwerty";
 import { SavePadsDialog } from "./SavePadsDialog";
 import { PadSampleTools } from "./PadSampleTools";
@@ -98,6 +106,9 @@ interface Pad extends SavedPad {
   choke: number;
   steps: number[];
 }
+
+/** Multi pitch stays set while the app is open, so switching panels never turns it off. */
+let padMultiPitch: MultiPitchSettings = DEFAULT_MULTI_PITCH;
 
 const emptySteps = () => Array.from({ length: STEPS }, () => 0);
 
@@ -464,7 +475,73 @@ export function PadSampler() {
     },
     [captureNote, ensureTrack],
   );
-  const padMidi = useMidiPads("pad-sampler", 16, (i, velocity) => trigger(index(i), velocity));
+  const [multi, setMultiState] = useState<MultiPitchSettings>(() => padMultiPitch);
+  const multiRef = useRef(multi);
+  multiRef.current = multi;
+  const multiOn = multi.mode !== "off";
+  const setMulti = useCallback((next: MultiPitchSettings) => {
+    padMultiPitch = next;
+    setMultiState(next);
+    const id = voiceTrackRef.current;
+    if (id) getEngine().stopSamples(id);
+  }, []);
+  /** Plays the multi pitch sound at the given semitone offsets (one for SPREAD, a chord for CHORD). */
+  const playPitches = useCallback(
+    (voice: string, pitches: number[], velocity = 1) => {
+      const m = multiRef.current;
+      const pad = padsRef.current[m.source];
+      if (!pad || !pitches.length) return;
+      const id = ensureTrack();
+      const engine = getEngine();
+      const keys = multiPitchVoiceKeys(voice);
+      pitches.forEach((p, k) => {
+        engine.playSample(
+          id,
+          {
+            url: pad.url,
+            start: pad.start,
+            end: pad.end,
+            gain: pad.gain,
+            pitch: pad.pitch,
+            rootNote: 60,
+            loop: pad.loop,
+            reverse: pad.reverse,
+            oneShot: pad.oneShot,
+            attack: pad.attack,
+            release: pad.release,
+          },
+          60 + p,
+          undefined,
+          velocity,
+          undefined,
+          keys[k],
+        );
+        captureNote(id, 60 + p, velocity);
+      });
+      setHit(m.source);
+      window.setTimeout(() => setHit((h) => (h === m.source ? null : h)), 120);
+    },
+    [captureNote, ensureTrack],
+  );
+  const pressMulti = useCallback(
+    (pad: number, velocity = 1) =>
+      playPitches(`mp${pad}`, padPitches(pad, multiRef.current), velocity),
+    [playPitches],
+  );
+  const releaseMulti = useCallback((pad: number) => {
+    const id = voiceTrackRef.current;
+    if (!id) return;
+    for (const key of multiPitchVoiceKeys(`mp${pad}`)) getEngine().stopVoiceKey(id, key);
+  }, []);
+  const padMidi = useMidiPads(
+    "pad-sampler",
+    16,
+    (i, velocity) =>
+      multiRef.current.mode !== "off" ? pressMulti(i, velocity) : trigger(index(i), velocity),
+    (i) => {
+      if (multiRef.current.mode !== "off") releaseMulti(i);
+    },
+  );
 
   /* pad step sequencer */
   useEffect(() => {
@@ -525,7 +602,8 @@ export function PadSampler() {
       e.preventDefault();
       // A held key auto-repeats; only the first press is a hit.
       if (e.repeat) return;
-      trigger(index(k));
+      if (multiRef.current.mode !== "off") pressMulti(k);
+      else trigger(index(k));
     };
     // capture phase: pads win over the global typing keys, so one press = one note
     window.addEventListener("keydown", down, true);
@@ -860,213 +938,247 @@ export function PadSampler() {
         </span>
       </div>
 
+      <MultiPitchModeSwitch
+        settings={multi}
+        onChange={(next) => {
+          // Turning it on plays the selected pad's sound (or the first loaded one).
+          const loaded = pads[next.source]
+            ? next.source
+            : pads[sel]
+              ? sel
+              : Number(Object.keys(pads)[0] ?? 0);
+          setMulti({ ...next, source: multi.mode === "off" ? (pads[sel] ? sel : loaded) : loaded });
+        }}
+      />
       <MidiPadLearnBar pads={padMidi} label="pads" names={(i) => `pad ${i + 1} (current bank)`} />
-      <div
-        className={`performance-pad-grid grid grid-cols-4 gap-2 ${skinBackground(skin) ? "rounded-lg p-2" : ""}`}
-        style={{ ...skinBackground(skin), cursor: skin.image ? "move" : undefined }}
-        {...imageDrag}
-      >
-        {Array.from({ length: PADS_PER_BANK }, (_, i) => {
-          const id = index(i);
-          const pad = pads[id];
-          const active = hit === id || playing === id;
-          const c = skin.padColor ?? padColor(bank, i);
-          const recording = recPad === id;
-          const sp = sweep[id];
-          const release = () => {
-            endSweep(id);
-            if (holdRef.current?.pad === id || recRef.current?.pad === id) {
-              endHold();
-              return;
-            }
-            if (pad) {
-              stopPad(id);
-              setPlaying((current) => (current === id ? null : current));
-            }
-          };
-          return (
-            <Button
-              variant="ghost"
-              key={id}
-              type="button"
-              data-loaded={Boolean(pad)}
-              onPointerDown={(e) => {
-                setSel(id);
-                if (armRec || !pad) {
-                  e.preventDefault();
-                  try {
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                  } catch {
-                    /* pointer capture is unavailable in a few mobile webviews */
-                  }
-                  void beginHold(id);
-                  return;
-                }
-                if (pad) {
-                  e.preventDefault();
-                  try {
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                  } catch {
-                    /* pointer capture is unavailable in a few mobile webviews */
-                  }
-                  trigger(id);
-                  setPlaying(id);
-                  startSweep(id);
-                }
-              }}
-              onPointerUp={release}
-              onPointerCancel={release}
-              onLostPointerCapture={release}
-              onPointerLeave={release}
-              onContextMenu={(e) => armRec && e.preventDefault()}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setOver(id);
-              }}
-              onDragLeave={() => setOver((o) => (o === id ? null : o))}
-              onDrop={(e) => {
-                e.preventDefault();
-                setOver(null);
-                const file = e.dataTransfer.files[0];
-                if (file) return void loadInto(id, file);
-                const raw =
-                  e.dataTransfer.getData("application/synclab") ||
-                  e.dataTransfer.getData("text/plain");
-                try {
-                  const v = JSON.parse(raw) as { type?: string; id?: string };
-                  const local = v?.type === "localfile" && v.id ? getLocalFile(v.id) : undefined;
-                  if (local) void loadInto(id, local.file);
-                } catch {
-                  /* not a file drag */
-                }
-              }}
-              style={
-                recording
-                  ? {
-                      borderColor: "hsl(0 85% 58%)",
-                      background: "linear-gradient(145deg, hsl(0 85% 45%), hsl(0 75% 28%))",
-                      boxShadow: "0 0 22px hsl(0 85% 55% / 0.8)",
+      {multiOn ? (
+        <MultiPitchPads
+          settings={multi}
+          onChange={setMulti}
+          sources={Object.keys(pads)
+            .map(Number)
+            .sort((a, b) => a - b)
+            .map((id) => ({
+              value: id,
+              label: `${BANKS[Math.floor(id / PADS_PER_BANK)]}${(id % PADS_PER_BANK) + 1} · ${pads[id]?.name ?? ""}`,
+            }))}
+          onPress={(pad) => pressMulti(pad)}
+          onRelease={(pad) => releaseMulti(pad)}
+          padKeys={KEYMAP}
+          emptyMessage="Load or record a sound on a pad first, then pick it under SOUND."
+        />
+      ) : (
+        <div
+          className={`performance-pad-grid grid grid-cols-4 gap-2 ${skinBackground(skin) ? "rounded-lg p-2" : ""}`}
+          style={{ ...skinBackground(skin), cursor: skin.image ? "move" : undefined }}
+          {...imageDrag}
+        >
+          {Array.from({ length: PADS_PER_BANK }, (_, i) => {
+            const id = index(i);
+            const pad = pads[id];
+            const active = hit === id || playing === id;
+            const c = skin.padColor ?? padColor(bank, i);
+            const recording = recPad === id;
+            const sp = sweep[id];
+            const release = () => {
+              endSweep(id);
+              if (holdRef.current?.pad === id || recRef.current?.pad === id) {
+                endHold();
+                return;
+              }
+              if (pad) {
+                stopPad(id);
+                setPlaying((current) => (current === id ? null : current));
+              }
+            };
+            return (
+              <Button
+                variant="ghost"
+                key={id}
+                type="button"
+                data-loaded={Boolean(pad)}
+                onPointerDown={(e) => {
+                  setSel(id);
+                  if (armRec || !pad) {
+                    e.preventDefault();
+                    try {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    } catch {
+                      /* pointer capture is unavailable in a few mobile webviews */
                     }
-                  : pad
+                    void beginHold(id);
+                    return;
+                  }
+                  if (pad) {
+                    e.preventDefault();
+                    try {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    } catch {
+                      /* pointer capture is unavailable in a few mobile webviews */
+                    }
+                    trigger(id);
+                    setPlaying(id);
+                    startSweep(id);
+                  }
+                }}
+                onPointerUp={release}
+                onPointerCancel={release}
+                onLostPointerCapture={release}
+                onPointerLeave={release}
+                onContextMenu={(e) => armRec && e.preventDefault()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setOver(id);
+                }}
+                onDragLeave={() => setOver((o) => (o === id ? null : o))}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setOver(null);
+                  const file = e.dataTransfer.files[0];
+                  if (file) return void loadInto(id, file);
+                  const raw =
+                    e.dataTransfer.getData("application/synclab") ||
+                    e.dataTransfer.getData("text/plain");
+                  try {
+                    const v = JSON.parse(raw) as { type?: string; id?: string };
+                    const local = v?.type === "localfile" && v.id ? getLocalFile(v.id) : undefined;
+                    if (local) void loadInto(id, local.file);
+                  } catch {
+                    /* not a file drag */
+                  }
+                }}
+                style={
+                  recording
                     ? {
-                        borderColor: c,
-                        background: active
-                          ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
-                          : sel === id
-                            ? `linear-gradient(145deg, color-mix(in oklab, ${c} 65%, var(--sampler-pad-face)), color-mix(in oklab, ${c} 40%, var(--sampler-pad-face)))`
-                            : `linear-gradient(145deg, color-mix(in oklab, ${c} 45%, var(--sampler-pad-face)), color-mix(in oklab, ${c} 25%, var(--sampler-pad-face)))`,
-                        boxShadow: active
-                          ? `0 0 18px ${c}`
-                          : sel === id
-                            ? `0 0 0 1px ${c}`
-                            : undefined,
-                        opacity: over === id ? 0.85 : 1,
+                        borderColor: "hsl(0 85% 58%)",
+                        background: "linear-gradient(145deg, hsl(0 85% 45%), hsl(0 75% 28%))",
+                        boxShadow: "0 0 22px hsl(0 85% 55% / 0.8)",
                       }
-                    : over === id
+                    : pad
                       ? {
                           borderColor: c,
-                          backgroundColor: `color-mix(in hsl, ${c} 15%, transparent)`,
+                          background: active
+                            ? `linear-gradient(145deg, ${c}, color-mix(in hsl, ${c} 55%, transparent))`
+                            : sel === id
+                              ? `linear-gradient(145deg, color-mix(in oklab, ${c} 65%, var(--sampler-pad-face)), color-mix(in oklab, ${c} 40%, var(--sampler-pad-face)))`
+                              : `linear-gradient(145deg, color-mix(in oklab, ${c} 45%, var(--sampler-pad-face)), color-mix(in oklab, ${c} 25%, var(--sampler-pad-face)))`,
+                          boxShadow: active
+                            ? `0 0 18px ${c}`
+                            : sel === id
+                              ? `0 0 0 1px ${c}`
+                              : undefined,
+                          opacity: over === id ? 0.85 : 1,
                         }
-                      : armRec
-                        ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
-                        : undefined
-              }
-              className={`sample-pad-wallpaper mpc-pad relative flex min-w-0 touch-none flex-col items-start justify-between whitespace-normal p-2 text-left select-none ${
-                pad || recording ? "" : "mpc-pad-rubber"
-              } ${active ? "is-lit" : ""} ${recording ? "animate-pulse" : ""}`}
-            >
-              <span
-                className="relative z-10 font-mono text-[9px]"
-                style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}
-              >
-                <span className={pad ? "" : "text-foreground"}>
-                  {BANKS[bank]}
-                  {i + 1} · {KEYMAP[i]?.toUpperCase()}
-                </span>
-              </span>
-              {pad && !recording && pad.peaks.length > 1 && (
-                <span
-                  className={`pointer-events-none absolute inset-x-1.5 top-5 bottom-7 rounded-sm ${playing === id ? "bg-black/75" : ""}`}
-                  style={{ opacity: playing === id ? 1 : 0.9 }}
-                >
-                  <WaveformView
-                    peaks={cropPadPeaks(pad)}
-                    color="var(--display-wave)"
-                    grid={false}
-                    outline={false}
-                    className="!h-full !w-full"
-                    label={`${pad.name} waveform`}
-                  />
-                  {playing === id &&
-                    sp !== undefined &&
-                    (() => {
-                      // Playhead tracks the real playback position: sample time is
-                      // linear, so pitch, reverse and loop only shape the sweep.
-                      const pos = pad.reverse ? 1 - sp : sp;
-                      const played = pad.reverse
-                        ? { left: `${pos * 100}%`, right: 0 }
-                        : { left: 0, width: `${pos * 100}%` };
-                      return (
-                        <>
-                          <span
-                            className="absolute inset-y-0 bg-white/20"
-                            style={played as import("react").CSSProperties}
-                          />
-                          <span
-                            className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-white"
-                            style={{ left: `${pos * 100}%` }}
-                          />
-                        </>
-                      );
-                    })()}
-                </span>
-              )}
-              {recording && recStream && (
-                <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
-                  <LiveWave stream={recStream} color="hsl(0 0% 100%)" label="Recording waveform" />
-                </span>
-              )}
-              <span
-                className={`line-clamp-2 font-mono text-[10px] ${pad || recording ? "" : "text-foreground"}`}
-                style={
-                  pad || recording
-                    ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" }
-                    : undefined
+                      : over === id
+                        ? {
+                            borderColor: c,
+                            backgroundColor: `color-mix(in hsl, ${c} 15%, transparent)`,
+                          }
+                        : armRec
+                          ? { borderColor: `color-mix(in hsl, ${c} 60%, transparent)` }
+                          : undefined
                 }
+                className={`sample-pad-wallpaper mpc-pad relative flex min-w-0 touch-none flex-col items-start justify-between whitespace-normal p-2 text-left select-none ${
+                  pad || recording ? "" : "mpc-pad-rubber"
+                } ${active ? "is-lit" : ""} ${recording ? "animate-pulse" : ""}`}
               >
-                {recording ? "RECORDING…" : pad ? pad.name : "HOLD TO RECORD"}
-              </span>
-              {pad && pad.choke > 0 && (
-                <span className="absolute right-1 top-1 rounded-sm bg-accent px-1 font-mono text-[8px] text-accent-foreground">
-                  C{pad.choke}
-                </span>
-              )}
-              {pad && (
                 <span
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Delete ${pad.name}`}
-                  title="Delete this sample"
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    clearPad(id);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                  className="relative z-10 font-mono text-[9px]"
+                  style={{ color: pad ? "hsl(0 0% 100% / 0.75)" : undefined }}
+                >
+                  <span className={pad ? "" : "text-foreground"}>
+                    {BANKS[bank]}
+                    {i + 1} · {KEYMAP[i]?.toUpperCase()}
+                  </span>
+                </span>
+                {pad && !recording && pad.peaks.length > 1 && (
+                  <span
+                    className={`pointer-events-none absolute inset-x-1.5 top-5 bottom-7 rounded-sm ${playing === id ? "bg-black/75" : ""}`}
+                    style={{ opacity: playing === id ? 1 : 0.9 }}
+                  >
+                    <WaveformView
+                      peaks={cropPadPeaks(pad)}
+                      color="var(--display-wave)"
+                      grid={false}
+                      outline={false}
+                      className="!h-full !w-full"
+                      label={`${pad.name} waveform`}
+                    />
+                    {playing === id &&
+                      sp !== undefined &&
+                      (() => {
+                        // Playhead tracks the real playback position: sample time is
+                        // linear, so pitch, reverse and loop only shape the sweep.
+                        const pos = pad.reverse ? 1 - sp : sp;
+                        const played = pad.reverse
+                          ? { left: `${pos * 100}%`, right: 0 }
+                          : { left: 0, width: `${pos * 100}%` };
+                        return (
+                          <>
+                            <span
+                              className="absolute inset-y-0 bg-white/20"
+                              style={played as import("react").CSSProperties}
+                            />
+                            <span
+                              className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-white"
+                              style={{ left: `${pos * 100}%` }}
+                            />
+                          </>
+                        );
+                      })()}
+                  </span>
+                )}
+                {recording && recStream && (
+                  <span className="pointer-events-none absolute inset-x-1.5 top-4 bottom-6">
+                    <LiveWave
+                      stream={recStream}
+                      color="hsl(0 0% 100%)"
+                      label="Recording waveform"
+                    />
+                  </span>
+                )}
+                <span
+                  className={`line-clamp-2 font-mono text-[10px] ${pad || recording ? "" : "text-foreground"}`}
+                  style={
+                    pad || recording
+                      ? { color: "hsl(0 0% 100%)", textShadow: "0 1px 2px hsl(0 0% 0% / 0.5)" }
+                      : undefined
+                  }
+                >
+                  {recording ? "RECORDING…" : pad ? pad.name : "HOLD TO RECORD"}
+                </span>
+                {pad && pad.choke > 0 && (
+                  <span className="absolute right-1 top-1 rounded-sm bg-accent px-1 font-mono text-[8px] text-accent-foreground">
+                    C{pad.choke}
+                  </span>
+                )}
+                {pad && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Delete ${pad.name}`}
+                    title="Delete this sample"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
                       e.stopPropagation();
                       clearPad(id);
-                    }
-                  }}
-                  className="absolute bottom-1 right-1 flex size-8 items-center justify-center rounded-sm bg-black/45 text-white/80 opacity-80 transition-opacity hover:bg-destructive hover:text-white hover:opacity-100"
-                >
-                  <Trash2 className="size-4" />
-                </span>
-              )}
-            </Button>
-          );
-        })}
-      </div>
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.stopPropagation();
+                        clearPad(id);
+                      }
+                    }}
+                    className="absolute bottom-1 right-1 flex size-8 items-center justify-center rounded-sm bg-black/45 text-white/80 opacity-80 transition-opacity hover:bg-destructive hover:text-white hover:opacity-100"
+                  >
+                    <Trash2 className="size-4" />
+                  </span>
+                )}
+              </Button>
+            );
+          })}
+        </div>
+      )}
 
       <input
         ref={fileRef}
@@ -1393,8 +1505,12 @@ export function PadSampler() {
         <div className="min-w-0 border-t border-border pt-3" aria-label="Sample pads keyboard">
           <Keyboard
             skinKey="pads-keyboard"
-            disabled={!selPad}
-            onPlay={(midi, velocity) => trigger(sel, velocity, undefined, midi)}
+            disabled={multiOn ? !pads[multi.source] : !selPad}
+            onPlay={(midi, velocity) =>
+              multiRef.current.mode !== "off"
+                ? playPitches(`mpkey${midi}`, notePitches(midi - 60, multiRef.current), velocity)
+                : trigger(sel, velocity, undefined, midi)
+            }
           />
         </div>
       )}

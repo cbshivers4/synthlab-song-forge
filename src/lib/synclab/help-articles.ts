@@ -526,6 +526,27 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Which video files play depends on your browser.",
     ],
   },
+  {
+    id: "multi-pitch",
+    category: "Samplers & video",
+    title: "Multi pitch: one sound on every pad, as notes or chords",
+    tags: "multi pitch 16 levels chromatic chord pads sampler video tune scale key mpc",
+    body: [
+      "In the Sampler, Pad Sampler or Video Sampler, press SPREAD or CHORD next to MULTI PITCH. Pick the sound under SOUND: a pad, a chop, or the whole sample.",
+      "SPREAD: all 16 pads play that one sound, each a step higher. CHORD: each pad plays a chord built on that sound. ORIGINAL PITCH ON picks the pad that plays it untouched; pads before it go lower.",
+      "SCALE keeps the pads in key (Major, Minor, pentatonic or every note). In CHORD mode, “In key” makes scale chords such as C, Dm, Em, F, G, Am; you can also pick major, minor, 7th, sus, power or octave chords.",
+      "Press OFF to get your normal pads back — nothing on them is changed.",
+    ],
+    can: [
+      "Play the pads with the mouse, a finger, the computer keys or learned MIDI pads; the on-screen keyboard plays the sound as notes or chords too.",
+      "In the Sampler, multi pitch is saved with the channel, so the keyboard, piano roll, recorded notes and exports all play it the same way.",
+    ],
+    cant: [
+      "Higher pads play faster and shorter, lower pads slower and longer, the way a hardware sampler repitches.",
+      "In the Pad Sampler and Video Sampler, multi pitch stays on while the app is open but isn't saved with the project.",
+      "Video Sampler multi pitch plays the video's sound straight to your speakers like its normal pads, not through the mixer, and the picture follows the first note of a chord.",
+    ],
+  },
 
   // ───────────── Mixing & effects ─────────────
   {

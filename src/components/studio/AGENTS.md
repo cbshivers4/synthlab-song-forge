@@ -127,3 +127,5 @@ Desktop DrumRoll steps keep one square size (--dr-row) at any pattern length; .d
 Multi-track copy/cut (copyTracks/cutTracks) store one clipboard entry per ticked channel and paste each back onto its own channel with multiPasteSteps keeping their relative offsets; paste during playback uses livePasteStep (nearest bar line) so live pastes stay in time.
 
 DrumRoll shows what plays: it trims silent sub-beat overhangs and hits outside patternRegion (drum-roll-length.ts; the scheduler never plays them), counts bars like the timeline ruler, and Clear all/row clear ignore loop markers while other step edits stay loop-bounded.
+
+Multi pitch (MultiPitchPads + lib/synclab/multi-pitch.ts, tested) maps 16 pads to semitone offsets or chords from one source sound. The Sampler stores it on sampler.multiPitch and triggerNote expands notes, so pads, keys, piano roll, recordings and exports agree; Pad Sampler and Video Sampler keep a session-only module setting and play through their own existing sound paths. Turning it OFF never edits pads or chops.

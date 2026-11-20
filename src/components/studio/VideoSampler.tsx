@@ -32,8 +32,18 @@ import { claimMidiNotes, midiSupported } from "@/lib/synclab/midi";
 
 import { WaveformView } from "./WaveformView";
 import { Keyboard } from "./Keyboard";
+import { MultiPitchModeSwitch, MultiPitchPads } from "./MultiPitchPads";
+import {
+  DEFAULT_MULTI_PITCH,
+  multiPitchVoiceKeys,
+  notePitches,
+  padPitches,
+  type MultiPitchSettings,
+} from "@/lib/synclab/multi-pitch";
 
 const PAD_KEYS = VIDEO_PAD_KEYS;
+/** Multi pitch stays set while the app is open, so switching panels never turns it off. */
+let videoMultiPitch: MultiPitchSettings = DEFAULT_MULTI_PITCH;
 
 /** Video sampler: load or film a clip, chop its audio at real attacks, trigger chops as pads (video + sound), and print chops to the timeline. */
 export function VideoSampler() {
@@ -432,6 +442,83 @@ export function VideoSampler() {
     );
   };
 
+  const [multi, setMultiState] = useState<MultiPitchSettings>(() => videoMultiPitch);
+  const multiOn = multi.mode !== "off";
+  const multiVoices = useRef<Map<string, AudioBufferSourceNode[]>>(new Map());
+  const stopMultiVoice = (voice: string) => {
+    for (const node of multiVoices.current.get(voice) ?? []) {
+      try {
+        node.stop();
+      } catch {
+        /* already stopped */
+      }
+    }
+    multiVoices.current.delete(voice);
+  };
+  const stopAllMulti = () => {
+    for (const voice of [...multiVoices.current.keys()]) stopMultiVoice(voice);
+  };
+  useEffect(() => () => stopAllMulti(), []);
+  const setMulti = (next: MultiPitchSettings) => {
+    videoMultiPitch = next;
+    setMultiState(next);
+    stopAllMulti();
+  };
+  /**
+   * Multi pitch plays the chosen chop from the decoded audio at each pitch (the picture follows
+   * the first note). Pitch and speed move together here, like a hardware sampler.
+   */
+  const playMulti = (voice: string, pitches: number[]) => {
+    const v = video.current;
+    if (!buffer || !url || filming || !pitches.length) return;
+    const src = multi.source;
+    if (src >= chops.length) return;
+    const [a, b] = src < 0 ? ([0, buffer.duration] as const) : range(src);
+    if (b - a <= 0.005) return;
+    stopMultiVoice(voice);
+    const ctx = getEngine().init();
+    const t0 = ctx.currentTime + 0.005;
+    const level = bypassed ? 0 : 0.9 / Math.sqrt(pitches.length);
+    const nodes = pitches.map((p) => {
+      const node = ctx.createBufferSource();
+      node.buffer = buffer;
+      node.playbackRate.value = Math.max(0.0625, Math.min(16, speed * Math.pow(2, p / 12)));
+      const amp = ctx.createGain();
+      amp.gain.value = level;
+      node.connect(amp).connect(ctx.destination);
+      node.onended = () => {
+        node.disconnect();
+        amp.disconnect();
+        const list = multiVoices.current.get(voice);
+        if (list)
+          multiVoices.current.set(
+            voice,
+            list.filter((x) => x !== node),
+          );
+      };
+      node.start(t0, a, b - a);
+      return node;
+    });
+    multiVoices.current.set(voice, nodes);
+    if (v) {
+      const rate = Math.max(0.0625, Math.min(16, speed * Math.pow(2, (pitches[0] ?? 0) / 12)));
+      window.clearTimeout(stopTimer.current);
+      v.muted = true;
+      v.playbackRate = rate;
+      v.currentTime = a;
+      void v.play();
+      setActive(src >= 0 ? src : null);
+      stopTimer.current = window.setTimeout(
+        () => {
+          v.pause();
+          setActive(null);
+        },
+        Math.max(50, ((b - a) / rate) * 1000),
+      );
+    }
+  };
+  const pressMulti = (pad: number) => playMulti(`mp${pad}`, padPitches(pad, multi));
+
   const learnNote = (index: number, pitch: number, channel: number) => {
     setMidiNotes((notes) => assignVideoPadNote(notes, index, { pitch, channel }));
     setLearnPad(null);
@@ -453,7 +540,8 @@ export function VideoSampler() {
       );
       if (index < 0) return false;
       consumedNotes.current.add(key);
-      trigger(index);
+      if (multiOn) pressMulti(index);
+      else trigger(index);
       return true;
     }),
   );
@@ -470,6 +558,12 @@ export function VideoSampler() {
       )
         return;
       const i = PAD_KEYS.indexOf(e.key.toLowerCase());
+      if (i >= 0 && multiOn && i < 16 && !filming) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (!e.repeat) pressMulti(i);
+        return;
+      }
       if (i >= 0 && i < chops.length && !filming) {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -579,7 +673,7 @@ export function VideoSampler() {
         <video
           ref={video}
           src={url ?? undefined}
-          muted={bypassed || filming}
+          muted={bypassed || filming || multiOn}
           playsInline
           style={{ height: `${videoHeight}px` }}
           className="w-full bg-background object-contain"
@@ -887,7 +981,29 @@ export function VideoSampler() {
           </span>
         </div>
       )}
-      {chops.length > 0 && (
+      {buffer && (
+        <MultiPitchModeSwitch
+          settings={multi}
+          disabled={filming}
+          onChange={(next) =>
+            setMulti({ ...next, source: next.source < chops.length ? next.source : -1 })
+          }
+        />
+      )}
+      {buffer && multiOn && (
+        <MultiPitchPads
+          settings={multi}
+          onChange={setMulti}
+          sources={[
+            { value: -1, label: "Whole video sound" },
+            ...chops.map((t, i) => ({ value: i, label: `Chop ${i + 1} · ${t.toFixed(2)}s` })),
+          ]}
+          onPress={(pad) => pressMulti(pad)}
+          padKeys={PAD_KEYS}
+          disabled={filming}
+        />
+      )}
+      {chops.length > 0 && !multiOn && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Video chop pads">
           {chops.map((t, i) => (
             <div key={i} className="flex min-w-0 flex-col gap-1">
@@ -1042,7 +1158,7 @@ export function VideoSampler() {
           )}
         </div>
       )}
-      {chops.length > 0 && (
+      {(chops.length > 0 || (buffer && multiOn)) && (
         <Button
           variant={showKeyboard ? "secondary" : "outline"}
           aria-pressed={showKeyboard}
@@ -1052,7 +1168,7 @@ export function VideoSampler() {
           {showKeyboard ? "Hide keyboard" : "Show keyboard"}
         </Button>
       )}
-      {chops.length > 0 && showKeyboard && (
+      {(chops.length > 0 || (buffer && multiOn)) && showKeyboard && (
         <section
           aria-label="Video sampler keyboard"
           className="min-w-0 border-t border-border pt-3"
@@ -1060,10 +1176,14 @@ export function VideoSampler() {
           <Keyboard
             skinKey="video-keyboard"
             disabled={filming}
-            mappedPads={{ count: chops.length, active, keys: PAD_KEYS }}
+            {...(multiOn ? {} : { mappedPads: { count: chops.length, active, keys: PAD_KEYS } })}
             onPlay={(note) => {
               if (learnPad !== null) {
                 learnNote(learnPad, note, 0);
+                return;
+              }
+              if (multiOn) {
+                playMulti(`key${note}`, notePitches(note - 60, multi));
                 return;
               }
               const index = videoPadForNote(note, chops.length);

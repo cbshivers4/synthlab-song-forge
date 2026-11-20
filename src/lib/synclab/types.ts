@@ -463,6 +463,8 @@ export interface SamplerState {
   syncToBpm?: boolean | undefined;
   fadeIn?: number | undefined;
   fadeOut?: number | undefined;
+  /** Multi pitch: one chop (or the whole sample) played across pads/keys as pitches or chords. */
+  multiPitch?: import("./multi-pitch").MultiPitchSettings | undefined;
 }
 
 export type AutomationParam =

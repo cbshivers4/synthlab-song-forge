@@ -295,3 +295,5 @@
 - [x] 4. Privacy: README/legal pages/Help Center read SUPPORT_EMAIL / FOUNDER_EMAILS; no migration needed
 - [x] 5. Maintainability: moved drum voices + DSP helpers out of audio-engine.ts, take-region helpers out of store.tsx (re-exported)
 - [x] 6. Verify: 905/905 tests, typecheck, build OK
+
+- [x] Multi pitch (SPREAD one-sound-per-pad and CHORD modes, scale, chord type, original-pitch pad) on Sampler, Pad Sampler and Video Sampler. 14 tests; signed-in browser checks measured the played pitches on all three. Pad/Video setting is session-only; phone layout unverified.
