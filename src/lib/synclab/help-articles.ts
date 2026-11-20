@@ -68,6 +68,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Save with File → Save or Ctrl/Cmd+S. Saved projects appear in your cloud projects and in Recent.",
       "If you close a project with unsaved changes, SYNCLAB asks whether to save first. If a recording is still finishing, it waits for it before saving.",
       "Undo (Ctrl/Cmd+Z) steps back one edit at a time.",
+      "File → Save Template… opens a small window where you type the template's name (it starts with the project name). Press Save or Enter; it then appears under your saved templates on the start screen.",
     ],
     can: [
       "Save to your account and open the same project on phone and computer.",
@@ -129,7 +130,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     title: "My microphone or audio interface is not detected",
     tags: "mic microphone volt interface permission device audio input blocked",
     body: [
-      "Open Settings → Audio and pick your input device. Interfaces appear once they are plugged in and the browser has permission.",
+      "Open Settings → Audio and pick your input device. Interfaces appear once they are plugged in and the browser has permission. Audio interface details only show while an interface is actually connected.",
       "If the browser blocked the microphone, allow it in the address bar and reload.",
       "Some computers let only one app use an interface at a time. Close other audio apps and try again.",
     ],
@@ -189,7 +190,9 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "Tap a track once to open its menu. Double-tap a drum track to open the drum roll, or a synth track to open the piano roll.",
       "Drag the loop markers at the top, or drag the band between them to move the whole loop. Drag the white playhead from the ruler or a track lane.",
-      "The bar above the timeline holds Edit, Clip, Quantize, Grid, Import, the bar-length menu, Count-in, Overdub/Replace and Follow.",
+      "The bar above the timeline holds Edit, Clip, Quantize, Grid, Import, the bar-length menu and Follow. The line under it holds the recording and editing buttons together: Replace, Overdub, Snap, Count-in, metronome, the loop readout, Split, Cut, Paste, Delete, Loop selected part and Edit notes. On a narrow screen that line scrolls sideways.",
+      "Clicking a track name or lane opens its menu right next to your mouse; the ⋮ button opens it beside the button. On a phone the menu opens in the middle of the screen.",
+      "Only what you select gets a bright white outline. Clicking anywhere outside the timeline closes open menus and clears the selection (the current channel stays picked for Edit).",
     ],
     can: [
       "Add, rename, colour, duplicate, mute, solo and delete tracks.",
@@ -208,9 +211,10 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "Use the cut tool to split a clip exactly where the guide line shows. Drag clips to move them to another time or track.",
       "Move a note block or beat part to another track: drag it up or down onto that track's lane (a dashed outline shows where it lands), or tap the block and choose Move part to… in the track menu.",
-      "To delete one block, tap it and press Delete in the small menu next to it (or Delete selected part in the track menu). Only that block goes; the rest of the track stays.",
+      "To delete one block, click it and press the Delete key (or DELETE in the bar above the timeline, or Delete selected part in the track menu). Only that block goes; the rest of the track stays. The whole block goes, even a part outside the loop markers — use Split first if you only want to remove part of it.",
+      "To unselect: click the selected block again, click empty space in a lane or below the tracks, or press Escape while the song is stopped (the first Escape closes an open track menu, the second clears the selection).",
       "Copy, then Paste places the material at the playhead on the selected track and keeps that track's settings. Duplicate track makes a full copy of the channel.",
-      "To copy several tracks at once, press on empty space in the tracks (or the empty area under the last track) and drag a box over the blocks you want, like in Studio Pro — hold Shift or Ctrl/⌘ to add to what's already picked. When you let go, a small menu appears with Copy, Cut, Paste and Unselect; click or right-click any selected track to bring it back — the tracks stay selected. Or press in the channel-name column and drag down over the channels you want — every one you pass over is highlighted. You can also tick the small box beside each track name, Ctrl/⌘-click a channel, or Shift-click to highlight the run from the current channel. Then press COPY in the bar above the timeline or ⌘C / Ctrl+C. Move the playhead and press PASTE or ⌘V / Ctrl+V: every track lands back on its own channel, lined up together. A box copies only the blocks it covers (box two 1-bar blocks and you get those 2 bars), and separate 1-, 2- or 4-bar blocks paste as the same separate blocks — they are never merged into one long block.",
+      "To copy several tracks at once, press on empty space in the tracks (or the empty area under the last track) and drag a box over the blocks you want, like in Studio Pro — hold Shift or Ctrl/⌘ to add to what's already picked. When you let go, a small menu appears next to your mouse with Copy, Cut, Paste at playhead, Paste at end of track and Unselect; click or right-click any selected track to bring it back — the tracks stay selected. Or press in the channel-name column and drag down over the channels you want — every one you pass over is highlighted. You can also tick the small box beside each track name, Ctrl/⌘-click a channel, or Shift-click to highlight the run from the current channel. Then press COPY in the bar above the timeline or ⌘C / Ctrl+C. Move the playhead and press PASTE or ⌘V / Ctrl+V: every track lands back on its own channel, lined up together. A box copies only the blocks it covers (box two 1-bar blocks and you get those 2 bars), and separate 1-, 2- or 4-bar blocks paste as the same separate blocks — they are never merged into one long block. Paste at end of track puts the copy straight after the last block on each track, keeping the blocks lined up and the gaps between them.",
       "Copy and paste work while the song is playing too. A paste during playback lands on the nearest bar line so it stays in time; when the song is stopped it lands exactly at the playhead.",
       "In the audio clip editor you can quantize a recording to the beat, add fades, and make a mono or stereo copy.",
     ],
@@ -219,6 +223,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Move a synth/MIDI/sampler note block to another note track, or a beat part to another drum track, keeping its position or dropping it at a new bar.",
       "Stretch an audio clip longer from its right edge without changing pitch.",
       "Fade in/out, reverse and normalize clips.",
+      "Paste at end of track to build a song quickly from loops you've already made.",
     ],
     cant: [
       "Edits never change your original file — they only change how it plays.",
@@ -236,9 +241,11 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Draw, Select and Erase modes sit above the grid. Drag notes to move them, drag the edge to resize, and use the lane below for velocity.",
       "Quantize snaps notes to the grid; Humanize nudges them slightly off it again.",
       "Every editor shares one timebase, so a note at bar 3 beat 1 shows at bar 3 beat 1 everywhere.",
+      "Move a group of notes: in Select mode drag a box over them (hold Shift or Ctrl/⌘ to add more), then drag any selected note and they all move together. The arrow keys nudge them one grid step left or right, or one note up or down.",
+      "When you let go of the box, a menu opens next to your mouse with Copy, Cut, Paste at cursor, Duplicate after, earlier/later and octave up/down moves, Select all, Unselect and Delete. Right-click empty grid to open it any time.",
     ],
     can: [
-      "Copy, cut and paste notes inside the piano roll.",
+      "Copy, cut, paste and duplicate groups of notes inside the piano roll.",
       "Place notes from the piano roll's own ruler without moving the song playhead.",
     ],
     cant: [
@@ -320,6 +327,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Record loop, then play on the pad while it loops to add notes (the tone you played is replayed too).",
       "Mute any part, hold Hold to erase to wipe notes as the loop passes, and choose 1, 2 or 4 bars.",
       "Edit single notes in the grid underneath, then Send to timeline (muted parts are left out).",
+      "Keep creating while it plays: entering notes, pressing buttons and turning knobs don't stop the loop. A new set or Create takes over on the next beat.",
     ],
     cant: [
       "My Sets are kept on this device and browser; the set you're working on is saved inside the song.",
@@ -335,6 +343,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "The Bassline Generator mixes two built-in phrase banks: ON-BEAT lines (green, notes on the 8th-note grid) and OFF-BEAT lines (blue, the 16ths in between). Drag the dot in the diamond, or the two PATTERN sliders, from sparse root notes up to busy melodic lines. Each lane has bank A or B, VELOCITY (all the way down turns it off), LENGTH, and a VARIATOR that swaps in other phrases during the cycle by AMOUNT.",
       "Across the top: PATCH (34 genre starting points), ROOT, OCTAVE, STEPS (16–64), RATE, SHUFFLE and SHIFT. NOTE RANGE stretches or shrinks the jumps away from the root, and MINORNESS 1–4 turns 7ths, then 3rds, 6ths and 2nds minor. There are 8 PATTERN slots, and Copy to pattern makes a variation in the next one.",
+      "The line only fills as many bars as your song already has — the FILLS N BARS readout shows how many. The pattern length (STEPS) is separate and simply repeats inside that.",
       "The NOTE DISPLAY shows the exact line. Tap or drag to draw notes, tap a note to remove it, drag the velocity bars, and use TIE → to slide into the next note. Back to generated returns to the generator's line.",
     ],
     can: [
@@ -347,6 +356,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Moving any generator control (diamond, sliders, knobs, variator, steps, shift, range, minorness) replaces your hand edits. Root, rate and shuffle keep them.",
       "The 8 pattern slots last while the studio is open; they aren't saved in the project. Add a pattern to the timeline to keep it.",
       "It writes bass notes only, no drums or chords.",
+      "To stop it, press Stop run (or Stop in the transport when it's playing with your song). Closing the panel stops it too.",
     ],
   },
   {
@@ -398,6 +408,8 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Banks A–H and patterns 1–8 hold different beats; Chain plays patterns in the order you add them.",
       "Play pads: tap pads to play and record. Note Repeat rolls a held pad at the chosen rate.",
       "Sound and Kit: shape each drum and load kits.",
+      "The drum roll's bars match the block on the timeline. Steps keep the same size however many bars you add; scroll sideways to reach later bars (the drum names stay in place).",
+      "Clear all removes every hit in the pattern, even outside the loop markers; a drum's own clear wipes that whole row. Undo brings them back.",
     ],
     can: [
       "Edit one hit or all hits of a drum at once (velocity, pitch, decay, chance, flam, roll, glitch).",
@@ -406,6 +418,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
     cant: [
       "Snap for new steps is for this session only and never moves hits that are already there.",
+      "The built-in drum sounds are louder than before, so older songs may play their drums louder — pull the drum faders down if needed. Your own samples are unchanged.",
     ],
   },
   {
@@ -579,17 +592,21 @@ export const KNOWLEDGE_BASE: Article[] = [
     title: "Mixer, buses, VCAs and returns",
     tags: "mixer bus send return fader pan mute solo eq routing vca aux gain meters dock studio pro f3 full view",
     body: [
-      "Each channel has a GAIN knob, EQ, sends, pan, mute, solo and a fader. Buses group channels, VCAs move several faders at once, and returns hold shared effects.",
+      "Each channel has a GAIN knob (−24 to +24 dB, before the fader — turn it up and the sound gets louder), EQ, sends, pan, mute, solo and a fader. The master has its own GAIN too. Buses group channels, VCAs move several faders at once, and returns hold shared effects.",
       "On a computer the mixer opens docked under the timeline, like Studio Pro. Drag the bar between them to give the mixer or the timeline more room (double-click the bar to reset it). Press F3 to show or hide the mixer.",
       "Full view (at the right end of the mixer's top bar) gives the mixer the whole screen with every row; Dock under timeline in its header puts it back. Your choice and the docked height are remembered on that computer.",
+      "On a computer, the up arrow in the Devices bar lets you choose what shows under the timeline: Effects & scope for the selected instrument, or Mixer.",
+      "Every channel, bus, aux return, VCA and the master has its own scope; press its corner button to make it big.",
       "On phone, swipe sideways through channels and use ⋯ for each channel's menu.",
     ],
     can: [
       "Route tracks to buses and sends; learn mixer controls to a MIDI controller.",
-      "Read true levels on the meters; the red zone means clipping.",
+      "Read true levels on the meters; the red zone means clipping and the clip light stays lit.",
+      "Mute and unmute instantly while the song plays.",
     ],
     cant: [
       "A VCA scales the channels it controls without moving their own faders.",
+      "One sound alone reads the same on its channel and the master; several channels add up, so the master can clip before any single channel does.",
       "The docked mixer shows the main rows (gain, inserts, sends, pan, fader, mute/solo). Channel EQ and output routing are only in Full view; every strip keeps its scope.",
       "On a short screen the docked channels scroll up and down if they don't fit; drag the bar up for taller faders.",
     ],
@@ -701,6 +718,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     title: "Mastering",
     tags: "master mastering loudness lufs limiter club streaming multiband imager exciter maximizer car walkman theater sound check",
     body: [
+      "To master a song, open its project, go to Mastering and press Bounce & master. SYNCLAB plays your whole mix into the mastering chain.",
       "Mastering measures loudness and peaks, then applies EQ, width, glue, drive and limiting. Presets cover streaming, club and vocal-forward targets.",
       "Mastering devices add a 4-band Master EQ, 3-band Multiband dynamics (replaces Glue while on), a Stereo Imager with width per band, an Exciter for top-end harmonics and Maximizer timing with a gain-reduction readout. Switch each device On, then turn its knobs; the master re-renders when you let go.",
       "Sound Check plays the original or mastered song as it would sound on studio monitors, a car stereo, club PA, Walkman, home stereo, movie theater, phone, earbuds, laptop, TV, FM radio or Bluetooth speaker. Switch places while it plays, loop it, tap the bar to jump, and turn background noise on or off.",
@@ -872,6 +890,8 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "Open Settings → MIDI, or the MIDI IN button above the timeline, and turn on your controller. SYNCLAB reconnects to it after you unplug and replug it.",
       "Use Learn on a knob, fader or button, then move the control on your hardware.",
+      "Settings → MIDI shows the last message your controller sent, so you can check it's reaching SYNCLAB.",
+      "Korg nanoKONTROL Studio works without setup, in its factory Assignable mode or its DAW modes (Studio One, Cubase, Live, SONAR, Digital Performer): faders = volume, knobs = pan, M / S / R = mute, solo and record-arm, SELECT picks the channel for tracks 1–8. PLAY, STOP, REC, ◀◀ / ▶▶ and CYCLE run the transport. Press STOP once to stop where you are, twice to go back to the start. The jog wheel moves the playhead by beats (not while recording). TRACK ◀ / ▶ switch to tracks 9–16.",
     ],
     can: [
       "Use several MIDI inputs at once, learn knobs/faders/buttons, and map drum pads.",
@@ -880,6 +900,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
     cant: [
       "MIDI works in Chrome and Edge (computer) and Chrome on Android — not in Safari or Firefox.",
+      "The nanoKONTROL Studio's Pro Tools mode isn't supported. Its mapping has been tested with a simulated controller — tell us if your unit acts differently. Your own MIDI Learn assignments win over the built-in ones.",
     ],
   },
   {
@@ -924,7 +945,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "MY COMPUTER in the left menu opens your music files; drag them onto the timeline or an instrument.",
       "Imported and exported MP3/MP4 files are kept in your account library so you can use them on phone and computer.",
-      "Audio Converter turns one audio file into another format.",
+      "Audio Converter turns one audio file into another format — for example AIF/AIFF to MP3 — even in Chrome and Edge, which can't read AIFF on their own.",
     ],
     can: [
       "Import WAV, MP3, AIFF, FLAC, M4A, OGG and video files.",
@@ -932,7 +953,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
     cant: [
       "A browser only sees files you choose — it can't browse your whole drive by itself.",
-      "Some converter formats depend on your browser.",
+      "Some converter formats depend on your browser, and a few compressed AIFF types (AIFF-C) may still not open.",
     ],
   },
 
@@ -1030,7 +1051,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     can: ["Permanently remove your account and personal data."],
     cant: [
       "It can't be undone.",
-      "Deleting the account doesn't cancel a paid subscription. Cancel first in Manage billing (website) or in the App Store / Google Play.",
+      "A website (Paddle) subscription is cancelled for you first; if that fails, your account isn't deleted so you're never left paying. App Store and Google Play subscriptions must be cancelled in your phone's store settings.",
     ],
   },
   {
@@ -1188,6 +1209,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "COMB RESONATOR: a tuned feedback filter that rings at the note you play — plucks, metal and bowed tones from noise.",
     ],
     can: [
+      "See each kind of module at a glance — every device type has its own panel colour.",
       "Load 40 new racks built on these devices (Seq, Chaos, Comb, Follower, Macro, Ring and Gate names) from the PRESET window at the top of the synth (sorted by sound type and by rack device) or the library search.",
     ],
     cant: [
