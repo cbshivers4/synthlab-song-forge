@@ -26,6 +26,7 @@ export const startStemSplitFn = createServerFn({ method: "POST" })
         audio: z.string().min(16).max(60_000_000),
         name: z.string().max(200),
         mime: z.string().max(100),
+        quality: z.enum(["standard", "clean", "six"]).optional(),
       })
       .parse(d),
   )
@@ -37,7 +38,7 @@ export const startStemSplitFn = createServerFn({ method: "POST" })
       const bin = atob(data.audio);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      const id = await startStemSplit(bytes, data.name, data.mime);
+      const id = await startStemSplit(bytes, data.name, data.mime, data.quality ?? "standard");
       // Bind the job to this account (service role only, so nobody can claim someone else's job ID).
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { error } = await supabaseAdmin
@@ -50,6 +51,71 @@ export const startStemSplitFn = createServerFn({ method: "POST" })
         throw new Error("Stem separation could not be started. Please try again.");
       }
       return { ok: true as const, id, remaining: use.remaining };
+    } catch (e) {
+      await refundAiUse(context.supabase, use.id);
+      return { ok: false as const, error: errOf(e) };
+    }
+  });
+
+const DRUM_PROMPTS: Record<string, string> = {
+  kick: "kick drum",
+  snare: "snare drum",
+  hihat: "hi-hat cymbal",
+  toms: "tom-tom drums",
+  crash: "crash cymbal",
+  ride: "ride cymbal",
+  percussion: "hand percussion and shaker",
+};
+
+/**
+ * Splits a drums-only recording into pieces (kick, snare, hi-hat…), one AI job per piece.
+ * Counts as one AI use for the whole kit; the use is given back if nothing could start.
+ */
+export const startDrumSplitFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d) =>
+    z
+      .object({
+        url: z.string().url().max(2000).optional(),
+        audio: z.string().min(16).max(60_000_000).optional(),
+        name: z.string().max(200).optional(),
+        mime: z.string().max(100).optional(),
+        pieces: z
+          .array(z.enum(["kick", "snare", "hihat", "toms", "crash", "ride", "percussion"]))
+          .min(1)
+          .max(7),
+      })
+      .refine((v) => !!v.url !== !!v.audio, "Send either a drums link or a drums file.")
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { startDrumSplit, cancelStemSplit } = await import("@/lib/stem-split.server");
+    const use = await reserveAiUse(context.supabase, "stems");
+    if (!use.ok) return { ok: false as const, error: use.error };
+    try {
+      let source: Parameters<typeof startDrumSplit>[0];
+      if (data.url) source = { url: data.url };
+      else {
+        const bin = atob(data.audio!);
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        source = { bytes, fileName: data.name || "drums.mp3", mime: data.mime || "audio/mpeg" };
+      }
+      const pieces = [...new Set(data.pieces)];
+      const jobs = await startDrumSplit(
+        source,
+        pieces.map((id) => ({ id, prompt: DRUM_PROMPTS[id]! })),
+      );
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin
+        .from("stem_split_jobs")
+        .insert(jobs.map((j) => ({ prediction_id: j.id, user_id: context.userId })));
+      if (error) {
+        console.error("drum split: could not record job owner", error);
+        await Promise.all(jobs.map((j) => cancelStemSplit(j.id).catch(() => undefined)));
+        throw new Error("The drum split could not be started. Please try again.");
+      }
+      return { ok: true as const, jobs, remaining: use.remaining };
     } catch (e) {
       await refundAiUse(context.supabase, use.id);
       return { ok: false as const, error: errOf(e) };

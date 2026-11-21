@@ -4,6 +4,17 @@
  */
 const GATEWAY = "https://connector-gateway.lovable.dev/replicate/v1";
 const DEMUCS_VERSION = "ff5ad47d2685b27c0f820ee134c4394140804f08fa755cb20c846459faa4b337"; // ryan5453/demucs
+/** cjwbw/demucs serves every Demucs model, including the fine-tuned and 6-instrument ones. */
+const DEMUCS_ALL_VERSION = "25a173108cff36ef9f80f854c162d01df9e6528be175794b81158fa03836d953";
+/** geopti/sam-audio-large isolates a sound from a text description (used on the drum stem). */
+const SAM_AUDIO_VERSION = "d8a8a4fcdcbf0bdc863f6d98cd2117ec0bc02224b576c7b98b2a009a8a1f83fa";
+
+/**
+ * standard: htdemucs, 4 parts (Generate Stem).
+ * clean: htdemucs_ft, the fine-tuned 4-part model with the least bleed (slower).
+ * six: htdemucs_6s, adds separate guitar and piano parts.
+ */
+export type StemQuality = "standard" | "clean" | "six";
 
 export class StemSplitError extends Error {
   constructor(
@@ -49,11 +60,8 @@ async function fail(res: Response, what: string): Promise<never> {
   );
 }
 
-export async function startStemSplit(
-  bytes: Uint8Array<ArrayBuffer>,
-  fileName: string,
-  mime: string,
-) {
+/** Uploads audio to the AI service and returns the link its models read from. */
+async function uploadAudio(bytes: Uint8Array<ArrayBuffer>, fileName: string, mime: string) {
   const form = new FormData();
   form.append(
     "content",
@@ -69,17 +77,82 @@ export async function startStemSplit(
   const file = (await up.json()) as { urls?: { get?: string } };
   const audio = file.urls?.get;
   if (!audio) throw new StemSplitError("Upload to the stem separator returned no file.", 500);
+  return audio;
+}
+
+async function startPrediction(version: string, input: Record<string, unknown>) {
   const res = await fetch(`${GATEWAY}/predictions`, {
     method: "POST",
     headers: headers(),
-    body: JSON.stringify({
-      version: DEMUCS_VERSION,
-      input: { audio, format: "mp3", shifts: 1, split_overlap: 0.25 },
-    }),
+    body: JSON.stringify({ version, input }),
   });
   if (!res.ok) await fail(res, "start");
   const pred = (await res.json()) as { id: string };
   return pred.id;
+}
+
+export async function startStemSplit(
+  bytes: Uint8Array<ArrayBuffer>,
+  fileName: string,
+  mime: string,
+  quality: StemQuality = "standard",
+) {
+  const audio = await uploadAudio(bytes, fileName, mime);
+  if (quality === "standard")
+    return startPrediction(DEMUCS_VERSION, {
+      audio,
+      format: "mp3",
+      shifts: 1,
+      split_overlap: 0.25,
+    });
+  return startPrediction(DEMUCS_ALL_VERSION, {
+    audio,
+    model_name: quality === "six" ? "htdemucs_6s" : "htdemucs_ft",
+    output_format: "mp3",
+    mp3_bitrate: 320,
+    // More shifts and overlap = cleaner edges between parts, at the cost of time.
+    shifts: 2,
+    overlap: 0.5,
+    clip_mode: "rescale",
+  });
+}
+
+/** Links the drum splitter may be pointed at from the browser: finished separator output only. */
+const SOURCE_ALLOWED =
+  /^https:\/\/(?:[a-z0-9-]+\.)?replicate\.delivery\/|^https:\/\/storage\.googleapis\.com\/replicate-files\//;
+export const isSeparatorLink = (url: string) => SOURCE_ALLOWED.test(url);
+
+/**
+ * Starts one isolation per drum piece on a drums-only recording.
+ * Pass either a link from a finished separation (the drums part) or raw audio to upload.
+ */
+export async function startDrumSplit(
+  source: { url: string } | { bytes: Uint8Array<ArrayBuffer>; fileName: string; mime: string },
+  prompts: { id: string; prompt: string }[],
+) {
+  let audio: string;
+  if ("url" in source) {
+    if (!isSeparatorLink(source.url))
+      throw new StemSplitError("That drum link is not from the stem separator.", 400);
+    audio = source.url;
+  } else audio = await uploadAudio(source.bytes, source.fileName, source.mime);
+  const ids: { piece: string; id: string }[] = [];
+  try {
+    for (const p of prompts)
+      ids.push({
+        piece: p.id,
+        id: await startPrediction(SAM_AUDIO_VERSION, {
+          audio,
+          description: p.prompt,
+          // Finds where the hits are first, which keeps other drums out of the quiet parts.
+          predict_spans: true,
+        }),
+      });
+  } catch (e) {
+    await Promise.all(ids.map((x) => cancelStemSplit(x.id).catch(() => undefined)));
+    throw e;
+  }
+  return ids;
 }
 
 export type StemSplitStatus =
@@ -97,7 +170,11 @@ export async function checkStemSplit(id: string): Promise<StemSplitStatus> {
     const out =
       p.output && typeof p.output === "object" ? (p.output as Record<string, unknown>) : {};
     const stems: Record<string, string> = {};
-    for (const [k, v] of Object.entries(out)) if (typeof v === "string") stems[k] = v;
+    if (Array.isArray(p.output)) {
+      // Sound isolation returns [target, residual?]; the first link is the isolated sound.
+      const first = p.output.find((v): v is string => typeof v === "string");
+      if (first) stems["target"] = first;
+    } else for (const [k, v] of Object.entries(out)) if (typeof v === "string") stems[k] = v;
     return { state: "done", stems };
   }
   if (p.status === "failed" || p.status === "canceled")

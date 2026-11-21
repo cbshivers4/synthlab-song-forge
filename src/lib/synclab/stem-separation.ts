@@ -20,7 +20,7 @@ const TK = 31; // time kernel (frames) for the harmonic median
 const FK = 17; // frequency kernel (bins) for the percussive median
 const NORM = 1.5; // sum of hann² at 75% overlap
 
-function makeFft(n: number) {
+export function makeFft(n: number) {
   const levels = Math.round(Math.log2(n));
   const rev = new Uint32Array(n);
   for (let i = 0; i < n; i++) {
