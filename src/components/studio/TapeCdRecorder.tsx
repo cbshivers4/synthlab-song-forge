@@ -1,5 +1,7 @@
 import { useEffect, useSyncExternalStore } from "react";
-import { CassetteTape, Disc3, DiscAlbum } from "lucide-react";
+import { CassetteTape, Disc3, DiscAlbum, Download } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { getReelRecorder } from "@/lib/synclab/reel-recorder";
 import { getTapeMedia, useTapeMedia, type Medium } from "@/lib/synclab/tape-media";
 import { ReelRecorder } from "./ReelRecorder";
@@ -17,6 +19,13 @@ const MACHINES: { id: Medium; label: string; icon: typeof Disc3 }[] = [
  * Tape & CD Recorder: the reel-to-reel, a cassette deck and a CD burner share one tape engine,
  * so only one machine records or plays at a time and every take is real audio.
  */
+function scrollToSave() {
+  const bar = document.getElementById("tape-save");
+  if (bar) {
+    bar.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
 export function TapeCdRecorder() {
   const media = useTapeMedia();
   const recorder = getReelRecorder();
@@ -33,6 +42,19 @@ export function TapeCdRecorder() {
     recorder.setMasterMetering(tape.source === "song");
     return () => recorder.setMasterMetering(false);
   }, [recorder, tape.source]);
+  // A finished take points straight at the save buttons.
+  useEffect(() => {
+    const off = recorder.onTapeChange((_capture, why) => {
+      if (why !== "record") return;
+      toast.success("Recording finished", {
+        description: "Save it as a file or add it to your project.",
+        action: { label: "Save", onClick: () => scrollToSave() },
+      });
+    });
+    return () => {
+      off();
+    };
+  }, [recorder]);
   const busy = tape.busy || !!media.burn;
   return (
     <div className="media-decks mx-auto flex w-full max-w-[900px] flex-col gap-3">
@@ -56,6 +78,15 @@ export function TapeCdRecorder() {
           </button>
         ))}
       </div>
+      <Button
+        variant={tape.hasTape ? "default" : "outline"}
+        className="h-11 self-end"
+        disabled={!tape.hasTape}
+        onClick={() => scrollToSave()}
+      >
+        <Download />
+        {media.medium === "cd" ? "Save this CD track" : "Save recording"}
+      </Button>
       {media.medium === "reel" && <ReelRecorder />}
       {media.medium === "cassette" && <CassetteDeck />}
       {media.medium === "cd" && <CdBurner />}

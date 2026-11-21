@@ -42,6 +42,7 @@ import { useApp } from "@/lib/synclab/app-state";
 import { songSteps } from "@/lib/synclab/timebase";
 import { Knob } from "./Knob";
 import { DeckKey, DeckMeters, TapeSourceControls, tapeClock } from "./TapeControls";
+import { TapeExportBar } from "./ReelRecorder";
 
 /** A CD-R drawn as SVG; the darker ring is the part of the disc already written. */
 export function CdArt({
@@ -543,6 +544,7 @@ export function CdBurner() {
         </section>
       )}
 
+      {disc && <TapeExportBar nameLabel={null} canLoad={false} />}
       <DiscSpindle />
 
       <Dialog open={!!burnedName} onOpenChange={(open) => !open && setBurnedName(null)}>

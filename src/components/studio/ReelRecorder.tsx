@@ -649,7 +649,14 @@ export function TapeExportBar({
     }
   };
   return (
-    <footer className="flex flex-wrap items-end gap-2 border-t border-border px-4 py-4">
+    <footer
+      id="tape-save"
+      aria-label="Save your recording"
+      className="flex flex-wrap items-end gap-2 border-t border-border px-4 py-4"
+    >
+      <p className="basis-full text-xs font-semibold uppercase tracking-wider text-primary">
+        Save your recording
+      </p>
       {nameLabel ? (
         <label className="flex min-w-[120px] flex-1 flex-col gap-1 text-xs text-muted-foreground">
           {nameLabel}
