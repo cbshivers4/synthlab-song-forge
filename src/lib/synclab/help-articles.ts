@@ -875,6 +875,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "AI separation can give you Vocals, Drums, Bass, Guitar, Piano & keys, Other instruments and the Instrumental. Picking Guitar or Piano uses the 6-instrument model; otherwise the fine-tuned 4-part model is used because it leaves the least bleed.",
       "Split the drums into pieces: pick Kick, Snare, Hi-hat, Toms, Crash, Ride and/or Percussion. The drums are taken out of the song first, then each piece is pulled out separately. Tick “My file is only drums” if your file already has nothing else in it.",
       "Bleed cleanup runs on your device after the AI is done. It compares every part and turns down sound that clearly belongs to another one. Light keeps the sound natural; Strong removes the most bleed but can thin out quiet tails and reverb. Off gives you exactly what the AI returned.",
+      "A 3-minute song usually takes 3–4 minutes. The Separate button shows how long the AI has been working. You can use other tools while you wait. If the page reloads, open Separate Stems again within the hour and it picks the job up without using another AI use. The finished parts are listed under the Separate button; press Add to timeline (or Add all) to put them in your song as new tracks.",
     ],
     can: [
       "Split a song into vocals, drums, bass, guitar, piano/keys and other instruments.",

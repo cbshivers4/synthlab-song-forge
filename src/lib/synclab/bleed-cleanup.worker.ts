@@ -1,4 +1,4 @@
-import { cleanBleed, type BleedStrength } from "./bleed-cleanup";
+import { cleanBleedInPlace, type BleedStrength } from "./bleed-cleanup";
 import type { StereoPcm } from "./stem-separation";
 
 type Job = { stems: StereoPcm[]; rivals: StereoPcm[]; strength: BleedStrength };
@@ -10,7 +10,8 @@ const scope = self as unknown as {
 scope.onmessage = (e) => {
   try {
     const { stems, rivals, strength } = e.data;
-    const out = cleanBleed(stems, strength, rivals, (p) =>
+    // The parts arrive transferred (not copied) and are cleaned in place, so only one copy exists.
+    const out = cleanBleedInPlace(stems, strength, rivals, (p) =>
       scope.postMessage({ type: "progress", p }),
     );
     const transfer: Transferable[] = [];

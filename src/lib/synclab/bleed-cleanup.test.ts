@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanBleed, leftover } from "./bleed-cleanup";
+import { cleanBleed, cleanBleedInPlace, leftover } from "./bleed-cleanup";
 import { partsFor, qualityFor } from "./ai-stems";
 
 const SR = 44100;
@@ -47,6 +47,17 @@ describe("bleed cleanup", () => {
     const out = cleanBleed([stems[0]!], "strong", [stems[1]!]);
     expect(out).toHaveLength(1);
     expect(energyAt(out[0]!.left, 1760) / energyAt(a, 1760)).toBeLessThan(0.1);
+  });
+
+  it("in-place cleanup writes into the stems' own arrays and sounds the same as the copying version", () => {
+    const copies = stems.map((st) => ({ left: st.left.slice(), right: st.right.slice() }));
+    const out = cleanBleedInPlace(copies, "strong");
+    expect(out[0]!.left).toBe(copies[0]!.left);
+    const [ref] = cleanBleed(stems, "strong");
+    let diff = 0;
+    for (let t = 0; t < ref!.left.length; t++)
+      diff = Math.max(diff, Math.abs(ref!.left[t]! - out[0]!.left[t]!));
+    expect(diff).toBeLessThan(1e-6);
   });
 
   it("leftover is the whole minus its parts", () => {

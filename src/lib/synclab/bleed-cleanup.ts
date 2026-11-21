@@ -28,8 +28,32 @@ export const BLEED_SETTINGS: Record<
 /**
  * Cleans `stems` against each other. `rivals` take part in deciding who owns each sound
  * but are not returned (for example the leftover of a drum kit after the pieces were taken out).
+ * Returns new arrays; the inputs are left as they were.
  */
 export function cleanBleed(
+  stems: StereoPcm[],
+  strength: BleedStrength,
+  rivals: StereoPcm[] = [],
+  onProgress?: (fraction: number) => void,
+): StereoPcm[] {
+  if (strength === "off" || stems.length + rivals.length < 2) return stems;
+  const len = Math.max(...[...stems, ...rivals].map((s) => s.left.length));
+  const copies = stems.map((s) => {
+    const left = new Float32Array(len);
+    const right = new Float32Array(len);
+    left.set(s.left);
+    right.set(s.right.subarray(0, len));
+    return { left, right };
+  });
+  return cleanBleedInPlace(copies, strength, rivals, onProgress);
+}
+
+/**
+ * Same cleanup, written straight back into each stem's own arrays, so a long song needs no
+ * second copy of every part (phones run out of memory otherwise). Safe because each frame only
+ * reads samples at or after its start, and finished samples are written behind that point.
+ */
+export function cleanBleedInPlace(
   stems: StereoPcm[],
   strength: BleedStrength,
   rivals: StereoPcm[] = [],
@@ -47,10 +71,9 @@ export function cleanBleed(
   const im = all.map(() => new Float64Array(N));
   const pow = all.map(() => new Float64Array(N / 2 + 1));
   const total = new Float64Array(N / 2 + 1);
-  const out = stems.map(() => ({
-    left: new Float32Array(len),
-    right: new Float32Array(len),
-  }));
+  // Overlap-add accumulators: index n holds output sample (frame start + n).
+  const accL = stems.map(() => new Float64Array(N));
+  const accR = stems.map(() => new Float64Array(N));
   const frames = Math.ceil((len + N) / HOP);
   for (let f = 0; f < frames; f++) {
     const start = f * HOP - (N - HOP);
@@ -92,19 +115,29 @@ export function cleanBleed(
         }
       }
       fft(r, i); // ifft(X) = conj(fft(conj X)) / N
-      const o = out[s]!;
+      const aL = accL[s]!,
+        aR = accR[s]!;
       for (let n = 0; n < N; n++) {
-        const t = start + n;
-        if (t < 0 || t >= len) continue;
         const w = win[n]! / (N * NORM);
-        o.left[t] = o.left[t]! + r[n]! * w;
-        o.right[t] = o.right[t]! - i[n]! * w;
+        aL[n] = aL[n]! + r[n]! * w;
+        aR[n] = aR[n]! - i[n]! * w;
       }
+      // The first HOP samples are final now (the next frame starts after them): write them back.
+      const o = stems[s]!;
+      for (let n = 0; n < HOP; n++) {
+        const t = start + n;
+        if (t >= 0 && t < o.left.length) o.left[t] = aL[n]!;
+        if (t >= 0 && t < o.right.length) o.right[t] = aR[n]!;
+      }
+      aL.copyWithin(0, HOP);
+      aR.copyWithin(0, HOP);
+      aL.fill(0, N - HOP);
+      aR.fill(0, N - HOP);
     }
     if (onProgress && f % 256 === 0) onProgress(f / frames);
   }
   onProgress?.(1);
-  return out;
+  return stems;
 }
 
 /** Time-domain leftover: whole − sum of parts (what the parts didn't take). */

@@ -16,60 +16,23 @@ import {
 } from "@/lib/synclab/stems";
 import { retainMediaInBackground } from "@/lib/synclab/media-library";
 import { GeneratedWaveform } from "./GeneratedWaveform";
-import { useServerFn } from "@tanstack/react-start";
-import {
-  cancelStemSplitFn,
-  checkStemSplitFn,
-  fetchStemFn,
-  startDrumSplitFn,
-  startStemSplitFn,
-} from "@/utils/stem-split.functions";
-import {
-  AI_STEMS,
-  DRUM_PIECES,
-  partsFor,
-  qualityFor,
-  type AiStemId,
-  type DrumPieceId,
-} from "@/lib/synclab/ai-stems";
+import { AI_STEMS, DRUM_PIECES, type AiStemId, type DrumPieceId } from "@/lib/synclab/ai-stems";
 import type { BleedStrength } from "@/lib/synclab/bleed-cleanup";
-import type { StereoPcm } from "@/lib/synclab/stem-separation";
-import { AiUsesLeft, announceAiUse } from "./AiUsesLeft";
-import { decodeAudioFile } from "@/lib/synclab/aiff-decode";
+import { AiUsesLeft } from "./AiUsesLeft";
+import {
+  clearResults,
+  decodeBytes,
+  isRunning,
+  markAdded,
+  resumeSavedJob,
+  runAiJob,
+  stemJob,
+  stopJob,
+  useStemJob,
+  type StemResult,
+} from "./stem-job";
 
 const MAX_AI_BYTES = 40 * 1024 * 1024;
-const toBase64 = async (blob: Blob) => {
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let bin = "";
-  for (let i = 0; i < bytes.length; i += 0x8000)
-    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(bin);
-};
-const fromBase64 = (b64: string, type: string) => {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return new Blob([out], { type });
-};
-const pcmOf = (b: AudioBuffer): StereoPcm => ({
-  left: b.getChannelData(0).slice(),
-  right: (b.numberOfChannels > 1 ? b.getChannelData(1) : b.getChannelData(0)).slice(),
-});
-const sumPcm = (list: StereoPcm[]): StereoPcm => {
-  const len = Math.max(...list.map((p) => p.left.length));
-  const left = new Float32Array(len),
-    right = new Float32Array(len);
-  for (const p of list)
-    for (let i = 0; i < p.left.length; i++) {
-      left[i] = left[i]! + p.left[i]!;
-      right[i] = right[i]! + p.right[i]!;
-    }
-  return { left, right };
-};
-const stereoPeaks = ({ left, right }: StereoPcm) =>
-  peaksOf(left, 512).map((v, i) =>
-    Math.max(v, Math.abs(right[Math.floor((i * right.length) / 512)] ?? 0)),
-  );
 const CLEANUP: { id: BleedStrength; label: string; hint: string }[] = [
   { id: "off", label: "Off", hint: "Exactly what the AI returned." },
   { id: "light", label: "Light", hint: "Turns down sound that clearly belongs to another part." },
@@ -88,8 +51,10 @@ const AI_DEFAULT: Record<AiStemId, boolean> = {
   other: false,
   instrumental: false,
 };
-
-type Source = { name: string; buffer: AudioBuffer; start: number; blob: Blob };
+const clock = (ms: number) => {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
 
 export function StemSplitter() {
   const skin = useSkin("stemsplit");
@@ -97,7 +62,10 @@ export function StemSplitter() {
   const skinned = !!(skin.image || skin.color);
   const { tracks, addTrack, addClip } = useStudio();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [source, setSource] = useState<Source | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+  // The job lives outside this panel, so switching tools or a page reload doesn't lose it.
+  const job = useStemJob();
+  const { source, busy, progress, results } = job;
   const [picked, setPicked] = useState<Record<StemId, boolean>>({
     vocals: true,
     drums: false,
@@ -105,19 +73,31 @@ export function StemSplitter() {
     music: false,
     instrumental: false,
   });
-  const [busy, setBusy] = useState<string | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
   const [mode, setMode] = useState<"ai" | "device">("ai");
   const [aiPicked, setAiPicked] = useState<Record<AiStemId, boolean>>(AI_DEFAULT);
   const [drumPicked, setDrumPicked] = useState<Partial<Record<DrumPieceId, boolean>>>({});
   const [drumsOnly, setDrumsOnly] = useState(false);
   const [cleanup, setCleanup] = useState<BleedStrength>("light");
-  const startDrums = useServerFn(startDrumSplitFn);
-  const startAi = useServerFn(startStemSplitFn);
-  const checkAi = useServerFn(checkStemSplitFn);
-  const fetchAi = useServerFn(fetchStemFn);
-  const cancelAi = useServerFn(cancelStemSplitFn);
-  const cancelRef = useRef(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  // A separation that was still running when the page reloaded carries on by itself.
+  useEffect(() => {
+    resumeSavedJob();
+  }, []);
+  // Elapsed time while the AI works, so a long wait never looks frozen.
+  useEffect(() => {
+    if (!job.since) return;
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [job.since]);
+  // Bring the finished parts into view (on a phone they are below the options).
+  const resultCount = results.length;
+  useEffect(() => {
+    if (resultCount) resultsRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [resultCount]);
+
+  const setBusy = (b: string | null) => stemJob.set({ busy: b });
+  const setProgress = (p: number | null) => stemJob.set({ progress: p });
 
   const clips = useMemo(
     () =>
@@ -127,25 +107,18 @@ export function StemSplitter() {
     [tracks],
   );
 
-  const decode = async (data: ArrayBuffer) => {
-    const ctx = new AudioContext();
-    try {
-      return await decodeAudioFile(ctx, data);
-    } finally {
-      void ctx.close();
-    }
-  };
-
   const loadFile = async (file?: File) => {
-    if (!file) return;
+    if (!file || isRunning()) return;
     retainMediaInBackground(file, file.name);
     setBusy("Reading file…");
     try {
-      setSource({
-        name: file.name.replace(/\.[^.]+$/, ""),
-        buffer: await decode(await file.arrayBuffer()),
-        start: 0,
-        blob: file,
+      stemJob.set({
+        source: {
+          name: file.name.replace(/\.[^.]+$/, ""),
+          buffer: await decodeBytes(await file.arrayBuffer()),
+          start: 0,
+          blob: file,
+        },
       });
     } catch {
       toast.error("Couldn't read that audio file");
@@ -156,12 +129,14 @@ export function StemSplitter() {
 
   const loadClip = async (idx: number) => {
     const item = clips[idx];
-    if (!item?.clip.url) return;
+    if (!item?.clip.url || isRunning()) return;
     setBusy("Reading clip…");
     try {
       const blob = await (await fetch(item.clip.url)).blob();
-      const buf = await decode(await blob.arrayBuffer());
-      setSource({ name: item.clip.name, buffer: buf, start: item.clip.start ?? 0, blob });
+      const buf = await decodeBytes(await blob.arrayBuffer());
+      stemJob.set({
+        source: { name: item.clip.name, buffer: buf, start: item.clip.start ?? 0, blob },
+      });
     } catch {
       toast.error("Couldn't read that clip");
     } finally {
@@ -169,15 +144,6 @@ export function StemSplitter() {
     }
   };
 
-  type Result = {
-    id: string;
-    label: string;
-    url: string;
-    peaks: number[];
-    duration: number;
-    added: boolean;
-  };
-  const [results, setResults] = useState<Result[]>([]);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopAudio = () => {
@@ -188,7 +154,7 @@ export function StemSplitter() {
   useEffect(() => () => stopAudio(), []);
 
   const run = async (useMode: "ai" | "device" = mode) => {
-    if (!source) return;
+    if (!source || isRunning()) return;
     if (useMode === "ai") {
       if (source.buffer.duration > MAX_STEM_SECONDS) {
         toast("Song too long", { description: "Separate up to 6 minutes at a time." });
@@ -213,16 +179,14 @@ export function StemSplitter() {
       });
     }
     stopAudio();
-    results.forEach((r) => {
-      if (!r.added) URL.revokeObjectURL(r.url);
-    });
-    setResults([]);
+    clearResults();
+    stemJob.set({ resultName: source.name, resultStart: source.start, resumed: false });
     setBusy("Separating…");
     setProgress(0);
     try {
       const parts = await separateStems(source.buffer, ids, (p) => setProgress(p));
       const sr = source.buffer.sampleRate;
-      const out: Result[] = [];
+      const out: StemResult[] = [];
       for (const id of ids) {
         const part = parts[id];
         if (!part) continue;
@@ -240,7 +204,7 @@ export function StemSplitter() {
           added: false,
         });
       }
-      setResults(out);
+      stemJob.set({ results: out });
       if (out.length)
         toast.success("Stems separated", {
           description: "Play each one, then add the ones you want to the timeline.",
@@ -251,52 +215,6 @@ export function StemSplitter() {
       });
     } finally {
       setBusy(null);
-      setProgress(null);
-    }
-  };
-
-  /** Waits for one AI job; null when you pressed Stop. */
-  const waitFor = async (id: string) => {
-    const deadline = Date.now() + 15 * 60_000;
-    for (;;) {
-      await new Promise((r) => setTimeout(r, 4000));
-      if (cancelRef.current) {
-        void cancelAi({ data: { id } }).catch(() => {});
-        return null;
-      }
-      if (Date.now() > deadline) {
-        void cancelAi({ data: { id } }).catch(() => {});
-        throw new Error(
-          "The separator took longer than 15 minutes, so it was stopped. Try a shorter song or an MP3.",
-        );
-      }
-      const res = await checkAi({ data: { id } });
-      if (!res.ok) throw new Error(res.error);
-      if (res.status.state === "failed") throw new Error(res.status.error);
-      if (res.status.state === "done") return res.status.stems;
-    }
-  };
-  const download = async (url: string) => {
-    const got = await fetchAi({ data: { url } });
-    if (!got.ok) throw new Error(got.error);
-    const blob = fromBase64(got.mp3, "audio/mpeg");
-    const buffer = await decode(await blob.arrayBuffer());
-    return { blob, pcm: pcmOf(buffer), rate: buffer.sampleRate };
-  };
-  /** Cleans bleed in the background; if that fails the parts are kept as the AI returned them. */
-  const cleanParts = async (parts: StereoPcm[], rivals: StereoPcm[] = []) => {
-    if (cleanup === "off") return parts;
-    setBusy("Cleaning bleed…");
-    setProgress(0);
-    try {
-      const { cleanBleedInBackground } = await import("@/lib/synclab/bleed-run");
-      return await cleanBleedInBackground(parts, cleanup, rivals, setProgress);
-    } catch {
-      toast("Bleed cleanup couldn't run on this device", {
-        description: "You get the parts exactly as the AI returned them.",
-      });
-      return parts;
-    } finally {
       setProgress(null);
     }
   };
@@ -316,140 +234,13 @@ export function StemSplitter() {
       return;
     }
     stopAudio();
-    results.forEach((r) => {
-      if (!r.added) URL.revokeObjectURL(r.url);
+    await runAiJob(source, { stemIds, pieces, cleanup, drumsOnly }, () => {
+      setMode("device");
+      void run("device");
     });
-    setResults([]);
-    cancelRef.current = false;
-    setProgress(null);
-    const sr = { rate: source.buffer.sampleRate };
-    const toResult = (id: string, label: string, pcm: StereoPcm, blob?: Blob): Result => ({
-      id,
-      label,
-      url: URL.createObjectURL(blob ?? encodeWav({ ...pcm, sampleRate: sr.rate })),
-      peaks: stereoPeaks(pcm),
-      duration: pcm.left.length / sr.rate,
-      added: false,
-    });
-    const stopped = () => {
-      toast("Separation stopped");
-    };
-    try {
-      setBusy("Uploading…");
-      const audio = await toBase64(source.blob);
-      const fileName = `${source.name}.${source.blob.type.includes("wav") ? "wav" : "mp3"}`;
-      const mime = source.blob.type || "audio/mpeg";
-      const out: Result[] = [];
-      let drumsLink: string | null = null;
-      let drumsWhole: StereoPcm | null = drumsOnly ? pcmOf(source.buffer) : null;
-
-      if (!drumsOnly) {
-        const quality = qualityFor(stemIds);
-        const started = await startAi({ data: { audio, name: fileName, mime, quality } });
-        announceAiUse();
-        if (!started.ok) throw new Error(started.error);
-        setBusy("Separating with AI…");
-        const stems = await waitFor(started.id);
-        if (!stems) return stopped();
-        setBusy("Downloading stems…");
-        // Bleed cleanup compares every part, so all of them are needed then.
-        const need = new Set(
-          cleanup !== "off" ? Object.keys(stems) : stemIds.flatMap((id) => partsFor(id, quality)),
-        );
-        if (pieces.length) need.add("drums");
-        const names = [...need].filter((n) => stems[n]);
-        const got = await Promise.all(names.map((n) => download(stems[n]!)));
-        const raw: Record<string, { blob: Blob; pcm: StereoPcm }> = {};
-        names.forEach((n, i) => (raw[n] = got[i]!));
-        if (got[0]) sr.rate = got[0].rate;
-        drumsLink = stems["drums"] ?? null;
-        drumsWhole = raw["drums"]?.pcm ?? null;
-        const cleaned = await cleanParts(names.map((n) => raw[n]!.pcm));
-        const part: Record<string, StereoPcm> = {};
-        names.forEach((n, i) => (part[n] = cleaned[i]!));
-        for (const id of stemIds) {
-          const use = partsFor(id, quality).filter((n) => part[n]);
-          if (!use.length) continue;
-          const label = AI_STEMS.find((s) => s.id === id)!.label;
-          const single = use.length === 1 && cleanup === "off" ? raw[use[0]!]?.blob : undefined;
-          out.push(toResult(id, label, sumPcm(use.map((n) => part[n]!)), single));
-        }
-        setResults([...out]);
-      }
-
-      if (pieces.length) {
-        if (!drumsOnly && !drumsLink) throw new Error("The separator returned no drums to split.");
-        setBusy("Splitting the drums…");
-        const started = await startDrums({
-          data: drumsOnly ? { audio, name: fileName, mime, pieces } : { url: drumsLink!, pieces },
-        });
-        announceAiUse();
-        if (!started.ok) throw new Error(started.error);
-        const done = await Promise.all(started.jobs.map((j) => waitFor(j.id)));
-        if (done.some((d) => !d)) return stopped();
-        setBusy("Downloading drum pieces…");
-        const got = await Promise.all(
-          started.jobs.map((j, i) => {
-            const link = done[i]?.["target"];
-            if (!link) throw new Error("The drum splitter returned nothing for one piece.");
-            return download(link);
-          }),
-        );
-        if (drumsOnly && got[0]) sr.rate = got[0].rate;
-        const piecePcm = got.map((g) => g.pcm);
-        // What none of the pieces took (room, other drums) competes too, so it doesn't bleed in.
-        const { leftover } = await import("@/lib/synclab/bleed-cleanup");
-        const rivals = drumsWhole && drumsWhole.left.length ? [leftover(drumsWhole, piecePcm)] : [];
-        const cleaned = await cleanParts(piecePcm, rivals);
-        started.jobs.forEach((j, i) => {
-          const label = DRUM_PIECES.find((p) => p.id === j.piece)?.label ?? j.piece;
-          out.push(
-            toResult(
-              `drum-${j.piece}`,
-              label,
-              cleaned[i]!,
-              cleanup === "off" ? got[i]!.blob : undefined,
-            ),
-          );
-        });
-      }
-
-      setResults(out);
-      if (out.length)
-        toast.success("Stems separated with AI", {
-          description: "Play each one, then add the ones you want to the timeline.",
-        });
-      else toast.error("The separator returned no stems");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      const serviceDown = /credit|billing|402|busy|429|unavailable/i.test(msg);
-      const description = /unauthor|401|jwt|session/i.test(msg)
-        ? "Sign in to use AI stem separation."
-        : serviceDown
-          ? `${msg} Your AI use was given back. You can separate on this device for free instead.`
-          : msg;
-      toast.error("Couldn't separate this song", {
-        ...(description ? { description } : {}),
-        ...(serviceDown
-          ? {
-              duration: 15000,
-              action: {
-                label: "Separate on this device",
-                onClick: () => {
-                  setMode("device");
-                  void run("device");
-                },
-              },
-            }
-          : {}),
-      });
-    } finally {
-      setBusy(null);
-      setProgress(null);
-    }
   };
 
-  const togglePlay = (r: Result) => {
+  const togglePlay = (r: StemResult) => {
     if (playingId === r.id) {
       stopAudio();
       return;
@@ -465,27 +256,35 @@ export function StemSplitter() {
     });
   };
 
-  const addToTimeline = (r: Result) => {
-    if (!source || r.added) return;
+  const addToTimeline = (r: StemResult) => {
+    const name = job.resultName ?? source?.name;
+    if (!name || r.added) return;
     const trackId = addTrack(
       "audio",
-      `${r.label.toUpperCase()} · ${source.name}`.slice(0, 40),
+      `${r.label.toUpperCase()} · ${name}`.slice(0, 40),
       undefined,
-      { keepPanel: true },
+      {
+        keepPanel: true,
+      },
     );
     addClip(trackId, {
       id: `stem-${r.id}-${Date.now()}`,
-      name: `${source.name} (${r.label})`,
+      name: `${name} (${r.label})`,
       url: r.url,
       peaks: r.peaks,
       duration: r.duration,
-      start: source.start,
+      start: job.resultStart,
       offset: 0,
       length: r.duration,
     });
-    setResults((rs) => rs.map((x) => (x.id === r.id ? { ...x, added: true } : x)));
+    markAdded(r.id);
     toast.success(`${r.label} added to the timeline`);
   };
+
+  const waiting = job.since ? clock(now - job.since) : null;
+  const expectMin = job.songSeconds
+    ? Math.max(2, Math.round((job.songSeconds * 1.1 + 40) / 60))
+    : null;
 
   return (
     <section
@@ -771,18 +570,21 @@ export function StemSplitter() {
         onClick={() => void run()}
       >
         <Split className="size-4" />{" "}
-        {busy ? `${busy}${progress !== null ? ` ${Math.round(progress * 100)}%` : ""}` : "Separate"}
+        {busy
+          ? `${busy}${progress !== null ? ` ${Math.round(progress * 100)}%` : ""}${waiting ? ` ${waiting}` : ""}`
+          : "Separate"}
       </Button>
       {(busy?.startsWith("Separating with AI") || busy?.startsWith("Splitting the drums")) && (
-        <Button
-          variant="outline"
-          className="ml-2 min-h-12"
-          onClick={() => {
-            cancelRef.current = true;
-          }}
-        >
+        <Button variant="outline" className="ml-2 min-h-12" onClick={stopJob}>
           Stop
         </Button>
+      )}
+      {waiting && (
+        <p className="font-mono text-xs text-muted-foreground" aria-live="polite">
+          The AI is working on {job.resultName ? `"${job.resultName}"` : "your song"} · {waiting} so
+          far{expectMin ? ` · usually about ${expectMin} min` : ""}. You can use other tools
+          meanwhile; the parts appear here when they're ready.
+        </p>
       )}
       {progress !== null && (
         <div
@@ -801,7 +603,10 @@ export function StemSplitter() {
       )}
 
       {results.length > 0 && (
-        <div className="space-y-2" aria-label="Separated stems">
+        <div ref={resultsRef} className="space-y-2" aria-label="Separated stems">
+          <h3 className="font-mono text-xs font-bold tracking-widest text-primary">
+            SEPARATED PARTS{job.resultName ? ` · ${job.resultName.toUpperCase()}` : ""}
+          </h3>
           {results.map((r) => (
             <div
               key={r.id}
@@ -841,7 +646,7 @@ export function StemSplitter() {
             variant="outline"
             className="min-h-11"
             disabled={results.every((r) => r.added)}
-            onClick={() => results.forEach(addToTimeline)}
+            onClick={() => results.forEach((r) => addToTimeline(r))}
           >
             Add all to timeline
           </Button>
