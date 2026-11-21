@@ -132,7 +132,7 @@
 ## Nov 1 — Master upgrade brief (phases 1–8, one at a time)
 - [x] Phase 1: audit + fixes (synth LFO/arp sync & swing, import success/failure, desktop menu commands, honest update message, Save As/close-save with failed takes, device-library commit, drum lane double-click, capture/preview cleanup); clear track verified staying on Edit (desktop + phone)
 - [x] Drum pad samples always saved as the project's own cloud copy; unreadable old samples no longer block opening
-- [ ] Phase 1 leftover: dormant Generate Stem/Separate Stems error wording (both Coming Soon)
+- [x] Phase 1 leftover: Generate Stem/Separate Stems no longer Coming Soon
 - [x] Phase 2: looper undo + song-bar sync + true rings, reel rotation from tape position, input loss/change handling, MIDI clock send/follow, honest sample-rate display (autosave/crash recovery excluded: manual-save-only rule)
 - [ ] Phase 2 not done (needs decisions/hardware): interface inputs beyond 1/2, loopback latency calibration, selectable sample rate/buffer (browser-limited), MIDI-note loops in looper
 - [x] Phase 3: file drops at drop position, Ctrl+D clip duplicate, Ctrl/pinch zoom, undo-right-after-edit fix, per-clip colours, pan/width knobs (wheel + double-click reset), mixer peak hold
@@ -145,8 +145,9 @@
 - [ ] Phase 5 not done: editable keyboard shortcuts, saved-library search + drag to timeline, true portrait layout (phones currently show the sideways studio by design)
 - [ ] Phases 6–8: wait for Phase 5 report
 
+- [x] Sign-in page lists AI Co-Producer, Generate Stem and Separate Stems as Available now (Nov 21)
 - [x] Phase 6: AI Co-Producer / Generate Stem / Separate Stems switched on; 25 AI uses per person per day (server-enforced, shown in each tool); stem separation 15-min deadline + real cancel; Hum to Beat transpose/snap-to-key/instrument/tempo; Bass Generator regenerate variations
-- [ ] Phase 6 not done: true AI voice conversion (no suitable service connected), dedicated Vocal Forge lyrics-to-tempo tool; landing page still lists the three AI tools as Coming soon (needs your OK to change)
+- [ ] Phase 6 not done: true AI voice conversion (no suitable service connected), dedicated Vocal Forge lyrics-to-tempo tool
 - [x] Phase 7: whole-song range, stems + one-track export, MIDI export, cancel, choose save folder, export history, delete confirmations, project-owned copies of sampler/clip/pad audio
 - [ ] Phase 7 not done: autosave/recovery (manual-save rule), Video Sampler video isn't saved in cloud projects, device-list entries are only shortcuts (not separate saved copies)
 - [x] Phase 8: full QA pass (399 tests, 0 type errors, 3-min session memory steady, 60 fps, 22 tools error-free, phone recording, 0 dependency advisories); completion report delivered

@@ -100,7 +100,7 @@ const AI_TOOLS: { icon: React.ReactNode; title: string; body: string }[] = [
   {
     icon: <AudioLines className="size-4" />,
     title: "Separate Stems",
-    body: "Split a song into vocals, drums, bass and music.",
+    body: "Split a song into vocals, drums, bass, guitar, piano and single drum pieces.",
   },
 ];
 
@@ -302,8 +302,10 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
 
             <section aria-labelledby="ai-tools" className="login-soon">
               <h2 id="ai-tools" className="login-soon-title">
-                Coming soon
-                <span className="login-soon-note">AI tools we are finishing for SYNCLAB.</span>
+                AI tools
+                <span className="login-soon-note">
+                  Ready in the studio — 25 AI uses per person per day.
+                </span>
               </h2>
               <ul className="login-soon-grid">
                 {AI_TOOLS.map((f) => (
@@ -311,7 +313,7 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
                     <span className="login-soon-head">
                       <span className="login-soon-icon text-primary">{f.icon}</span>
                       <span className="login-soon-name font-semibold">{f.title}</span>
-                      <span className="login-soon-badge">Coming soon</span>
+                      <span className="login-soon-badge">Available now</span>
                     </span>
                     <p className="login-soon-body">{f.body}</p>
                   </li>
