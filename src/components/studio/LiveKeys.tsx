@@ -1,4 +1,5 @@
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
+import { joinBandPreview, stopBandPreview } from "@/lib/synclab/live-band";
 import {
   useEffect,
   useLayoutEffect,
@@ -288,7 +289,7 @@ function KeysDesk({
     chooseKeys(track.id);
     if (transport.recording) {
       toast("Stop recording first", {
-        description: "Preview alone pauses your song, which would end the take.",
+        description: "Preview pauses your song, which would end the take.",
       });
       return;
     }
@@ -296,11 +297,13 @@ function KeysDesk({
       pause();
       toast("Song paused", {
         description:
-          "You're hearing the keyboard player on their own. Press Play with song to bring the song back in.",
+          "You're hearing the live players without the song (Live Drummer and Live Keys play together). Press Play with song to bring the song back in.",
       });
     }
     player.stop();
     player.start("alone");
+    // The other live player (if this song has one) previews with it, on the same beat.
+    joinBandPreview("keys");
   };
   const playWithSong = () => {
     chooseKeys(track.id);
@@ -521,7 +524,10 @@ function KeysDesk({
                     size="lg"
                     className="drummer-play min-h-14"
                     variant="destructive"
-                    onClick={() => player.stop()}
+                    onClick={() => {
+                      stopBandPreview("keys");
+                      player.stop();
+                    }}
                     aria-label="Stop the keyboard player"
                   >
                     <Square className="size-5 fill-current" />
@@ -535,7 +541,7 @@ function KeysDesk({
                     title="Hear only the keyboard player, at the song tempo — your song pauses if it's playing"
                   >
                     <Play className="size-5 fill-current" />
-                    {phone ? "Alone" : "Preview alone"}
+                    {phone ? "Preview" : "Preview (no song)"}
                   </Button>
                 )}
                 <Button

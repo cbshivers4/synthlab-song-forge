@@ -1,4 +1,5 @@
 import { useIsLandscapePhone } from "@/hooks/use-mobile";
+import { joinBandPreview, stopBandPreview } from "@/lib/synclab/live-band";
 import {
   useEffect,
   useLayoutEffect,
@@ -276,7 +277,7 @@ function DrummerDesk({
     chooseDrummer(track.id);
     if (transport.recording) {
       toast("Stop recording first", {
-        description: "Preview alone pauses your song, which would end the take.",
+        description: "Preview pauses your song, which would end the take.",
       });
       return;
     }
@@ -284,11 +285,13 @@ function DrummerDesk({
       pause();
       toast("Song paused", {
         description:
-          "You're hearing the drummer on their own. Press Play with song to bring the song back in.",
+          "You're hearing the live players without the song (Live Drummer and Live Keys play together). Press Play with song to bring the song back in.",
       });
     }
     player.stop();
     player.start("alone");
+    // The other live player (if this song has one) previews with it, on the same beat.
+    joinBandPreview("drums");
   };
   /** Drummer and song together, locked to the song's bars. */
   const playWithSong = () => {
@@ -471,7 +474,10 @@ function DrummerDesk({
                     size="lg"
                     className="drummer-play min-h-14"
                     variant="destructive"
-                    onClick={() => player.stop()}
+                    onClick={() => {
+                      stopBandPreview("drums");
+                      player.stop();
+                    }}
                     aria-label="Stop the drummer"
                   >
                     <Square className="size-5 fill-current" />
@@ -485,7 +491,7 @@ function DrummerDesk({
                     title="Hear only the drummer, at the song tempo — your song pauses if it's playing"
                   >
                     <Play className="size-5 fill-current" />
-                    {phone ? "Alone" : "Preview alone"}
+                    {phone ? "Preview" : "Preview (no song)"}
                   </Button>
                 )}
                 <Button

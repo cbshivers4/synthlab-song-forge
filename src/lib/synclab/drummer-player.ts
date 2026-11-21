@@ -1,5 +1,6 @@
 import { getEngine } from "./audio-engine";
 import { activeSongClock } from "./song-clock";
+import { bandGrid, registerBandMember } from "./live-band";
 import {
   barOptions,
   genBar,
@@ -108,6 +109,12 @@ class DrummerPlayer {
     this.nextStep = 0;
     this.nextTime = ctx.currentTime + 0.06;
     this.lastTime = ctx.currentTime;
+    // Previewing next to the other live player: join its grid so bars, beats and fills line up.
+    const grid = mode === "alone" ? bandGrid("drums") : null;
+    if (grid && grid.time > ctx.currentTime) {
+      this.nextStep = grid.step;
+      this.nextTime = grid.time;
+    }
     this.tick();
     this.timer = setInterval(() => this.tick(), 25);
     this.emit();
@@ -122,6 +129,20 @@ class DrummerPlayer {
     this.waitSince = null;
     this.queued = { fill: null, fillAt: 0, brk: null, crash: null };
     this.emit();
+  }
+
+  /** Free-running preview position (null while stopped, following or waiting for the song). */
+  previewGrid() {
+    if (!this.running || this.following || this.waitSince !== null) return null;
+    return { step: this.nextStep, time: this.nextTime };
+  }
+
+  get isRunning() {
+    return this.running;
+  }
+
+  hasPart() {
+    return !!this.track?.drummer;
   }
 
   toggle() {
@@ -371,5 +392,16 @@ class DrummerPlayer {
 
 let player: DrummerPlayer | null = null;
 export function getDrummer() {
-  return (player ??= new DrummerPlayer());
+  if (!player) {
+    const created = new DrummerPlayer();
+    player = created;
+    registerBandMember("drums", {
+      hasPart: () => created.hasPart(),
+      previewGrid: () => created.previewGrid(),
+      running: () => created.isRunning,
+      startPreview: () => created.start("alone"),
+      stop: () => created.stop(),
+    });
+  }
+  return player;
 }

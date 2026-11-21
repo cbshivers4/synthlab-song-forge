@@ -380,7 +380,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Keep playing while you switch panels.",
     ],
     cant: [
-      "Preview alone pauses your song (and is blocked while recording), because it plays the keys on their own.",
+      "Preview pauses your song (and is blocked while recording). If your song also has a Live Drummer, the drummer previews with the keys, in time; Stop on either one stops both.",
       "It plays the chords you set; it doesn't listen to your audio to work out the chords.",
       "Parts printed before an update keep their older sound — print again to hear the new one.",
     ],
@@ -461,7 +461,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Keep playing while you switch panels.",
     ],
     cant: [
-      "Preview alone pauses your song (and is blocked while recording), because it plays the drummer on their own.",
+      "Preview pauses your song (and is blocked while recording). If your song also has Live Keys, the keys preview with the drummer, in time; Stop on either one stops both.",
       "It follows your song's tempo; it doesn't listen to your audio to follow a live player.",
     ],
   },
