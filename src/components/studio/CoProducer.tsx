@@ -42,7 +42,11 @@ export function CoProducer() {
   // A fast second tap on the phone's Tools tile lands on an idea button as the panel opens,
   // which would send a question (and use AI) the person never chose. Ignore taps that early.
   const openedAt = useRef(performance.now());
-  useEffect(() => endRef.current?.scrollIntoView({ block: "nearest" }), [msgs]);
+  // Braces matter: newer Chrome returns a Promise from scrollIntoView, and React would call a
+  // returned value as the effect's cleanup ("… is not a function"), crashing the panel.
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "nearest" });
+  }, [msgs]);
 
   useEffect(() => {
     const p = pending.current;

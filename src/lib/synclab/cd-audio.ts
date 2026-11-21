@@ -51,6 +51,8 @@ export function cdTimecode(seconds: number): string {
   return [mm, ss, ff].map((n) => String(n).padStart(2, "0")).join(":");
 }
 
+// Control characters are intentionally matched: they are unsafe in file names.
+// eslint-disable-next-line no-control-regex
 const unsafe = /[\\/:*?"<>|\u0000-\u001f]/g;
 /** Plain ASCII (accents dropped, other symbols to "-") so every burner and computer reads the names. */
 const ascii = (s: string) =>

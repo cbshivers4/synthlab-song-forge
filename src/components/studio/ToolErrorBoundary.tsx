@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 /** Errors that happen when the app was updated while this page stayed open (old and new code mixed). */
 const STALE =
-  /is not a function|dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk/i;
+  /dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk/i;
 
 type Props = { name: string; children: ReactNode; onClose?: () => void; className?: string };
 
@@ -17,11 +17,21 @@ export class ToolErrorBoundary extends Component<Props, { error: Error | null }>
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
-  override componentDidCatch(error: Error) {
+  override componentDidCatch(error: Error, info?: { componentStack?: string | null }) {
     console.error(`[${this.props.name}] crashed:`, error);
-    // Record the real message in the app's error log so a crash on someone's phone can be traced.
+    // Record the real message plus where it happened in the app's error log, so a crash on
+    // someone's device can be traced without a screenshot.
     try {
-      const report = new Error(`[${this.props.name}] ${error?.message || "Unknown error"}`);
+      const where = [
+        (error?.stack ?? "").split("\n").slice(1, 3).join(" "),
+        (info?.componentStack ?? "").trim().split("\n").slice(0, 3).join(" "),
+      ]
+        .join(" | ")
+        .replace(/\s+/g, " ")
+        .slice(0, 400);
+      const report = new Error(
+        `[${this.props.name}] ${error?.message || "Unknown error"} @ ${where}`,
+      );
       if (error?.stack) report.stack = error.stack;
       window.reportError?.(report);
     } catch {

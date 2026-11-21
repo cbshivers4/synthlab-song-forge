@@ -32,6 +32,23 @@ export default tseslint.config(
           ],
         },
       ],
+      // Newer Chrome returns Promises from scroll methods; an effect that returns one hands React a
+      // non-function cleanup, which crashes the panel when it re-runs or closes. Use braces.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.name=/^use(Layout|Insertion)?Effect$/] > ArrowFunctionExpression[body.type='CallExpression'][body.callee.property.name=/^(scroll|focus|play|requestFullscreen)/]",
+          message:
+            "Wrap this effect body in braces so it returns nothing (scroll/play calls return Promises).",
+        },
+        {
+          selector:
+            "CallExpression[callee.name=/^use(Layout|Insertion)?Effect$/] > ArrowFunctionExpression[body.type='ChainExpression'][body.expression.callee.property.name=/^(scroll|focus|play|requestFullscreen)/]",
+          message:
+            "Wrap this effect body in braces so it returns nothing (scroll/play calls return Promises).",
+        },
+      ],
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
     },
