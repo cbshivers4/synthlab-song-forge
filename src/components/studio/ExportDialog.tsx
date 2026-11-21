@@ -112,7 +112,7 @@ export function ExportDialog() {
     addTrack,
     addClip,
     tracks,
-    buses,
+    allBuses,
     vcas,
     auxReturns,
     fxChains,
@@ -462,7 +462,7 @@ export function ExportDialog() {
           const cap = await renderSong({
             tracks: tg.tracks,
             transport,
-            buses,
+            buses: allBuses,
             vcas,
             auxReturns,
             fxChains,

@@ -21,7 +21,7 @@ import { MidiLearnBlock } from "../MidiLearn";
 import { TrackNotes } from "@/components/studio/TrackNotes";
 import { TrackIcon } from "@/components/studio/TrackStyle";
 import { RenameTrackButton } from "@/components/studio/RenameTrackButton";
-import type { BusId, Track, VcaId } from "@/lib/synclab/types";
+import type { Track, TrackBusId, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, peakHoldDb, peakHoldText, useClipped } from "@/lib/synclab/clip-monitor";
 import { Scope } from "../Scope";
@@ -126,10 +126,12 @@ export function Strip({
   index: number;
   onSelect: () => void;
 }) {
-  const { updateTrack, moveTrack, tracks, transport, setTransport, vcas } = useStudio();
+  const { updateTrack, moveTrack, tracks, transport, setTransport, vcas, customBuses } =
+    useStudio();
   const vcaState = t.vca ? vcas[t.vca] : undefined;
-  const vcaGain = vcaState ? (vcaState.muted ? 0 : vcaState.volume) : 1;
-  const effective = t.volume * vcaGain;
+  // The VCA moves this fader itself; only a muted VCA changes what you hear beyond it.
+  const effective = vcaState?.muted ? 0 : t.volume;
+  const customBus = customBuses.find((b) => b.id === t.bus);
   const advanced = useApp().mode === "advanced";
 
   const clip = useClipped(t.id);
@@ -274,13 +276,13 @@ export function Strip({
           "flex flex-col justify-center gap-0.5 border-b border-border/60 px-1",
         )}
       >
-        <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as BusId })}>
+        <Select value={t.bus} onValueChange={(v) => updateTrack(t.id, { bus: v as TrackBusId })}>
           <SelectTrigger
             aria-label={`${t.name} output bus`}
             onClick={(e) => e.stopPropagation()}
             className="h-6 w-full rounded-sm border-border px-1 font-mono text-[8px] uppercase"
             style={{
-              background: `color-mix(in oklab, ${BUS_COLOR[t.bus] ?? t.color} 22%, var(--surface-2, transparent))`,
+              background: `color-mix(in oklab, ${customBus?.color ?? BUS_COLOR[t.bus] ?? t.color} 22%, var(--surface-2, transparent))`,
             }}
           >
             <SelectValue />
@@ -289,6 +291,11 @@ export function Strip({
             {BUSES.map((b) => (
               <SelectItem key={b} value={b} className="text-xs uppercase">
                 {b}
+              </SelectItem>
+            ))}
+            {customBuses.map((b) => (
+              <SelectItem key={b.id} value={b.id} className="text-xs uppercase">
+                {b.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -359,14 +366,17 @@ export function Strip({
         />
         {vcaState && (
           <div
-            className="relative w-2 shrink-0 rounded-sm bg-surface-2"
-            title={`After VCA ${t.vca}: ${toDb(effective).toFixed(1)} dB`}
-            aria-label={`Level after VCA ${t.vca}`}
+            className={cn(
+              "relative w-2 shrink-0 rounded-sm",
+              vcaState.muted ? "bg-amber-500/60" : "bg-primary/40",
+            )}
+            title={
+              vcaState.muted
+                ? `VCA ${t.vca} is muted`
+                : `On VCA ${t.vca} — moving the VCA moves this fader`
+            }
+            aria-label={`On VCA ${t.vca}${vcaState.muted ? ", muted" : ""}`}
           >
-            <div
-              className="absolute inset-x-0 bottom-0 rounded-sm bg-primary/70 transition-[height] duration-75"
-              style={{ height: `${effective * 100}%` }}
-            />
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 font-mono text-[7px] text-primary">
               {t.vca}
             </span>
@@ -387,7 +397,7 @@ export function Strip({
             "font-mono text-[9px]",
             vcaState ? "text-primary" : "text-muted-foreground",
           )}
-          title={vcaState ? `Fader ${toDb(t.volume).toFixed(1)} dB, after VCA ${t.vca}` : undefined}
+          title={vcaState ? `Fader ${toDb(t.volume).toFixed(1)} dB, on VCA ${t.vca}` : undefined}
         >
           {toDb(effective).toFixed(1)}
         </span>

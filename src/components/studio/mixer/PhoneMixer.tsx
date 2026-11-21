@@ -15,7 +15,7 @@ import { Select } from "@/components/ui/select";
 import { useStudio } from "@/lib/synclab/store";
 import { TrackIcon } from "@/components/studio/TrackStyle";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
-import type { AuxId, BusId, BusState, Track, VcaId } from "@/lib/synclab/types";
+import type { AuxId, BusState, Track, TrackBusId, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip } from "@/lib/synclab/clip-monitor";
 import { RenameTrackButton } from "../RenameTrackButton";
@@ -128,10 +128,21 @@ export function PhoneTouchStrips({
   size = "normal",
 }: {
   levels: MixLevels;
-  routing?: { buses: BusId[]; vcas: VcaId[]; aux: AuxId[] };
+  routing?: { buses: TrackBusId[]; vcas: VcaId[]; aux: AuxId[] };
   size?: TouchStripSize;
 }) {
-  const { tracks, selectedId, buses, setBus, vcas, setVca, auxReturns, setAuxReturn } = useStudio();
+  const {
+    tracks,
+    selectedId,
+    busStateOf,
+    busName,
+    customBuses,
+    setBus,
+    vcas,
+    setVca,
+    auxReturns,
+    setAuxReturn,
+  } = useStudio();
   const scrollRef = useRef<HTMLDivElement>(null);
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -157,8 +168,9 @@ export function PhoneTouchStrips({
             key={`bus-${id}`}
             kind="BUS"
             id={id}
-            color={BUS_COLOR[id] ?? AUX_COLOR}
-            state={buses[id]}
+            title={busName(id)}
+            color={customBuses.find((b) => b.id === id)?.color ?? BUS_COLOR[id] ?? AUX_COLOR}
+            state={busStateOf(id)}
             level={levels.buses[id] ?? 0}
             onChange={(p) => setBus(id, p)}
             memberCount={tracks.filter((t) => t.bus === id).length}
@@ -203,6 +215,7 @@ export function PhoneTouchStrips({
 function TouchRouteChannel({
   kind,
   id,
+  title,
   color,
   state,
   level,
@@ -211,13 +224,16 @@ function TouchRouteChannel({
 }: {
   kind: "BUS" | "VCA" | "AUX";
   id: string;
+  /** shown name (custom bus names); defaults to the id */
+  title?: string;
   color: string;
   state: BusState;
   level: number;
   onChange: (p: Partial<BusState>) => void;
   memberCount?: number;
 }) {
-  const name = kind === "BUS" ? `${id} bus` : kind === "VCA" ? `VCA ${id}` : `${id} return`;
+  const shown = title ?? id;
+  const name = kind === "BUS" ? `${shown} bus` : kind === "VCA" ? `VCA ${id}` : `${id} return`;
   const meterId = kind === "BUS" ? `bus:${id}` : kind === "VCA" ? `vca:${id}` : `aux:${id}`;
   const volume = state.volume;
   return (
@@ -235,7 +251,7 @@ function TouchRouteChannel({
         <span className="shrink-0 rounded-sm border border-current px-1 font-mono text-[10px] font-bold leading-4">
           {kind}
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-bold uppercase">{id}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-bold uppercase">{shown}</span>
       </div>
       <div className="touch-mix-scope shrink-0 px-1.5 pt-1.5">
         <Scope scopeId={meterId} height={40} compact color={color} />
@@ -288,7 +304,7 @@ function TouchRouteChannel({
           <PhoneChannelControls
             target={
               kind === "BUS"
-                ? { kind: "bus", id: id as BusId }
+                ? { kind: "bus", id: id as TrackBusId }
                 : kind === "VCA"
                   ? { kind: "vca", id: id as VcaId }
                   : { kind: "aux", id: id as AuxId }

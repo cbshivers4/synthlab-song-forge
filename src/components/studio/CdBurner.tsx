@@ -113,7 +113,7 @@ export function CdBurner() {
     recorder.getSnapshot,
     recorder.getSnapshot,
   );
-  const { tracks, transport, buses, vcas, auxReturns, fxChains } = useStudio();
+  const { tracks, transport, allBuses, vcas, auxReturns, fxChains } = useStudio();
   const { project } = useApp();
   const fileInput = useRef<HTMLInputElement>(null);
   const [dubFrom, setDubFrom] = useState("");
@@ -159,7 +159,7 @@ export function CdBurner() {
       const cap = await renderSong({
         tracks,
         transport,
-        buses,
+        buses: allBuses,
         vcas,
         auxReturns,
         fxChains,

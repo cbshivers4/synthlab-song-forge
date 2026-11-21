@@ -8,6 +8,7 @@ import { QuickNotes } from "@/components/studio/QuickNotes";
 import { cn } from "@/lib/utils";
 import { useIsLandscapePhone, useIsMobile } from "@/hooks/use-mobile";
 import { BusStrip, ControlStrip } from "./mixer/BusStrips";
+import { AddBusButton } from "./mixer/BusTemplates";
 import { DeskPicker } from "./mixer/DeskPicker";
 import { MasterStrip } from "./mixer/MasterStrip";
 import {
@@ -63,8 +64,12 @@ export function Mixer({
     setAuxReturn,
     updateTrack,
     addTrack,
+    customBuses,
   } = useStudio();
-  const levels = useMeters(tracks);
+  const levels = useMeters(
+    tracks,
+    customBuses.map((b) => b.id),
+  );
   const [narrow, setNarrow] = useState(false);
   // Tablets default to finger-sized strips; the full desk stays one tap away (device preference).
   const [touchPref, setTouchPref] = useState(true);
@@ -214,8 +219,12 @@ export function Mixer({
   // Only show bus strips that actually have channels routed to them.
   const activeBuses = BUS_STRIPS.filter((id) => tracks.some((t) => t.bus === id));
   const show = phone ? phoneView.show : { bus: showBuses, vca: showVcas, aux: showAux };
+  // Effect buses the producer made always show: they were added on purpose.
   const routing = {
-    buses: show.bus ? (counts.bus === 0 ? activeBuses : BUS_STRIPS.slice(0, counts.bus)) : [],
+    buses: [
+      ...(show.bus ? (counts.bus === 0 ? activeBuses : BUS_STRIPS.slice(0, counts.bus)) : []),
+      ...customBuses.map((b) => b.id),
+    ],
     vcas: show.vca ? VCA_IDS.slice(0, counts.vca) : [],
     aux: show.aux ? AUX_IDS.slice(0, counts.aux) : [],
   };
@@ -340,6 +349,7 @@ export function Mixer({
                 </Button>
               ))}
             </div>
+            <AddBusButton className="h-11 shrink-0 px-3 text-xs font-bold" />
             <Button
               variant="outline"
               className="h-11 shrink-0 px-3 text-xs font-bold"
@@ -375,6 +385,7 @@ export function Mixer({
               >
                 Full screen
               </Button>
+              <AddBusButton className="shrink-0" />
               <QuickNotes label />
               <PhoneFxMenu />
               <PhoneEqButton />
@@ -387,9 +398,10 @@ export function Mixer({
             </span>
 
             <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-              {tracks.length} ch · {activeBuses.length} buses
+              {tracks.length} ch · {activeBuses.length + customBuses.length} buses
             </span>
             <div className="ml-auto flex shrink-0 items-center gap-1">
+              <AddBusButton className="h-6 px-2 font-mono text-[9px] uppercase tracking-wider" />
               {mobileDevice && (
                 <Button
                   variant="secondary"
@@ -628,6 +640,17 @@ export function Mixer({
                 onChange={(p) => setBus(id, p)}
               />
             ))}
+          {customBuses.map((b) => (
+            <BusStrip
+              key={b.id}
+              id={b.id}
+              name={b.name}
+              color={b.color}
+              state={b}
+              level={levels.buses[b.id] ?? 0}
+              onChange={(p) => setBus(b.id, p)}
+            />
+          ))}
           {showVcas &&
             VCA_IDS.slice(0, counts.vca).map((id) => (
               <ControlStrip

@@ -372,7 +372,7 @@ function DeckPanel({ id }: { id: DeckId }) {
   const deck = dj.deck(id);
   // shows the recorded performance during "Replay moves"; buttons act on the live deck
   const s = deck.shown;
-  const { tracks, transport, buses, vcas, auxReturns, fxChains } = useStudio();
+  const { tracks, transport, allBuses, vcas, auxReturns, fxChains } = useStudio();
   const fileRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
   const [, tick] = useState(0);
@@ -398,7 +398,7 @@ function DeckPanel({ id }: { id: DeckId }) {
       const cap = await renderSong({
         tracks,
         transport,
-        buses,
+        buses: allBuses,
         vcas,
         auxReturns,
         fxChains,

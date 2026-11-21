@@ -6,6 +6,7 @@ import type {
   AudioClip,
   AuxId,
   BusId,
+  CustomBus,
   BusState,
   DrumPad,
   PluginDef,
@@ -27,6 +28,8 @@ export interface CloudSession {
   tracks: Track[];
   transport: Transport;
   buses: Record<BusId, BusState>;
+  /** effect buses the producer added in the mixer */
+  customBuses?: CustomBus[];
   vcas?: Record<VcaId, BusState>;
   auxReturns?: Record<AuxId, BusState>;
   fxChains: Record<string, PluginInstance[]>;

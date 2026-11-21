@@ -755,16 +755,16 @@ function MidiClip({ track }: { track: Track }) {
   );
 }
 
-/** Shows the track's level after its VCA so moving the VCA fader is visible on the track. */
+/** Shows the track's level on its VCA (the VCA moves the fader itself; a muted VCA silences it). */
 export function VcaLevel({ track }: { track: Track }) {
   const { vcas } = useStudio();
   const st = track.vca ? vcas[track.vca] : undefined;
-  const eff = Math.min(1, track.volume * (st ? (st.muted ? 0 : st.volume) : 1));
+  const eff = Math.min(1, st?.muted ? 0 : track.volume);
   return (
     <div
       className="flex w-14 flex-col gap-0.5"
-      title={`Level after VCA ${track.vca}`}
-      aria-label={`Level after VCA ${track.vca}`}
+      title={`Level on VCA ${track.vca}`}
+      aria-label={`Level on VCA ${track.vca}`}
     >
       <div className="h-1.5 rounded-sm bg-surface-2">
         <div

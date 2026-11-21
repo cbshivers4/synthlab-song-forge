@@ -319,22 +319,11 @@ export class SyncLabEngine {
     this.sendOut.set("chorus", cDelay);
     this.sendOut.set("reverb", conv);
 
-    for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"]) {
-      const g = ctx.createGain();
-      g.gain.value =
-        id === "master" ? 1 : this.busStates[id]?.muted ? 0 : (this.busStates[id]?.volume ?? 1);
-      const busScope = ctx.createAnalyser();
-      busScope.fftSize = 1024;
-      busScope.smoothingTimeConstant = 0.6;
-      const busMeter = ctx.createAnalyser();
-      busMeter.fftSize = 1024;
-      g.connect(busScope);
-      busScope.connect(busMeter);
-      busMeter.connect(master);
-      this.pluginScopes.set(`bus:${id}`, busScope);
-      this.busMeters.set(id, busMeter);
-      this.buses.set(id, g);
-    }
+    for (const id of ["drums", "vocals", "instruments", "synths", "fx", "master"])
+      this.makeBus(ctx, master, id);
+    // Effect buses the producer added (from bus templates) exist before any channel routes to them.
+    for (const id of Object.keys(this.busStates))
+      if (id.startsWith("cb-")) this.makeBus(ctx, master, id);
     // Meter VCA members without routing this tap to the speakers a second time.
     for (const id of ["A", "B", "C", "D"]) {
       const meter = ctx.createAnalyser();
@@ -484,9 +473,54 @@ export class SyncLabEngine {
     return { left: join(cap.left), right: join(cap.right), sampleRate: this.ctx.sampleRate };
   }
 
+  /** One subgroup: fader gain → scope → meter → master. Bus inserts splice in after the scope. */
+  private makeBus(ctx: BaseAudioContext, master: AudioNode, id: string) {
+    const g = ctx.createGain();
+    g.gain.value =
+      id === "master" ? 1 : this.busStates[id]?.muted ? 0 : (this.busStates[id]?.volume ?? 1);
+    const busScope = ctx.createAnalyser();
+    busScope.fftSize = 1024;
+    busScope.smoothingTimeConstant = 0.6;
+    const busMeter = ctx.createAnalyser();
+    busMeter.fftSize = 1024;
+    g.connect(busScope);
+    busScope.connect(busMeter);
+    busMeter.connect(master);
+    this.pluginScopes.set(`bus:${id}`, busScope);
+    this.busMeters.set(id, busMeter);
+    this.buses.set(id, g);
+    return g;
+  }
+
   busNode(id: string) {
     this.init();
-    return this.buses.get(id) ?? this.buses.get("master")!;
+    const found = this.buses.get(id);
+    if (found) return found;
+    // Producer-made effect buses are created on first use, on this engine's own context.
+    if (id.startsWith("cb-") && this.master)
+      return this.makeBus(this.master.context, this.master, id);
+    return this.buses.get("master")!;
+  }
+
+  /** Removes a producer-made effect bus (its channels are routed elsewhere first). */
+  removeBus(id: string) {
+    if (!id.startsWith("cb-")) return;
+    const g = this.buses.get(id);
+    const meter = this.busMeters.get(id);
+    const scope = this.pluginScopes.get(`bus:${id}`);
+    const fx = this.fxInserts.get(`bus:${id}`);
+    for (const node of [g, scope, meter, fx?.input, ...(fx?.nodes ?? [])])
+      try {
+        node?.disconnect();
+      } catch {
+        /* already detached */
+      }
+    this.buses.delete(id);
+    this.busMeters.delete(id);
+    this.pluginScopes.delete(`bus:${id}`);
+    this.fxInserts.delete(`bus:${id}`);
+    this.insertLists.delete(`bus:${id}`);
+    delete this.busStates[id];
   }
 
   setBus(id: string, volume: number, muted: boolean, gain = 1) {
@@ -856,6 +890,8 @@ export class SyncLabEngine {
     const master = this.master;
     if (!master) return;
     const [kind = "", name = ""] = targetId.split(":");
+    // Make sure a producer-made bus exists before splicing its inserts in after the scope.
+    if (kind === "bus") this.busNode(name);
     const source: AudioNode | null =
       kind === "bus"
         ? (this.pluginScopes.get(`bus:${name}`) ?? this.busNode(name))
@@ -2336,17 +2372,13 @@ export class SyncLabEngine {
       const group = this.trackVcas.get(trackId);
       const vca = group ? this.vcaStates[group] : undefined;
       ch.gain.gain.setTargetAtTime(
-        this.trackAudible.get(trackId) !== false && !vca?.muted
-          ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 2)
-          : 0,
+        this.trackAudible.get(trackId) !== false && !vca?.muted ? clamp(v["volume"], 0, 2) : 0,
         t,
         0.02,
       );
       for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
         send.gain.setTargetAtTime(
-          this.trackAudible.get(trackId) !== false && !vca?.muted
-            ? clamp(v["volume"] * (vca?.volume ?? 1), 0, 2)
-            : 0,
+          this.trackAudible.get(trackId) !== false && !vca?.muted ? clamp(v["volume"], 0, 2) : 0,
           t,
           0.02,
         );
@@ -2394,7 +2426,6 @@ export class SyncLabEngine {
         t.pan,
         audible,
         t.vca,
-        vca?.volume,
         vca?.muted,
         t.bus ?? "master",
         busState?.volume,
@@ -2423,14 +2454,15 @@ export class SyncLabEngine {
       if (t.vca) this.trackVcas.set(t.id, t.vca);
       else this.trackVcas.delete(t.id);
       ch.trim.gain.setTargetAtTime(clampTrim(t.gain), this.ctx.currentTime, 0.02);
+      // A VCA moves its members' own faders (vca-link.ts); here it only mutes the group.
       ch.gain.gain.setTargetAtTime(
-        audible && !vca?.muted ? t.volume * (vca?.volume ?? 1) : 0,
+        audible && !vca?.muted ? t.volume : 0,
         this.ctx.currentTime,
         0.02,
       );
       for (const send of [ch.synthReverbScale, ch.synthChorusScale]) {
         send.gain.setTargetAtTime(
-          audible && !vca?.muted ? clamp(t.volume * (vca?.volume ?? 1), 0, 2) : 0,
+          audible && !vca?.muted ? clamp(t.volume, 0, 2) : 0,
           this.ctx.currentTime,
           0.02,
         );
@@ -4830,6 +4862,7 @@ export const getEngine = () => {
   // a stale instance from a previous hot reload may lack newer methods
   const required: (keyof SyncLabEngine)[] = [
     "setBus",
+    "removeBus",
     "setFxInserts",
     "startInputMonitoring",
     "stopInputMonitoring",

@@ -595,7 +595,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     id: "mixer",
     category: "Mixing & effects",
     title: "Mixer, buses, VCAs and returns",
-    tags: "mixer bus send return fader pan mute solo eq routing vca aux gain meters dock studio pro f3 full view",
+    tags: "mixer bus send return fader pan mute solo eq routing vca aux gain meters dock studio pro f3 full view effect bus vocal chain template drum bus group",
     body: [
       "Each channel has a GAIN knob (−24 to +24 dB, before the fader — turn it up and the sound gets louder), EQ, sends, pan, mute, solo and a fader. The master has its own GAIN too. Buses group channels, VCAs move several faders at once, and returns hold shared effects.",
       "On a computer the mixer opens docked under the timeline, like Studio Pro. Drag the bar between them to give the mixer or the timeline more room (double-click the bar to reset it). Press F3 to show or hide the mixer.",
@@ -603,6 +603,10 @@ export const KNOWLEDGE_BASE: Article[] = [
       "On a computer, the up arrow in the Devices bar lets you choose what shows under the timeline: Effects & scope for the selected instrument, or Mixer.",
       "Every channel, bus, aux return, VCA and the master has its own scope; press its corner button to make it big.",
       "On phone, swipe sideways through channels and use ⋯ for each channel's menu.",
+      "EFFECT BUSES: press + Effect bus at the top of the mixer. Pick a template — Vocal Chain, Rap Vocal, Backing Vocals, Drum Bus, Bass Bus, Instrument Glue, Guitar Bus, Synth Space, FX Wash, Lo-Fi Bus or Empty Bus — name it, choose its colour and tick the channels that should play through it. Every ticked channel then goes through that one chain of effects and that one fader before the master.",
+      "Change which effects a template uses before you add the bus: + Add effect, the arrows to change the order and ✕ to remove one. Save changes to keep them in that template, or Save as new template… to make your own. Reset to original brings back a factory template.",
+      "On any bus strip, the template button loads a different template (it replaces the effects on that bus), saves the bus's current effects and knob settings as a new template, and on your own buses lets you rename or delete the bus. The channels button picks which channels play through the bus. On the docked mixer these two buttons sit just above the bus fader. You can also send a channel to a bus from its output menu or the timeline track menu.",
+      "VCA GROUPS: assign channels to VCA A–D with the VCA strip's button. Moving the VCA fader moves every assigned channel's own fader by the same number of dB, so you see them follow. The VCA PAN knob moves their pan, and the VCA HIGH / MID / LOW knobs move their channel EQ (a channel without EQ gets one). On the docked mixer the VCA EQ opens from its EQ button. VCA MUTE silences the whole group.",
     ],
     can: [
       "Route tracks to buses and sends; learn mixer controls to a MIDI controller.",
@@ -610,7 +614,8 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Mute and unmute instantly while the song plays.",
     ],
     cant: [
-      "A VCA scales the channels it controls without moving their own faders.",
+      "A VCA fader can't push a channel past its own fader top (+6 dB) or below silent; the channel stops there, and its balance comes back when you move the VCA the other way.",
+      "Bus templates you make are kept on the device you made them on. The buses themselves and their effects are saved with the project when you save.",
       "One sound alone reads the same on its channel and the master; several channels add up, so the master can clip before any single channel does.",
       "The docked mixer shows the main rows (gain, inserts, sends, pan, fader, mute/solo). Channel EQ and output routing are only in Full view; every strip keeps its scope.",
       "On a short screen the docked channels scroll up and down if they don't fit; drag the bar up for taller faders.",

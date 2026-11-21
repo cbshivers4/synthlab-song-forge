@@ -1,6 +1,10 @@
 export type TrackKind = "audio" | "instrument" | "midi" | "drum" | "sampler" | "ai-vocal";
 
 export type BusId = "drums" | "vocals" | "instruments" | "synths" | "fx" | "master";
+/** An effect bus the producer added in the mixer (from a bus template). */
+export type CustomBusId = `cb-${string}`;
+/** Where a channel's output goes: a built-in bus or one of the producer's own effect buses. */
+export type TrackBusId = BusId | CustomBusId;
 export type VcaId = "A" | "B" | "C" | "D";
 export type AuxId = "reverb" | "delay" | "chorus";
 
@@ -535,8 +539,8 @@ export interface Track {
   height?: number;
   monitor?: boolean;
   input: string;
-  bus: BusId;
-  /** A VCA controls channel level without changing its individual fader setting. */
+  bus: TrackBusId;
+  /** VCA group: moving the VCA fader / pan / EQ moves this channel's own controls by the same amount. */
   vca?: VcaId | undefined;
   sends?: { reverb: number; delay: number; chorus: number } | undefined;
   steps: number;
@@ -643,6 +647,21 @@ export interface BusState {
   muted: boolean;
   /** pre-fader trim (0…2, default 1) — used on the master strip's GAIN knob */
   gain?: number | undefined;
+  /** VCA only: group pan offset (-1…1); moving it shifts every member's pan by the same amount */
+  pan?: number | undefined;
+  /** VCA only: group EQ offsets in dB; moving one shifts every member's channel EQ band */
+  eqLow?: number | undefined;
+  eqMid?: number | undefined;
+  eqHigh?: number | undefined;
+}
+
+/** An effect bus added in the mixer: its own fader, mute and effect chain (fxChains["bus:<id>"]). */
+export interface CustomBus extends BusState {
+  id: CustomBusId;
+  name: string;
+  color: string;
+  /** template it was made from (for the strip label only) */
+  template?: string | undefined;
 }
 
 /** A folder that groups tracks on the timeline and mixer, like Logic/FL track folders. */

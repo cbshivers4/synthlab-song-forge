@@ -164,7 +164,8 @@ export function TrackRow({
     swapTake,
     stretchClip,
   } = useStudio();
-  const { transport, setNotes, loadSample, fxChains, tracks: allTracks } = useStudio();
+  const { transport, setNotes, loadSample, fxChains, customBuses, tracks: allTracks } =
+    useStudio();
   const fileStudio = useStudio();
   const advanced = useApp().mode === "advanced";
 
@@ -1307,7 +1308,10 @@ export function TrackRow({
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>Send to bus</DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
-                    {TRACK_BUSES.map((b) => {
+                    {[
+                      ...TRACK_BUSES,
+                      ...customBuses.map((b) => ({ id: b.id, label: `${b.name} bus` })),
+                    ].map((b) => {
                       const fx = fxChains[`bus:${b.id}`] ?? [];
                       return (
                         <DropdownMenuItem

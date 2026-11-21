@@ -8,7 +8,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useStudio } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { MidiLearnButton } from "../MidiLearn";
-import type { BusId, BusState, VcaId } from "@/lib/synclab/types";
+import type { BusState, TrackBusId, VcaId } from "@/lib/synclab/types";
+import { BusAssign, BusTemplateMenu } from "./BusTemplates";
+import { EQ_RANGE } from "@/lib/synclab/vca-link";
 import { cn } from "@/lib/utils";
 import { Scope } from "../Scope";
 import { InsertRack } from "./InsertRack";
@@ -19,13 +21,19 @@ export function BusStrip({
   state,
   level,
   onChange,
+  name,
+  color: ownColor,
 }: {
-  id: BusId;
+  id: TrackBusId;
   state: BusState;
   level: number;
   onChange: (p: Partial<BusState>) => void;
+  /** custom bus name; built-in buses show their id */
+  name?: string;
+  color?: string;
 }) {
-  const color = BUS_COLOR[id] ?? "oklch(0.78 0.16 195)";
+  const color = ownColor ?? BUS_COLOR[id] ?? "oklch(0.78 0.16 195)";
+  const label = name ?? id;
   const advanced = useApp().mode === "advanced";
 
   const tint = (pct: number) => `color-mix(in oklab, ${color} ${pct}%, transparent)`;
@@ -44,7 +52,9 @@ export function BusStrip({
         )}
         style={{ background: tint(16) }}
       >
-        <span>{id} BUS</span>
+        <span className="truncate" title={`${label} bus`}>
+          {label} {name ? "" : "BUS"}
+        </span>
       </div>
       <div
         className={cn(
@@ -57,7 +67,7 @@ export function BusStrip({
         <ChevronRight className="size-3.5 shrink-0" aria-hidden />
         <div className="mx-header-gain">
           <Knob
-            label={`${id} bus gain`}
+            label={`${label} bus gain`}
             value={state.volume}
             min={0}
             max={FADER_MAX_GAIN}
@@ -74,10 +84,13 @@ export function BusStrip({
       <div
         className={cn(
           ROW.eq,
-          "flex items-center justify-center border-b border-border/60 font-mono text-[7px] uppercase tracking-widest text-muted-foreground",
+          "flex flex-col items-stretch justify-center gap-1 border-b border-border/60 px-1.5",
         )}
       >
-        Bus FX below
+        <span className="text-center font-mono text-[7px] uppercase tracking-widest text-muted-foreground">
+          Effect template
+        </span>
+        <BusTemplateMenu id={id} />
       </div>
       <div className={cn(ROW.devices, "border-b border-border/60 p-1")}>
         <FxMenu target={`bus:${id}`} label="Devices" />
@@ -88,12 +101,19 @@ export function BusStrip({
       <div
         className={cn(
           ROW.io,
-          "flex items-center justify-center border-b border-border/60 font-mono text-[8px] uppercase tracking-widest text-muted-foreground",
+          "flex flex-col justify-center gap-0.5 border-b border-border/60 px-1.5 font-mono text-[8px] uppercase tracking-widest text-muted-foreground",
         )}
       >
-        Master
+        <BusAssign id={id} />
+        <span className="text-center">→ Master</span>
       </div>
-      <div className={cn(ROW.pan, "border-b border-border/60")} />
+      {/* Docked desk hides the template/routing rows, so their buttons sit here instead. */}
+      <div className={cn(ROW.pan, "flex items-center border-b border-border/60 px-1")}>
+        <div className="mx-dock-only w-full gap-1">
+          <BusTemplateMenu id={id} className="min-w-0 flex-1" />
+          <BusAssign id={id} short className="w-12 shrink-0" />
+        </div>
+      </div>
       <div
         className={cn(
           ROW.fader,
@@ -102,7 +122,7 @@ export function BusStrip({
         style={{ "--primary": color } as CSSProperties}
       >
         <Slider
-          aria-label={`${id} bus volume`}
+          aria-label={`${label} bus volume`}
           orientation="vertical"
           className={cn("h-full w-8", FADER_CAP)}
           value={[faderPosition(state.volume)]}
@@ -111,7 +131,7 @@ export function BusStrip({
           step={0.001}
           onValueChange={([v = 0]) => onChange({ volume: faderGain(v) })}
         />
-        <MidiLearnButton id={`bus:${id}`} param="volume" label={`${id} bus level`} />
+        <MidiLearnButton id={`bus:${id}`} param="volume" label={`${label} bus level`} />
         <Meter id={`bus:${id}`} level={level} tall />
       </div>
       <div
@@ -126,7 +146,7 @@ export function BusStrip({
         <ClipLed id={`bus:${id}`} compact />
       </div>
       <div className={cn(ROW.buttons, "flex items-start px-1 pt-1")}>
-        <MidiLearnButton id={`bus:${id}`} param="mute" label={`${id} bus mute`} />
+        <MidiLearnButton id={`bus:${id}`} param="mute" label={`${label} bus mute`} />
         <button
           onClick={() => onChange({ muted: !state.muted })}
           title={state.muted ? "Bus muted — click to unmute" : "Mute this bus"}
@@ -142,7 +162,7 @@ export function BusStrip({
       </div>
       <div
         className={cn(ROW.icon, "flex items-center justify-center border-t border-border/60")}
-        title={`${id} bus`}
+        title={`${label} bus`}
         aria-hidden
       >
         <Waves className="size-5" />
@@ -263,16 +283,14 @@ export function ControlStrip({
       <div
         className={cn(ROW.eq, "flex items-center justify-center gap-1 border-b border-border/60")}
       >
-        <MidiLearnButton
-          id={`${aux ? "aux" : "vca"}:${name}`}
-          param="volume"
-          label={`${kind} ${name} level`}
-        />
-        <MidiLearnButton
-          id={`${aux ? "aux" : "vca"}:${name}`}
-          param="mute"
-          label={`${kind} ${name} mute`}
-        />
+        {aux ? (
+          <>
+            <MidiLearnButton id={`aux:${name}`} param="volume" label={`${kind} ${name} level`} />
+            <MidiLearnButton id={`aux:${name}`} param="mute" label={`${kind} ${name} mute`} />
+          </>
+        ) : (
+          <VcaEqKnobs name={name} state={state} onChange={onChange} />
+        )}
       </div>
       <div
         className={cn(ROW.scope, "border-b border-border/60 p-[3px]")}
@@ -293,7 +311,28 @@ export function ControlStrip({
         {aux ? (
           <FxMenu target={`send:${name}`} label="Return FX" />
         ) : (
-          <VcaAssign id={name as VcaId} memberCount={memberCount ?? 0} />
+          <div className="flex w-full gap-1">
+            <VcaAssign id={name as VcaId} memberCount={memberCount ?? 0} short />
+            {/* Docked desk hides the EQ row; the group EQ opens from here instead. */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mx-dock-only h-7 shrink-0 px-2 font-mono text-[9px]"
+                  aria-label={`VCA ${name} EQ for all its channels`}
+                >
+                  EQ
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="app-menu w-56 p-2">
+                <div className="mb-1 font-mono text-[10px] font-bold uppercase text-muted-foreground">
+                  VCA {name} EQ — moves every channel&rsquo;s EQ
+                </div>
+                <VcaEqKnobs name={name} state={state} onChange={onChange} size={34} />
+              </PopoverContent>
+            </Popover>
+          </div>
         )}
       </div>
       {advanced && <div className={cn(ROW.sends, "border-b border-border/60")} />}
@@ -301,12 +340,37 @@ export function ControlStrip({
       <div
         className={cn(
           ROW.io,
-          "flex items-center justify-center border-b border-border/60 font-mono text-[9px] uppercase text-muted-foreground",
+          "flex items-center justify-center gap-1 border-b border-border/60 font-mono text-[9px] uppercase text-muted-foreground",
         )}
       >
-        {aux ? "Master" : "Assigned channels"}
+        {aux ? (
+          "Master"
+        ) : (
+          <>
+            <MidiLearnButton id={`vca:${name}`} param="volume" label={`${kind} ${name} level`} />
+            <MidiLearnButton id={`vca:${name}`} param="mute" label={`${kind} ${name} mute`} />
+          </>
+        )}
       </div>
-      <div className={cn(ROW.pan, "border-b border-border/60")} />
+      <div className={cn(ROW.pan, "flex items-center justify-center border-b border-border/60")}>
+        {!aux && (
+          <Knob
+            label="Pan"
+            ariaLabel={`VCA ${name} pan for all its channels`}
+            value={state.pan ?? 0}
+            min={-1}
+            max={1}
+            step={0.01}
+            defaultValue={0}
+            size={26}
+            layout="inline"
+            format={(v) =>
+              Math.abs(v) < 0.005 ? "C" : `${v < 0 ? "L" : "R"}${Math.round(Math.abs(v) * 100)}`
+            }
+            onChange={(pan) => onChange({ pan })}
+          />
+        )}
+      </div>
       <div
         className={cn(
           ROW.fader,
@@ -353,6 +417,48 @@ export function ControlStrip({
       >
         {aux ? <Waves className="size-5" /> : <Sliders className="size-5" />}
       </div>
+    </div>
+  );
+}
+
+/** Group EQ: each knob shifts that band on every member channel's EQ by the same dB. */
+function VcaEqKnobs({
+  name,
+  state,
+  onChange,
+  size = 26,
+}: {
+  name: string;
+  state: BusState;
+  onChange: (patch: Partial<BusState>) => void;
+  size?: number;
+}) {
+  return (
+    <div
+      className="grid w-full grid-cols-3 gap-0.5 px-0.5"
+      title="Moves the EQ on every channel in this VCA by the same amount"
+    >
+      {(
+        [
+          ["eqHigh", "High"],
+          ["eqMid", "Mid"],
+          ["eqLow", "Low"],
+        ] as const
+      ).map(([key, band]) => (
+        <Knob
+          key={key}
+          label={band}
+          ariaLabel={`VCA ${name} ${band} EQ for all its channels`}
+          value={state[key] ?? 0}
+          min={-EQ_RANGE}
+          max={EQ_RANGE}
+          step={0.5}
+          unit=" dB"
+          defaultValue={0}
+          size={size}
+          onChange={(v) => onChange({ [key]: v })}
+        />
+      ))}
     </div>
   );
 }

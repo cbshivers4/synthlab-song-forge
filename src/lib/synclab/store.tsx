@@ -80,6 +80,8 @@ import {
   withDefaultParams,
 } from "./plugins";
 import { insertRigDevice } from "./guitar-rig";
+import { isCustomBusId, newCustomBusId, templatePlugins, type BusTemplate } from "./bus-templates";
+import { applyVcaLink, bakeLegacyVca, type LinkMemory } from "./vca-link";
 import {
   claimControllerMidi,
   getMidiAccess,
@@ -142,6 +144,9 @@ import type {
   AuxId,
   VcaId,
   BusState,
+  CustomBus,
+  CustomBusId,
+  TrackBusId,
   DrumPad,
   MidiNote,
   PluginDef,
@@ -363,6 +368,10 @@ interface StudioState {
   panel: PanelId;
   userPresets: SynthPatch[];
   buses: Record<BusId, BusState>;
+  /** effect buses the producer added in the mixer (Vocal Chain, Drum Bus…) */
+  customBuses: CustomBus[];
+  /** every bus level by id (built-in + custom), for offline song renders */
+  allBuses: Record<string, BusState>;
   vcas: Record<VcaId, BusState>;
   auxReturns: Record<AuxId, BusState>;
   sections: SongSection[];
@@ -380,7 +389,26 @@ interface StudioApi extends StudioState {
   /** timestamp of the last automatic local save, null before the first one */
   savedAt: number | null;
   selected: Track | null;
-  setBus: (id: BusId, patch: Partial<BusState>) => void;
+  setBus: (id: TrackBusId, patch: Partial<BusState>) => void;
+  /** level/mute of any bus, built-in or custom */
+  busStateOf: (id: TrackBusId) => BusState;
+  /** display name of a bus ("vocals", or the custom bus's own name) */
+  busName: (id: TrackBusId) => string;
+  /** adds an effect bus loaded with a template's effects and routes the given channels to it */
+  addCustomBus: (opts: {
+    name: string;
+    color: string;
+    template?: BusTemplate;
+    memberIds?: string[];
+  }) => CustomBusId;
+  updateCustomBus: (id: CustomBusId, patch: Partial<Pick<CustomBus, "name" | "color">>) => void;
+  /** deletes a custom bus; its channels go straight to the master */
+  removeCustomBus: (id: CustomBusId) => void;
+  /** replaces a bus's effects with a template's chain */
+  applyBusTemplate: (id: TrackBusId, template: BusTemplate) => void;
+  /** routes exactly these channels to the bus; channels taken off it go to the master */
+  setBusMembers: (id: TrackBusId, trackIds: string[]) => void;
+  /** moving VCA level/pan/EQ moves every member channel's own fader/pan/EQ by the same amount */
   setVca: (id: VcaId, patch: Partial<BusState>) => void;
   setAuxReturn: (id: AuxId, patch: Partial<BusState>) => void;
   addSection: (name?: string, start?: number, length?: number) => void;
@@ -646,6 +674,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     fx: { volume: 1, muted: false },
     master: { volume: 1, muted: false },
   });
+  const [customBuses, setCustomBuses] = useState<CustomBus[]>([]);
+  const customBusesRef = useRef(customBuses);
+  customBusesRef.current = customBuses;
   const [vcas, setVcas] = useState<Record<VcaId, BusState>>({
     A: { volume: 1, muted: false },
     B: { volume: 1, muted: false },
@@ -1310,8 +1341,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               target.param === "volume" ? { volume: faderGain(v) } : { muted: v >= 0.5 };
             if (kind === "bus" && ["drums", "synths", "vocals", "fx", "master"].includes(id))
               setBuses((b) => ({ ...b, [id]: { ...b[id as BusId], ...patch } }));
+            if (kind === "bus" && isCustomBusId(id))
+              setCustomBuses((list) => list.map((c) => (c.id === id ? { ...c, ...patch } : c)));
             if (kind === "vca" && ["A", "B", "C", "D"].includes(id))
-              setVcas((b) => ({ ...b, [id]: { ...b[id as VcaId], ...patch } }));
+              setVcaLinkedRef.current(id as VcaId, patch);
             if (kind === "aux" && ["reverb", "delay", "chorus"].includes(id))
               setAuxReturns((b) => ({ ...b, [id]: { ...b[id as AuxId], ...patch } }));
             return;
@@ -1884,6 +1917,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       getEngine().setBus(id, b.volume, b.muted, b.gain ?? 1);
   }, [buses]);
 
+  // Producer-made effect buses: level/mute into the engine; deleted ones are torn down.
+  const engineCustomBusIds = useRef(new Set<string>());
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const engine = getEngine();
+    const live = new Set<string>();
+    for (const b of customBuses) {
+      live.add(b.id);
+      engine.setBus(b.id, b.volume, b.muted, 1);
+    }
+    for (const id of engineCustomBusIds.current) if (!live.has(id)) engine.removeBus(id);
+    engineCustomBusIds.current = live;
+  }, [customBuses]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     getEngine().setVcaStates(vcas, tracksRef.current);
@@ -2186,26 +2233,128 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     midiWasPlayingRef.current = transport.playing;
   }, [transport.playing]);
 
-  const updateTrack = useCallback((id: string, rawPatch: Partial<Track>) => {
-    // A hand press of mute/solo outside a take replaces that button's recorded presses.
-    const patch = manualSwitchPatch(rawPatch, isTakingSwitches());
-    // Moving a fader, pan or send while playing "touches" its automation lane so Write/Touch/Latch record it.
-    if (transportRef.current.playing) {
-      const prev = tracksRef.current.find((t) => t.id === id);
-      if (prev?.automation?.length) {
-        for (const param of movedLiveParams(prev, patch)) {
-          const lane = prev.automation.find((l) => l.param === param);
-          if (!lane || lane.locked || !["write", "touch", "latch"].includes(lane.mode)) continue;
-          const key = `${id}:${param}`;
-          const before = automationGestureRef.current.get(key);
-          automationGestureRef.current.set(key, {
-            touchedUntil: performance.now() + 180,
-            latched: lane.mode === "latch" || !!before?.latched,
-          });
-        }
-      }
+  /** Moving a fader, pan or send while playing "touches" its automation lane so Write/Touch/Latch record it. */
+  const touchAutomation = useCallback((id: string, patch: Partial<Track>) => {
+    if (!transportRef.current.playing) return;
+    const prev = tracksRef.current.find((t) => t.id === id);
+    if (!prev?.automation?.length) return;
+    for (const param of movedLiveParams(prev, patch)) {
+      const lane = prev.automation.find((l) => l.param === param);
+      if (!lane || lane.locked || !["write", "touch", "latch"].includes(lane.mode)) continue;
+      const key = `${id}:${param}`;
+      const before = automationGestureRef.current.get(key);
+      automationGestureRef.current.set(key, {
+        touchedUntil: performance.now() + 180,
+        latched: lane.mode === "latch" || !!before?.latched,
+      });
     }
-    setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }, []);
+
+  const updateTrack = useCallback(
+    (id: string, rawPatch: Partial<Track>) => {
+      // A hand press of mute/solo outside a take replaces that button's recorded presses.
+      const patch = manualSwitchPatch(rawPatch, isTakingSwitches());
+      touchAutomation(id, patch);
+      setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    },
+    [touchAutomation],
+  );
+
+  // VCA groups move their members' own faders / pans / channel EQ (vca-link.ts), so the
+  // channel controls visibly follow. Session-only memory keeps the balance when a VCA bottoms out.
+  const vcaLinkMemoryRef = useRef(new Map<string, LinkMemory>());
+  const vcasRef = useRef(vcas);
+  vcasRef.current = vcas;
+  const installedPluginsRef = useRef(installedPlugins);
+  installedPluginsRef.current = installedPlugins;
+  const setVcaLinked = useCallback(
+    (id: VcaId, patch: Partial<BusState>) => {
+      const prev = vcasRef.current[id];
+      const next = { ...prev, ...patch };
+      vcasRef.current = { ...vcasRef.current, [id]: next };
+      setVcas((v) => ({ ...v, [id]: { ...v[id], ...patch } }));
+      const eqDef =
+        installedPluginsRef.current.find((d) => d.kind === "eq") ??
+        BUILT_IN_PLUGINS.find((d) => d.kind === "eq");
+      const makeEq = () => (eqDef ? instantiate(eqDef) : null);
+      if (transportRef.current.playing) {
+        const preview = applyVcaLink(tracksRef.current, id, prev, next, new Map(), makeEq);
+        preview.forEach((t, i) => {
+          const before = tracksRef.current[i];
+          if (before && t !== before) touchAutomation(t.id, { volume: t.volume, pan: t.pan });
+        });
+      }
+      setTracks((ts) => applyVcaLink(ts, id, prev, next, vcaLinkMemoryRef.current, makeEq));
+    },
+    [touchAutomation],
+  );
+  const setVcaLinkedRef = useRef(setVcaLinked);
+  setVcaLinkedRef.current = setVcaLinked;
+
+  const busStateOf = useCallback(
+    (id: TrackBusId): BusState =>
+      isCustomBusId(id)
+        ? (customBusesRef.current.find((b) => b.id === id) ?? { volume: 1, muted: false })
+        : buses[id],
+    [buses],
+  );
+  const setAnyBus = useCallback((id: TrackBusId, patch: Partial<BusState>) => {
+    if (isCustomBusId(id))
+      setCustomBuses((list) => list.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+    else setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } }));
+  }, []);
+  const applyBusTemplate = useCallback((id: TrackBusId, template: BusTemplate) => {
+    const plugins = templatePlugins(template, installedPluginsRef.current);
+    setFxChains((c) => ({ ...c, [`bus:${id}`]: plugins }));
+    if (isCustomBusId(id))
+      setCustomBuses((list) =>
+        list.map((b) => (b.id === id ? { ...b, template: template.name } : b)),
+      );
+  }, []);
+  const setBusMembers = useCallback((id: TrackBusId, trackIds: string[]) => {
+    const pick = new Set(trackIds);
+    setTracks((ts) =>
+      ts.map((t) =>
+        pick.has(t.id)
+          ? t.bus === id
+            ? t
+            : { ...t, bus: id }
+          : t.bus === id && id !== "master"
+            ? { ...t, bus: "master" }
+            : t,
+      ),
+    );
+  }, []);
+  const addCustomBus = useCallback(
+    (opts: { name: string; color: string; template?: BusTemplate; memberIds?: string[] }) => {
+      const id = newCustomBusId();
+      setCustomBuses((list) => [
+        ...list,
+        {
+          id,
+          name: opts.name.trim() || "Effect bus",
+          color: opts.color,
+          volume: 1,
+          muted: false,
+          template: opts.template?.name,
+        },
+      ]);
+      if (opts.template) {
+        const plugins = templatePlugins(opts.template, installedPluginsRef.current);
+        setFxChains((c) => ({ ...c, [`bus:${id}`]: plugins }));
+      }
+      if (opts.memberIds?.length) setBusMembers(id, opts.memberIds);
+      return id;
+    },
+    [setBusMembers],
+  );
+  const removeCustomBus = useCallback((id: CustomBusId) => {
+    setTracks((ts) => ts.map((t) => (t.bus === id ? { ...t, bus: "master" } : t)));
+    setFxChains((c) => {
+      const { [`bus:${id}`]: _gone, ...rest } = c;
+      return rest;
+    });
+    setCustomBuses((list) => list.filter((b) => b.id !== id));
   }, []);
 
   // Arming an audio channel opens the microphone so its meter moves and, when
@@ -3246,6 +3395,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         step: 0,
       },
       buses: structuredClone(buses),
+      customBuses: structuredClone(customBuses),
       vcas: structuredClone(vcas),
       auxReturns: structuredClone(auxReturns),
       fxChains: structuredClone(fxChains),
@@ -3256,22 +3406,15 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       folders: structuredClone(foldersRef.current),
       projectNotes: projectNotesRef.current,
     }),
-    [buses, vcas, auxReturns, fxChains, installedPlugins, userPresets],
+    [buses, customBuses, vcas, auxReturns, fxChains, installedPlugins, userPresets],
   );
 
   const applySession = useCallback((session: CloudSession) => {
     getEngine().stopSamples();
     for (const track of tracksRef.current) getEngine().removeChannel(track.id);
-    setTracks(structuredClone(session.tracks));
-    setTransportState({
-      ...session.transport,
-      playing: false,
-      recording: false,
-      paused: false,
-      step: 0,
-    });
-    setBuses(structuredClone(session.buses));
-    setVcas(
+    // VCAs now move their channels' faders; older saves stored a hidden VCA scale instead.
+    const legacy = bakeLegacyVca(
+      structuredClone(session.tracks),
       structuredClone(
         session.vcas ?? {
           A: { volume: 1, muted: false },
@@ -3281,6 +3424,18 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         },
       ),
     );
+    vcaLinkMemoryRef.current.clear();
+    setTracks(legacy.tracks);
+    setCustomBuses(structuredClone(session.customBuses ?? []));
+    setTransportState({
+      ...session.transport,
+      playing: false,
+      recording: false,
+      paused: false,
+      step: 0,
+    });
+    setBuses(structuredClone(session.buses));
+    setVcas(legacy.vcas);
     setAuxReturns(
       structuredClone(
         session.auxReturns ?? {
@@ -3338,6 +3493,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [
     tracks,
     buses,
+    customBuses,
     vcas,
     auxReturns,
     fxChains,
@@ -3422,6 +3578,11 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       panel,
       userPresets,
       buses,
+      customBuses,
+      allBuses: {
+        ...buses,
+        ...Object.fromEntries(customBuses.map((b) => [b.id, b])),
+      },
       vcas,
       auxReturns,
       sections,
@@ -3439,8 +3600,17 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       canRedo: futureRef.current.length > 0,
       savedAt,
       selected,
-      setBus: (id, patch) => setBuses((b) => ({ ...b, [id]: { ...b[id], ...patch } })),
-      setVca: (id, patch) => setVcas((v) => ({ ...v, [id]: { ...v[id], ...patch } })),
+      setBus: setAnyBus,
+      busStateOf,
+      busName: (id) =>
+        isCustomBusId(id) ? (customBuses.find((b) => b.id === id)?.name ?? "Effect bus") : id,
+      addCustomBus,
+      updateCustomBus: (id, patch) =>
+        setCustomBuses((list) => list.map((b) => (b.id === id ? { ...b, ...patch } : b))),
+      removeCustomBus,
+      applyBusTemplate,
+      setBusMembers,
+      setVca: setVcaLinked,
       setAuxReturn: (id, patch) => setAuxReturns((a) => ({ ...a, [id]: { ...a[id], ...patch } })),
       addSection: (name, start, length) => {
         setSections((list) => {
@@ -4945,6 +5115,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     panel,
     userPresets,
     buses,
+    customBuses,
+    busStateOf,
+    setAnyBus,
+    addCustomBus,
+    removeCustomBus,
+    applyBusTemplate,
+    setBusMembers,
+    setVcaLinked,
     vcas,
     auxReturns,
     sections,

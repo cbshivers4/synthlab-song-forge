@@ -2053,6 +2053,9 @@ main[data-mixer-dock="true"] > .phone-tool-panel { flex: 0 1 var(--dock-mixer-h,
 main[data-mixer-dock="true"] > .phone-tool-panel > .editor-panel-header { display: none; }
 main[data-mixer-dock="true"] > .phone-tool-panel > .editor-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 main[data-mixer-dock="true"] .mx-learn-row { display: none; }
+/* Bus template / channel / VCA EQ shortcuts: shown only on the docked desk, whose EQ and routing rows are hidden. */
+.mx-dock-only { display: none; }
+main[data-mixer-dock="true"] .mx-console:not(.mx-phone) .mx-dock-only { display: flex; }
 main[data-mixer-dock="true"] .mx-console:not(.mx-phone) { flex: 1 1 auto; min-height: 0; border-width: 0; }
 main[data-mixer-dock="true"] .mx-console:not(.mx-phone) .mobile-mixer-strips { flex: 1 1 auto; }
 main[data-mixer-dock="true"] .mx-console:not(.mx-phone) .mx-output-dock { display: flex; }

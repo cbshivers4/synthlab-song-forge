@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { useStudio } from "@/lib/synclab/store";
 import { BUILT_IN_PLUGINS } from "@/lib/synclab/plugins";
-import type { AuxId, BusId, BusState, Track, VcaId } from "@/lib/synclab/types";
+import type { AuxId, BusState, Track, TrackBusId, VcaId } from "@/lib/synclab/types";
 import { cn } from "@/lib/utils";
 import { clearClip, peakHoldText, useClipped } from "@/lib/synclab/clip-monitor";
 import { Knob } from "../Knob";
@@ -33,6 +33,8 @@ import { EqCurve, useTrackEq } from "./ChannelEq";
 import { InsertRack } from "./InsertRack";
 import { useMasterFx } from "./MasterStrip";
 import { BUSES, BUS_COLOR, SEND_KEYS, VCA_IDS, toDb } from "./shared";
+import { BusTemplateMenu } from "./BusTemplates";
+import { EQ_RANGE } from "@/lib/synclab/vca-link";
 
 /**
  * Phone mixer "⋯" window: every control from the top of the desk strip (gain, EQ, inserts, sends,
@@ -42,7 +44,7 @@ import { BUSES, BUS_COLOR, SEND_KEYS, VCA_IDS, toDb } from "./shared";
 export type PhoneChannelTarget =
   | { kind: "track"; track: Track; index: number }
   | { kind: "master" }
-  | { kind: "bus"; id: BusId }
+  | { kind: "bus"; id: TrackBusId }
   | { kind: "vca"; id: VcaId }
   | { kind: "aux"; id: AuxId };
 
@@ -115,7 +117,7 @@ export function PhoneChannelControls({
 }
 
 function Body({ target, label }: { target: PhoneChannelTarget; label: string }) {
-  const { tracks, buses, vcas, auxReturns } = useStudio();
+  const { tracks, buses, vcas, auxReturns, busStateOf, customBuses } = useStudio();
   // Read the live track so edits made here show at once.
   const track = target.kind === "track" ? tracks.find((t) => t.id === target.track.id) : undefined;
   if (target.kind === "track" && !track) return null;
@@ -131,7 +133,9 @@ function Body({ target, label }: { target: PhoneChannelTarget; label: string }) 
       : target.kind === "master"
         ? BUS_COLOR["master"]!
         : target.kind === "bus"
-          ? (BUS_COLOR[target.id] ?? BUS_COLOR["master"]!)
+          ? (customBuses.find((b) => b.id === target.id)?.color ??
+            BUS_COLOR[target.id] ??
+            BUS_COLOR["master"]!)
           : target.kind === "vca"
             ? "oklch(0.82 0.14 70)"
             : "oklch(0.78 0.13 225)";
@@ -141,7 +145,7 @@ function Body({ target, label }: { target: PhoneChannelTarget; label: string }) 
       : target.kind === "master"
         ? buses.master.volume
         : target.kind === "bus"
-          ? buses[target.id].volume
+          ? busStateOf(target.id).volume
           : target.kind === "vca"
             ? vcas[target.id].volume
             : auxReturns[target.id].volume;
@@ -410,7 +414,7 @@ function TrackEffects({ t }: { t: Track }) {
 }
 
 function TrackRouting({ t }: { t: Track }) {
-  const { updateTrack, transport, setTransport } = useStudio();
+  const { updateTrack, transport, setTransport, customBuses } = useStudio();
   return (
     <Panel>
       <Section title="Output — where this channel goes">
@@ -425,6 +429,18 @@ function TrackRouting({ t }: { t: Track }) {
               style={t.bus === b ? undefined : { borderLeft: `4px solid ${BUS_COLOR[b]}` }}
             >
               {b}
+            </BigButton>
+          ))}
+          {customBuses.map((b) => (
+            <BigButton
+              key={b.id}
+              className="px-2 normal-case"
+              on={t.bus === b.id}
+              onClick={() => updateTrack(t.id, { bus: b.id })}
+              aria-label={`Send ${t.name} to ${b.name}`}
+              style={t.bus === b.id ? undefined : { borderLeft: `4px solid ${b.color}` }}
+            >
+              {b.name}
             </BigButton>
           ))}
         </div>
@@ -726,12 +742,13 @@ function RoutePanel({
   color,
 }: {
   kind: "bus" | "aux";
-  id: BusId | AuxId;
+  id: TrackBusId | AuxId;
   color: string;
 }) {
   const {
     tracks,
-    buses,
+    busStateOf,
+    busName,
     setBus,
     auxReturns,
     setAuxReturn,
@@ -743,13 +760,13 @@ function RoutePanel({
     updateTrack,
   } = useStudio();
   const [tab, setTab] = useState<RouteTab>("level");
-  const state: BusState = kind === "bus" ? buses[id as BusId] : auxReturns[id as AuxId];
+  const state: BusState = kind === "bus" ? busStateOf(id as TrackBusId) : auxReturns[id as AuxId];
   const change = (p: Partial<BusState>) =>
-    kind === "bus" ? setBus(id as BusId, p) : setAuxReturn(id as AuxId, p);
+    kind === "bus" ? setBus(id as TrackBusId, p) : setAuxReturn(id as AuxId, p);
   const fxTarget = kind === "bus" ? `bus:${id}` : `send:${id}`;
   const meterId = `${kind}:${id}`;
   const list = fxChains[fxTarget] ?? [];
-  const name = kind === "bus" ? `${id} bus` : `${id} return`;
+  const name = kind === "bus" ? `${busName(id as TrackBusId)} bus` : `${id} return`;
   const tabs: [RouteTab, string][] =
     kind === "bus"
       ? [
@@ -807,6 +824,11 @@ function RoutePanel({
       {tab === "effects" && (
         <Panel>
           <Section title={`${name} effects`} className="col-span-full">
+            {kind === "bus" && (
+              <div className="mb-2 max-w-xs">
+                <BusTemplateMenu id={id as TrackBusId} className="h-12 text-xs" />
+              </div>
+            )}
             <InsertRack
               title={`${name} effects`}
               midiId={fxTarget}
@@ -840,7 +862,7 @@ function RoutePanel({
                     key={t.id}
                     on={t.bus === id}
                     onClick={() =>
-                      updateTrack(t.id, { bus: t.bus === id ? "master" : (id as BusId) })
+                      updateTrack(t.id, { bus: t.bus === id ? "master" : (id as TrackBusId) })
                     }
                     aria-label={`${t.name} into ${name}`}
                     className="truncate normal-case"
@@ -927,7 +949,7 @@ function VcaPanel({ id }: { id: VcaId }) {
               />
             </div>
             <div className="mt-2 grid grid-cols-2 gap-1.5">
-              <BigButton onClick={() => setVca(id, { volume: 1 })}>Unity 0 dB</BigButton>
+              <BigButton onClick={() => setVca(id, { volume: 1 })}>VCA to 0 dB</BigButton>
               <BigButton
                 on={state.muted}
                 onClick={() => setVca(id, { muted: !state.muted })}
@@ -943,10 +965,49 @@ function VcaPanel({ id }: { id: VcaId }) {
               Sum of its {members.length} channel{members.length === 1 ? "" : "s"}
             </p>
           </Section>
+          <Section title={`Pan & EQ for all of VCA ${id}`}>
+            <div className="flex flex-wrap items-start justify-around gap-3">
+              <Knob
+                label="Pan"
+                ariaLabel={`VCA ${id} pan for all its channels`}
+                value={state.pan ?? 0}
+                min={-1}
+                max={1}
+                step={0.01}
+                defaultValue={0}
+                format={(v) =>
+                  Math.abs(v) < 0.005 ? "C" : `${v < 0 ? "L" : "R"}${Math.round(Math.abs(v) * 100)}`
+                }
+                size={KNOB - 8}
+                onChange={(pan) => setVca(id, { pan })}
+              />
+              {(
+                [
+                  ["eqLow", "Low"],
+                  ["eqMid", "Mid"],
+                  ["eqHigh", "High"],
+                ] as const
+              ).map(([key, band]) => (
+                <Knob
+                  key={key}
+                  label={band}
+                  ariaLabel={`VCA ${id} ${band} EQ for all its channels`}
+                  value={state[key] ?? 0}
+                  min={-EQ_RANGE}
+                  max={EQ_RANGE}
+                  step={0.5}
+                  unit=" dB"
+                  defaultValue={0}
+                  size={KNOB - 8}
+                  onChange={(v) => setVca(id, { [key]: v })}
+                />
+              ))}
+            </div>
+          </Section>
           <Section title="What a VCA does">
             <p className="text-sm text-muted-foreground">
-              This fader turns all its channels up or down together. Their own faders stay where
-              they are.
+              Moving this fader moves every channel&rsquo;s own fader by the same amount, so you see
+              them follow. Pan and EQ work the same way. Mute silences the whole group.
             </p>
             <p className="mt-2 font-mono text-xs font-bold uppercase text-foreground">
               {members.length

@@ -81,7 +81,9 @@ export function FaderScale() {
 }
 
 /** Real post-fader signal readings; one shared 20 fps refresh for every strip. */
-export function useMeters(tracks: Track[]) {
+export function useMeters(tracks: Track[], extraBusIds: string[] = []) {
+  const extraRef = useRef(extraBusIds);
+  extraRef.current = extraBusIds;
   const [levels, setLevels] = useState<{
     tracks: Record<string, number>;
     buses: Record<string, number>;
@@ -118,7 +120,8 @@ export function useMeters(tracks: Track[]) {
         const id = track.id;
         tracks[id] = read(id, engine.getTrackLevel(id));
       }
-      for (const id of BUS_STRIPS) buses[id] = read(`bus:${id}`, engine.getBusLevel(id));
+      for (const id of [...BUS_STRIPS, ...extraRef.current])
+        buses[id] = read(`bus:${id}`, engine.getBusLevel(id));
       for (const id of VCA_IDS) vcas[id] = read(`vca:${id}`, engine.getVcaLevel(id));
       for (const id of AUX_IDS) aux[id] = read(`aux:${id}`, engine.getAuxLevel(id));
       setLevels({ tracks, buses, vcas, aux, master: read("master", engine.getLevel()) });
