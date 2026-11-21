@@ -960,6 +960,25 @@ class DjMixer {
     return this.recFrames / this.ctx.sampleRate;
   }
 
+  /** The recorded mix as float stereo audio, for the Tape & CD Recorder. */
+  mixCapture(): { left: Float32Array; right: Float32Array; sampleRate: number } {
+    const left = new Float32Array(this.recFrames),
+      right = new Float32Array(this.recFrames);
+    let at = 0;
+    for (const chunk of this.chunks) {
+      const n = chunk.length / 2;
+      for (let i = 0; i < n && at < this.recFrames; i++, at++) {
+        left[at] = chunk[2 * i]! / 32768;
+        right[at] = chunk[2 * i + 1]! / 32768;
+      }
+    }
+    return {
+      left: left.subarray(0, at).slice(),
+      right: right.subarray(0, at).slice(),
+      sampleRate: this.ctx.sampleRate,
+    };
+  }
+
   wav(): Blob {
     return wavFromPcm16(this.chunks, this.ctx.sampleRate);
   }

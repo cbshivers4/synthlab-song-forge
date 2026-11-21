@@ -159,3 +159,33 @@ export const renameDiscTrack = (disc: Disc, id: string, title: string): Disc => 
   ...disc,
   tracks: disc.tracks.map((t) => (t.id === id ? { ...t, title: editName(title) } : t)),
 });
+
+/** Shortest cassette on the shelf list whose two sides together hold `seconds` (else the longest). */
+export function cassetteTypeFor(seconds: number): string {
+  const fits = [...CASSETTE_TYPES]
+    .filter((t) => t.minutes * 60 >= seconds)
+    .sort((a, b) => a.minutes - b.minutes);
+  return (fits[0] ?? [...CASSETTE_TYPES].sort((a, b) => b.minutes - a.minutes)[0]!).id;
+}
+
+/**
+ * Dub a recording onto a cassette like a real deck: side A fills first and the rest carries on
+ * onto side B. Anything longer than both sides is cut off (cutSeconds says how much).
+ */
+export function dubToCassette(
+  capture: Capture,
+  typeId: string,
+): { a: Capture; b: Capture | null; cutSeconds: number } {
+  const sideFrames = Math.floor(sideSeconds(typeId) * capture.sampleRate);
+  const total = capture.left.length;
+  const right = capture.right.length ? capture.right : capture.left;
+  const part = (from: number, to: number): Capture => ({
+    left: capture.left.slice(from, to),
+    right: right.slice(from, to),
+    sampleRate: capture.sampleRate,
+  });
+  const a = part(0, Math.min(total, sideFrames));
+  const b = total > sideFrames ? part(sideFrames, Math.min(total, sideFrames * 2)) : null;
+  const cutSeconds = Math.max(0, total - sideFrames * 2) / capture.sampleRate;
+  return { a, b, cutSeconds };
+}

@@ -173,6 +173,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Cassette deck: pick a cassette from the shelf (12 kinds — Normal, Chrome and Metal, C46 to C90 — each with its real side length), name it, and press Put in deck. You'll see it go in, the door close and the reels turn. FLIP turns it over to side B, EJECT takes it out. REC records onto the side from the counter, like a real deck: what was under it is replaced and the rest stays. Recording stops by itself at the end of the side.",
       "CD burner: load a blank CD from the spindle (74 or 80 minutes, six colours) and name it. Press REC for a live CD — every take becomes the next track until you press STOP. You can also add your song, copy a cassette side or the reel tape, or add an audio file. Rename, reorder, play or remove tracks, and the display shows how much room is left.",
       "Auto level (on by default) makes quiet recordings loud. Microphones and audio interfaces often record well under full volume; when you press STOP, Auto level raises the take to a strong, steady level and holds its loudest moments just under full volume so it never clips. The button shows how much it raised the last take. Loud takes, like your finished song, are left exactly as recorded, and nothing is ever turned down. If one side of the take is silent (a mic plugged into input 1 only), it plays from both speakers. Turn it off to keep the take exactly as it came in, then use Rec level / Record gain.",
+      "From DJ Decks, Add to tape / CD sends a recorded mix straight onto the reel, a new cassette or the CD.",
       "Burn CD makes a ZIP with CD-quality tracks (44.1 kHz, 16-bit WAV, padded to whole CD sectors), a CUE sheet with the track names and 2-second gaps, and a HOW TO BURN guide. Open the CUE sheet in your computer's burning app (Music on Mac, Windows Media Player, ImgBurn, Burn and others) with a blank CD-R in the drive to make a real audio CD that plays in any CD player.",
     ],
     can: [
@@ -776,6 +777,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     tags: "dj decks turntables serato mixer crossfader sync cue loop scratch playlist record mix headphones",
     body: [
       "Load music on Deck A and Deck B, beat-match with SYNC, mix with gain, EQ, filter, faders and the crossfader, and press Record mix to record your set.",
+      "When you stop recording, Add to tape / CD copies your mix into the Tape & CD Recorder: Reel-to-reel (replaces the reel's tape), New cassette (a cassette long enough for it, side A then side B, put in the deck), or CD (the next track on the CD in the tray, or a fresh blank CD). The recorder opens so you can play it, save it or burn the CD.",
       "Scratch or spin the record, move the tone arm, or press ◀◀ to go back to the start. Hot cues and loops sit under each deck.",
       "Playlists: Add music, New, Save, Rename and Delete. On a computer the track list under the waveforms shows name, artist, length and BPM; press A or B to load.",
       "Headphone CUE lets you hear a deck before the crowd does.",

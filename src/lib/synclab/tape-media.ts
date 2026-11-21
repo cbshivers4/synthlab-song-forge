@@ -13,6 +13,8 @@ import {
   addDiscTrack,
   captureSeconds,
   cassetteType,
+  cassetteTypeFor,
+  dubToCassette,
   discTrackSeconds,
   discType,
   editName,
@@ -312,6 +314,50 @@ class TapeMedia {
     if (wasPlaying) await this.rec.play();
   };
   setBurn = (burn: MediaState["burn"]) => this.update({ burn });
+
+  // ---------- dubbing from other parts of the studio (DJ Decks mix…) ----------
+  /** Put a recording on the reel-to-reel (replacing the reel's tape) and show the reel. */
+  sendToReel = async (capture: Capture, name: string) => {
+    await this.settle();
+    await this.setMedium("reel");
+    this.rec.setTape(capture, name, null);
+    this.reel = { capture, name };
+    return `On the reel-to-reel as "${name}".`;
+  };
+  /** Dub onto a new cassette long enough for it (side A, then side B) and put it in the deck. */
+  sendToCassette = async (capture: Capture, name: string) => {
+    await this.settle();
+    const typeId = cassetteTypeFor(captureSeconds(capture));
+    const c = newCassette(typeId, name, makeId());
+    const { a, b, cutSeconds } = dubToCassette(capture, typeId);
+    c.sides = { A: a, B: b };
+    this.update({ cassettes: [c, ...this.state.cassettes] });
+    await this.setMedium("cassette");
+    await this.insertCassette(c.id);
+    const type = cassetteType(typeId).name;
+    return cutSeconds > 0
+      ? `Dubbed onto a new ${type}. The last ${Math.round(cutSeconds)} s didn't fit on the cassette.`
+      : b
+        ? `Dubbed onto a new ${type}: side A, carrying on to side B.`
+        : `Dubbed onto side A of a new ${type}.`;
+  };
+  /** Add as the next track on the CD in the tray, or on a fresh blank CD if that one can't take it. */
+  sendToCd = async (capture: Capture, title: string) => {
+    await this.settle();
+    await this.setMedium("cd");
+    let error = this.trayDisc() && !this.state.tray.open ? this.addToDisc(capture, title) : "none";
+    if (error) {
+      const d = newDisc("silver-80", title, makeId());
+      this.update({ discs: [d, ...this.state.discs] });
+      await this.loadDiscOnTray(d.id);
+      error = this.addToDisc(capture, title);
+      if (error) throw new Error(error);
+      this.update({ trackId: this.trayDisc()?.tracks.at(-1)?.id ?? null });
+      this.loadDisc();
+      return `Track 1 on a new blank CD-R 80.`;
+    }
+    return `Added as track ${this.trayDisc()?.tracks.length ?? 1} on the CD in the tray.`;
+  };
   /** Ready the deck for a fresh live recording (no CD track loaded, limit = room left). */
   readyLiveTake = () => {
     this.update({ trackId: null });

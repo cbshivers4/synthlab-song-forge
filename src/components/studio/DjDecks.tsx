@@ -12,7 +12,9 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import {
   Cable,
+  CassetteTape,
   Disc3,
+  DiscAlbum,
   FolderOpen,
   SkipBack,
   Headphones,
@@ -27,6 +29,13 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getTapeMedia } from "@/lib/synclab/tape-media";
 import { Slider } from "@/components/ui/slider";
 import { Knob } from "./Knob";
 import { useStudio } from "@/lib/synclab/store";
@@ -1285,6 +1294,7 @@ const eqLabel = (v: number) =>
 function RecordPanel() {
   const dj = getDj();
   const m = dj.state;
+  const { setPanel } = useStudio();
   const [busy, setBusy] = useState<string | null>(null);
   const name = `SYNCLAB DJ mix ${new Date().toISOString().slice(0, 10)}`;
   const save = async (kind: "wav" | "mp3") => {
@@ -1308,6 +1318,27 @@ function RecordPanel() {
       toast.success(`Mix saved as ${kind.toUpperCase()}`, { description: filename });
     } catch (e) {
       toast.error("Couldn't save the mix", { description: (e as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  };
+  /** Dub the recorded mix onto the reel, a new cassette or the CD, then open that machine. */
+  const sendTo = async (machine: "reel" | "cassette" | "cd") => {
+    setBusy("Copying the mix…");
+    try {
+      const capture = dj.mixCapture();
+      if (!capture.left.length) throw new Error("Record a mix first.");
+      const media = getTapeMedia();
+      const done =
+        machine === "reel"
+          ? await media.sendToReel(capture, name)
+          : machine === "cassette"
+            ? await media.sendToCassette(capture, name)
+            : await media.sendToCd(capture, name);
+      setPanel("reel-recorder");
+      toast.success("Mix added to the Tape & CD Recorder", { description: done });
+    } catch (e) {
+      toast.error("Couldn't add the mix", { description: (e as Error).message });
     } finally {
       setBusy(null);
     }
@@ -1373,6 +1404,30 @@ function RecordPanel() {
             <Download className="size-4" />
             WAV
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="dj-btn"
+                variant="outline"
+                disabled={!!busy}
+                aria-label="Add the mix to the reel-to-reel, a cassette or a CD"
+              >
+                <Disc3 className="size-4" />
+                <span className="dj-btn-text">Add to tape / CD</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onSelect={() => void sendTo("reel")}>
+                <Disc3 /> Reel-to-reel
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void sendTo("cassette")}>
+                <CassetteTape /> New cassette
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void sendTo("cd")}>
+                <DiscAlbum /> CD (next track)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {dj.canReplay && (
             <Button
               className="dj-btn"
