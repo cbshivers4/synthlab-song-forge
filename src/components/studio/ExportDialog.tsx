@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { encodeInBackground } from "@/lib/synclab/audio-encode";
 import { CloudUpload, Download, FolderOpen, Share2, Square, Disc3, X } from "lucide-react";
 import {
   Dialog,
@@ -232,7 +233,7 @@ export function ExportDialog() {
       case "caf":
         return encodeCaf(cap, depth);
       case "mp3":
-        return encodeMp3(cap, Math.min(320, kbps));
+        return encodeInBackground(cap, "mp3", Math.min(320, kbps));
       case "mid":
         throw new Error("MIDI is written from notes, not audio.");
       default:

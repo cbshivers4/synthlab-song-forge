@@ -1,4 +1,5 @@
 import { encodeMp3, encodeWav, type Capture } from "./bounce";
+import { encodeInBackground } from "./audio-encode";
 import { browserMime, encodeAiff, encodeFlac, resample } from "./export-formats";
 
 export type ConversionFormat = "wav" | "mp3" | "aiff" | "flac" | "m4a" | "ogg" | "opus";
@@ -115,7 +116,7 @@ export async function convertAudio(
     case "wav":
       return encodeWav(audio, mono ? 1 : 2);
     case "mp3":
-      return encodeMp3(audio, kbps);
+      return encodeInBackground(audio, "mp3", kbps);
     case "aiff":
       return encodeAiff(audio, 24);
     case "flac":

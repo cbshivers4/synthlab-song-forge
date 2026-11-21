@@ -1,4 +1,5 @@
 import { SkinControls, skinBackground, useImageDrop } from "@/components/studio/SkinControls";
+import { encodeInBackground } from "@/lib/synclab/audio-encode";
 import { useSkin } from "@/lib/synclab/skins";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Download, Gauge, Play, Share2, Square } from "lucide-react";
@@ -237,11 +238,19 @@ export function Mastering() {
 
   const { requirePro } = usePlan();
 
-  const save = (format: "wav" | "mp3") => {
+  const save = async (format: "wav" | "mp3") => {
     if (!result) return;
     if (!requirePro("Saving mastered files")) return;
-    const blob = format === "wav" ? encodeWav(result.audio) : encodeMp3(result.audio, 320);
-    downloadBlob(blob, `${safeName}-master.${format}`);
+    try {
+      // MP3 encodes in the background so a long master never freezes the page.
+      const blob =
+        format === "wav"
+          ? encodeWav(result.audio)
+          : await encodeInBackground(result.audio, "mp3", 320);
+      downloadBlob(blob, `${safeName}-master.${format}`);
+    } catch (e) {
+      toast.error("Couldn't save the master", { description: (e as Error).message });
+    }
   };
 
   // Phones and tablets expose a share sheet; desktops usually don't. Probe once

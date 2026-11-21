@@ -29,8 +29,8 @@ import {
 } from "@/lib/synclab/reel-audio";
 import { songSteps, stepSeconds } from "@/lib/synclab/timebase";
 import { useStudio } from "@/lib/synclab/store";
-import { encodeMp3, encodeWav, downloadBlob } from "@/lib/synclab/bounce";
-import { encodeAiff, encodeFlac, encodeWavDepth } from "@/lib/synclab/export-formats";
+import { encodeWav, downloadBlob } from "@/lib/synclab/bounce";
+import { encodeInBackground, type EncodeFormat } from "@/lib/synclab/audio-encode";
 import { getEngine } from "@/lib/synclab/audio-engine";
 import { uid } from "@/lib/synclab/presets";
 import { Knob } from "./Knob";
@@ -609,6 +609,7 @@ export function TapeExportBar({
   const [format, setFormat] = useState("wav24");
   const [quality, setQuality] = useState(320);
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const locked = state.busy || saving;
   const recording = state.mode === "recording";
   const save = async (toProject: boolean) => {
@@ -630,14 +631,10 @@ export function TapeExportBar({
         });
         toast.success("Tape added to project");
       } else {
-        const blob =
-          format === "mp3"
-            ? encodeMp3(capture, quality)
-            : format === "flac"
-              ? encodeFlac(capture, 24)
-              : format === "aiff"
-                ? encodeAiff(capture, 24)
-                : encodeWavDepth(capture, format === "wav16" ? 16 : format === "wav32" ? 32 : 24);
+        // Encoded in the background: a long mix encoded here would freeze the whole page.
+        const blob = await encodeInBackground(capture, format as EncodeFormat, quality, (p) =>
+          setProgress(Math.round(p * 100)),
+        );
         const extension = format.startsWith("wav") ? "wav" : format;
         downloadBlob(blob, `${name.replace(/[\\/:*?"<>|]/g, "-")}.${extension}`);
         toast.success(`${extension.toUpperCase()} exported`);
@@ -646,6 +643,7 @@ export function TapeExportBar({
       toast.error(error instanceof Error ? error.message : "Could not save tape.");
     } finally {
       setSaving(false);
+      setProgress(null);
     }
   };
   return (
@@ -729,7 +727,7 @@ export function TapeExportBar({
         onClick={() => void save(false)}
       >
         <Download />
-        Save file
+        {saving && progress != null ? `Saving… ${progress}%` : saving ? "Saving…" : "Save file"}
       </Button>
       <Button
         className="h-11"
