@@ -167,11 +167,12 @@ export const KNOWLEDGE_BASE: Article[] = [
     id: "reel",
     category: "Recording",
     title: "Tape & CD Recorder (reel, cassette, CD)",
-    tags: "reel tape recorder quicktime cassette deck mixtape side flip eject cd burner burn cd-r live cd cue wav record capture export",
+    tags: "reel tape recorder quicktime auto level quiet loud volume boost cassette deck mixtape side flip eject cd burner burn cd-r live cd cue wav record capture export",
     body: [
       "Open Tape & CD Recorder from PERFORM (phone: Tools). The tabs at the top switch between three machines: Reel-to-reel, Cassette deck and CD burner. They all record your input or the studio, with live meters.",
       "Cassette deck: pick a cassette from the shelf (12 kinds — Normal, Chrome and Metal, C46 to C90 — each with its real side length), name it, and press Put in deck. You'll see it go in, the door close and the reels turn. FLIP turns it over to side B, EJECT takes it out. REC records onto the side from the counter, like a real deck: what was under it is replaced and the rest stays. Recording stops by itself at the end of the side.",
       "CD burner: load a blank CD from the spindle (74 or 80 minutes, six colours) and name it. Press REC for a live CD — every take becomes the next track until you press STOP. You can also add your song, copy a cassette side or the reel tape, or add an audio file. Rename, reorder, play or remove tracks, and the display shows how much room is left.",
+      "Auto level (on by default) makes quiet recordings loud. Microphones and audio interfaces often record well under full volume; when you press STOP, Auto level raises the take to a strong, steady level and holds its loudest moments just under full volume so it never clips. The button shows how much it raised the last take. Loud takes, like your finished song, are left exactly as recorded, and nothing is ever turned down. If one side of the take is silent (a mic plugged into input 1 only), it plays from both speakers. Turn it off to keep the take exactly as it came in, then use Rec level / Record gain.",
       "Burn CD makes a ZIP with CD-quality tracks (44.1 kHz, 16-bit WAV, padded to whole CD sectors), a CUE sheet with the track names and 2-second gaps, and a HOW TO BURN guide. Open the CUE sheet in your computer's burning app (Music on Mac, Windows Media Player, ImgBurn, Burn and others) with a blank CD-R in the drive to make a real audio CD that plays in any CD player.",
     ],
     can: [

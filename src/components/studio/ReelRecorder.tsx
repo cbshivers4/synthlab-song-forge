@@ -3,6 +3,7 @@ import { useSkin } from "@/lib/synclab/skins";
 import { getPlayStep, usePlayStep } from "@/lib/synclab/playhead";
 import { VuFace } from "./VuFace";
 import { ReelInputChannels } from "./ReelInputChannels";
+import { AutoLevelButton } from "./TapeControls";
 import { useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import {
   Circle,
@@ -564,6 +565,7 @@ export function ReelRecorder() {
                 <RotateCcw />
                 Loop
               </Button>
+              <AutoLevelButton state={state} locked={locked} />
             </div>
             {state.monitor && (
               <p className="mt-2 text-xs text-amber">

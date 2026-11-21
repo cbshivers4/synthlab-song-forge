@@ -3,6 +3,7 @@ import { openMic, releaseMic, getInputChannel } from "./mic";
 import type { Capture } from "./bounce";
 import { clampTapePosition, joinTapeChunks, punchTape, tapeCurve } from "./reel-audio";
 import { decodeAudioFile } from "./aiff-decode";
+import { autoLevelTake } from "./tape-level";
 
 export type TapeMode = "stopped" | "recording" | "playing" | "paused" | "rewinding";
 export interface TapeState {
@@ -29,6 +30,10 @@ export interface TapeState {
   limit: number | null;
   /** True after a recording stopped because the tape/disc ran out. */
   full: boolean;
+  /** Raise quiet takes to a steady level (with a peak limiter) when recording stops. */
+  autoLevel: boolean;
+  /** Boost auto level gave the last take, in dB; null before any take. */
+  lastBoostDb: number | null;
 }
 /** Why the tape changed: a finished recording, a loaded file, or a medium swapped in by code. */
 export type TapeChange = "record" | "load" | "set";
@@ -75,6 +80,8 @@ class ReelRecorder {
     hasTape: false,
     limit: null,
     full: false,
+    autoLevel: true,
+    lastBoostDb: null,
   };
   private tapeListeners = new Set<(capture: Capture | null, why: TapeChange) => void>();
   /** Frame the current recording started at (punch-in), 0 for a fresh tape. */
@@ -372,7 +379,15 @@ class ReelRecorder {
     patch: Partial<
       Pick<
         TapeState,
-        "inputGain" | "tone" | "drive" | "outputGain" | "speed" | "monitor" | "loop" | "name"
+        | "inputGain"
+        | "tone"
+        | "drive"
+        | "outputGain"
+        | "speed"
+        | "monitor"
+        | "loop"
+        | "name"
+        | "autoLevel"
       >
     >,
   ) => {
@@ -447,11 +462,10 @@ class ReelRecorder {
         right = joinTapeChunks(this.chunks.right);
       const recorded = left.length > 0;
       if (recorded) {
-        this.capture = punchTape(
-          this.recordBase,
-          { left, right, sampleRate: this.ctx.sampleRate },
-          this.recordFrom,
-        );
+        const take = { left, right, sampleRate: this.ctx.sampleRate };
+        const boost = this.state.autoLevel ? autoLevelTake(take).boostDb : 0;
+        this.update({ lastBoostDb: boost });
+        this.capture = punchTape(this.recordBase, take, this.recordFrom);
         this.reversed = null;
       }
       this.recordBase = null;

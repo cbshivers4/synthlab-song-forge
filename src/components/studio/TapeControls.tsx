@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Headphones } from "lucide-react";
+import { Headphones, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getReelRecorder, type TapeState } from "@/lib/synclab/reel-recorder";
 
@@ -46,7 +46,30 @@ export function TapeSourceControls({ state, locked }: { state: TapeState; locked
         <Headphones />
         Monitor
       </Button>
+      <AutoLevelButton state={state} locked={locked} />
     </div>
+  );
+}
+
+/** Auto level on/off, with the boost the last take received. */
+export function AutoLevelButton({ state, locked }: { state: TapeState; locked: boolean }) {
+  const recorder = getReelRecorder();
+  const boost = state.lastBoostDb;
+  return (
+    <Button
+      variant={state.autoLevel ? "secondary" : "outline"}
+      className="h-11"
+      aria-pressed={state.autoLevel}
+      disabled={locked || state.mode === "recording"}
+      title="Makes quiet recordings loud: when you stop, the take is raised to a strong, steady level and its loudest moments are held just under full volume so it never clips. Loud takes are left as they are."
+      onClick={() => recorder.configure({ autoLevel: !state.autoLevel })}
+    >
+      <Volume2 />
+      Auto level {state.autoLevel ? "on" : "off"}
+      {state.autoLevel && boost != null && boost > 0.05 && (
+        <span className="text-[10px] text-muted-foreground">+{boost.toFixed(1)} dB</span>
+      )}
+    </Button>
   );
 }
 
