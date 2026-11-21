@@ -66,5 +66,5 @@ AI assistants: the app-hosted MCP server (src/lib/mcp, OAuth, caller-scoped clie
 Menu/track-menu/timeline-logo colours are device-only prefs in color-prefs.ts applied as <html> attributes; every shared menu surface carries .app-menu so portalled menus follow them without per-component styling.
 Prettier/ESLint skip generated Supabase files, payment/webhook code, account deletion and Electron (.prettierignore + eslint override) so maintenance formatting never rewrites billing or security code.
 Both Paddle webhook paths (/api/public/payments/webhook and legacy /api/public/paddle-webhook) call handlePaddleWebhook in src/lib/paddle-webhook.server.ts, verified by the Paddle SDK, and DB write errors return 400 so Paddle retries instead of losing the event.
-- vite.config pre-bundles the server-function client deps (optimizeDeps.include) so the dev preview never reloads mid-session on the first server call.
-- Effect callbacks that call scroll/play/focus use braces (ESLint no-restricted-syntax enforces it): newer Chrome returns Promises from scroll methods and React would call the returned value as cleanup, crashing the panel.
+- vite.config optimizeDeps.include pre-bundles server-function client deps so dev never reloads on the first server call.
+- Scroll/play effects use braces (lint-enforced): Chrome scroll Promises returned as cleanup crash panels.
