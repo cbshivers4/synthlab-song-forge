@@ -68,4 +68,3 @@ Prettier/ESLint skip generated Supabase files, payment/webhook code, account del
 Both Paddle webhook paths (/api/public/payments/webhook and legacy /api/public/paddle-webhook) call handlePaddleWebhook in src/lib/paddle-webhook.server.ts, verified by the Paddle SDK, and DB write errors return 400 so Paddle retries instead of losing the event.
 - vite.config optimizeDeps.include pre-bundles server-function client deps so dev never reloads on the first server call.
 - Scroll/play effects use braces (lint-enforced): Chrome scroll Promises returned as cleanup crash panels.
-- Tape/cassette/CD takes pass through autoLevelTake (tape-level.ts) on Stop when Auto level is on: boost-only gated loudness + block limiter under the ceiling, so raw mic takes aren't quiet and loud song prints stay untouched.
