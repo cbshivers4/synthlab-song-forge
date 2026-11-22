@@ -23,6 +23,8 @@ export interface ProjectMeta {
   timeSig: string;
   template: string;
   openedAt: number;
+  /** someone else's song you were invited to */
+  shared?: boolean;
 }
 
 interface AppApi {

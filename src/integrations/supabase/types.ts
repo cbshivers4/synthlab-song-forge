@@ -272,6 +272,79 @@ export type Database = {
         }
         Relationships: []
       }
+      project_members: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          owner_email: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          owner_email?: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          owner_email?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_members_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cloud_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_ops: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: number
+          kind: string
+          payload: Json
+          project_id: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: never
+          kind: string
+          payload?: Json
+          project_id: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: never
+          kind?: string
+          payload?: Json
+          project_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_ops_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "cloud_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stem_split_jobs: {
         Row: {
           created_at: string
@@ -515,6 +588,8 @@ export type Database = {
     }
     Functions: {
       ai_uses_left: { Args: { _daily_limit?: number }; Returns: number }
+      can_access_project: { Args: { _project: string }; Returns: boolean }
+      can_access_project_folder: { Args: { _folder: string }; Returns: boolean }
       can_save_projects: { Args: { _user_id: string }; Returns: boolean }
       consume_ai_use: {
         Args: { _daily_limit?: number; _tool: string }
@@ -531,6 +606,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      owns_project: { Args: { _project: string }; Returns: boolean }
       refund_ai_use: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {

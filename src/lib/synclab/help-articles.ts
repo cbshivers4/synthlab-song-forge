@@ -39,6 +39,32 @@ export type Article = {
 export const KNOWLEDGE_BASE: Article[] = [
   // ───────────── Getting started ─────────────
   {
+    id: "live-together",
+    category: "Getting started",
+    title: "Work on a song together, live",
+    tags: "collaborate collaboration share invite live together friend band partner co-write shared song",
+    body: [
+      "Save the song first (File → Save). Then press SHARE in the top bar (on a phone: the people button on the Edit screen).",
+      "Type the other person's email and press Invite. SYNCLAB doesn't email them for you: press the envelope next to their name to send the link from your own email app, or press Copy song link and send it any way you like.",
+      "They sign in to SYNCLAB with that same email. The song appears under Recent files marked “Shared with you”, or opens straight away from the link.",
+      "While you both have it open, the SHARE button shows LIVE and each person's initials. New channels, notes, drum hits, recordings, mixer moves, effects, tempo and song length show up on the other screens within a moment.",
+      "Saving is still manual: File → Save saves the shared song for everyone in it. Changes nobody saves are gone when everyone closes the song.",
+    ],
+    can: [
+      "Invite as many people as you like, and remove anyone from the song (owner) or leave it (invited people).",
+      "See who has the song open right now in the Share window.",
+      "Each person plays, listens and records on their own device; new recordings are uploaded so everyone can hear them.",
+      "Arming a channel for recording stays on your own device, so you don't arm someone else's microphone.",
+    ],
+    cant: [
+      "Play together in time over the internet — each person presses Play on their own device.",
+      "Merge two edits to the same channel made at the same moment: the last change wins.",
+      "Undo someone else's change — Undo only steps back through your own edits.",
+      "Save without a plan: invited people need the free trial or a plan to press Save, like any song. Only the owner can delete the song.",
+      "Send invitation emails automatically.",
+    ],
+  },
+  {
     id: "workspace",
     category: "Getting started",
     title: "The start screen and workspace",

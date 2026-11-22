@@ -37,6 +37,7 @@ import { useStudio, type PanelId } from "@/lib/synclab/store";
 import { useApp } from "@/lib/synclab/app-state";
 import { TopBar } from "./TopBar";
 import { MenuBar } from "./MenuBar";
+import { ShareSongButton } from "./collab/ShareSong";
 import { Timeline } from "./Timeline";
 import { AddTrackMenu } from "./AddTrackMenu";
 import { PhonePages } from "./PhonePages";
@@ -408,6 +409,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
                     : "Untitled song"}
               </h1>
               <AddTrackMenu size="sm" />
+              <ShareSongButton compact />
               <DeviceClock inline />
             </header>
             {recordingStrip}

@@ -71,6 +71,13 @@
       "when": 1795351704861,
       "tag": "0009_founder_visits_and_notification_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795352418085,
+      "tag": "0010_live_song_collaboration",
+      "breakpoints": true
     }
   ]
 }

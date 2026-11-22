@@ -53,6 +53,8 @@ export interface CloudProject {
   updatedAt: number;
   trackCount?: number;
   session?: CloudSession;
+  /** someone else's song you were invited to (live collaboration) */
+  shared?: boolean;
 }
 
 const safe = (name: string) =>
@@ -108,7 +110,11 @@ async function prepareSession(
   projectId: string,
 ): Promise<CloudSession> {
   const notStored = new Set<string>();
-  const prefix = `${userId}/${projectId}/`;
+  const myPrefix = `${userId}/${projectId}/`;
+  // In a shared song, audio saved by anyone in it (their folder/<song id>/…) already belongs to it.
+  const inSong = new RegExp(`^[^/]+/${projectId}/`);
+  const ownPrefix = (path: string | undefined) =>
+    path && inSong.test(path) ? path.slice(0, path.indexOf("/") + 1) + `${projectId}/` : myPrefix;
   const mediaFailed = new Set<string>();
   const tracks = await Promise.all(
     session.tracks.map(async (track) => {
@@ -122,7 +128,7 @@ async function prepareSession(
             clip.url,
             clip.cloudPath,
             `${userId}/${projectId}/audio/${clip.id}-${safe(clip.name)}`,
-            prefix,
+            ownPrefix(clip.cloudPath),
             clip.name,
             mediaFailed,
           )),
@@ -135,7 +141,7 @@ async function prepareSession(
           sampler.url,
           sampler.cloudPath,
           `${userId}/${projectId}/samples/${track.id}-${safe(sampler.name)}`,
-          prefix,
+          ownPrefix(sampler.cloudPath),
           sampler.name,
           mediaFailed,
         );
@@ -147,7 +153,7 @@ async function prepareSession(
           pad.sampleUrl,
           pad.sampleCloudPath,
           `${userId}/${projectId}/drums/${track.id}-${pad.id}-${safe(pad.sample ?? pad.name)}`,
-          `${userId}/${projectId}/`,
+          ownPrefix(pad.sampleCloudPath),
         );
         if (plan.kind === "none") return pad;
         if (plan.kind === "keep")
@@ -181,7 +187,7 @@ async function prepareSession(
           gran.sampleUrl,
           gran.sampleCloudPath,
           `${userId}/${projectId}/samples/${track.id}-granular-${safe(name)}`,
-          prefix,
+          ownPrefix(gran.sampleCloudPath),
           name,
           mediaFailed,
         );
@@ -199,7 +205,7 @@ async function prepareSession(
       pad.url,
       pad.cloudPath,
       `${userId}/${projectId}/pads/${key}-${safe(pad.name)}`,
-      prefix,
+      ownPrefix(pad.cloudPath),
       pad.name,
       mediaFailed,
     );
@@ -316,9 +322,10 @@ async function restoreSession(session: CloudSession): Promise<CloudSession> {
 
 export async function listCloudProjects(): Promise<CloudProject[]> {
   if (TEST_MODE) return [];
+  const me = await supabase.auth.getUser().then((r) => r.data.user?.id ?? "");
   const { data, error } = await supabase
     .from("cloud_projects")
-    .select("id,name,bpm,musical_key,time_signature,template,opened_at,updated_at,session")
+    .select("id,user_id,name,bpm,musical_key,time_signature,template,opened_at,updated_at,session")
     .order("updated_at", { ascending: false });
   if (error) throw error;
   return data.map((row) => {
@@ -333,6 +340,7 @@ export async function listCloudProjects(): Promise<CloudProject[]> {
       openedAt: new Date(row.opened_at).getTime(),
       updatedAt: new Date(row.updated_at).getTime(),
       trackCount: session?.tracks?.length ?? 0,
+      shared: !!me && row.user_id !== me,
     };
   });
 }
@@ -355,21 +363,32 @@ export async function saveCloudProject(
   const userId = await currentUserId();
   const id = project.id || crypto.randomUUID();
   const prepared = await prepareSession(session, userId, id);
-  const { data, error } = await supabase
-    .from("cloud_projects")
-    .upsert({
-      id,
-      user_id: userId,
-      name: project.name,
-      bpm: project.bpm,
-      musical_key: project.key,
-      time_signature: project.timeSig,
-      template: project.template,
-      opened_at: new Date(project.openedAt).toISOString(),
-      session: prepared as unknown as Json,
-    })
-    .select("id,updated_at")
-    .single();
+  const fields = {
+    name: project.name,
+    bpm: project.bpm,
+    musical_key: project.key,
+    time_signature: project.timeSig,
+    template: project.template,
+    opened_at: new Date(project.openedAt).toISOString(),
+    session: prepared as unknown as Json,
+  };
+  // A song someone shared with you is saved in place for everyone; it stays theirs.
+  const owner = project.id
+    ? await supabase.from("cloud_projects").select("user_id").eq("id", id).maybeSingle()
+    : null;
+  const theirs = !!owner?.data && owner.data.user_id !== userId;
+  const { data, error } = theirs
+    ? await supabase
+        .from("cloud_projects")
+        .update(fields)
+        .eq("id", id)
+        .select("id,updated_at")
+        .single()
+    : await supabase
+        .from("cloud_projects")
+        .upsert({ id, user_id: userId, ...fields })
+        .select("id,updated_at")
+        .single();
   if (error) throw saveError(error);
   return { id: data.id, updatedAt: new Date(data.updated_at).getTime() };
 }
@@ -378,7 +397,9 @@ export async function loadCloudProject(id: string): Promise<CloudProject> {
   if (TEST_MODE) throw new Error(TEST_MODE_MESSAGE);
   const { data, error } = await supabase.from("cloud_projects").select("*").eq("id", id).single();
   if (error) throw error;
+  const me = await supabase.auth.getUser().then((r) => r.data.user?.id ?? "");
   return {
+    shared: !!me && data.user_id !== me,
     id: data.id,
     name: data.name,
     bpm: data.bpm,

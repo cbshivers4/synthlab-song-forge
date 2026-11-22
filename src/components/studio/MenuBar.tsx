@@ -12,6 +12,7 @@ import { useStudio } from "@/lib/synclab/store";
 import { consumeTakeFailure, TakeNotKeptError } from "@/lib/synclab/take-status";
 import { importAudioToSampler, AUDIO_IMPORT_ACCEPT } from "@/lib/synclab/import-audio";
 import { DeviceClock } from "./DeviceClock";
+import { ShareSongButton } from "./collab/ShareSong";
 import { requestBluetoothSettings } from "./Settings";
 import { useApp } from "@/lib/synclab/app-state";
 import { toast } from "sonner";
@@ -706,6 +707,7 @@ export function MenuBar({ phone = false }: { phone?: boolean } = {}) {
               </span>
             )}
           </h1>
+          <ShareSongButton />
           <span className="hidden min-w-0 shrink-0 truncate pl-2 pr-1 font-mono text-[10px] tracking-widest text-muted-foreground uppercase xl:inline">
             {project ? `${project.key} · ${project.timeSig}` : ""} · {mode} mode
           </span>

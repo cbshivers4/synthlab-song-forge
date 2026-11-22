@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioWaveform,
   Cloud,
@@ -230,7 +230,22 @@ export function StartScreen() {
 
   useEffect(() => {
     void listCloudProjects()
-      .then(setCloud)
+      .then((list) => {
+        setCloud(list);
+        // An invite link (?song=<id>) opens that song once you're signed in.
+        const url = new URL(window.location.href);
+        const wanted = url.searchParams.get("song");
+        if (!wanted) return;
+        url.searchParams.delete("song");
+        window.history.replaceState(window.history.state, "", url.toString());
+        const item = list.find((p) => p.id === wanted);
+        if (item) void openCloudRef.current(item);
+        else
+          toast.error("That shared song isn't in your account", {
+            description:
+              "Ask the song's owner to invite the email you signed in with, then open the link again.",
+          });
+      })
       .catch(() => setCloud([]));
     setTemplates(listUserTemplates());
     void supabase.auth.getUser().then(({ data }) => setAccountEmail(data.user?.email ?? ""));
@@ -278,15 +293,23 @@ export function StartScreen() {
         timeSig: loaded.timeSig,
         template: loaded.template,
         openedAt: Date.now(),
+        ...(loaded.shared ? { shared: true } : {}),
       });
       setStage("studio");
-      toast.success(`${loaded.name} opened from your cloud`);
+      toast.success(
+        loaded.shared
+          ? `${loaded.name} opened — shared with you`
+          : `${loaded.name} opened from your cloud`,
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not open cloud project");
     } finally {
       setCloudBusy(null);
     }
   };
+
+  const openCloudRef = useRef(openCloud);
+  openCloudRef.current = openCloud;
 
   const duplicateCloud = async (item: CloudProject) => {
     setCloudBusy(item.id);
@@ -493,6 +516,11 @@ export function StartScreen() {
                                   <Loader2 className="size-3.5 animate-spin" />
                                 )}
                                 {item.name}
+                                {item.shared && (
+                                  <span className="shrink-0 rounded-sm border border-primary/50 px-1 font-mono text-[8px] tracking-widest text-primary uppercase">
+                                    Shared with you
+                                  </span>
+                                )}
                               </div>
                               <div className="truncate font-mono text-[10px] text-muted-foreground">
                                 {item.bpm} BPM · {item.key} · {relTime(item.updatedAt)}
@@ -531,14 +559,16 @@ export function StartScreen() {
                             >
                               <Copy className="size-3.5" />
                             </IconBtn>
-                            <IconBtn
-                              label={`Delete ${item.name}`}
-                              title="Delete"
-                              danger
-                              onClick={() => setConfirmDel({ kind: "cloud", item })}
-                            >
-                              <Trash2 className="size-3.5" />
-                            </IconBtn>
+                            {!item.shared && (
+                              <IconBtn
+                                label={`Delete ${item.name}`}
+                                title="Delete"
+                                danger
+                                onClick={() => setConfirmDel({ kind: "cloud", item })}
+                              >
+                                <Trash2 className="size-3.5" />
+                              </IconBtn>
+                            )}
                           </div>
                         </div>
                       );

@@ -167,6 +167,7 @@ import { alignedTake, getInputLatencyMs, outputDelay, preRollTake } from "./late
 import { peaksSpanOf } from "./clip-peaks";
 import { addCut, cutNotesAt, deleteRegion, regionAt, unrollNotes } from "./note-cuts";
 import { GRANULAR_KNOBS } from "./granular";
+import type { SharedSong } from "./collab/sync";
 import {
   externalNoteOff,
   externalNoteOn,
@@ -381,6 +382,14 @@ interface StudioState {
 
 interface StudioApi extends StudioState {
   snapshot: () => CloudSession;
+  /** song-wide settings shared live with everyone in a shared song */
+  collabSong: SharedSong;
+  /** applies someone else's live edit (no undo step, playback keeps going) */
+  applyRemote: (change: {
+    tracks?: Track[];
+    removedIds?: string[];
+    song?: Partial<SharedSong>;
+  }) => void;
   restore: (session: CloudSession) => void;
   undo: () => void;
   redo: () => void;
@@ -3461,6 +3470,74 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     setPanel(null);
   }, []);
 
+  /** Song-wide settings everyone in a live shared song shares (collab/sync.ts). */
+  const collabSong = useMemo<SharedSong>(
+    () => ({
+      bpm: transport.bpm,
+      swing: transport.swing,
+      bars: transport.bars,
+      beatsPerBar: transport.beatsPerBar ?? 4,
+      buses,
+      customBuses,
+      vcas,
+      auxReturns,
+      fxChains,
+      sections,
+      folders,
+      projectNotes,
+    }),
+    [
+      transport.bpm,
+      transport.swing,
+      transport.bars,
+      transport.beatsPerBar,
+      buses,
+      customBuses,
+      vcas,
+      auxReturns,
+      fxChains,
+      sections,
+      folders,
+      projectNotes,
+    ],
+  );
+
+  /**
+   * Someone else's live edit: swaps channels/settings in place without stopping playback,
+   * resetting panels or adding an undo step (undo only steps through your own edits).
+   */
+  const applyRemote = useCallback(
+    (change: { tracks?: Track[]; removedIds?: string[]; song?: Partial<SharedSong> }) => {
+      applyingRef.current = true;
+      if (change.tracks) {
+        for (const id of change.removedIds ?? []) getEngine().removeChannel(id);
+        const next = change.tracks;
+        setTracks(next);
+        const ids = new Set(next.map((t) => t.id));
+        setSelectedIds((cur) => (cur.every((id) => ids.has(id)) ? cur : cur.filter((id) => ids.has(id))));
+        setSelectedId((cur) => (cur && !ids.has(cur) ? (next[0]?.id ?? null) : cur));
+      }
+      const song = change.song;
+      if (song) {
+        const tp: Partial<Transport> = {};
+        if (song.bpm !== undefined) tp.bpm = song.bpm;
+        if (song.swing !== undefined) tp.swing = song.swing;
+        if (song.bars !== undefined) tp.bars = song.bars;
+        if (song.beatsPerBar !== undefined) tp.beatsPerBar = song.beatsPerBar;
+        if (Object.keys(tp).length) setTransportState((s) => ({ ...s, ...tp }));
+        if (song.buses) setBuses(song.buses);
+        if (song.customBuses) setCustomBuses(song.customBuses);
+        if (song.vcas) setVcas(song.vcas);
+        if (song.auxReturns) setAuxReturns(song.auxReturns);
+        if (song.fxChains) setFxChains(song.fxChains);
+        if (song.sections) setSections(song.sections);
+        if (song.folders) setFolders(song.folders);
+        if (song.projectNotes !== undefined) setProjectNotes(song.projectNotes);
+      }
+    },
+    [setTransportState],
+  );
+
   const pendingHistoryRef = useRef<(() => void) | null>(null);
   // Record a history step, debounced so a drag or a knob sweep counts as one edit.
   // No automatic saving: the project is saved only when the user chooses File → Save.
@@ -3593,6 +3670,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       projectNotes,
       setProjectNotes,
       snapshot: buildSnapshot,
+      collabSong,
+      applyRemote,
       restore: (session) => {
         applyingRef.current = true;
         applySession(session);
@@ -5152,6 +5231,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     razorAtImpl,
     buildSnapshot,
     applySession,
+    collabSong,
+    applyRemote,
     historyTick,
     automationHistoryTick,
     savedAt,

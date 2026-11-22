@@ -100,6 +100,7 @@ import { ExternalApps } from "@/components/studio/ExternalApps";
 import { HumToBeat } from "@/components/studio/HumToBeat";
 import { BassGenerator } from "@/components/studio/BassGenerator";
 import { LiveDrummer, DrummerBridge } from "@/components/studio/LiveDrummer";
+import { CollabBridge } from "@/components/studio/collab/CollabBridge";
 import { LiveKeys, KeysBridge } from "@/components/studio/LiveKeys";
 import { DjDecks } from "@/components/studio/DjDecks";
 import { AmpRoom } from "@/components/studio/AmpRoom";
@@ -978,6 +979,7 @@ function StudioWorkspace() {
         <ExportDialog />
         <MidiClockFollow />
         <DrummerBridge />
+        <CollabBridge />
         <KeysBridge />
         <ScopeWindow />
         <StudioAgentTools />
@@ -1048,6 +1050,7 @@ function StudioWorkspace() {
       </div>
       <TrackSettingsDialog />
       <DrummerBridge />
+        <CollabBridge />
       <KeysBridge />
       {!isMobile && <TopBar />}
       {landscape ? null : isMobile ? (
