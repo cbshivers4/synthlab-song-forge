@@ -24,7 +24,7 @@ function accountFrom(claims: Record<string, unknown>, userId: string) {
  */
 export const recordSignIn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     z
       .object({
         timezone: z.string().max(64).default(""),
@@ -104,7 +104,7 @@ export const recordSignIn = createServerFn({ method: "POST" })
 /** The signed-in person's own "tips and offers by email" choice. */
 export const setMarketingConsent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => z.object({ optedIn: z.boolean() }).parse(input))
+  .validator((input: unknown) => z.object({ optedIn: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const me = accountFrom(context.claims as Record<string, unknown>, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

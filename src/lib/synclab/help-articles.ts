@@ -1081,6 +1081,18 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
   },
   {
+    id: "tips-emails",
+    category: "Account & billing",
+    title: "Tips and offers emails",
+    tags: "email newsletter tips offers unsubscribe marketing",
+    body: [
+      "SYNCLAB only sends you tips, tutorials and plan offers if you say yes: tick “Email me SYNCLAB tips, tutorials and offers” when you sign in, or turn on Settings → Account → Tips and offers by email.",
+      "If you haven't picked a plan, you get a short series over 30 days showing what the studio can do. It stops as soon as you start a trial or pay.",
+    ],
+    can: ["Turn the emails on or off any time in Settings → Account.", "Unsubscribe with the link at the bottom of any email."],
+    cant: ["Account emails, like password resets, still arrive when tips emails are off."],
+  },
+  {
     id: "support",
     category: "Account & billing",
     title: "Getting help",

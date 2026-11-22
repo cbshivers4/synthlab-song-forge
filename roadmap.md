@@ -303,8 +303,9 @@
 - [x] Reel shelf (10 reel types, load/remove animations, named reels) and Save reel / cassette / CD to the account (lossless files, downloaded when loaded, delete asks first). Signed-in save → reload → load verified for reel, cassette and CD; CD keeps its own copy after its source reel is deleted; test items removed. Not published.
 
 ## Founder dashboard & sign-up emails (Nov 22)
-- [ ] Sign-in history (name, email, location, device) saved to the account database; founder-only read.
-- [ ] Pop-up for the founder when someone signs in or sends a support message.
-- [ ] Founder Analytics page: accounts, paid/trial/free, sign-ins, locations, support messages inbox.
-- [ ] 30-day benefit email campaign written in the app, with the unpaid-user list.
-- [ ] Send campaign + upgrade emails through Loops (user chose Loops): sync accounts and paid status; stop for payers.
+- [x] Sign-in history (name, email, location, device, plan) saved; founder-only read. Verified signed in: entries recorded once per visit; location shows only on the live site (preview has no location data).
+- [x] Live pop-up for the founder when someone signs in or sends a support message. Verified with a test customer.
+- [x] Founder Analytics page (/admin): overview stats + 30-day chart, sign-ins, accounts, messages inbox (read/done/reply), CSV downloads.
+- [x] 30-day, 12-email benefit campaign written; opt-in box on sign-in + Settings switch; privacy policy and Help Center updated.
+- [x] Loops connected: opted-in unpaid accounts synced with plan/isPaid and campaign_start; payments re-sync plan. Verified a test contact reached Loops, then deleted it.
+- [ ] Build the Loop in Loops (trigger campaign_start, 12 emails, filter isPaid is false) and verify the Loops sending domain — needs the founder in the Loops website.

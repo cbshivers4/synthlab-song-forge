@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { recordSignIn } from "@/utils/founder.functions";
 import { isSupportAdmin } from "@/lib/synclab/support";
@@ -18,6 +19,7 @@ import { countryName, openFounderDashboard } from "@/lib/founder/links";
 export function FounderAlerts() {
   const recorded = useRef<string | null>(null);
   const watching = useRef<string | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (TEST_MODE) return;
@@ -52,6 +54,7 @@ export function FounderAlerts() {
               device: string;
               plan: string;
             };
+            void queryClient.invalidateQueries({ queryKey: ["founder"] });
             if (e.user_id === userId) return;
             toast(`${e.name || e.email} ${e.kind === "sign_in" ? "signed in" : "opened SYNCLAB"}`, {
               description: `${e.email} · ${formatPlace(e, countryName)} · ${e.device} · ${e.plan.toUpperCase()}`,
@@ -64,6 +67,7 @@ export function FounderAlerts() {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "support_tickets" },
           (payload) => {
+            void queryClient.invalidateQueries({ queryKey: ["founder", "messages"] });
             const t = payload.new as { name: string; email: string; subject: string; kind: string };
             toast(`New ${t.kind === "problem" ? "problem report" : "support message"}`, {
               description: `${t.name || t.email}: ${t.subject}`,
@@ -109,7 +113,7 @@ export function FounderAlerts() {
       sub.subscription.unsubscribe();
       stopWatching();
     };
-  }, []);
+  }, [queryClient]);
 
   return null;
 }
