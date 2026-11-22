@@ -24,10 +24,12 @@ describe("sign-in history", () => {
     expect(loginKind(new Date(NOW - OPEN_GAP_MS).toISOString(), NOW)).toBe("open");
   });
   it("shows city, region and country, skipping unknown countries", () => {
-    expect(formatPlace({ city: "Detroit", region: "Michigan", country: "US" }, () => "United States")).toBe(
-      "Detroit, Michigan, United States",
+    expect(
+      formatPlace({ city: "Detroit", region: "Michigan", country: "US" }, () => "United States"),
+    ).toBe("Detroit, Michigan, United States");
+    expect(formatPlace({ country: "XX", timezone: "America/New_York" })).toBe(
+      "Time zone America/New York",
     );
-    expect(formatPlace({ country: "XX", timezone: "America/New_York" })).toBe("Time zone America/New York");
     expect(formatPlace({})).toBe("Unknown location");
   });
   it("names the account from its full name, else the email", () => {
@@ -36,7 +38,9 @@ describe("sign-in history", () => {
   });
   it("names phones and browsers", () => {
     expect(
-      describeDevice("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"),
+      describeDevice(
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1",
+      ),
     ).toEqual({ device: "iPhone", browser: "Safari" });
   });
 });
@@ -53,11 +57,21 @@ describe("30-day campaign", () => {
     expect(inCampaignAudience({ email: "a@x.com", plan: "free", optedIn: false })).toBe(false);
     expect(inCampaignAudience({ email: "a@x.com", plan: "pro", optedIn: true })).toBe(false);
     expect(inCampaignAudience({ email: "a@x.com", plan: "trial", optedIn: true })).toBe(false);
-    expect(inCampaignAudience({ email: "cbshivers@gmail.com", plan: "free", optedIn: true })).toBe(false);
+    expect(inCampaignAudience({ email: "cbshivers@gmail.com", plan: "free", optedIn: true })).toBe(
+      false,
+    );
   });
   it("treats an expired subscription as unpaid", () => {
-    expect(accountPlan("a@x.com", { status: "active", current_period_end: "2026-11-01T00:00:00Z" }, NOW)).toBe("free");
-    expect(accountPlan("a@x.com", { status: "trialing", current_period_end: "2026-12-01T00:00:00Z" }, NOW)).toBe("trial");
+    expect(
+      accountPlan("a@x.com", { status: "active", current_period_end: "2026-11-01T00:00:00Z" }, NOW),
+    ).toBe("free");
+    expect(
+      accountPlan(
+        "a@x.com",
+        { status: "trialing", current_period_end: "2026-12-01T00:00:00Z" },
+        NOW,
+      ),
+    ).toBe("trial");
     expect(accountPlan("a@x.com", null, NOW)).toBe("free");
   });
   it("knows which email is due on each day", () => {

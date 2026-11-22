@@ -38,7 +38,11 @@ export function MarketingEmailSwitch() {
         try {
           const r = await setMarketingConsent({ data: { optedIn: v } });
           setOn(r.optedIn);
-          toast.success(r.optedIn ? "You'll get SYNCLAB tips and offers by email" : "No more tips and offers emails");
+          toast.success(
+            r.optedIn
+              ? "You'll get SYNCLAB tips and offers by email"
+              : "No more tips and offers emails",
+          );
         } catch (e) {
           toast.error(e instanceof Error ? e.message : "Couldn't save your choice");
         } finally {

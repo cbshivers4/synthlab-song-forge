@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMaybeApp } from "@/lib/synclab/app-state";
 import { SUPPORT_EMAIL } from "@/lib/synclab/contact";
 import { isFounderEmail } from "@/lib/synclab/plan-tier";
-import { openFounderDashboard } from "@/components/founder/FounderAlerts";
+import { openFounderDashboard } from "@/lib/founder/links";
 import {
   EMPTY_SETTINGS,
   HELP_CATEGORIES,

@@ -6,7 +6,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { CAMPAIGN_EVENT, PAID_EVENT } from "./email-campaign";
-import { accountPlan, displayName, inCampaignAudience, isPaidPlan, type AccountPlan } from "./insights";
+import {
+  accountPlan,
+  displayName,
+  inCampaignAudience,
+  isPaidPlan,
+  type AccountPlan,
+} from "./insights";
 import { isFounderEmail } from "@/lib/synclab/plan-tier";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/loops";
@@ -50,7 +56,11 @@ export function bestSubscription(
   return best;
 }
 
-export async function planForUser(admin: Admin, userId: string, email: string): Promise<AccountPlan> {
+export async function planForUser(
+  admin: Admin,
+  userId: string,
+  email: string,
+): Promise<AccountPlan> {
   const { data } = await admin
     .from("subscriptions")
     .select("status,current_period_end")
@@ -70,7 +80,8 @@ export async function syncContactToLoops(
   row: ContactRow,
   opts: { justPaid?: boolean } = {},
 ): Promise<{ synced: boolean; started: boolean; error?: string }> {
-  if (!loopsConfigured() || !row.email || isFounderEmail(row.email)) return { synced: false, started: false };
+  if (!loopsConfigured() || !row.email || isFounderEmail(row.email))
+    return { synced: false, started: false };
   // Never put someone into Loops who hasn't said yes; only tell Loops about an opt-out
   // when we sent them there before.
   if (!row.opted_in && !row.loops_synced_at) return { synced: false, started: false };
@@ -87,7 +98,10 @@ export async function syncContactToLoops(
       isPaid: paid,
     });
     let started = false;
-    if (!row.campaign_started_at && inCampaignAudience({ email: row.email, plan, optedIn: row.opted_in })) {
+    if (
+      !row.campaign_started_at &&
+      inCampaignAudience({ email: row.email, plan, optedIn: row.opted_in })
+    ) {
       await loops(
         "/events/send",
         "POST",
@@ -143,7 +157,7 @@ export async function upsertContact(
       ? {
           opted_in: optIn.optedIn,
           opted_in_at: optIn.optedIn ? now : null,
-          opt_in_source: optIn.optedIn ? optIn.source : existing?.opt_in_source ?? "",
+          opt_in_source: optIn.optedIn ? optIn.source : (existing?.opt_in_source ?? ""),
         }
       : {};
   const { data, error } = await admin
@@ -174,7 +188,11 @@ export async function syncAccountPlan(admin: Admin, userId: string): Promise<voi
   const email = u.user?.email?.toLowerCase();
   if (!email) return;
   const plan = await planForUser(admin, userId, email);
-  const row = await upsertContact(admin, { id: userId, email, meta: u.user?.user_metadata ?? null }, plan);
+  const row = await upsertContact(
+    admin,
+    { id: userId, email, meta: u.user?.user_metadata ?? null },
+    plan,
+  );
   if (row) await syncContactToLoops(admin, row, { justPaid: isPaidPlan(plan) });
 }
 

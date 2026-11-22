@@ -54,7 +54,7 @@ import { LibraryPanel } from "./LibraryPanel";
 import { useApp } from "@/lib/synclab/app-state";
 import { usePlan } from "@/lib/synclab/plan";
 import { MarketingEmailSwitch } from "@/components/founder/MarketingEmailSwitch";
-import { openFounderDashboard } from "@/components/founder/FounderAlerts";
+import { openFounderDashboard } from "@/lib/founder/links";
 import {
   qwertyEnabled,
   setQwertyEnabled,
@@ -1204,7 +1204,10 @@ export function Settings() {
           <MarketingEmailSwitch />
         </Row>
         {tier === "founder" && (
-          <Row label="Founder Analytics" hint="Accounts, sign-ins, plans, messages and the email campaign. Opens in a new tab.">
+          <Row
+            label="Founder Analytics"
+            hint="Accounts, sign-ins, plans, messages and the email campaign. Opens in a new tab."
+          >
             <Button variant="secondary" onClick={() => openFounderDashboard()}>
               Open dashboard
             </Button>

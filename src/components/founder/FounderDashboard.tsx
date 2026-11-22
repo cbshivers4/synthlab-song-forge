@@ -18,7 +18,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { syncAllToLoops, type FounderAccount } from "@/utils/founder.functions";
-import { formatPlace, inCampaignAudience, campaignDay, type AccountPlan } from "@/lib/founder/insights";
+import {
+  formatPlace,
+  inCampaignAudience,
+  campaignDay,
+  type AccountPlan,
+} from "@/lib/founder/insights";
 import {
   CAMPAIGN_EMAILS,
   CAMPAIGN_EVENT,
@@ -26,7 +31,7 @@ import {
   campaignEmailText,
   emailForDay,
 } from "@/lib/founder/email-campaign";
-import { countryName } from "./FounderAlerts";
+import { countryName } from "@/lib/founder/links";
 import {
   founderOverviewQuery,
   loginHistoryQuery,
@@ -93,7 +98,15 @@ function PlanBadge({ plan }: { plan: string }) {
   );
 }
 
-function Stat({ label, value, note }: { label: string; value: string | number; note?: string | undefined }) {
+function Stat({
+  label,
+  value,
+  note,
+}: {
+  label: string;
+  value: string | number;
+  note?: string | undefined;
+}) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -117,7 +130,13 @@ function downloadCsv(name: string, rows: (string | number)[][]) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function FounderDashboard({ tab, onTab }: { tab: FounderTab; onTab: (t: FounderTab) => void }) {
+export function FounderDashboard({
+  tab,
+  onTab,
+}: {
+  tab: FounderTab;
+  onTab: (t: FounderTab) => void;
+}) {
   const { data: overview } = useSuspenseQuery(founderOverviewQuery);
   const logins = useQuery(loginHistoryQuery);
   const messages = useQuery(supportMessagesQuery);
@@ -131,7 +150,9 @@ export function FounderDashboard({ tab, onTab }: { tab: FounderTab; onTab: (t: F
             <h1 className="font-display text-lg font-extrabold tracking-tight">
               SYNCLAB <span className="text-primary">Founder Analytics</span>
             </h1>
-            <p className="text-xs text-muted-foreground">Private — only your founder account can see this page.</p>
+            <p className="text-xs text-muted-foreground">
+              Private — only your founder account can see this page.
+            </p>
           </div>
           <nav className="flex flex-wrap gap-1" aria-label="Dashboard sections">
             {TAB_LIST.map((t) => (
@@ -155,11 +176,20 @@ export function FounderDashboard({ tab, onTab }: { tab: FounderTab; onTab: (t: F
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
-        {tab === "overview" && <Overview accounts={overview.accounts} logins={logins.data ?? []} openMessages={openMessages} onTab={onTab} />}
+        {tab === "overview" && (
+          <Overview
+            accounts={overview.accounts}
+            logins={logins.data ?? []}
+            openMessages={openMessages}
+            onTab={onTab}
+          />
+        )}
         {tab === "logins" && <SignIns logins={logins.data ?? []} loading={logins.isLoading} />}
         {tab === "accounts" && <Accounts accounts={overview.accounts} />}
         {tab === "messages" && <Messages rows={messages.data ?? []} loading={messages.isLoading} />}
-        {tab === "campaign" && <Campaign accounts={overview.accounts} loopsConnected={overview.loopsConnected} />}
+        {tab === "campaign" && (
+          <Campaign accounts={overview.accounts} loopsConnected={overview.loopsConnected} />
+        )}
       </main>
     </div>
   );
@@ -218,14 +248,25 @@ function Overview({
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Accounts" value={accounts.length} note={`${newWeek} new this week`} />
         <Stat label="Paying" value={count("pro")} note={`${count("trial")} on free trial`} />
-        <Stat label="Unpaid" value={count("free") + count("past_due")} note={`${count("past_due")} with a payment due`} />
+        <Stat
+          label="Unpaid"
+          value={count("free") + count("past_due")}
+          note={`${count("past_due")} with a payment due`}
+        />
         <Stat label="Messages to read" value={openMessages} note="Support and problem reports" />
         <Stat label="Sign-ins today" value={signInsToday} />
-        <Stat label="Sign-ins this week" value={signInsWeek} note={`${activeWeek} different people`} />
+        <Stat
+          label="Sign-ins this week"
+          value={signInsWeek}
+          note={`${activeWeek} different people`}
+        />
         <Stat label="Said yes to emails" value={accounts.filter((a) => a.optedIn).length} />
         <Stat
           label="In the 30-day campaign"
-          value={accounts.filter((a) => a.campaignStartedAt && a.plan !== "pro" && a.plan !== "trial").length}
+          value={
+            accounts.filter((a) => a.campaignStartedAt && a.plan !== "pro" && a.plan !== "trial")
+              .length
+          }
         />
       </div>
 
@@ -233,15 +274,35 @@ function Overview({
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-sm font-bold">Last 30 days</h2>
           <div className="flex gap-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-primary" />Sign-ins</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-sm bg-accent" />New accounts</span>
+            <span className="flex items-center gap-1">
+              <span className="size-2 rounded-sm bg-primary" />
+              Sign-ins
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="size-2 rounded-sm bg-accent" />
+              New accounts
+            </span>
           </div>
         </div>
-        <div className="flex h-40 items-end gap-1" role="img" aria-label="Sign-ins and new accounts per day for the last 30 days">
+        <div
+          className="flex h-40 items-end gap-1"
+          role="img"
+          aria-label="Sign-ins and new accounts per day for the last 30 days"
+        >
           {days.map((d) => (
-            <div key={d.label} className="group relative flex h-full flex-1 items-end gap-px" title={`${d.label}: ${d.signIns} sign-ins, ${d.joined} new accounts`}>
-              <div className="w-1/2 rounded-t-sm bg-primary" style={{ height: `${(d.signIns / max) * 100}%` }} />
-              <div className="w-1/2 rounded-t-sm bg-accent" style={{ height: `${(d.joined / max) * 100}%` }} />
+            <div
+              key={d.label}
+              className="group relative flex h-full flex-1 items-end gap-px"
+              title={`${d.label}: ${d.signIns} sign-ins, ${d.joined} new accounts`}
+            >
+              <div
+                className="w-1/2 rounded-t-sm bg-primary"
+                style={{ height: `${(d.signIns / max) * 100}%` }}
+              />
+              <div
+                className="w-1/2 rounded-t-sm bg-accent"
+                style={{ height: `${(d.joined / max) * 100}%` }}
+              />
             </div>
           ))}
         </div>
@@ -253,9 +314,14 @@ function Overview({
 
       <div className="grid gap-4 md:grid-cols-2">
         <section className="rounded-lg border border-border bg-card p-4">
-          <h2 className="mb-2 flex items-center gap-2 font-display text-sm font-bold"><MapPin className="size-4 text-primary" />Where people sign in from</h2>
+          <h2 className="mb-2 flex items-center gap-2 font-display text-sm font-bold">
+            <MapPin className="size-4 text-primary" />
+            Where people sign in from
+          </h2>
           {places.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No sign-ins recorded yet. They appear from the next sign-in on.</p>
+            <p className="text-sm text-muted-foreground">
+              No sign-ins recorded yet. They appear from the next sign-in on.
+            </p>
           ) : (
             <ul className="space-y-1">
               {places.map(([p, n]) => (
@@ -269,20 +335,31 @@ function Overview({
         </section>
         <section className="rounded-lg border border-border bg-card p-4">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-display text-sm font-bold"><LogIn className="size-4 text-primary" />Latest sign-ins</h2>
-            <Button size="sm" variant="ghost" onClick={() => onTab("logins")}>See all</Button>
+            <h2 className="flex items-center gap-2 font-display text-sm font-bold">
+              <LogIn className="size-4 text-primary" />
+              Latest sign-ins
+            </h2>
+            <Button size="sm" variant="ghost" onClick={() => onTab("logins")}>
+              See all
+            </Button>
           </div>
           {logins.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nobody has signed in since the history started.</p>
+            <p className="text-sm text-muted-foreground">
+              Nobody has signed in since the history started.
+            </p>
           ) : (
             <ul className="space-y-2">
               {logins.slice(0, 6).map((l) => (
                 <li key={l.id} className="text-sm">
                   <div className="flex justify-between gap-2">
                     <span className="truncate font-semibold">{l.name}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{ago(l.created_at)}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {ago(l.created_at)}
+                    </span>
                   </div>
-                  <div className="truncate text-xs text-muted-foreground">{l.email} · {formatPlace(l, countryName)}</div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {l.email} · {formatPlace(l, countryName)}
+                  </div>
                 </li>
               ))}
             </ul>
@@ -290,7 +367,8 @@ function Overview({
         </section>
       </div>
       <p className="text-xs text-muted-foreground">
-        Website visits from people who aren't signed in (page views, where visitors come from) are in your project's Analytics view in the editor.
+        Website visits from people who aren't signed in (page views, where visitors come from) are
+        in your project's Analytics view in the editor.
       </p>
     </div>
   );
@@ -303,14 +381,27 @@ function SignIns({ logins, loading }: { logins: LoginRow[]; loading: boolean }) 
     if (kind !== "all" && l.kind !== kind) return false;
     const t = q.trim().toLowerCase();
     if (!t) return true;
-    return [l.name, l.email, l.city, l.region, l.country, l.device].some((v) => v.toLowerCase().includes(t));
+    return [l.name, l.email, l.city, l.region, l.country, l.device].some((v) =>
+      v.toLowerCase().includes(t),
+    );
   });
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Input className="max-w-xs" placeholder="Search name, email or place" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search sign-ins" />
+        <Input
+          className="max-w-xs"
+          placeholder="Search name, email or place"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search sign-ins"
+        />
         {(["all", "sign_in", "open"] as const).map((k) => (
-          <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} onClick={() => setKind(k)}>
+          <Button
+            key={k}
+            size="sm"
+            variant={kind === k ? "secondary" : "ghost"}
+            onClick={() => setKind(k)}
+          >
             {k === "all" ? "All" : k === "sign_in" ? "Sign-ins" : "App openings"}
           </Button>
         ))}
@@ -320,36 +411,87 @@ function SignIns({ logins, loading }: { logins: LoginRow[]; loading: boolean }) 
           className="ml-auto"
           onClick={() =>
             downloadCsv("synclab-sign-ins.csv", [
-              ["When", "Type", "Name", "Email", "City", "Region", "Country", "Device", "Browser", "Plan"],
-              ...rows.map((l) => [l.created_at, l.kind, l.name, l.email, l.city, l.region, l.country, l.device, l.browser, l.plan]),
+              [
+                "When",
+                "Type",
+                "Name",
+                "Email",
+                "City",
+                "Region",
+                "Country",
+                "Device",
+                "Browser",
+                "Plan",
+              ],
+              ...rows.map((l) => [
+                l.created_at,
+                l.kind,
+                l.name,
+                l.email,
+                l.city,
+                l.region,
+                l.country,
+                l.device,
+                l.browser,
+                l.plan,
+              ]),
             ])
           }
         >
-          <Download className="size-4" />Download
+          <Download className="size-4" />
+          Download
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        A sign-in is a new login. An app opening is the same login coming back after 6 hours or more. Location is worked out from the internet connection, so it's usually the nearest city, not an exact address.
+        A sign-in is a new login. An app opening is the same login coming back after 6 hours or
+        more. Location is worked out from the internet connection, so it's usually the nearest city,
+        not an exact address.
       </p>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm">
           <thead className="bg-muted/40 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            <tr><th className="p-2">When</th><th className="p-2">Name</th><th className="p-2">Email</th><th className="p-2">Location</th><th className="p-2">Device</th><th className="p-2">Plan</th></tr>
+            <tr>
+              <th className="p-2">When</th>
+              <th className="p-2">Name</th>
+              <th className="p-2">Email</th>
+              <th className="p-2">Location</th>
+              <th className="p-2">Device</th>
+              <th className="p-2">Plan</th>
+            </tr>
           </thead>
           <tbody>
-            {loading && <tr><td className="p-3 text-muted-foreground" colSpan={6}>Loading…</td></tr>}
-            {!loading && rows.length === 0 && <tr><td className="p-3 text-muted-foreground" colSpan={6}>No sign-ins match.</td></tr>}
+            {loading && (
+              <tr>
+                <td className="p-3 text-muted-foreground" colSpan={6}>
+                  Loading…
+                </td>
+              </tr>
+            )}
+            {!loading && rows.length === 0 && (
+              <tr>
+                <td className="p-3 text-muted-foreground" colSpan={6}>
+                  No sign-ins match.
+                </td>
+              </tr>
+            )}
             {rows.map((l) => (
               <tr key={l.id} className="border-t border-border">
                 <td className="whitespace-nowrap p-2">
                   {when(l.created_at)}
-                  <div className="text-[10px] uppercase text-muted-foreground">{l.kind === "sign_in" ? "Sign-in" : "App opening"}</div>
+                  <div className="text-[10px] uppercase text-muted-foreground">
+                    {l.kind === "sign_in" ? "Sign-in" : "App opening"}
+                  </div>
                 </td>
                 <td className="p-2 font-semibold">{l.name}</td>
                 <td className="break-all p-2">{l.email}</td>
                 <td className="p-2">{formatPlace(l, countryName)}</td>
-                <td className="whitespace-nowrap p-2">{l.device}<div className="text-[10px] text-muted-foreground">{l.browser}</div></td>
-                <td className="p-2"><PlanBadge plan={l.plan} /></td>
+                <td className="whitespace-nowrap p-2">
+                  {l.device}
+                  <div className="text-[10px] text-muted-foreground">{l.browser}</div>
+                </td>
+                <td className="p-2">
+                  <PlanBadge plan={l.plan} />
+                </td>
               </tr>
             ))}
           </tbody>
@@ -371,9 +513,20 @@ function Accounts({ accounts }: { accounts: FounderAccount[] }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Input className="max-w-xs" placeholder="Search name or email" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search accounts" />
+        <Input
+          className="max-w-xs"
+          placeholder="Search name or email"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search accounts"
+        />
         {(["all", "paid", "unpaid"] as const).map((k) => (
-          <Button key={k} size="sm" variant={plan === k ? "secondary" : "ghost"} onClick={() => setPlan(k)}>
+          <Button
+            key={k}
+            size="sm"
+            variant={plan === k ? "secondary" : "ghost"}
+            onClick={() => setPlan(k)}
+          >
             {k === "all" ? "All" : k === "paid" ? "Paid & trial" : "Unpaid"}
           </Button>
         ))}
@@ -384,32 +537,73 @@ function Accounts({ accounts }: { accounts: FounderAccount[] }) {
           onClick={() =>
             downloadCsv("synclab-accounts.csv", [
               ["Name", "Email", "Plan", "Joined", "Last sign-in", "Location", "Said yes to emails"],
-              ...rows.map((a) => [a.name, a.email, a.plan, a.createdAt, a.lastSignInAt ?? "", place(a.lastPlace), a.optedIn ? "yes" : "no"]),
+              ...rows.map((a) => [
+                a.name,
+                a.email,
+                a.plan,
+                a.createdAt,
+                a.lastSignInAt ?? "",
+                place(a.lastPlace),
+                a.optedIn ? "yes" : "no",
+              ]),
             ])
           }
         >
-          <Download className="size-4" />Download
+          <Download className="size-4" />
+          Download
         </Button>
       </div>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-left text-sm">
           <thead className="bg-muted/40 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-            <tr><th className="p-2">Name</th><th className="p-2">Email</th><th className="p-2">Plan</th><th className="p-2">Joined</th><th className="p-2">Last sign-in</th><th className="p-2">Location</th><th className="p-2">Emails</th></tr>
+            <tr>
+              <th className="p-2">Name</th>
+              <th className="p-2">Email</th>
+              <th className="p-2">Plan</th>
+              <th className="p-2">Joined</th>
+              <th className="p-2">Last sign-in</th>
+              <th className="p-2">Location</th>
+              <th className="p-2">Emails</th>
+            </tr>
           </thead>
           <tbody>
-            {rows.length === 0 && <tr><td className="p-3 text-muted-foreground" colSpan={7}>No accounts match.</td></tr>}
+            {rows.length === 0 && (
+              <tr>
+                <td className="p-3 text-muted-foreground" colSpan={7}>
+                  No accounts match.
+                </td>
+              </tr>
+            )}
             {rows.map((a) => {
               const day = campaignDay(a.campaignStartedAt);
               return (
                 <tr key={a.id} className="border-t border-border">
-                  <td className="p-2 font-semibold">{a.name}<div className="text-[10px] uppercase text-muted-foreground">{a.provider}</div></td>
+                  <td className="p-2 font-semibold">
+                    {a.name}
+                    <div className="text-[10px] uppercase text-muted-foreground">{a.provider}</div>
+                  </td>
                   <td className="break-all p-2">{a.email}</td>
-                  <td className="p-2"><PlanBadge plan={a.plan} /></td>
+                  <td className="p-2">
+                    <PlanBadge plan={a.plan} />
+                  </td>
                   <td className="whitespace-nowrap p-2">{when(a.createdAt)}</td>
-                  <td className="whitespace-nowrap p-2">{ago(a.lastSignInAt)}<div className="text-[10px] text-muted-foreground">{a.signIns30d} in 30 days</div></td>
+                  <td className="whitespace-nowrap p-2">
+                    {ago(a.lastSignInAt)}
+                    <div className="text-[10px] text-muted-foreground">
+                      {a.signIns30d} in 30 days
+                    </div>
+                  </td>
                   <td className="p-2">{place(a.lastPlace)}</td>
                   <td className="p-2 text-xs">
-                    {a.optedIn ? (day !== null ? `Campaign day ${day}` : "Said yes") : <span className="text-muted-foreground">No</span>}
+                    {a.optedIn ? (
+                      day !== null ? (
+                        `Campaign day ${day}`
+                      ) : (
+                        "Said yes"
+                      )
+                    ) : (
+                      <span className="text-muted-foreground">No</span>
+                    )}
                     {a.loopsError && <div className="text-destructive">Email service problem</div>}
                   </td>
                 </tr>
@@ -437,20 +631,40 @@ function Messages({ rows, loading }: { rows: MessageRow[]; loading: boolean }) {
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
-        <Button size="sm" variant={filter === "open" ? "secondary" : "ghost"} onClick={() => setFilter("open")}>To read</Button>
-        <Button size="sm" variant={filter === "all" ? "secondary" : "ghost"} onClick={() => setFilter("all")}>All messages</Button>
+        <Button
+          size="sm"
+          variant={filter === "open" ? "secondary" : "ghost"}
+          onClick={() => setFilter("open")}
+        >
+          To read
+        </Button>
+        <Button
+          size="sm"
+          variant={filter === "all" ? "secondary" : "ghost"}
+          onClick={() => setFilter("all")}
+        >
+          All messages
+        </Button>
       </div>
       {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
       {!loading && shown.length === 0 && (
         <p className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-          {filter === "open" ? "No new messages. Messages from Contact Support and Report a Problem land here." : "No messages yet."}
+          {filter === "open"
+            ? "No new messages. Messages from Contact Support and Report a Problem land here."
+            : "No messages yet."}
         </p>
       )}
       <ul className="space-y-2">
         {shown.map((m) => {
           const expanded = open === m.id;
           return (
-            <li key={m.id} className={cn("rounded-lg border bg-card", m.status === "open" ? "border-primary/50" : "border-border")}>
+            <li
+              key={m.id}
+              className={cn(
+                "rounded-lg border bg-card",
+                m.status === "open" ? "border-primary/50" : "border-border",
+              )}
+            >
               <button
                 type="button"
                 className="flex w-full items-start gap-3 p-3 text-left"
@@ -460,39 +674,76 @@ function Messages({ rows, loading }: { rows: MessageRow[]; loading: boolean }) {
                   if (!expanded && m.status === "open") void setStatus(m.id, "read");
                 }}
               >
-                <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", m.status === "open" ? "bg-primary" : "bg-muted")} />
+                <span
+                  className={cn(
+                    "mt-1.5 size-2 shrink-0 rounded-full",
+                    m.status === "open" ? "bg-primary" : "bg-muted",
+                  )}
+                />
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="truncate font-semibold">{m.subject || "(no subject)"}</span>
-                    <span className="shrink-0 text-xs text-muted-foreground">{when(m.created_at)}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {when(m.created_at)}
+                    </span>
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {m.kind === "problem" ? "Problem report" : "Support"} · {m.category} · {m.name} &lt;{m.email}&gt;
+                    {m.kind === "problem" ? "Problem report" : "Support"} · {m.category} · {m.name}{" "}
+                    &lt;{m.email}&gt;
                   </span>
                 </span>
               </button>
               {expanded && (
                 <div className="space-y-3 border-t border-border p-3 text-sm">
                   <p className="whitespace-pre-wrap">{m.description}</p>
-                  {m.expected && <p><span className="font-semibold">Expected: </span><span className="whitespace-pre-wrap">{m.expected}</span></p>}
-                  {m.steps && <p><span className="font-semibold">Steps: </span><span className="whitespace-pre-wrap">{m.steps}</span></p>}
-                  {m.project_name && <p className="text-xs text-muted-foreground">Project: {m.project_name}</p>}
+                  {m.expected && (
+                    <p>
+                      <span className="font-semibold">Expected: </span>
+                      <span className="whitespace-pre-wrap">{m.expected}</span>
+                    </p>
+                  )}
+                  {m.steps && (
+                    <p>
+                      <span className="font-semibold">Steps: </span>
+                      <span className="whitespace-pre-wrap">{m.steps}</span>
+                    </p>
+                  )}
+                  {m.project_name && (
+                    <p className="text-xs text-muted-foreground">Project: {m.project_name}</p>
+                  )}
                   {m.diagnostics && Object.keys(m.diagnostics as object).length > 0 && (
                     <details className="text-xs text-muted-foreground">
                       <summary className="cursor-pointer">Device details</summary>
-                      <pre className="mt-1 overflow-x-auto whitespace-pre-wrap">{JSON.stringify(m.diagnostics, null, 2)}</pre>
+                      <pre className="mt-1 overflow-x-auto whitespace-pre-wrap">
+                        {JSON.stringify(m.diagnostics, null, 2)}
+                      </pre>
                     </details>
                   )}
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" asChild>
-                      <a href={`mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent(`Re: ${m.subject}`)}`}>
-                        <Mail className="size-4" />Reply by email
+                      <a
+                        href={`mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent(`Re: ${m.subject}`)}`}
+                      >
+                        <Mail className="size-4" />
+                        Reply by email
                       </a>
                     </Button>
                     {m.status !== "closed" ? (
-                      <Button size="sm" variant="secondary" onClick={() => void setStatus(m.id, "closed")}>Mark done</Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => void setStatus(m.id, "closed")}
+                      >
+                        Mark done
+                      </Button>
                     ) : (
-                      <Button size="sm" variant="ghost" onClick={() => void setStatus(m.id, "open")}>Mark as new</Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => void setStatus(m.id, "open")}
+                      >
+                        Mark as new
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -505,11 +756,19 @@ function Messages({ rows, loading }: { rows: MessageRow[]; loading: boolean }) {
   );
 }
 
-function Campaign({ accounts, loopsConnected }: { accounts: FounderAccount[]; loopsConnected: boolean }) {
+function Campaign({
+  accounts,
+  loopsConnected,
+}: {
+  accounts: FounderAccount[];
+  loopsConnected: boolean;
+}) {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   const unpaid = accounts.filter((a) => a.plan === "free" || a.plan === "past_due");
-  const audience = accounts.filter((a) => inCampaignAudience({ email: a.email, plan: a.plan as AccountPlan, optedIn: a.optedIn }));
+  const audience = accounts.filter((a) =>
+    inCampaignAudience({ email: a.email, plan: a.plan as AccountPlan, optedIn: a.optedIn }),
+  );
   const started = audience.filter((a) => a.campaignStartedAt);
   const failed = accounts.filter((a) => a.loopsError);
 
@@ -536,30 +795,55 @@ function Campaign({ accounts, loopsConnected }: { accounts: FounderAccount[]; lo
         <Stat label="Unpaid accounts" value={unpaid.length} />
         <Stat label="Unpaid & said yes" value={audience.length} note="Who the campaign is for" />
         <Stat label="Campaign started" value={started.length} />
-        <Stat label="Email service" value={loopsConnected ? "Loops ✓" : "Not connected"} note={failed.length ? `${failed.length} contacts had a problem` : undefined} />
+        <Stat
+          label="Email service"
+          value={loopsConnected ? "Loops ✓" : "Not connected"}
+          note={failed.length ? `${failed.length} contacts had a problem` : undefined}
+        />
       </div>
 
       <section className="space-y-2 rounded-lg border border-border bg-card p-4 text-sm">
         <h2 className="font-display text-sm font-bold">How it works</h2>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-          <li>Only people who ticked "Email me tips and offers" are sent to Loops. Founder and paying accounts never get the campaign.</li>
-          <li>When an unpaid person says yes, the app tells Loops to start the 30-day campaign (event <code className="text-foreground">{CAMPAIGN_EVENT}</code>).</li>
-          <li>When someone starts a trial or pays, the app updates them in Loops (<code className="text-foreground">isPaid</code> = true, event <code className="text-foreground">{PAID_EVENT}</code>) so the remaining emails stop.</li>
+          <li>
+            Only people who ticked "Email me tips and offers" are sent to Loops. Founder and paying
+            accounts never get the campaign.
+          </li>
+          <li>
+            When an unpaid person says yes, the app tells Loops to start the 30-day campaign (event{" "}
+            <code className="text-foreground">{CAMPAIGN_EVENT}</code>).
+          </li>
+          <li>
+            When someone starts a trial or pays, the app updates them in Loops (
+            <code className="text-foreground">isPaid</code> = true, event{" "}
+            <code className="text-foreground">{PAID_EVENT}</code>) so the remaining emails stop.
+          </li>
           <li>Loops adds the unsubscribe link to every email.</li>
         </ul>
         <h3 className="pt-2 font-semibold">One-time setup in Loops</h3>
         <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
           <li>Verify your sending domain in Loops (Settings → Domain).</li>
-          <li>Create a Loop that starts on the event <code className="text-foreground">{CAMPAIGN_EVENT}</code>.</li>
-          <li>Add the {CAMPAIGN_EMAILS.length} emails below in order, with a timer before each one matching its day.</li>
-          <li>On every email, add the audience filter <code className="text-foreground">isPaid is false</code>, then start the Loop.</li>
+          <li>
+            Create a Loop that starts on the event{" "}
+            <code className="text-foreground">{CAMPAIGN_EVENT}</code>.
+          </li>
+          <li>
+            Add the {CAMPAIGN_EMAILS.length} emails below in order, with a timer before each one
+            matching its day.
+          </li>
+          <li>
+            On every email, add the audience filter{" "}
+            <code className="text-foreground">isPaid is false</code>, then start the Loop.
+          </li>
         </ol>
         <div className="pt-2">
           <Button size="sm" onClick={() => void sync()} disabled={busy || !loopsConnected}>
             <RefreshCw className={cn("size-4", busy && "animate-spin")} />
             {busy ? "Sending to Loops…" : "Send everyone who said yes to Loops"}
           </Button>
-          {!loopsConnected && <p className="mt-1 text-xs text-muted-foreground">Connect Loops first.</p>}
+          {!loopsConnected && (
+            <p className="mt-1 text-xs text-muted-foreground">Connect Loops first.</p>
+          )}
         </div>
       </section>
 
@@ -574,19 +858,28 @@ function Campaign({ accounts, loopsConnected }: { accounts: FounderAccount[]; lo
                 ["Name", "Email", "Joined", "Campaign day", "Email due"],
                 ...audience.map((a) => {
                   const d = campaignDay(a.campaignStartedAt);
-                  return [a.name, a.email, a.createdAt, d ?? "not started", emailForDay(d)?.subject ?? ""];
+                  return [
+                    a.name,
+                    a.email,
+                    a.createdAt,
+                    d ?? "not started",
+                    emailForDay(d)?.subject ?? "",
+                  ];
                 }),
               ])
             }
           >
-            <Download className="size-4" />Audience list
+            <Download className="size-4" />
+            Audience list
           </Button>
         </div>
         {CAMPAIGN_EMAILS.map((e) => (
           <article key={e.day} className="rounded-lg border border-border bg-card p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-primary">Day {e.day}</div>
+                <div className="font-mono text-[10px] font-bold uppercase tracking-widest text-primary">
+                  Day {e.day}
+                </div>
                 <h3 className="font-semibold">{e.subject}</h3>
                 <p className="text-xs text-muted-foreground">Preview: {e.preview}</p>
               </div>
@@ -594,16 +887,23 @@ function Campaign({ accounts, loopsConnected }: { accounts: FounderAccount[]; lo
                 size="sm"
                 variant="secondary"
                 onClick={() => {
-                  void navigator.clipboard.writeText(`Subject: ${e.subject}\nPreview: ${e.preview}\n\n${campaignEmailText(e)}`);
+                  void navigator.clipboard.writeText(
+                    `Subject: ${e.subject}\nPreview: ${e.preview}\n\n${campaignEmailText(e)}`,
+                  );
                   toast.success(`Day ${e.day} email copied`);
                 }}
               >
-                <Copy className="size-4" />Copy
+                <Copy className="size-4" />
+                Copy
               </Button>
             </div>
             <details className="mt-2 text-sm">
-              <summary className="cursor-pointer text-xs text-muted-foreground">Read the email</summary>
-              <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-foreground">{campaignEmailText(e)}</pre>
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                Read the email
+              </summary>
+              <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-foreground">
+                {campaignEmailText(e)}
+              </pre>
             </details>
           </article>
         ))}

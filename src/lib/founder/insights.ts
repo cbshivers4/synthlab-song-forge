@@ -75,7 +75,10 @@ export function formatPlace(
 }
 
 /** The name to show: the account's full name, otherwise the part of the email before @. */
-export function displayName(meta: Record<string, unknown> | null | undefined, email: string): string {
+export function displayName(
+  meta: Record<string, unknown> | null | undefined,
+  email: string,
+): string {
   const pick = (k: string) => (typeof meta?.[k] === "string" ? (meta[k] as string).trim() : "");
   return pick("full_name") || pick("name") || pick("user_name") || email.split("@")[0] || "Unknown";
 }
@@ -100,13 +103,18 @@ export function accountPlan(
 }
 
 /** Paying (or trialing with a card) accounts never receive the upgrade campaign. */
-export const isPaidPlan = (plan: AccountPlan) => plan === "pro" || plan === "trial" || plan === "founder";
+export const isPaidPlan = (plan: AccountPlan) =>
+  plan === "pro" || plan === "trial" || plan === "founder";
 
 /**
  * Who the 30-day campaign is for: unpaid accounts that said yes to marketing email.
  * Founder accounts and paying customers are always left out.
  */
-export function inCampaignAudience(c: { email: string; plan: AccountPlan; optedIn: boolean }): boolean {
+export function inCampaignAudience(c: {
+  email: string;
+  plan: AccountPlan;
+  optedIn: boolean;
+}): boolean {
   if (!c.email || isFounderEmail(c.email)) return false;
   if (isPaidPlan(c.plan)) return false;
   return c.optedIn;

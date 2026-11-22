@@ -13,19 +13,7 @@ import { recordSignIn } from "@/utils/founder.functions";
 import { isSupportAdmin } from "@/lib/synclab/support";
 import { TEST_MODE } from "@/lib/synclab/test-mode";
 import { MARKETING_OPT_IN_KEY, formatPlace } from "@/lib/founder/insights";
-
-
-export function countryName(code: string): string {
-  try {
-    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-}
-
-export function openFounderDashboard(tab?: string) {
-  window.open(tab ? `/admin?tab=${tab}` : "/admin", "_blank", "noopener");
-}
+import { countryName, openFounderDashboard } from "@/lib/founder/links";
 
 export function FounderAlerts() {
   const recorded = useRef<string | null>(null);

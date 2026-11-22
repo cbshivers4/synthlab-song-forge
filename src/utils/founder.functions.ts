@@ -6,12 +6,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /** Reads the caller's account details from the verified token. */
 function accountFrom(claims: Record<string, unknown>, userId: string) {
-  const email = typeof claims["email"] === "string" ? (claims["email"] as string).toLowerCase() : "";
+  const email =
+    typeof claims["email"] === "string" ? (claims["email"] as string).toLowerCase() : "";
   const meta =
     claims["user_metadata"] && typeof claims["user_metadata"] === "object"
       ? (claims["user_metadata"] as Record<string, unknown>)
       : null;
-  const sessionId = typeof claims["session_id"] === "string" ? (claims["session_id"] as string) : "";
+  const sessionId =
+    typeof claims["session_id"] === "string" ? (claims["session_id"] as string) : "";
   return { id: userId, email, meta, sessionId };
 }
 
@@ -34,8 +36,15 @@ export const recordSignIn = createServerFn({ method: "POST" })
     const me = accountFrom(context.claims as Record<string, unknown>, context.userId);
     const { getRequest } = await import("@tanstack/react-start/server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // The account record has the full name even when the token doesn't carry it.
+    const { data: account } = await supabaseAdmin.auth.admin.getUserById(me.id);
+    if (account.user) {
+      me.meta = account.user.user_metadata ?? me.meta;
+      me.email = account.user.email?.toLowerCase() ?? me.email;
+    }
     const { loginKind, describeDevice, displayName } = await import("@/lib/founder/insights");
-    const { planForUser, upsertContact, syncContactToLoops } = await import("@/lib/founder/loops.server");
+    const { planForUser, upsertContact, syncContactToLoops } =
+      await import("@/lib/founder/loops.server");
 
     const request = getRequest();
     const cf = (request as unknown as { cf?: Record<string, unknown> }).cf ?? {};
@@ -47,17 +56,18 @@ export const recordSignIn = createServerFn({ method: "POST" })
     const timezone = str(cf["timezone"]) || data.timezone;
     const { device, browser } = describeDevice(header("user-agent"));
 
-    let kind: "sign_in" | "open" | null = "sign_in";
-    if (me.sessionId) {
-      const { data: last } = await supabaseAdmin
-        .from("login_events")
-        .select("created_at")
-        .eq("session_id", me.sessionId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      kind = loginKind(last?.created_at ?? null);
-    }
+    // Same login (session) seen recently = same visit. Tokens without a session id fall
+    // back to the account's latest entry.
+    let lastQuery = supabaseAdmin
+      .from("login_events")
+      .select("created_at")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    lastQuery = me.sessionId
+      ? lastQuery.eq("session_id", me.sessionId)
+      : lastQuery.eq("user_id", me.id);
+    const { data: last } = await lastQuery.maybeSingle();
+    const kind = loginKind(last?.created_at ?? null);
 
     const plan = await planForUser(supabaseAdmin, me.id, me.email);
     if (kind) {
@@ -98,9 +108,13 @@ export const setMarketingConsent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const me = accountFrom(context.claims as Record<string, unknown>, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { planForUser, upsertContact, syncContactToLoops } = await import("@/lib/founder/loops.server");
+    const { planForUser, upsertContact, syncContactToLoops } =
+      await import("@/lib/founder/loops.server");
     const plan = await planForUser(supabaseAdmin, me.id, me.email);
-    const row = await upsertContact(supabaseAdmin, me, plan, { optedIn: data.optedIn, source: "settings" });
+    const row = await upsertContact(supabaseAdmin, me, plan, {
+      optedIn: data.optedIn,
+      source: "settings",
+    });
     if (!row) throw new Error("Could not save your email choice. Please try again.");
     await syncContactToLoops(supabaseAdmin, row);
     return { optedIn: row.opted_in };
@@ -136,7 +150,14 @@ export const getFounderOverview = createServerFn({ method: "POST" })
     const { accountPlan, displayName } = await import("@/lib/founder/insights");
     const { bestSubscription, loopsConfigured } = await import("@/lib/founder/loops.server");
 
-    const users: { id: string; email?: string; created_at: string; last_sign_in_at?: string | null; app_metadata: Record<string, unknown>; user_metadata: Record<string, unknown> }[] = [];
+    const users: {
+      id: string;
+      email?: string;
+      created_at: string;
+      last_sign_in_at?: string | null;
+      app_metadata: Record<string, unknown>;
+      user_metadata: Record<string, unknown>;
+    }[] = [];
     for (let page = 1; page <= 20; page++) {
       const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
       if (error) throw new Error("Could not read accounts");
@@ -161,7 +182,12 @@ export const getFounderOverview = createServerFn({ method: "POST" })
     const count30 = new Map<string, number>();
     for (const e of events.data ?? []) {
       if (!lastPlace.has(e.user_id))
-        lastPlace.set(e.user_id, { city: e.city, region: e.region, country: e.country, timezone: e.timezone });
+        lastPlace.set(e.user_id, {
+          city: e.city,
+          region: e.region,
+          country: e.country,
+          timezone: e.timezone,
+        });
       count30.set(e.user_id, (count30.get(e.user_id) ?? 0) + 1);
     }
 
@@ -174,7 +200,10 @@ export const getFounderOverview = createServerFn({ method: "POST" })
         name: displayName(u.user_metadata, email),
         createdAt: u.created_at,
         lastSignInAt: u.last_sign_in_at ?? null,
-        provider: typeof u.app_metadata["provider"] === "string" ? (u.app_metadata["provider"] as string) : "email",
+        provider:
+          typeof u.app_metadata["provider"] === "string"
+            ? (u.app_metadata["provider"] as string)
+            : "email",
         plan: accountPlan(email, bestSubscription(email, subsBy.get(u.id) ?? [])),
         optedIn: c?.opted_in ?? false,
         campaignStartedAt: c?.campaign_started_at ?? null,

@@ -14,7 +14,10 @@ export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Founder Analytics — SYNCLAB" },
-      { name: "description", content: "Private SYNCLAB founder dashboard: accounts, sign-ins, plans and messages." },
+      {
+        name: "description",
+        content: "Private SYNCLAB founder dashboard: accounts, sign-ins, plans and messages.",
+      },
       { property: "og:title", content: "Founder Analytics — SYNCLAB" },
       { property: "og:description", content: "Private SYNCLAB founder dashboard." },
       { property: "og:type", content: "website" },
