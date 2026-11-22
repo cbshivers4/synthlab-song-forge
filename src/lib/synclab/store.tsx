@@ -1893,10 +1893,14 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined" && getEngine().ctx) {
-      getEngine().syncMix(tracks);
-      for (const t of tracks) getEngine().setInserts(t.id, t.plugins ?? []);
-    }
+    if (typeof window === "undefined") return;
+    const engine = getEngine();
+    // Hand the engine the newest channels even before audio has started: the first sound (a
+    // Live Drummer / Live Keys preview, a pad tap) builds its channel from this list, and a stale
+    // list played new channels at full level and kept old fader/mute settings.
+    const live = !!engine.ctx;
+    engine.syncMix(tracks);
+    if (live) for (const t of tracks) engine.setInserts(t.id, t.plugins ?? []);
   }, [tracks]);
 
   // A new recording pass starts with an empty "played live" list, so earlier

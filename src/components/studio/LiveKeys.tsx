@@ -14,6 +14,8 @@ import { Piano, Play, Square, Sparkles, Zap, PauseCircle, Music2, Disc } from "l
 import { Button } from "@/components/ui/button";
 import { Knob } from "./Knob";
 import { IntensityPad } from "./LiveDrummer";
+import { LiveChannelNotice } from "./LiveChannelNotice";
+import { KEYS_CHANNEL_VOLUME } from "@/lib/synclab/live-channel-check";
 import { useStudio } from "@/lib/synclab/store";
 import { stepsPerBar } from "@/lib/synclab/timebase";
 import { getPlayStep } from "@/lib/synclab/playhead";
@@ -354,6 +356,7 @@ function KeysDesk({
       steps,
       ...(track.patch ? { patch: structuredClone(track.patch) } : {}),
       ...(track.octave ? { octave: track.octave } : {}),
+      volume: track.volume,
       ...(track.plugins?.length ? { plugins: structuredClone(track.plugins) } : {}),
     });
     if (last + 1 > (transport.bars ?? 0)) setTransport({ bars: last + 1 });
@@ -517,6 +520,7 @@ function KeysDesk({
                   {snap.hitQueued && <b>HIT</b>}
                 </span>
               </div>
+              <LiveChannelNotice track={track} part="keys" volume={KEYS_CHANNEL_VOLUME} />
 
               <div className="drummer-perform">
                 {playing ? (

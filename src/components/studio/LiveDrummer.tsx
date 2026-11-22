@@ -34,6 +34,8 @@ import {
 } from "@/lib/synclab/drummer";
 import type { DrumKitId, Track } from "@/lib/synclab/types";
 import { DrumKitView } from "./DrumKitView";
+import { LiveChannelNotice } from "./LiveChannelNotice";
+import { DRUMMER_CHANNEL_VOLUME } from "@/lib/synclab/live-channel-check";
 
 const PIECES: { id: DrumPiece; label: string }[] = [
   { id: "kick", label: "Kick" },
@@ -117,6 +119,8 @@ export function LiveDrummer() {
     updateTrack(id, {
       steps: spb,
       pads: defaultPads(spb, genre.kit),
+      // headroom: the session kits peak hot, so a new drummer channel starts lower and never clips the master
+      volume: DRUMMER_CHANNEL_VOLUME,
       drummer: defaultDrummer(genreId),
       name: `DRUMMER · ${genre.label}`.slice(0, 40),
     });
@@ -347,6 +351,8 @@ function DrummerDesk({
       pads: written,
       steps,
       patternRegion: [first * spb, (last + 1) * spb],
+      // same level as the live drummer, so the printed part doesn't jump in volume at hand-over
+      volume: track.volume,
       ...(track.plugins?.length ? { plugins: structuredClone(track.plugins) } : {}),
     });
     if (last + 1 > (transport.bars ?? 0)) setTransport({ bars: last + 1 });
@@ -467,6 +473,7 @@ function DrummerDesk({
                   {snap.crashQueued && <b>CRASH</b>}
                 </span>
               </div>
+              <LiveChannelNotice track={track} part="drummer" volume={DRUMMER_CHANNEL_VOLUME} />
 
               <div className="drummer-perform">
                 {playing ? (
