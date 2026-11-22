@@ -64,6 +64,13 @@
       "when": 1795345938070,
       "tag": "0008_founder_dashboard_login_history",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1795351704861,
+      "tag": "0009_founder_visits_and_notification_prefs",
+      "breakpoints": true
     }
   ]
 }

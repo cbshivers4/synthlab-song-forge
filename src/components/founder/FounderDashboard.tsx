@@ -1,3 +1,4 @@
+import { formatDuration } from "@/lib/founder/visits";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
@@ -179,6 +180,7 @@ export function FounderDashboard({
         {tab === "overview" && (
           <Overview
             accounts={overview.accounts}
+            time={overview.time}
             logins={logins.data ?? []}
             openMessages={openMessages}
             onTab={onTab}
@@ -199,11 +201,13 @@ type LoginRow = Database["public"]["Tables"]["login_events"]["Row"];
 
 function Overview({
   accounts,
+  time,
   logins,
   openMessages,
   onTab,
 }: {
   accounts: FounderAccount[];
+  time: { secondsToday: number; averageVisit7d: number; inAppNow: number };
   logins: LoginRow[];
   openMessages: number;
   onTab: (t: FounderTab) => void;
@@ -259,6 +263,17 @@ function Overview({
           label="Sign-ins this week"
           value={signInsWeek}
           note={`${activeWeek} different people`}
+        />
+        <Stat label="In SYNCLAB now" value={time.inAppNow} note="Using the app right now" />
+        <Stat
+          label="Time in app today"
+          value={formatDuration(time.secondsToday)}
+          note="Everyone together"
+        />
+        <Stat
+          label="Average visit"
+          value={formatDuration(time.averageVisit7d)}
+          note="Last 7 days"
         />
         <Stat label="Said yes to emails" value={accounts.filter((a) => a.optedIn).length} />
         <Stat
@@ -536,13 +551,23 @@ function Accounts({ accounts }: { accounts: FounderAccount[] }) {
           className="ml-auto"
           onClick={() =>
             downloadCsv("synclab-accounts.csv", [
-              ["Name", "Email", "Plan", "Joined", "Last sign-in", "Location", "Said yes to emails"],
+              [
+                "Name",
+                "Email",
+                "Plan",
+                "Joined",
+                "Last sign-in",
+                "Minutes in app (30 days)",
+                "Location",
+                "Said yes to emails",
+              ],
               ...rows.map((a) => [
                 a.name,
                 a.email,
                 a.plan,
                 a.createdAt,
                 a.lastSignInAt ?? "",
+                String(Math.round(a.seconds30d / 60)),
                 place(a.lastPlace),
                 a.optedIn ? "yes" : "no",
               ]),
@@ -562,6 +587,7 @@ function Accounts({ accounts }: { accounts: FounderAccount[] }) {
               <th className="p-2">Plan</th>
               <th className="p-2">Joined</th>
               <th className="p-2">Last sign-in</th>
+              <th className="p-2">Time in app</th>
               <th className="p-2">Location</th>
               <th className="p-2">Emails</th>
             </tr>
@@ -569,7 +595,7 @@ function Accounts({ accounts }: { accounts: FounderAccount[] }) {
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td className="p-3 text-muted-foreground" colSpan={7}>
+                <td className="p-3 text-muted-foreground" colSpan={8}>
                   No accounts match.
                 </td>
               </tr>
@@ -591,6 +617,18 @@ function Accounts({ accounts }: { accounts: FounderAccount[] }) {
                     {ago(a.lastSignInAt)}
                     <div className="text-[10px] text-muted-foreground">
                       {a.signIns30d} in 30 days
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap p-2">
+                    {a.inAppNow ? (
+                      <span className="font-semibold text-primary">In the app now</span>
+                    ) : a.lastVisitSeconds !== null ? (
+                      `Last visit ${formatDuration(a.lastVisitSeconds)}`
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                    <div className="text-[10px] text-muted-foreground">
+                      {formatDuration(a.seconds30d)} in 30 days
                     </div>
                   </td>
                   <td className="p-2">{place(a.lastPlace)}</td>

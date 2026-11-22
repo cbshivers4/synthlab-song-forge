@@ -17,6 +17,7 @@ import { AppProvider } from "@/lib/synclab/app-state";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { installSidewaysModalScroll } from "@/lib/sideways-scroll";
 import { FounderAlerts } from "@/components/founder/FounderAlerts";
+import { VisitTracker } from "@/components/founder/VisitTracker";
 
 function NotFoundComponent() {
   return (
@@ -163,6 +164,7 @@ function RootComponent() {
           <Outlet />
           <Toaster position="bottom-right" />
           <FounderAlerts />
+          <VisitTracker />
         </StudioProvider>
       </AppProvider>
     </QueryClientProvider>

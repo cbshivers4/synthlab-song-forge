@@ -54,6 +54,7 @@ import { LibraryPanel } from "./LibraryPanel";
 import { useApp } from "@/lib/synclab/app-state";
 import { usePlan } from "@/lib/synclab/plan";
 import { MarketingEmailSwitch } from "@/components/founder/MarketingEmailSwitch";
+import { FounderNotificationSettings } from "@/components/founder/FounderNotificationSettings";
 import { openFounderDashboard } from "@/lib/founder/links";
 import {
   qwertyEnabled,
@@ -499,6 +500,7 @@ export function Settings() {
               "controls",
               "folders",
               "account",
+              ...(tier === "founder" ? ["notifications"] : []),
               "recording",
               "metronome",
               "timing",
@@ -518,6 +520,7 @@ export function Settings() {
               "controls",
               "folders",
               "account",
+              ...(tier === "founder" ? ["notifications"] : []),
               "recording",
               "metronome",
               "timing",
@@ -1167,6 +1170,11 @@ export function Settings() {
           <span className="text-xs text-muted-foreground">Automatic</span>
         </Row>
       </TabsContent>
+      {tier === "founder" && (
+        <TabsContent value="notifications" className="mt-4">
+          <FounderNotificationSettings />
+        </TabsContent>
+      )}
       <TabsContent value="account" className="mt-4">
         <Row label="Signed-in account">
           <span className="break-all text-sm text-primary">{email ?? "Not signed in"}</span>

@@ -35,6 +35,42 @@ export type Database = {
         }
         Relationships: []
       }
+      app_visits: {
+        Row: {
+          active_seconds: number
+          device: string
+          email: string
+          ended_at: string | null
+          id: string
+          last_seen_at: string
+          name: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          active_seconds?: number
+          device?: string
+          email?: string
+          ended_at?: string | null
+          id?: string
+          last_seen_at?: string
+          name?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          active_seconds?: number
+          device?: string
+          email?: string
+          ended_at?: string | null
+          id?: string
+          last_seen_at?: string
+          name?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       cloud_projects: {
         Row: {
           bpm: number
@@ -72,6 +108,36 @@ export type Database = {
           session?: Json
           template?: string
           time_signature?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      founder_notification_prefs: {
+        Row: {
+          app_opens: boolean
+          desktop: boolean
+          messages: boolean
+          sign_ins: boolean
+          time_spent: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_opens?: boolean
+          desktop?: boolean
+          messages?: boolean
+          sign_ins?: boolean
+          time_spent?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_opens?: boolean
+          desktop?: boolean
+          messages?: boolean
+          sign_ins?: boolean
+          time_spent?: boolean
           updated_at?: string
           user_id?: string
         }

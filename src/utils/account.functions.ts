@@ -7,6 +7,8 @@ const USER_TABLES = [
   "library_items",
   "login_events",
   "marketing_contacts",
+  "app_visits",
+  "founder_notification_prefs",
   "subscriptions",
   "support_tickets",
   "tape_shelf_items",

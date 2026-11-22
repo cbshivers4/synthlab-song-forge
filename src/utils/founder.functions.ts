@@ -139,6 +139,12 @@ export interface FounderAccount {
   loopsError: string;
   lastPlace: { city: string; region: string; country: string; timezone: string } | null;
   signIns30d: number;
+  /** seconds SYNCLAB was on their screen in the last 30 days */
+  seconds30d: number;
+  /** seconds of their latest visit */
+  lastVisitSeconds: number | null;
+  /** using the app right now */
+  inAppNow: boolean;
 }
 
 /** Everything the founder dashboard shows about accounts. Admins only. */
@@ -165,7 +171,7 @@ export const getFounderOverview = createServerFn({ method: "POST" })
       if (data.users.length < 1000) break;
     }
     const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
-    const [subs, contacts, events] = await Promise.all([
+    const [subs, contacts, events, visits] = await Promise.all([
       supabaseAdmin.from("subscriptions").select("user_id,status,current_period_end,environment"),
       supabaseAdmin.from("marketing_contacts").select("*"),
       supabaseAdmin
@@ -174,7 +180,33 @@ export const getFounderOverview = createServerFn({ method: "POST" })
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(10000),
+      supabaseAdmin
+        .from("app_visits")
+        .select("user_id,active_seconds,started_at,last_seen_at,ended_at")
+        .gte("last_seen_at", since)
+        .order("last_seen_at", { ascending: false })
+        .limit(20000),
     ]);
+    const { isVisitLive } = await import("@/lib/founder/visits");
+    const secondsBy = new Map<string, number>();
+    const lastVisit = new Map<string, number>();
+    const liveNow = new Set<string>();
+    let secondsToday = 0;
+    let visits7 = 0;
+    let seconds7 = 0;
+    const todayKey = new Date().toDateString();
+    for (const v of visits.data ?? []) {
+      // your own time in the app isn't counted in the totals
+      if (v.user_id === context.userId) continue;
+      secondsBy.set(v.user_id, (secondsBy.get(v.user_id) ?? 0) + v.active_seconds);
+      if (!lastVisit.has(v.user_id)) lastVisit.set(v.user_id, v.active_seconds);
+      if (isVisitLive(v)) liveNow.add(v.user_id);
+      if (new Date(v.started_at).toDateString() === todayKey) secondsToday += v.active_seconds;
+      if (Date.now() - new Date(v.started_at).getTime() < 7 * 86_400_000) {
+        visits7++;
+        seconds7 += v.active_seconds;
+      }
+    }
     const subsBy = new Map<string, { status: string; current_period_end: string | null }[]>();
     for (const s of subs.data ?? []) subsBy.set(s.user_id, [...(subsBy.get(s.user_id) ?? []), s]);
     const contactBy = new Map((contacts.data ?? []).map((c) => [c.user_id, c]));
@@ -211,10 +243,21 @@ export const getFounderOverview = createServerFn({ method: "POST" })
         loopsError: c?.loops_error ?? "",
         lastPlace: lastPlace.get(u.id) ?? null,
         signIns30d: count30.get(u.id) ?? 0,
+        seconds30d: secondsBy.get(u.id) ?? 0,
+        lastVisitSeconds: lastVisit.get(u.id) ?? null,
+        inAppNow: liveNow.has(u.id),
       };
     });
     accounts.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return { accounts, loopsConnected: loopsConfigured() };
+    return {
+      accounts,
+      loopsConnected: loopsConfigured(),
+      time: {
+        secondsToday,
+        averageVisit7d: visits7 ? Math.round(seconds7 / visits7) : 0,
+        inAppNow: liveNow.size,
+      },
+    };
   });
 
 /** Sends every opted-in account to Loops and starts the campaign where it qualifies. Admins only. */
@@ -241,4 +284,29 @@ export const syncAllToLoops = createServerFn({ method: "POST" })
       await new Promise((res) => setTimeout(res, 250));
     }
     return { synced, started, failed, connected: true };
+  });
+
+/** Adds on-screen time to the caller's current visit (starts or resumes one when no id is given). */
+export const visitBeat = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) =>
+    z
+      .object({
+        visitId: z.string().uuid().optional(),
+        seconds: z.number().min(0).max(100_000),
+        ended: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const me = accountFrom(context.claims as Record<string, unknown>, context.userId);
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { recordVisitBeat } = await import("@/lib/founder/visits.server");
+    return recordVisitBeat(supabaseAdmin, me, {
+      visitId: data.visitId,
+      seconds: data.seconds,
+      ended: data.ended ?? false,
+      userAgent: getRequest().headers.get("user-agent") ?? "",
+    });
   });
