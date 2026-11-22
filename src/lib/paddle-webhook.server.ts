@@ -63,6 +63,25 @@ async function handleSubscriptionCanceled(data: any, env: PaddleEnv) {
   assertOk(error, 'Subscription cancel');
 }
 
+/**
+ * Best-effort: tell the email service the account's new plan so the upgrade campaign
+ * stops once someone pays. Never throws — a payment record must not fail because of it.
+ */
+async function syncMarketingPlan(data: any) {
+  try {
+    let userId: string | undefined = data?.customData?.userId;
+    if (!userId && data?.id) {
+      const { data: row } = await getSupabase().from('subscriptions').select('user_id').eq('paddle_subscription_id', data.id).maybeSingle();
+      userId = (row as { user_id?: string } | null)?.user_id;
+    }
+    if (!userId) return;
+    const { syncAccountPlan } = await import('@/lib/founder/loops.server');
+    await syncAccountPlan(getSupabase() as never, userId);
+  } catch (e) {
+    console.error('Marketing plan sync failed (payment still recorded):', e);
+  }
+}
+
 /** Verifies the Paddle signature, records the subscription change, and answers Paddle. */
 export async function handlePaddleWebhook(request: Request): Promise<Response> {
   const env = (new URL(request.url).searchParams.get('env') || 'sandbox') as PaddleEnv;
@@ -74,6 +93,7 @@ export async function handlePaddleWebhook(request: Request): Promise<Response> {
       case EventName.SubscriptionCanceled: await handleSubscriptionCanceled(event.data, env); break;
       default: console.log('Unhandled event:', event.eventType);
     }
+    await syncMarketingPlan(event.data as any);
     return Response.json({ received: true });
   } catch (e) {
     console.error('Webhook error:', e);

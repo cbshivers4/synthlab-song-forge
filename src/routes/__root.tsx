@@ -16,6 +16,7 @@ import { StudioProvider } from "@/lib/synclab/store";
 import { AppProvider } from "@/lib/synclab/app-state";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { installSidewaysModalScroll } from "@/lib/sideways-scroll";
+import { FounderAlerts } from "@/components/founder/FounderAlerts";
 
 function NotFoundComponent() {
   return (
@@ -161,6 +162,7 @@ function RootComponent() {
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster position="bottom-right" />
+          <FounderAlerts />
         </StudioProvider>
       </AppProvider>
     </QueryClientProvider>

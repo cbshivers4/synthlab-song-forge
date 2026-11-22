@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMaybeApp } from "@/lib/synclab/app-state";
 import { SUPPORT_EMAIL } from "@/lib/synclab/contact";
 import { isFounderEmail } from "@/lib/synclab/plan-tier";
+import { openFounderDashboard } from "@/components/founder/FounderAlerts";
 import {
   EMPTY_SETTINGS,
   HELP_CATEGORIES,
@@ -602,6 +603,9 @@ function AdminSettings({
       <p className="text-xs text-muted-foreground">
         Admin only. These destinations are used across the app — nothing is hard-coded.
       </p>
+      <Button size="sm" variant="secondary" onClick={() => openFounderDashboard("messages")}>
+        Open Founder Analytics — messages, sign-ins and accounts
+      </Button>
       <div className="grid gap-3 sm:grid-cols-2">
         {fields.map((f) => (
           <div key={f.key}>

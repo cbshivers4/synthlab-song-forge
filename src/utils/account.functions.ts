@@ -5,6 +5,8 @@ const USER_TABLES = [
   "stem_split_jobs",
   "cloud_projects",
   "library_items",
+  "login_events",
+  "marketing_contacts",
   "subscriptions",
   "support_tickets",
   "tape_shelf_items",
@@ -65,6 +67,10 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
         throw new Error("Could not cancel your subscription, so your account was not deleted. Please try again.");
       }
     }
+
+    // Remove them from the email service before their contact record is deleted.
+    const { deleteLoopsContact } = await import("@/lib/founder/loops.server");
+    await deleteLoopsContact(supabaseAdmin, userId);
 
     for (const table of USER_TABLES) {
       const { error } = await supabaseAdmin.from(table).delete().eq("user_id", userId);

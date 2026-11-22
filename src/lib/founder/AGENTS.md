@@ -1,0 +1,3 @@
+# Founder dashboard and marketing email
+
+- Founder dashboard (/admin under _authenticated, src/components/founder, src/lib/founder): sign-ins are recorded server-side in recordSignIn (location from the Cloudflare request, deduped per session/6 h) and written with the admin client; the page reads through admin-only RLS and getFounderOverview verifies has_role first. Marketing email goes only to opted-in unpaid accounts via Loops (loops.server.ts, best-effort, never blocks sign-in, payments or deletion); the Paddle webhook re-syncs the plan after its DB writes so paid accounts leave the campaign.

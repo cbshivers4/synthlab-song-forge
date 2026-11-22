@@ -53,6 +53,8 @@ import { MidiSettingsPanel } from "./MidiSettingsPanel";
 import { LibraryPanel } from "./LibraryPanel";
 import { useApp } from "@/lib/synclab/app-state";
 import { usePlan } from "@/lib/synclab/plan";
+import { MarketingEmailSwitch } from "@/components/founder/MarketingEmailSwitch";
+import { openFounderDashboard } from "@/components/founder/FounderAlerts";
 import {
   qwertyEnabled,
   setQwertyEnabled,
@@ -1195,6 +1197,19 @@ export function Settings() {
         <Row label="Project saving">
           <span className="text-xs text-primary">Manual — File → Save</span>
         </Row>
+        <Row
+          label="Tips and offers by email"
+          hint="Tutorials, new features and plan offers. Unsubscribe anytime from any email."
+        >
+          <MarketingEmailSwitch />
+        </Row>
+        {tier === "founder" && (
+          <Row label="Founder Analytics" hint="Accounts, sign-ins, plans, messages and the email campaign. Opens in a new tab.">
+            <Button variant="secondary" onClick={() => openFounderDashboard()}>
+              Open dashboard
+            </Button>
+          </Row>
+        )}
         <div className="mt-6 rounded-md border border-destructive/50 p-4">
           <h3 className="text-sm font-semibold text-destructive">Delete my account</h3>
           <p className="mt-1 text-xs text-muted-foreground">

@@ -14,6 +14,8 @@ import {
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MARKETING_OPT_IN_KEY } from "@/lib/founder/insights";
 import { useApp } from "@/lib/synclab/app-state";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -161,6 +163,7 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
 
   const enterStudio = () => {
     if (next) {
@@ -379,6 +382,23 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
             <p className="login-fine login-browser-note">
               Works in Chrome, Edge, Safari and Firefox. Best on desktop.
             </p>
+            <label className="login-fine login-optin flex cursor-pointer items-start gap-2 text-left">
+              <Checkbox
+                checked={marketingOptIn}
+                onCheckedChange={(v) => {
+                  const on = v === true;
+                  setMarketingOptIn(on);
+                  try {
+                    if (on) localStorage.setItem(MARKETING_OPT_IN_KEY, "1");
+                    else localStorage.removeItem(MARKETING_OPT_IN_KEY);
+                  } catch {
+                    /* storage unavailable */
+                  }
+                }}
+                className="mt-0.5"
+              />
+              <span>Email me SYNCLAB tips, tutorials and offers. Unsubscribe anytime.</span>
+            </label>
 
             <div className="login-divider">
               <span className="rounded-full border border-border bg-background px-3 py-0.5">

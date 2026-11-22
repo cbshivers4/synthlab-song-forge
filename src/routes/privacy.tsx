@@ -21,7 +21,7 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyRoute() {
   return (
-    <LegalPage title="Privacy Notice" updated="21 September 2026">
+    <LegalPage title="Privacy Notice" updated="22 November 2026">
       <p>
         SYNCLAB is based in Detroit, Michigan, USA. We are the <strong>data controller</strong> for
         the personal data described here, which means we decide why and how it is used. Contact:{" "}
@@ -54,8 +54,16 @@ function PrivacyRoute() {
           improvement. Legal basis: legitimate interests.
         </li>
         <li>
-          <strong>Marketing emails</strong> — only if you opt in. Legal basis: consent, withdrawable
-          at any time.
+          <strong>Sign-in history</strong> (your name and email, the time, your approximate location
+          — city, region and country worked out from your internet connection — and your device and
+          browser type) each time you sign in or return to the app — for account security and to
+          understand how SYNCLAB is used. Legal basis: legitimate interests.
+        </li>
+        <li>
+          <strong>Marketing emails</strong> — only if you tick “Email me SYNCLAB tips, tutorials and
+          offers” or turn it on in Settings → Account. We then share your name, email and plan
+          status with our email provider, Loops, to send them. Legal basis: consent, withdrawable at
+          any time with the unsubscribe link in any email or in Settings.
         </li>
       </ul>
       <p>
@@ -72,6 +80,10 @@ function PrivacyRoute() {
         <li>
           <strong>Paddle.com</strong>, our Merchant of Record, for the sale of the product,
           subscription management, payments, tax compliance and invoicing.
+        </li>
+        <li>
+          <strong>Loops</strong>, our email provider, for tips and offers emails — only for people
+          who said yes to them.
         </li>
         <li>
           <strong>Professional advisers</strong> (legal, accounting) where necessary.

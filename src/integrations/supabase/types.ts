@@ -110,6 +110,102 @@ export type Database = {
         }
         Relationships: []
       }
+      login_events: {
+        Row: {
+          browser: string
+          city: string
+          country: string
+          created_at: string
+          device: string
+          email: string
+          id: string
+          kind: string
+          name: string
+          plan: string
+          region: string
+          session_id: string
+          timezone: string
+          user_id: string
+        }
+        Insert: {
+          browser?: string
+          city?: string
+          country?: string
+          created_at?: string
+          device?: string
+          email?: string
+          id?: string
+          kind?: string
+          name?: string
+          plan?: string
+          region?: string
+          session_id?: string
+          timezone?: string
+          user_id: string
+        }
+        Update: {
+          browser?: string
+          city?: string
+          country?: string
+          created_at?: string
+          device?: string
+          email?: string
+          id?: string
+          kind?: string
+          name?: string
+          plan?: string
+          region?: string
+          session_id?: string
+          timezone?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      marketing_contacts: {
+        Row: {
+          campaign_started_at: string | null
+          created_at: string
+          email: string
+          loops_error: string
+          loops_synced_at: string | null
+          name: string
+          opt_in_source: string
+          opted_in: boolean
+          opted_in_at: string | null
+          plan: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_started_at?: string | null
+          created_at?: string
+          email?: string
+          loops_error?: string
+          loops_synced_at?: string | null
+          name?: string
+          opt_in_source?: string
+          opted_in?: boolean
+          opted_in_at?: string | null
+          plan?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_started_at?: string | null
+          created_at?: string
+          email?: string
+          loops_error?: string
+          loops_synced_at?: string | null
+          name?: string
+          opt_in_source?: string
+          opted_in?: boolean
+          opted_in_at?: string | null
+          plan?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stem_split_jobs: {
         Row: {
           created_at: string
