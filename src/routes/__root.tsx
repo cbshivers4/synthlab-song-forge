@@ -16,7 +16,7 @@ import { StudioProvider } from "@/lib/synclab/store";
 import { AppProvider } from "@/lib/synclab/app-state";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { installSidewaysModalScroll } from "@/lib/sideways-scroll";
-import { FounderAlerts } from "@/components/founder/FounderAlerts";
+import { FOUNDER_TOASTER_ID, FounderAlerts } from "@/components/founder/FounderAlerts";
 import { VisitTracker } from "@/components/founder/VisitTracker";
 
 function NotFoundComponent() {
@@ -163,6 +163,16 @@ function RootComponent() {
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
           <Toaster position="bottom-right" />
+          {/* Founder alerts: near the top, stay until deleted with their × button */}
+          <Toaster
+            id={FOUNDER_TOASTER_ID}
+            position="top-center"
+            expand
+            visibleToasts={6}
+            offset={{ top: 64 }}
+            mobileOffset={{ top: 56 }}
+            toastOptions={{ closeButtonAriaLabel: "Delete notification" }}
+          />
           <FounderAlerts />
           <VisitTracker />
         </StudioProvider>

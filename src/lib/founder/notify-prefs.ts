@@ -53,7 +53,13 @@ export function desktopNotify(title: string, body: string, onClick?: () => void)
   if (!current.desktop || typeof Notification === "undefined") return;
   if (Notification.permission !== "granted" || document.visibilityState === "visible") return;
   try {
-    const n = new Notification(title, { body, icon: "/favicon.png", tag: `${title}:${body}` });
+    const n = new Notification(title, {
+      body,
+      icon: "/favicon.png",
+      tag: `${title}:${body}`,
+      // stays until dismissed, like the in-app pop-up
+      requireInteraction: true,
+    });
     n.onclick = () => {
       window.focus();
       onClick?.();

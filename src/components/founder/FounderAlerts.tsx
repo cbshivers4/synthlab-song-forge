@@ -20,9 +20,28 @@ import { desktopNotify, getNotifyPrefs, loadNotifyPrefs } from "@/lib/founder/no
 import { wantsAlert } from "@/lib/founder/notify-rules";
 import { LEFT_CONFIRM_MS, formatDuration } from "@/lib/founder/visits";
 
-/** One pop-up (and a desktop notification when the app isn't on screen). */
-function alert(title: string, description: string, label: string, open: () => void, ms: number) {
-  toast(title, { description, duration: ms, action: { label, onClick: open } });
+/** The founder's own pop-up area, near the top of the screen (mounted in __root). */
+export const FOUNDER_TOASTER_ID = "founder-alerts";
+
+/**
+ * One pop-up (and a desktop notification when the app isn't on screen). It stays on screen
+ * until the founder deletes it with its × button; View/Read open the dashboard and keep it.
+ */
+function alert(title: string, description: string, label: string, open: () => void) {
+  toast(title, {
+    id: `founder:${title}:${description}`,
+    toasterId: FOUNDER_TOASTER_ID,
+    description,
+    duration: Infinity,
+    closeButton: true,
+    action: {
+      label,
+      onClick: (e) => {
+        e.preventDefault();
+        open();
+      },
+    },
+  });
   desktopNotify(title, description, open);
 }
 
@@ -34,6 +53,7 @@ export function FounderAlerts() {
   useEffect(() => {
     if (TEST_MODE) return;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
     const leftTimers = new Map<string, ReturnType<typeof setTimeout>>();
     const toldLeft = new Set<string>();
 
@@ -48,9 +68,15 @@ export function FounderAlerts() {
     const watch = async (userId: string) => {
       if (watching.current === userId) return;
       stopWatching();
-      if (!(await isSupportAdmin(userId))) return;
+      // Claim it before waiting: the first session check and the sign-in event both call this,
+      // and two subscriptions would show every pop-up twice.
       watching.current = userId;
+      if (!(await isSupportAdmin(userId)) || cancelled || watching.current !== userId) {
+        if (watching.current === userId) watching.current = null;
+        return;
+      }
       await loadNotifyPrefs(userId).catch(() => undefined);
+      if (cancelled || watching.current !== userId || channel) return;
       channel = supabase
         .channel(`founder-alerts-${Math.random().toString(36).slice(2)}`)
         .on(
@@ -77,7 +103,6 @@ export function FounderAlerts() {
               `${e.email} · ${formatPlace(e, countryName)} · ${e.device} · ${e.plan.toUpperCase()}`,
               "View",
               () => openFounderDashboard("logins"),
-              12_000,
             );
           },
         )
@@ -93,7 +118,6 @@ export function FounderAlerts() {
               `${t.name || t.email}: ${t.subject}`,
               "Read",
               () => openFounderDashboard("messages"),
-              15_000,
             );
           },
         )
@@ -124,7 +148,6 @@ export function FounderAlerts() {
                       `Spent ${formatDuration(data.active_seconds)} in the app · ${data.email} · ${data.device}`,
                       "View",
                       () => openFounderDashboard("accounts"),
-                      12_000,
                     );
                   });
               }, LEFT_CONFIRM_MS),
@@ -165,6 +188,7 @@ export function FounderAlerts() {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") onSession(session);
     });
     return () => {
+      cancelled = true;
       sub.subscription.unsubscribe();
       stopWatching();
     };
