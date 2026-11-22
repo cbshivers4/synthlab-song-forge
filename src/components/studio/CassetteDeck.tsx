@@ -9,7 +9,6 @@ import {
   Rewind,
   FastForward,
   Square,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getReelRecorder } from "@/lib/synclab/reel-recorder";
@@ -18,8 +17,9 @@ import { getTapeMedia, useTapeMedia } from "@/lib/synclab/tape-media";
 import {
   CASSETTE_TYPES,
   MAX_NAME,
-  captureSeconds,
+  cassetteSideSeconds,
   cassetteType,
+  shelfTag,
   shownName,
   sideSeconds,
   type Cassette,
@@ -28,6 +28,7 @@ import {
 import { Knob } from "./Knob";
 import { TapeExportBar } from "./ReelRecorder";
 import { DeckKey, DeckMeters, TapeSourceControls, tapeClock } from "./TapeControls";
+import { DeleteFromShelfButton, SaveToAccountButton } from "./ShelfControls";
 
 const HUB = 13;
 const PACK = 40;
@@ -314,12 +315,20 @@ export function CassetteDeck() {
           <p className="text-[11px] text-muted-foreground">
             REC records onto the side from the counter, like a real deck: what was under it is
             replaced and the rest stays. Recording stops by itself at the end of the side — flip the
-            cassette to keep going. Cassettes keep their recordings while SYNCLAB is open; use Save
-            file or Add to project to keep them for good.
+            cassette to keep going. Press Save cassette to keep it (both sides and its name) in your
+            account; it comes back on the shelf on every device you sign in on.
           </p>
         </div>
       </div>
-      <TapeExportBar nameLabel={null} canLoad={!!cassette} />
+      <TapeExportBar
+        nameLabel={null}
+        canLoad={!!cassette}
+        keep={
+          cassette ? (
+            <SaveToAccountButton kind="cassette" item={cassette} disabled={recording || moving} />
+          ) : null
+        }
+      />
       <CassetteShelf />
     </section>
   );
@@ -393,41 +402,41 @@ function CassetteShelf() {
           </label>
           <Button
             className="h-11"
-            disabled={busy || inDeck(selected)}
+            disabled={busy || inDeck(selected) || media.shelf.loading === selected.id}
             onClick={() => void m.insertCassette(selected.id)}
           >
-            {inDeck(selected) ? "In the deck" : "Put in deck"}
+            {media.shelf.loading === selected.id
+              ? "Loading…"
+              : inDeck(selected)
+                ? "In the deck"
+                : "Put in deck"}
           </Button>
+          <SaveToAccountButton kind="cassette" item={selected} disabled={busy} />
           {(["A", "B"] as const).map((side) => (
             <Button
               key={side}
               variant="outline"
               className="h-11"
-              disabled={!selected.sides[side] || busy}
-              onClick={() => m.eraseSide(selected.id, side)}
+              disabled={cassetteSideSeconds(selected, side) <= 0 || busy}
+              onClick={() => void m.eraseSide(selected.id, side)}
               title={`Erase side ${side}`}
             >
               Erase {side}
             </Button>
           ))}
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-11"
-            aria-label="Remove cassette from shelf"
+          <DeleteFromShelfButton
+            kind="cassette"
+            item={selected}
+            name={shownName(selected.name, cassetteType(selected.typeId).name)}
             disabled={inDeck(selected)}
-            onClick={() => {
-              m.removeCassette(selected.id);
-              setPicked(null);
-            }}
-          >
-            <Trash2 />
-          </Button>
+            onDeleted={() => setPicked(null)}
+          />
         </div>
       )}
       <div className="cassette-grid">
         {media.cassettes.map((c) => {
           const type = cassetteType(c.typeId);
+          const tag = shelfTag(c);
           return (
             <button
               key={c.id}
@@ -444,8 +453,13 @@ function CassetteShelf() {
               <span className="cassette-slot-meta">
                 {inDeck(c)
                   ? "IN DECK"
-                  : `A ${tapeClock(captureSeconds(c.sides.A))} · B ${tapeClock(captureSeconds(c.sides.B))}`}
+                  : `A ${tapeClock(cassetteSideSeconds(c, "A"))} · B ${tapeClock(cassetteSideSeconds(c, "B"))}`}
               </span>
+              {tag && (
+                <span className="shelf-tag" data-dirty={tag === "UNSAVED" || undefined}>
+                  {tag}
+                </span>
+              )}
             </button>
           );
         })}

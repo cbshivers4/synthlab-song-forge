@@ -47,7 +47,7 @@ export function TapeCdRecorder() {
     const off = recorder.onTapeChange((_capture, why) => {
       if (why !== "record") return;
       toast.success("Recording finished", {
-        description: "Save it as a file or add it to your project.",
+        description: "Save it to your account, as a file, or add it to your project.",
         action: { label: "Save", onClick: () => scrollToSave() },
       });
     });

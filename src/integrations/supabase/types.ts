@@ -269,6 +269,42 @@ export type Database = {
         }
         Relationships: []
       }
+      tape_shelf_items: {
+        Row: {
+          artist: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          parts: Json
+          saved_at: string
+          type_id: string
+          user_id: string
+        }
+        Insert: {
+          artist?: string
+          created_at?: string
+          id: string
+          kind: string
+          name?: string
+          parts?: Json
+          saved_at?: string
+          type_id: string
+          user_id: string
+        }
+        Update: {
+          artist?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          parts?: Json
+          saved_at?: string
+          type_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

@@ -50,6 +50,13 @@
       "when": 1795106059039,
       "tag": "0006_close_ai_limit_and_founder_gaps",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795344327283,
+      "tag": "0007_create_tape_shelf_items",
+      "breakpoints": true
     }
   ]
 }

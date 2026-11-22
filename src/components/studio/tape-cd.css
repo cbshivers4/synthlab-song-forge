@@ -771,3 +771,234 @@
   background: var(--destructive);
   color: var(--destructive-foreground);
 }
+
+/* ---------- reel tapes: flange finishes, sizes, load/remove ---------- */
+[data-finish="machine"] {
+  --rf-hi: oklch(0.94 0.004 250);
+  --rf-mid: oklch(0.74 0.005 250);
+  --rf-lo: oklch(0.5 0.006 250);
+}
+[data-finish="silver"] {
+  --rf-hi: oklch(0.98 0.002 250);
+  --rf-mid: oklch(0.82 0.004 250);
+  --rf-lo: oklch(0.58 0.006 250);
+}
+[data-finish="black"] {
+  --rf-hi: oklch(0.46 0.005 250);
+  --rf-mid: oklch(0.27 0.005 250);
+  --rf-lo: oklch(0.14 0.004 250);
+}
+[data-finish="gold"] {
+  --rf-hi: oklch(0.92 0.11 92);
+  --rf-mid: oklch(0.74 0.13 82);
+  --rf-lo: oklch(0.47 0.1 70);
+}
+[data-finish="red"] {
+  --rf-hi: oklch(0.72 0.19 27);
+  --rf-mid: oklch(0.56 0.21 27);
+  --rf-lo: oklch(0.36 0.15 27);
+}
+[data-finish="blue"] {
+  --rf-hi: oklch(0.84 0.09 230);
+  --rf-mid: oklch(0.64 0.14 240);
+  --rf-lo: oklch(0.42 0.12 250);
+}
+[data-finish="white"] {
+  --rf-hi: oklch(0.99 0.002 90);
+  --rf-mid: oklch(0.92 0.004 90);
+  --rf-lo: oklch(0.76 0.006 90);
+}
+[data-finish="smoke"] {
+  --rf-hi: oklch(0.56 0.012 250 / 0.92);
+  --rf-mid: oklch(0.38 0.01 250 / 0.9);
+  --rf-lo: oklch(0.22 0.008 250 / 0.9);
+}
+[data-finish="orange"] {
+  --rf-hi: oklch(0.86 0.15 62);
+  --rf-mid: oklch(0.72 0.18 52);
+  --rf-lo: oklch(0.5 0.14 45);
+}
+[data-finish="green"] {
+  --rf-hi: oklch(0.84 0.15 150);
+  --rf-mid: oklch(0.66 0.17 150);
+  --rf-lo: oklch(0.42 0.12 155);
+}
+[data-oxide="brown"] {
+  --oxide-in: oklch(0.3 0.03 50);
+  --oxide-out: oklch(0.2 0.025 45);
+}
+[data-oxide="black"] {
+  --oxide-in: oklch(0.24 0.004 250);
+  --oxide-out: oklch(0.13 0.003 250);
+}
+/* The deck's reels take their colour from the threaded reel (the machine finish keeps the design's metal). */
+.reel-recorder .tape-reel[data-finish]:not([data-finish="machine"]) .reel-stop-hi {
+  stop-color: var(--rf-hi);
+}
+.reel-recorder .tape-reel[data-finish]:not([data-finish="machine"]) .reel-stop-mid {
+  stop-color: var(--rf-mid);
+}
+.reel-recorder .tape-reel[data-finish]:not([data-finish="machine"]) .reel-stop-lo {
+  stop-color: var(--rf-lo);
+}
+.reel-recorder .tape-reel[data-oxide] .tape-stop-in {
+  stop-color: var(--oxide-in);
+}
+.reel-recorder .tape-reel[data-oxide] .tape-stop-out {
+  stop-color: var(--oxide-out);
+}
+/* 7″ and 5″ reels sit smaller on the same spindles. */
+.tape-reel[data-size="7"] svg {
+  scale: 0.8;
+}
+.tape-reel[data-size="5"] svg {
+  scale: 0.62;
+}
+.tape-reels[data-motion="loading"] .tape-reel {
+  animation: reel-load 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.tape-reels[data-motion="unloading"] .tape-reel {
+  animation: reel-unload 0.7s ease-in both;
+}
+@keyframes reel-load {
+  from {
+    transform: translateY(-55%) scale(0.86);
+    opacity: 0;
+  }
+  45% {
+    opacity: 1;
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes reel-unload {
+  from {
+    transform: none;
+  }
+  25% {
+    transform: translateY(-8%);
+  }
+  to {
+    transform: translateY(-60%) scale(0.86);
+    opacity: 0;
+  }
+}
+/* Tape path only shows once a reel is threaded; it draws in after the reels land. */
+.tape-deck .tape-path path {
+  transition: opacity 0.3s ease;
+}
+.tape-deck[data-threaded="false"] .tape-path path {
+  opacity: 0;
+}
+.tape-reels[data-motion="loading"] ~ .tape-path path {
+  animation: tape-thread 0.9s ease both;
+}
+@keyframes tape-thread {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.tape-spindle .spindle-ring {
+  fill: none;
+  stroke: oklch(1 0 0 / 0.08);
+  stroke-width: 2;
+  stroke-dasharray: 6 8;
+}
+.tape-spindle .spindle-hub {
+  fill: var(--hardware-black, oklch(0.16 0.004 250));
+  stroke: oklch(0.45 0.005 250);
+  stroke-width: 3;
+}
+.tape-spindle .spindle-key {
+  fill: oklch(0.7 0.005 250);
+}
+.tape-spindle .spindle-center {
+  fill: oklch(0.85 0.004 250);
+}
+.reel-loaded-bar {
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tape-reels[data-motion] .tape-reel,
+  .tape-reels[data-motion] ~ .tape-path path {
+    animation-duration: 0.01s;
+  }
+}
+
+/* shelf reels */
+.reel-art {
+  width: 100%;
+  aspect-ratio: 1;
+  display: block;
+}
+.reel-art[data-size="7"] {
+  scale: 0.84;
+}
+.reel-art[data-size="5"] {
+  scale: 0.68;
+}
+.reel-art .ra-pack {
+  fill: oklch(0.36 0.03 55);
+}
+.reel-art[data-oxide="black"] .ra-pack {
+  fill: oklch(0.3 0.004 250);
+}
+.reel-art .ra-recorded {
+  fill: var(--oxide-out);
+}
+.reel-art .ra-flange {
+  fill: var(--rf-mid);
+  stroke: var(--rf-lo);
+  stroke-width: 3;
+}
+.reel-art .ra-edge {
+  fill: none;
+  stroke: var(--rf-hi);
+  stroke-width: 2;
+}
+.reel-art .ra-hub {
+  fill: oklch(0.16 0.004 250);
+  stroke: var(--rf-lo);
+  stroke-width: 3;
+}
+.reel-art .ra-center {
+  fill: var(--rf-hi);
+}
+.reel-art .ra-size {
+  font: 700 18px var(--font-mono);
+  fill: var(--rf-lo);
+}
+.reel-art[data-finish="black"] .ra-size,
+.reel-art[data-finish="smoke"] .ra-size {
+  fill: var(--rf-hi);
+}
+.shelf-tag {
+  align-self: flex-start;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font: 700 9px var(--font-mono);
+  letter-spacing: 0.08em;
+}
+.shelf-tag[data-dirty] {
+  border-color: var(--deck-amber);
+  color: var(--deck-amber);
+}
+.reel-loaded-bar {
+  color: var(--card-foreground);
+}
+.reel-recorder[data-deck-look="reel"] .reel-loaded-bar {
+  background: var(--tape-deck-brush), var(--tape-deck-face);
+  color: inherit;
+}
+/* The tape pack is painted with --tape-media; back-coated (black) tape swaps it. */
+.reel-recorder .tape-reel[data-oxide="black"] {
+  --tape-media: oklch(0.19 0.004 250);
+}

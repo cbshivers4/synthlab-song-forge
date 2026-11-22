@@ -1,7 +1,7 @@
 /** Runs file encoding (MP3/WAV/FLAC/AIFF) in a background worker so long recordings never freeze the page. */
 import type { Capture } from "./bounce";
 
-export type EncodeFormat = "wav16" | "wav24" | "wav32" | "mp3" | "flac" | "aiff";
+export type EncodeFormat = "wav16" | "wav24" | "wav32" | "mp3" | "flac" | "flac16" | "aiff";
 
 export function encodeInBackground(
   capture: Capture,

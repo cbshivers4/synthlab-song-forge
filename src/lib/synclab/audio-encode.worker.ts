@@ -46,6 +46,7 @@ self.onmessage = (e: MessageEvent<Job>) => {
       if (end.length) parts.push(new Uint8Array(end));
       blob = new Blob(parts as BlobPart[], { type: "audio/mpeg" });
     } else if (format === "flac") blob = encodeFlac(cap, 24);
+    else if (format === "flac16") blob = encodeFlac(cap, 16);
     else if (format === "aiff") blob = encodeAiff(cap, 24);
     else blob = encodeWavDepth(cap, format === "wav16" ? 16 : format === "wav32" ? 32 : 24);
     self.postMessage({ type: "done", blob });

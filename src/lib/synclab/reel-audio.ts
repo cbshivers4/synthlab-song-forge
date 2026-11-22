@@ -62,8 +62,10 @@ export function recordingReelSeconds(
   source: "input" | "song",
   songSeconds: number,
   position: number,
+  /** the threaded reel's recording time, for microphone/line takes */
+  reelCapacity = INPUT_REEL_SECONDS,
 ) {
-  const capacity = source === "song" && songSeconds > 0 ? songSeconds : INPUT_REEL_SECONDS;
+  const capacity = source === "song" && songSeconds > 0 ? songSeconds : reelCapacity;
   return Math.max(capacity, position + 1);
 }
 

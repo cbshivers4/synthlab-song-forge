@@ -7,6 +7,7 @@ const USER_TABLES = [
   "library_items",
   "subscriptions",
   "support_tickets",
+  "tape_shelf_items",
   "user_roles",
   "user_visual_settings",
 ] as const;

@@ -24,9 +24,15 @@ import {
   DISC_TYPES,
   MAX_NAME,
   captureSeconds,
+  cassetteSideSeconds,
   cassetteType,
+  discLengths,
+  discTrackCount,
   discTrackSeconds,
   discType,
+  reelTapeSeconds,
+  reelType,
+  shelfTag,
   shownName,
   type Disc,
 } from "@/lib/synclab/tape-media-model";
@@ -43,6 +49,7 @@ import { songSteps } from "@/lib/synclab/timebase";
 import { Knob } from "./Knob";
 import { DeckKey, DeckMeters, TapeSourceControls, tapeClock } from "./TapeControls";
 import { TapeExportBar } from "./ReelRecorder";
+import { DeleteFromShelfButton, SaveToAccountButton } from "./ShelfControls";
 
 /** A CD-R drawn as SVG; the darker ring is the part of the disc already written. */
 export function CdArt({
@@ -182,30 +189,53 @@ export function CdBurner() {
       setRendering(false);
     }
   };
-  const dubSources = [
-    ...(m.reelTape() ? [{ id: "reel", label: "Reel-to-reel tape" }] : []),
+  // Every recorded reel and cassette side on the shelves, saved ones included.
+  const dubSources: {
+    id: string;
+    label: string;
+    kind: "reel" | "cassette";
+    item: string;
+    key: string;
+  }[] = [
+    ...media.reels
+      .filter((r) => reelTapeSeconds(r) > 0)
+      .map((r) => ({
+        id: `reel:${r.id}`,
+        label: `${shownName(r.name, reelType(r.typeId).name)} (reel)`,
+        kind: "reel" as const,
+        item: r.id,
+        key: "tape",
+      })),
     ...media.cassettes.flatMap((c) =>
       (["A", "B"] as const)
-        .filter((side) => c.sides[side])
+        .filter((side) => cassetteSideSeconds(c, side) > 0)
         .map((side) => ({
-          id: `${c.id}:${side}`,
+          id: `cassette:${c.id}:${side}`,
           label: `${shownName(c.name, cassetteType(c.typeId).name)} · Side ${side}`,
+          kind: "cassette" as const,
+          item: c.id,
+          key: side,
         })),
     ),
   ];
-  const dub = () => {
+  const [dubbing, setDubbing] = useState(false);
+  const dub = async () => {
     const source = dubSources.find((s) => s.id === dubFrom) ?? dubSources[0];
-    if (!source) return;
-    let capture = null;
-    if (source.id === "reel") capture = m.reelTape();
-    else {
-      const [cid, side] = source.id.split(":") as [string, "A" | "B"];
-      capture = media.cassettes.find((c) => c.id === cid)?.sides[side] ?? null;
+    if (!source || dubbing) return;
+    setDubbing(true);
+    try {
+      const capture = await m.partCapture(source.kind, source.item, source.key);
+      if (!capture) return;
+      const error = m.addToDisc(capture, source.label);
+      if (error) toast.error("Not added to the CD", { description: error });
+      else toast.success(`${source.label} copied to the CD`);
+    } catch (error) {
+      toast.error("Couldn't copy it", {
+        description: error instanceof Error ? error.message : "Try again.",
+      });
+    } finally {
+      setDubbing(false);
     }
-    if (!capture) return;
-    const error = m.addToDisc(capture, source.label);
-    if (error) toast.error("Not added to the CD", { description: error });
-    else toast.success(`${source.label} copied to the CD`);
   };
   const burn = async () => {
     if (!disc?.tracks.length || media.burn) return;
@@ -403,6 +433,7 @@ export function CdBurner() {
                 className="h-11 rounded border border-input bg-background px-2 text-foreground"
               />
             </label>
+            <SaveToAccountButton kind="cd" item={disc} disabled={recording || locked} />
           </div>
           <div
             className="cd-capacity mb-3"
@@ -499,11 +530,11 @@ export function CdBurner() {
                 <Button
                   variant="outline"
                   className="h-11"
-                  disabled={!ready || locked || recording}
-                  onClick={dub}
+                  disabled={!ready || locked || recording || dubbing}
+                  onClick={() => void dub()}
                 >
                   <Plus />
-                  Copy tape to CD
+                  {dubbing ? "Copying…" : "Copy tape to CD"}
                 </Button>
               </>
             )}
@@ -544,7 +575,13 @@ export function CdBurner() {
         </section>
       )}
 
-      {disc && <TapeExportBar nameLabel={null} canLoad={false} />}
+      {disc && (
+        <TapeExportBar
+          nameLabel={null}
+          canLoad={false}
+          keep={<SaveToAccountButton kind="cd" item={disc} disabled={recording || locked} />}
+        />
+      )}
       <DiscSpindle />
 
       <Dialog open={!!burnedName} onOpenChange={(open) => !open && setBurnedName(null)}>
@@ -636,13 +673,14 @@ function DiscSpindle() {
         {media.discs.map((d) => {
           const type = discType(d.typeId);
           const onTray = d.id === media.tray.discId;
-          const used = cdUsedSeconds(discTrackSeconds(d));
+          const used = cdUsedSeconds(discLengths(d));
+          const tag = shelfTag(d);
           return (
             <div key={d.id} className="cd-slot" data-in-tray={onTray || undefined}>
               <button
                 type="button"
                 className="cd-slot-pick"
-                disabled={busy || onTray}
+                disabled={busy || onTray || media.shelf.loading === d.id}
                 onClick={() => void m.loadDiscOnTray(d.id)}
                 aria-label={`Load ${shownName(d.title, "My CD")} (${type.name}) into the burner`}
               >
@@ -651,18 +689,23 @@ function DiscSpindle() {
                 <span className="cassette-slot-meta">
                   {onTray
                     ? "IN BURNER"
-                    : `${type.name.replace("CD-R ", "")} · ${d.tracks.length} tr`}
+                    : media.shelf.loading === d.id
+                      ? "LOADING…"
+                      : `${type.name.replace("CD-R ", "")} · ${discTrackCount(d)} tr`}
                 </span>
+                {tag && (
+                  <span className="shelf-tag" data-dirty={tag === "UNSAVED" || undefined}>
+                    {tag}
+                  </span>
+                )}
               </button>
               {!onTray && (
-                <button
-                  type="button"
-                  className="cd-slot-remove"
-                  aria-label={`Remove ${shownName(d.title, "My CD")}`}
-                  onClick={() => m.removeDisc(d.id)}
-                >
-                  <Trash2 className="size-3.5" />
-                </button>
+                <DeleteFromShelfButton
+                  kind="cd"
+                  item={d}
+                  name={shownName(d.title, "My CD")}
+                  compact
+                />
               )}
             </div>
           );

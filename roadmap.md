@@ -299,3 +299,5 @@
 
 - [x] Multi pitch (SPREAD one-sound-per-pad and CHORD modes, scale, chord type, original-pitch pad) on Sampler, Pad Sampler and Video Sampler. 14 tests; signed-in browser checks measured the played pitches on all three. Pad/Video setting is session-only; phone layout unverified.
 - [x] MPC tools on all three samplers: Note Repeat (rates + swing), pad/chop edit (tune, fine, level, pan, ADSR, filter + envelope, pitch envelope, velocity, mono/poly, mute groups, one-shot/note-on, mute), Pad Sampler pattern swing and tempo follow, Video Sampler through its own mixer channel with pitch-kept stretch. Velocity layers not built.
+
+- [x] Reel shelf (10 reel types, load/remove animations, named reels) and Save reel / cassette / CD to the account (lossless files, downloaded when loaded, delete asks first). Signed-in save → reload → load verified for reel, cassette and CD; CD keeps its own copy after its source reel is deleted; test items removed. Not published.
