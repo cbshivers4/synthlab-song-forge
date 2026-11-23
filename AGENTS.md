@@ -68,4 +68,3 @@ Prettier/ESLint skip generated Supabase files, payment/webhook code, account del
 Both Paddle webhook paths (/api/public/payments/webhook and legacy /api/public/paddle-webhook) call handlePaddleWebhook in src/lib/paddle-webhook.server.ts, verified by the Paddle SDK, and DB write errors return 400 so Paddle retries instead of losing the event.
 - vite.config optimizeDeps.include pre-bundles server-function client deps so dev never reloads on the first server call.
 - Scroll/play effects use braces (lint-enforced): Chrome scroll Promises returned as cleanup crash panels.
-- Desktop synths render through FitToBox (fit-scale.ts): pages shrink to fit the panel instead of scrolling, layout containers stay unscaled-width-aware via container queries, and pointer math (cables) divides by the fit scale; phone keeps the original scrolling layout.
