@@ -2638,7 +2638,7 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 .synth-hardware .hardware-knob-pointer i { background: var(--hardware-dark-ink); height: 36%; }
 .synth-hardware .hardware-knob-value { padding: 1px 5px; background: var(--hardware-black); color: var(--primary); border: 1px solid var(--hardware-rubber-edge); border-radius: 2px; }
 .synth-hardware[data-synth-style="spec4"] { --surface: var(--instrument-graphite); --surface-2: var(--instrument-graphite-hi); --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --hardware-scale: var(--primary); }
-.synth-hardware[data-synth-style="spec4"] .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) { padding: 12px; border: 1px solid var(--hardware-black); }
+.synth-hardware[data-synth-style="spec4"] :is(.synth-console-tabs, .synth-console-tabs .fit-to-box-body) > [role="tabpanel"]:not([data-state="inactive"]) { padding: 12px; border: 1px solid var(--hardware-black); }
 .synth-hardware[data-synth-style="spec4"] .synth-osc-module { --foreground: var(--hardware-ink); --muted-foreground: var(--hardware-silver); --border: var(--hardware-rubber-edge); }
 .synth-hardware[data-synth-style="acid"] { border-inline: 8px solid var(--hardware-rubber); }
 .synth-hardware[data-synth-style="acid"]:not([style*="background-image"]) { background-image: var(--hardware-brush), var(--instrument-silver-face); }
@@ -3397,7 +3397,7 @@ body:has(.phone-console) [data-sonner-toast] button { pointer-events: auto; }
 }
 .synth-hardware .synth-badge { font-family: var(--font-display); font-size: 26px; letter-spacing: 0.02em; color: oklch(0.96 0 0); background: none; border: 0; font-style: normal; }
 .synth-hardware .synth-osc-module,
-.synth-hardware .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) {
+.synth-hardware :is(.synth-console-tabs, .synth-console-tabs .fit-to-box-body) > [role="tabpanel"]:not([data-state="inactive"]) {
   background: oklch(0.21 0.005 260) !important; border: 1px solid oklch(0.15 0.004 260) !important; border-radius: 4px;
   --foreground: oklch(0.93 0.004 260); --muted-foreground: oklch(0.7 0.008 260); --surface: oklch(0.21 0.005 260); --surface-2: oklch(0.27 0.006 260); --background: oklch(0.21 0.005 260);
 }
@@ -4760,13 +4760,13 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .synth-hardware .synth-preset-deck button.bg-primary { color: var(--primary-foreground) !important; }
 .synth-hardware .hardware-knob-label { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
 .synth-hardware .text-\[9px\] { font-size: 10px; }
-.synth-hardware[data-synth-style]:not([data-synth-style="acid"]) .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) {
+.synth-hardware[data-synth-style]:not([data-synth-style="acid"]) :is(.synth-console-tabs, .synth-console-tabs .fit-to-box-body) > [role="tabpanel"]:not([data-state="inactive"]) {
   --foreground: oklch(0.94 0.004 260); --muted-foreground: oklch(0.78 0.008 260);
 }
-.synth-hardware[data-synth-style]:not([data-synth-style="acid"]) .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) .hardware-knob-label { color: var(--foreground); }
+.synth-hardware[data-synth-style]:not([data-synth-style="acid"]) :is(.synth-console-tabs, .synth-console-tabs .fit-to-box-body) > [role="tabpanel"]:not([data-state="inactive"]) .hardware-knob-label { color: var(--foreground); }
 .synth-hardware[data-synth-style="acid"] { --muted-foreground: oklch(0.3 0.01 250); --primary-foreground: oklch(0.99 0 0); }
 .synth-hardware[data-synth-style="acid"]:not([style*="background-image"]) { background: linear-gradient(180deg, oklch(0.84 0.006 250), oklch(0.72 0.01 250)) !important; }
-.synth-hardware[data-synth-style="acid"] .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) { background: var(--acid-panel) !important; border-color: var(--acid-edge) !important; }
+.synth-hardware[data-synth-style="acid"] :is(.synth-console-tabs, .synth-console-tabs .fit-to-box-body) > [role="tabpanel"]:not([data-state="inactive"]) { background: var(--acid-panel) !important; border-color: var(--acid-edge) !important; }
 .bassgen-device { --background: oklch(0.97 0.002 250); --input: var(--bass-edge); --accent: var(--bass-panel-2); --accent-foreground: var(--bass-ink); }
 .synth-hardware[data-synth-style="acid"] .text-primary { color: oklch(0.5 0.19 30); font-weight: 700; }
 
@@ -4901,7 +4901,7 @@ html.phone-console-active [role="option"] { min-height: 44px; font-size: 15px; }
 .synth-hardware.synth-hardware[data-synth-style] .synth-console-tabs > [role="tablist"] { background: var(--look-deck); border: 1px solid var(--look-edge); border-radius: var(--look-radius); box-shadow: none; }
 .synth-hardware.synth-hardware[data-synth-style] .synth-console-tabs > [role="tablist"] [role="tab"] { background-color: var(--look-btn); color: var(--look-btn-ink); border: 1px solid var(--look-edge); border-radius: min(var(--look-radius), 6px); }
 .synth-hardware.synth-hardware[data-synth-style] .synth-console-tabs > [role="tablist"] [role="tab"][data-state="active"] { background-color: var(--primary); color: var(--primary-foreground) !important; border-color: var(--primary); }
-.synth-hardware.synth-hardware[data-synth-style] .synth-console-tabs > [role="tabpanel"]:not([data-state="inactive"]) {
+.synth-hardware.synth-hardware[data-synth-style] :is(.synth-console-tabs, .synth-console-tabs .fit-to-box-body) > [role="tabpanel"]:not([data-state="inactive"]) {
   background: var(--look-panel) !important; border: 1px solid var(--look-edge) !important; border-radius: var(--look-radius); padding: 12px;
   --foreground: var(--look-ink); --muted-foreground: var(--look-dim);
 }
@@ -5410,3 +5410,52 @@ html:not([data-track-menus="off"]) .app-menu.track-tinted-menu {
 .drum-roll-sheet .drum-row-name { position: sticky; left: 0; z-index: 4; background: var(--surface-2); }
 .drum-roll-sheet .drum-roll-label-header { width: calc(8rem + var(--dr-row, 30px) + 2px); }
 .drum-roll-sheet .drum-row-mute { position: sticky; left: calc(8rem + 4px); z-index: 4; box-shadow: -4px 0 0 0 var(--surface-2), 4px 0 0 0 var(--surface-2); }
+
+/* Computer synth layout: everything fits the workspace, no scrolling (SynthEditor fit mode). */
+.synth-fit-panel .synth-badge { font-size: 15px; line-height: 1.2; padding: 4px 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
+.synth-fit-panel .synth-fit-deck { padding: 6px 8px; gap: 6px; }
+.synth-fit-pages [role="tabpanel"] { margin-top: 0; padding-top: 0; }
+.synth-fit-pages > .synth-fit-tablist { height: 100%; }
+.synth-fit-tablist [role="tab"] { justify-content: flex-start; flex: 1 1 0; max-height: 30px; min-height: 0; padding: 0 10px; font-size: 12px; line-height: 1; width: 100%; overflow: hidden; }
+.synth-fit-panel .synth-fit-keys .instrument-keyboard .label-xs { white-space: nowrap; }
+.synth-fit-panel { container: synthfit / inline-size; }
+.synth-fit-panel .synth-fit-row > .synth-badge { flex: 1 1 0; text-align: right; align-self: stretch; display: flex; align-items: center; justify-content: flex-end; }
+.synth-hardware.synth-fit-panel .synth-fit-deck .synth-preset-window { width: clamp(10rem, 24cqi, 18rem); height: 2.25rem !important; }
+.synth-fit-panel .synth-fit-deck button.size-11 { width: 2.25rem; height: 2.25rem; }
+.synth-fit-panel .synth-fit-row > button, .synth-fit-panel .synth-fit-row > * > button { height: 2.25rem; }
+@container synthfit (max-width: 1000px) { .synth-fit-panel .synth-fit-label { display: none; } }
+.synth-fit-panel[data-learn-buttons="off"] .fit-to-box [data-midi-learn="idle"] { display: none; }
+.synth-fit-panel .synth-fit-row > div:has(.synth-preset-window) { min-width: 0; flex: 1 1 16rem; max-width: 28rem; }
+.synth-hardware.synth-fit-panel .synth-fit-deck .synth-preset-window { width: 100%; }
+.synth-fit-pages .fit-to-box .hardware-knob:not(.hardware-knob-inline) { width: 3.4rem; gap: 2px; }
+.synth-fit-pages .fit-to-box .hardware-knob-dial { width: 38px !important; height: 38px !important; }
+.synth-fit-pages .synth-xy-block { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; row-gap: 6px; align-content: start; }
+.synth-fit-pages .synth-xy-block > * { margin: 0 !important; }
+.synth-fit-pages .synth-xy-block > :is(h3, p) { grid-column: 1 / -1; }
+.synth-fit-pages .synth-xy-block > .synth-xy-knobs { grid-column: 2; grid-row: 2; flex-direction: column; justify-content: center; }
+.synth-fit-pages .synth-osc-grid { display: contents; }
+.synth-fit-pages .synth-osc-page:not([data-state="inactive"]) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+.synth-fit-pages .synth-osc-page > * { margin: 0 !important; grid-column: 1; }
+.synth-fit-pages .synth-osc-page .synth-osc-module:not([aria-label]) { grid-column: 1 / -1; }
+.synth-fit-pages .synth-osc-page .synth-noise-card { grid-column: 2; grid-row: 1; }
+.synth-fit-pages .synth-osc-page .synth-osc-grid > .synth-card { display: flex; align-items: stretch; }
+.synth-fit-pages .synth-osc-page .synth-osc-grid > .synth-card > .synth-card-head { width: 12.5rem; flex-shrink: 0; align-content: center; border-bottom-width: 0; border-right: 1px solid var(--border); }
+.synth-fit-pages .synth-osc-page .synth-osc-grid > .synth-card > .synth-card-head > .ml-auto { margin-left: 0; flex-wrap: wrap; order: 3; width: 100%; }
+.synth-fit-pages .synth-osc-page .synth-osc-grid > .synth-card > :not(.synth-card-head) { flex: 1 1 auto; min-width: 0; align-items: center; }
+.synth-fit-pages .synth-xy-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.synth-fit-pages .synth-xy-block { grid-template-columns: minmax(0, 14rem) auto; }
+.synth-fit-panel .modular-scope-window canvas { height: 44px; }
+.synth-fit-panel .modular-scope-window { margin-block: 4px; }
+/* Fit layout: devices stretch to fill each rack row; rows wrap only when the case is narrow. */
+.synth-fit-panel .modular-module-grid { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+.synth-fit-panel .modular-workstation .modular-module { min-height: 0; }
+.synth-fit-panel .modular-workstation .modular-module .modular-knob-bank { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)) !important; }
+.synth-fit-panel .modular-workstation .modular-module .hardware-knob-label { min-height: 16px; }
+/* Wide fit layout: two oscillator strips per row. */
+@container (min-width: 80rem) {
+  .synth-fit-pages .synth-osc-page:not([data-state="inactive"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .synth-fit-pages .synth-osc-page .synth-osc-module:not([aria-label]) { grid-column: auto; }
+  .synth-fit-pages .synth-osc-page .synth-noise-card > :not(.synth-card-head) { justify-content: flex-start; }
+}
+/* The cable list follows the rack's height; a long list scrolls inside itself instead of growing the page. */
+.synth-fit-panel .modular-cable-list { height: 0; min-height: 100%; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }

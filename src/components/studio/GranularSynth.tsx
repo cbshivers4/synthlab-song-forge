@@ -263,7 +263,7 @@ export function GranularSynth({ track }: { track: Track }) {
         )}
       </div>
 
-      <div className="granular-sections grid gap-2 md:grid-cols-3">
+      <div className="granular-sections grid gap-2 @2xl:grid-cols-3">
         {groups.map((grp) => (
           <section key={grp.id} className="granular-section" aria-label={grp.title}>
             <h4>{grp.title}</h4>

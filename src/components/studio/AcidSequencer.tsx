@@ -125,7 +125,7 @@ export function AcidSequencer({ track }: { track: Track }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-8 gap-1 md:grid-cols-16">
+      <div className="grid grid-cols-8 gap-1 @xl:grid-cols-16">
         {steps.map((s, i) => (
           <button
             key={i}

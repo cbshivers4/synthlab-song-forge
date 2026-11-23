@@ -199,10 +199,7 @@ function DetachedPanels() {
         selected?.kind === "sampler" ? (
           <Sampler />
         ) : synthTrack ? (
-          <>
-            <p className="label-xs mb-3">Editing {synthTrack.name}</p>
-            <SynthEditor track={synthTrack} />
-          </>
+          <SynthEditor track={synthTrack} />
         ) : (
           <p className="text-sm text-muted-foreground">
             Add an instrument track to open the synthesizer.
@@ -239,7 +236,15 @@ function DetachedPanels() {
                 Dock
               </Button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">{meta[id].body}</div>
+            <div
+              className={`min-h-0 flex-1 p-3 ${
+                id === "synth" && synthTrack && selected?.kind !== "sampler"
+                  ? "flex flex-col overflow-hidden"
+                  : "overflow-y-auto"
+              }`}
+            >
+              {meta[id].body}
+            </div>
           </div>
         </DetachedWindow>
       ))}
@@ -617,7 +622,13 @@ function Panels({
               </div>
             </PhonePages>
           ) : (
-            <div className="editor-body min-h-0 flex-1 space-y-3 overflow-y-auto p-3 pb-24 sm:pb-3">
+            <div
+              className={`editor-body min-h-0 flex-1 p-3 ${
+                panel === "synth" && synthTrack
+                  ? "flex flex-col overflow-hidden"
+                  : "space-y-3 overflow-y-auto pb-24 sm:pb-3"
+              }`}
+            >
               {panel === "reel-recorder" && <TapeCdRecorder />}
               {panel === "video-sampler" && <VideoSampler />}
               {panel === "mixer" && (
@@ -675,14 +686,7 @@ function Panels({
                 />
               )}
               {panel === "synth" &&
-                (synthTrack ? (
-                  <>
-                    <p className="label-xs mb-3">Editing {synthTrack.name}</p>
-                    <SynthEditor track={synthTrack} />
-                  </>
-                ) : (
-                  <AddSynthTrack />
-                ))}
+                (synthTrack ? <SynthEditor track={synthTrack} /> : <AddSynthTrack />)}
               {panel === "drums" &&
                 (drumTrack ? (
                   <DrumMachine track={drumTrack} />
@@ -1044,13 +1048,17 @@ function StudioWorkspace() {
           <SafePanels float={float} setFloat={setFloat} />
           <DetachedPanels />
           {/* The device strip steps out for tools that own the whole workspace: mixer and studio view. */}
-          {((!isMobile && panel !== "mixer" && panel !== "studio-view" && panel !== "drums") ||
+          {((!isMobile &&
+            panel !== "mixer" &&
+            panel !== "studio-view" &&
+            panel !== "drums" &&
+            panel !== "synth") ||
             (isMobile && !panel)) && <DeviceBar />}
         </main>
       </div>
       <TrackSettingsDialog />
       <DrummerBridge />
-        <CollabBridge />
+      <CollabBridge />
       <KeysBridge />
       {!isMobile && <TopBar />}
       {landscape ? null : isMobile ? (

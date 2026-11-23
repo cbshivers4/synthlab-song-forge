@@ -123,7 +123,9 @@ const drumPad = (kind: string, kit?: string) => ({
 });
 const noteName = (pitch: number) => `${KEYS[pitch % 12]}${Math.floor(pitch / 12) - 1}`;
 
-export function TouchSynth({ track }: { track: Track }) {
+/** `fit`: computer layout — pad and part controls side by side, loop notes swap in for the pad, nothing scrolls. */
+export function TouchSynth({ track, fit = false }: { track: Track; fit?: boolean }) {
+  const [fitView, setFitView] = useState<"pad" | "notes">("pad");
   const { previewNote, updatePatch, transport, updateTrack, setTransport } = useStudio();
   const settings = track.patch?.touch ?? {
     root: 0,
@@ -748,13 +750,8 @@ export function TouchSynth({ track }: { track: Track }) {
     say(`SET · ${setName.toUpperCase()}`);
   }, [setName]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return (
-    <section
-      ref={root}
-      className="kaoss-face min-w-0 space-y-3 rounded-lg p-3"
-      aria-label="Touch synth"
-      style={{ "--lane": lane.color } as CSSProperties}
-    >
+  const header = (
+    <>
       <header className="flex flex-wrap items-center gap-2">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold text-primary">
           <Hand className="size-5" /> SYNCLAB TOUCH
@@ -765,11 +762,36 @@ export function TouchSynth({ track }: { track: Track }) {
             TOUCH_KIT_PROGRAMS.length}{" "}
           SOUNDS
         </span>
-        <div className="ml-auto">
+        {fit && (
+          <div className="ml-auto flex items-center gap-1" role="group" aria-label="Touch view">
+            <Button
+              size="sm"
+              variant={fitView === "pad" ? "default" : "outline"}
+              aria-pressed={fitView === "pad"}
+              className="h-7 px-2 font-mono text-[10px]"
+              onClick={() => setFitView("pad")}
+            >
+              <Hand className="size-3.5" /> Pad
+            </Button>
+            <Button
+              size="sm"
+              variant={fitView === "notes" ? "default" : "outline"}
+              aria-pressed={fitView === "notes"}
+              className="h-7 px-2 font-mono text-[10px]"
+              onClick={() => setFitView("notes")}
+            >
+              <Pencil className="size-3.5" /> Loop notes
+            </Button>
+          </div>
+        )}
+        <div className={fit ? "" : "ml-auto"}>
           <HardwareBypass track={track} name="Touch Synth" />
         </div>
       </header>
-
+    </>
+  );
+  const lcd = (
+    <>
       <div
         className="kaoss-lcd grid gap-x-4 gap-y-1 rounded-md px-3 py-2 font-mono sm:grid-cols-[minmax(0,1fr)_auto]"
         aria-label="Touch display"
@@ -792,7 +814,10 @@ export function TouchSynth({ track }: { track: Track }) {
           {transport.recording && <span className="text-destructive">● REC</span>}
         </div>
       </div>
-
+    </>
+  );
+  const loopSets = (
+    <>
       <div className="space-y-2" aria-label="Touch loop sets">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="flex items-center gap-1.5 font-mono text-xs font-bold text-foreground">
@@ -981,12 +1006,15 @@ export function TouchSynth({ track }: { track: Track }) {
           </Button>
         </div>
       </div>
-
-      <div className="grid min-w-0 gap-3 md:grid-cols-[9.5rem_minmax(0,1fr)_11rem]">
+    </>
+  );
+  const perform = (
+    <>
+      <div className="grid min-w-0 gap-3 @2xl:grid-cols-[9.5rem_minmax(0,1fr)_11rem]">
         <div
           role="tablist"
           aria-label="Touch parts"
-          className="grid grid-cols-5 gap-1 md:grid-cols-1"
+          className="grid grid-cols-5 gap-1 @2xl:grid-cols-1"
         >
           {TOUCH_LANES.map((l, i) => {
             const count = loops[l.id]?.filter((n) => n.step < steps).length ?? 0;
@@ -1061,7 +1089,7 @@ export function TouchSynth({ track }: { track: Track }) {
             aria-valuemax={1}
             aria-valuenow={pos.current.x}
             aria-valuetext={lane.drums ? "Drum pad" : "Pitch left to right, tone bottom to top"}
-            className="kaoss-pad relative h-64 w-full touch-none select-none overflow-hidden rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-72"
+            className="kaoss-pad relative h-64 w-full touch-none select-none overflow-hidden rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring @2xl:h-72"
             onPointerDown={(e) => {
               if (pointer.current !== null) return;
               e.preventDefault();
@@ -1256,7 +1284,10 @@ export function TouchSynth({ track }: { track: Track }) {
           </Button>
         </div>
       </div>
-
+    </>
+  );
+  const soundProgram = (
+    <>
       <div className="space-y-2 border-t border-border pt-3" aria-label="Touch sound program">
         {lane.drums ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -1362,7 +1393,10 @@ export function TouchSynth({ track }: { track: Track }) {
           </>
         )}
       </div>
-
+    </>
+  );
+  const drumDisplay = (
+    <>
       {lane.drums && (
         <div
           className="touch-drum-display grid grid-cols-5 gap-1 rounded-md p-1.5"
@@ -1387,7 +1421,10 @@ export function TouchSynth({ track }: { track: Track }) {
           ))}
         </div>
       )}
-
+    </>
+  );
+  const sequencer = (
+    <>
       <div
         className="flex flex-wrap items-center gap-2 border-t border-border pt-3"
         aria-label="Loop sequencer"
@@ -1469,7 +1506,10 @@ export function TouchSynth({ track }: { track: Track }) {
           <ArrowRightToLine className="size-3.5" /> Send to timeline
         </Button>
       </div>
-
+    </>
+  );
+  const noteEditor = (
+    <>
       <div className="space-y-2 border-t border-border pt-3" aria-label="Touch loop note editor">
         <div className="flex items-center gap-2">
           <h4 className="mr-auto font-mono text-xs font-bold text-foreground">
@@ -1496,21 +1536,27 @@ export function TouchSynth({ track }: { track: Track }) {
             <Eraser className="size-4" />
           </Button>
         </div>
-        <div className="max-h-80 overflow-auto rounded-sm border border-border">
-          <div style={{ minWidth: `${steps * 30 + 64}px` }}>
-            <div className="flex h-6">
+        <div
+          className={
+            fit
+              ? "rounded-sm border border-border"
+              : "max-h-80 overflow-auto rounded-sm border border-border"
+          }
+        >
+          <div style={fit ? undefined : { minWidth: `${steps * 30 + 64}px` }}>
+            <div className={fit ? "flex h-5" : "flex h-6"}>
               <span className="w-16 shrink-0" />
               {Array.from({ length: steps }, (_, step) => (
                 <span
                   key={step}
-                  className={`w-[30px] shrink-0 text-center font-mono text-[10px] ${step % 16 === 0 ? "text-foreground" : "text-muted-foreground"}`}
+                  className={`${fit ? "min-w-0 flex-1 overflow-hidden text-[9px]" : "w-[30px] shrink-0 text-[10px]"} text-center font-mono ${step % 16 === 0 ? "text-foreground" : "text-muted-foreground"}`}
                 >
                   {step + 1}
                 </span>
               ))}
             </div>
             {pitches.map((pitch) => (
-              <div key={pitch} className="flex h-[30px]">
+              <div key={pitch} className={fit ? "flex h-6" : "flex h-[30px]"}>
                 <span className="flex w-16 shrink-0 items-center px-1 font-mono text-[10px] text-muted-foreground">
                   {lane.drums ? TOUCH_DRUM_LABELS[pitch] : noteName(pitch)}
                 </span>
@@ -1523,10 +1569,12 @@ export function TouchSynth({ track }: { track: Track }) {
                       aria-label={`${filled ? "Erase" : "Place"} ${lane.label} note ${pitch} at step ${step + 1}`}
                       aria-pressed={filled}
                       onClick={() => editCell(step, pitch)}
-                      className={`h-[30px] w-[30px] shrink-0 rounded-none border border-border p-0 ${step % 4 === 0 ? "bg-muted/40" : ""}`}
+                      className={`${fit ? "h-6 min-w-0 flex-1" : "h-[30px] w-[30px] shrink-0"} rounded-none border border-border p-0 ${step % 4 === 0 ? "bg-muted/40" : ""}`}
                       style={{ color: lane.color }}
                     >
-                      {filled && <span className="size-4 rounded-sm bg-current" />}
+                      {filled && (
+                        <span className={`${fit ? "size-3" : "size-4"} rounded-sm bg-current`} />
+                      )}
                     </Button>
                   );
                 })}
@@ -1535,6 +1583,43 @@ export function TouchSynth({ track }: { track: Track }) {
           </div>
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <section
+      ref={root}
+      className={`kaoss-face min-w-0 rounded-lg ${fit ? "space-y-2 p-2" : "space-y-3 p-3"}`}
+      aria-label="Touch synth"
+      data-fit={fit || undefined}
+      style={{ "--lane": lane.color } as CSSProperties}
+    >
+      {header}
+      {lcd}
+      {fit ? (
+        <div className="grid min-w-0 grid-cols-[minmax(0,2.4fr)_minmax(15rem,1fr)] gap-3">
+          <div className="min-w-0 space-y-2">
+            {/* The pad stays mounted while notes are shown: its lights and playhead are written by the loop clock. */}
+            <div className={fitView === "notes" ? "hidden" : undefined}>{perform}</div>
+            {fitView === "notes" && noteEditor}
+            {sequencer}
+          </div>
+          <div className="min-w-0 space-y-2">
+            {loopSets}
+            {soundProgram}
+            {drumDisplay}
+          </div>
+        </div>
+      ) : (
+        <>
+          {loopSets}
+          {perform}
+          {soundProgram}
+          {drumDisplay}
+          {sequencer}
+          {noteEditor}
+        </>
+      )}
     </section>
   );
 }

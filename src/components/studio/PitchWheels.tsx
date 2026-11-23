@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { getEngine } from "@/lib/synclab/audio-engine";
 
 /** Spring-loaded pitch bend (±range semitones) and mod wheel; drives the track's real pitch-mod bus. */
-export function PitchWheels({ trackId }: { trackId: string }) {
+/** `compact` fits the wheels beside the synth keyboard (no-scroll synth layout). */
+export function PitchWheels({ trackId, compact = false }: { trackId: string; compact?: boolean }) {
   const [bend, setBend] = useState(0);
   const [mod, setMod] = useState(0);
   const [range, setRange] = useState(2);
@@ -23,11 +24,21 @@ export function PitchWheels({ trackId }: { trackId: string }) {
 
   return (
     <div
-      className="flex flex-wrap items-end gap-4 rounded-md border border-border bg-surface/70 p-2"
+      className={
+        compact
+          ? "pitch-wheels-compact flex h-full shrink-0 items-stretch gap-2 rounded-md border border-border bg-surface/70 p-1.5"
+          : "flex flex-wrap items-end gap-4 rounded-md border border-border bg-surface/70 p-2"
+      }
       aria-label="Pitch bend and mod wheel"
     >
-      <label className="flex flex-col items-center gap-1">
-        <span className="label-xs">PITCH BEND</span>
+      <label
+        className={
+          compact
+            ? "flex min-h-0 flex-col items-center gap-0.5"
+            : "flex flex-col items-center gap-1"
+        }
+      >
+        <span className="label-xs">{compact ? "BEND" : "PITCH BEND"}</span>
         <input
           type="range"
           aria-label="Pitch bend"
@@ -39,13 +50,19 @@ export function PitchWheels({ trackId }: { trackId: string }) {
           onPointerUp={() => applyBend(0)}
           onKeyUp={() => applyBend(0)}
           onBlur={() => applyBend(0)}
-          className="h-24 w-6 accent-primary [writing-mode:vertical-lr] [direction:rtl]"
+          className={`${compact ? "min-h-0 flex-1" : "h-24"} w-6 accent-primary [writing-mode:vertical-lr] [direction:rtl]`}
         />
         <span className="font-mono text-[10px] text-foreground/70">
           {(bend * range).toFixed(1)} st
         </span>
       </label>
-      <label className="flex flex-col items-center gap-1">
+      <label
+        className={
+          compact
+            ? "flex min-h-0 flex-col items-center gap-0.5"
+            : "flex flex-col items-center gap-1"
+        }
+      >
         <span className="label-xs">MOD</span>
         <input
           type="range"
@@ -59,13 +76,13 @@ export function PitchWheels({ trackId }: { trackId: string }) {
             setMod(v);
             getEngine().setModWheel(trackId, v);
           }}
-          className="h-24 w-6 accent-primary [writing-mode:vertical-lr] [direction:rtl]"
+          className={`${compact ? "min-h-0 flex-1" : "h-24"} w-6 accent-primary [writing-mode:vertical-lr] [direction:rtl]`}
         />
         <span className="font-mono text-[10px] text-foreground/70">{Math.round(mod * 100)}%</span>
       </label>
-      <div className="flex flex-col gap-1">
-        <span className="label-xs">BEND RANGE</span>
-        <div className="flex gap-1">
+      <div className={compact ? "flex flex-col justify-center gap-1" : "flex flex-col gap-1"}>
+        <span className="label-xs">{compact ? "RANGE" : "BEND RANGE"}</span>
+        <div className={compact ? "flex flex-col gap-1" : "flex gap-1"}>
           {[2, 7, 12].map((r) => (
             <button
               key={r}
@@ -78,9 +95,11 @@ export function PitchWheels({ trackId }: { trackId: string }) {
             </button>
           ))}
         </div>
-        <span className="text-[9px] text-muted-foreground">
-          Bend springs back to center when released.
-        </span>
+        {!compact && (
+          <span className="text-[9px] text-muted-foreground">
+            Bend springs back to center when released.
+          </span>
+        )}
       </div>
     </div>
   );

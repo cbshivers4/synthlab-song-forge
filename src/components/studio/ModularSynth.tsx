@@ -1,8 +1,9 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ChevronLeft, ChevronRight, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { Knob } from "./Knob";
 import { Button } from "@/components/ui/button";
-import { canvasPoint } from "@/lib/synclab/canvas-point";
+import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { useStudio } from "@/lib/synclab/store";
 import {
   CABLE_COLORS,
@@ -47,7 +48,8 @@ const DEVICE_SERIES: Partial<Record<ModuleType, string>> = {
 };
 
 /** Empty Eurorack-style case: add devices, then tap an output jack and an input jack to run a coloured cable. */
-export function ModularSynth({ track }: { track: Track }) {
+/** `fit`: computer layout — devices to add sit in a menu and the cable list beside the case, so nothing scrolls. */
+export function ModularSynth({ track, fit = false }: { track: Track; fit?: boolean }) {
   const { updatePatch, previewNote } = useStudio();
   const patch = track.patch as SynthPatch;
   const m: ModularPatch = normalizeModular(patch.modular);
@@ -118,14 +120,17 @@ export function ModularSynth({ track }: { track: Track }) {
       if (!box || !layer) return;
       const r = layer.getBoundingClientRect();
       const origin = canvasPoint(r.left + r.width / 2, r.top + r.height / 2);
+      // The rack may be shown shrunk to fit the screen: screen distances → rack distances.
+      const shown = canvasRect(layer).width;
+      const k = layer.clientWidth && shown ? shown / layer.clientWidth : 1;
       const pos = (p: PortRef) => {
         const el = box.querySelector<HTMLElement>(`[data-jack="${CSS.escape(pkey(p))}"]`);
         if (!el) return null;
         const b = el.getBoundingClientRect();
         const center = canvasPoint(b.left + b.width / 2, b.top + b.height / 2);
         return {
-          x: center.x - origin.x + box.clientWidth / 2,
-          y: center.y - origin.y + box.clientHeight / 2,
+          x: (center.x - origin.x) / k + box.clientWidth / 2,
+          y: (center.y - origin.y) / k + box.clientHeight / 2,
         };
       };
       setLines(
@@ -304,26 +309,55 @@ export function ModularSynth({ track }: { track: Track }) {
 
   return (
     <div className="modular-workstation space-y-2">
-      <div className="flex flex-wrap items-center gap-1.5" aria-label="Add devices to the rack">
-        <span className="label-xs mr-1">ADD DEVICE</span>
-        {(Object.keys(MODULE_DEFS) as ModuleType[]).map((t) => (
-          <Button
-            variant="ghost"
-            key={t}
-            type="button"
-            onClick={() => addModule(t)}
-            className="modular-add"
-          >
-            <Plus className="size-3" />
-            {MODULE_DEFS[t].label}
-          </Button>
-        ))}
-      </div>
+      {fit ? null : (
+        <div className="flex flex-wrap items-center gap-1.5" aria-label="Add devices to the rack">
+          <span className="label-xs mr-1">ADD DEVICE</span>
+          {(Object.keys(MODULE_DEFS) as ModuleType[]).map((t) => (
+            <Button
+              variant="ghost"
+              key={t}
+              type="button"
+              onClick={() => addModule(t)}
+              className="modular-add"
+            >
+              <Plus className="size-3" />
+              {MODULE_DEFS[t].label}
+            </Button>
+          ))}
+        </div>
+      )}
       <div
         className="flex flex-wrap items-center gap-1.5"
         role="radiogroup"
         aria-label="Cable colour"
       >
+        {fit && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="ghost" className="modular-add mr-2">
+                <Plus className="size-3" /> ADD DEVICE
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="flex w-[min(92vw,640px)] flex-wrap gap-1.5"
+              aria-label="Add devices to the rack"
+            >
+              {(Object.keys(MODULE_DEFS) as ModuleType[]).map((t) => (
+                <Button
+                  variant="ghost"
+                  key={t}
+                  type="button"
+                  onClick={() => addModule(t)}
+                  className="modular-add"
+                >
+                  <Plus className="size-3" />
+                  {MODULE_DEFS[t].label}
+                </Button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        )}
         <span className="label-xs mr-1">CABLE COLOUR</span>
         {CABLE_COLORS.map((c) => (
           <Button
@@ -354,111 +388,122 @@ export function ModularSynth({ track }: { track: Track }) {
         )}
       </div>
 
-      <div ref={boxRef} className="modular-case relative" aria-label="Modular Tech Synth case">
-        <div className="modular-rail" aria-hidden />
-        {m.modules.length === 0 ? (
-          <div className="grid min-h-48 place-items-center p-6 text-center font-mono text-xs text-muted-foreground">
-            EMPTY RACK — add devices above (start with VCO, VCA, ENVELOPE and OUTPUT), then patch
-            them with cables.
-          </div>
-        ) : (
-          <div className="modular-module-grid">{m.modules.map(renderDevice)}</div>
-        )}
-        <div className="modular-rail" aria-hidden />
-        <svg
-          ref={cableRef}
-          className="modular-cable-layer pointer-events-none absolute inset-0 size-full overflow-visible"
-          aria-hidden
-        >
-          {lines.map((l) => (
-            <g key={l.id}>
-              <path d={l.d} className="modular-cable-shadow" />
-              <path d={l.d} className={`modular-cable cable-${l.color}`} />
-              <path d={l.d} className="modular-cable-sheen" />
-              {[l.a, l.b].map((p, i) => (
-                <g key={i} className={`cable-${l.color}`}>
-                  <circle cx={p.x} cy={p.y + 6} r="5" className="modular-plug-boot" />
-                  <circle cx={p.x} cy={p.y} r="6" className="modular-plug" />
-                </g>
-              ))}
-            </g>
-          ))}
-        </svg>
-      </div>
-
-      <div className="space-y-1" aria-label="Patch cables">
-        <div className="flex items-center gap-2">
-          <h4 className="label-xs">CABLES ({m.cables.length})</h4>
-          {m.cables.length > 0 && (
-            <Button
-              variant="ghost"
-              type="button"
-              className="modular-add ml-auto"
-              onClick={() => save({ ...m, cables: [] })}
-            >
-              UNPLUG ALL
-            </Button>
+      <div
+        className={
+          fit
+            ? "grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)] items-stretch gap-2"
+            : "space-y-2"
+        }
+      >
+        <div ref={boxRef} className="modular-case relative" aria-label="Modular Tech Synth case">
+          <div className="modular-rail" aria-hidden />
+          {m.modules.length === 0 ? (
+            <div className="grid min-h-48 place-items-center p-6 text-center font-mono text-xs text-muted-foreground">
+              EMPTY RACK — add devices above (start with VCO, VCA, ENVELOPE and OUTPUT), then patch
+              them with cables.
+            </div>
+          ) : (
+            <div className="modular-module-grid">{m.modules.map(renderDevice)}</div>
           )}
+          <div className="modular-rail" aria-hidden />
+          <svg
+            ref={cableRef}
+            className="modular-cable-layer pointer-events-none absolute inset-0 size-full overflow-visible"
+            aria-hidden
+          >
+            {lines.map((l) => (
+              <g key={l.id}>
+                <path d={l.d} className="modular-cable-shadow" />
+                <path d={l.d} className={`modular-cable cable-${l.color}`} />
+                <path d={l.d} className="modular-cable-sheen" />
+                {[l.a, l.b].map((p, i) => (
+                  <g key={i} className={`cable-${l.color}`}>
+                    <circle cx={p.x} cy={p.y + 6} r="5" className="modular-plug-boot" />
+                    <circle cx={p.x} cy={p.y} r="6" className="modular-plug" />
+                  </g>
+                ))}
+              </g>
+            ))}
+          </svg>
         </div>
-        {m.cables.length === 0 && (
-          <p className="text-[11px] text-muted-foreground">
-            No cables — nothing reaches an OUTPUT, so the synth is silent.
-          </p>
-        )}
-        {m.cables.map((c) => (
-          <div key={c.id} className="flex flex-wrap items-center gap-2 font-mono text-[10px]">
-            <span className={`modular-swatch small cable-${c.color}`} aria-hidden />
-            <span className="min-w-48">
-              {label(c.from)} → {label(c.to)}
-            </span>
-            <select
-              aria-label="Cable colour"
-              value={c.color}
-              onChange={(e) =>
-                save({
-                  ...m,
-                  cables: m.cables.map((x) =>
-                    x.id === c.id ? { ...x, color: e.target.value as CableColor } : x,
-                  ),
-                })
-              }
-              className="rounded-[3px] border border-border bg-surface px-1 py-0.5"
-            >
-              {CABLE_COLORS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
-            <input
-              type="range"
-              aria-label={`Cable amount ${label(c.from)} to ${label(c.to)}`}
-              min={-1}
-              max={2}
-              step={0.01}
-              value={c.amount}
-              onChange={(e) =>
-                save({
-                  ...m,
-                  cables: m.cables.map((x) =>
-                    x.id === c.id ? { ...x, amount: Number(e.target.value) } : x,
-                  ),
-                })
-              }
-              className="w-28 accent-primary"
-            />
-            <span className="w-10 tabular-nums">{c.amount.toFixed(2)}</span>
-            <Button
-              variant="ghost"
-              type="button"
-              aria-label={`Unplug ${label(c.from)} to ${label(c.to)}`}
-              onClick={() => save({ ...m, cables: m.cables.filter((x) => x.id !== c.id) })}
-              className="rounded-[3px] border border-border p-0.5 hover:border-destructive"
-            >
-              <X className="size-3" />
-            </Button>
+
+        <div
+          className={fit ? "modular-cable-list min-w-0 space-y-1" : "min-w-0 space-y-1"}
+          aria-label="Patch cables"
+        >
+          <div className="flex items-center gap-2">
+            <h4 className="label-xs">CABLES ({m.cables.length})</h4>
+            {m.cables.length > 0 && (
+              <Button
+                variant="ghost"
+                type="button"
+                className="modular-add ml-auto"
+                onClick={() => save({ ...m, cables: [] })}
+              >
+                UNPLUG ALL
+              </Button>
+            )}
           </div>
-        ))}
+          {m.cables.length === 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              No cables — nothing reaches an OUTPUT, so the synth is silent.
+            </p>
+          )}
+          {m.cables.map((c) => (
+            <div key={c.id} className="flex flex-wrap items-center gap-2 font-mono text-[10px]">
+              <span className={`modular-swatch small cable-${c.color}`} aria-hidden />
+              <span className={fit ? "min-w-0 basis-full" : "min-w-48"}>
+                {label(c.from)} → {label(c.to)}
+              </span>
+              <select
+                aria-label="Cable colour"
+                value={c.color}
+                onChange={(e) =>
+                  save({
+                    ...m,
+                    cables: m.cables.map((x) =>
+                      x.id === c.id ? { ...x, color: e.target.value as CableColor } : x,
+                    ),
+                  })
+                }
+                className="rounded-[3px] border border-border bg-surface px-1 py-0.5"
+              >
+                {CABLE_COLORS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="range"
+                aria-label={`Cable amount ${label(c.from)} to ${label(c.to)}`}
+                min={-1}
+                max={2}
+                step={0.01}
+                value={c.amount}
+                onChange={(e) =>
+                  save({
+                    ...m,
+                    cables: m.cables.map((x) =>
+                      x.id === c.id ? { ...x, amount: Number(e.target.value) } : x,
+                    ),
+                  })
+                }
+                className={`${fit ? "min-w-0 flex-1" : "w-28"} accent-primary`}
+              />
+              <span className="w-10 tabular-nums">{c.amount.toFixed(2)}</span>
+              <Button
+                variant="ghost"
+                type="button"
+                aria-label={`Unplug ${label(c.from)} to ${label(c.to)}`}
+                onClick={() => save({ ...m, cables: m.cables.filter((x) => x.id !== c.id) })}
+                className="rounded-[3px] border border-border p-0.5 hover:border-destructive"
+              >
+                <X className="size-3" />
+              </Button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ import {
 import { SkinControls, skinBackground, useImageDrop } from "./SkinControls";
 import { useSkin, type SkinKey } from "@/lib/synclab/skins";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Palette } from "lucide-react";
+import { Palette, SlidersHorizontal } from "lucide-react";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 /** Black keys carry both names, flat above sharp, like a printed piano-key chart. */
@@ -58,6 +58,7 @@ export function Keyboard({
   disabled = false,
   skinKey = "keyboard",
   mappedPads,
+  compact = false,
 }: {
   track?: Track;
   onPlay?: (midi: number, velocity: number) => void;
@@ -66,6 +67,8 @@ export function Keyboard({
   disabled?: boolean;
   skinKey?: SkinKey;
   mappedPads?: { count: number; active: number | null; keys: string };
+  /** One control row with the rest under Options, and keys that fill the given height (synth no-scroll layout). */
+  compact?: boolean;
 } = {}) {
   const skin = useSkin(skinKey);
   const imageDrop = useImageDrop(skinKey);
@@ -325,98 +328,8 @@ export function Keyboard({
       </p>
     );
 
-  return (
-    <div
-      className="instrument-keyboard space-y-2 rounded-md border border-border bg-surface p-3"
-      data-keyboard-skin={skinKey}
-      style={keyboardStyle}
-      {...imageDrop}
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" aria-label="Keyboard appearance">
-              <Palette className="size-4" /> Keyboard colors & wallpaper
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto">
-            <SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" />
-          </PopoverContent>
-        </Popover>
-        <Button
-          size="sm"
-          variant={typing ? "secondary" : "outline"}
-          aria-pressed={typing}
-          disabled={disabled}
-          title="A W S E D F T G Y H U J K O L play notes; Z / X change octave"
-          onClick={() => {
-            setQwertyEnabled(!typing);
-            if (!typing) setQwertyOctave(octave);
-          }}
-        >
-          <ComputerKeyboard className="size-4" /> Computer keys {typing ? "ON" : "OFF"}
-        </Button>
-        {typing && (
-          <span className="font-mono text-xs text-muted-foreground">C{typingOctave} · Z / X</span>
-        )}
-      </div>
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3">
-        <span className="label-xs">
-          {onPlay
-            ? "Selected sample"
-            : `Playing ${selected?.name} · ${selected?.instrument ?? "SYNTH"}`}
-        </span>
-        <div className="flex shrink-0 items-center gap-1 sm:ml-auto">
-          <span className="label-xs mr-1">OCTAVE</span>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-6"
-            aria-label="Octave down"
-            disabled={octave <= 1 || locked}
-            onClick={() => slideTo(octave - 1)}
-          >
-            <Minus className="size-3" />
-          </Button>
-          <span className="w-8 text-center font-mono text-xs text-primary">C{octave}</span>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-6"
-            aria-label="Octave up"
-            disabled={octave >= 7 || locked}
-            onClick={() => slideTo(octave + 1)}
-          >
-            <Plus className="size-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            aria-pressed={locked}
-            aria-label={locked ? "Unlock keyboard range" : "Lock keyboard range"}
-            onClick={() => setLocked((l) => !l)}
-            className={`h-6 gap-1 px-2 font-mono text-[10px] tracking-wider ${
-              locked
-                ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]"
-                : "text-muted-foreground"
-            }`}
-          >
-            {locked ? <Lock className="size-3" /> : <Unlock className="size-3" />}
-            {locked ? "LOCKED" : "LOCK"}
-          </Button>
-        </div>
-        <div className="col-span-2 flex w-full items-center gap-2 sm:col-auto sm:w-32">
-          <span className="label-xs">VEL</span>
-          <Slider
-            value={[velocity]}
-            min={0.1}
-            max={1}
-            step={0.01}
-            onValueChange={([v = 0.9]) => setVelocity(v)}
-          />
-        </div>
-      </div>
-
+  const extras = (
+    <>
       {/* fast range slide: bass ←→ treble */}
       <div className="flex items-center gap-2">
         <Button
@@ -510,10 +423,289 @@ export function Keyboard({
           ))}
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <div
+      className={
+        compact
+          ? "instrument-keyboard flex h-full min-h-0 flex-col gap-1.5 rounded-md border border-border bg-surface p-1.5"
+          : "instrument-keyboard space-y-2 rounded-md border border-border bg-surface p-3"
+      }
+      data-keyboard-skin={skinKey}
+      style={keyboardStyle}
+      {...imageDrop}
+    >
+      {compact ? (
+        <div className="flex min-w-0 shrink-0 items-center gap-2">
+          <div
+            className={
+              compact
+                ? "flex min-w-0 shrink-0 flex-nowrap items-center gap-1.5"
+                : "flex flex-wrap items-center gap-2"
+            }
+          >
+            {compact ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1 px-2 text-[11px]"
+                    aria-label="Keyboard options"
+                  >
+                    <SlidersHorizontal className="size-3.5" /> Options
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="max-h-[80dvh] w-[min(92vw,560px)] space-y-3 overflow-y-auto">
+                  {extras}
+                  <SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" aria-label="Keyboard appearance">
+                    <Palette className="size-4" /> Keyboard colors & wallpaper
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto">
+                  <SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" />
+                </PopoverContent>
+              </Popover>
+            )}
+            <Button
+              size="sm"
+              variant={typing ? "secondary" : "outline"}
+              aria-pressed={typing}
+              disabled={disabled}
+              title="A W S E D F T G Y H U J K O L play notes; Z / X change octave"
+              onClick={() => {
+                setQwertyEnabled(!typing);
+                if (!typing) setQwertyOctave(octave);
+              }}
+            >
+              <ComputerKeyboard className="size-4" />
+              {compact
+                ? `Typing ${typing ? "ON" : "OFF"}`
+                : `Computer keys ${typing ? "ON" : "OFF"}`}
+            </Button>
+            {typing && !compact && (
+              <span className="font-mono text-xs text-muted-foreground">
+                C{typingOctave} · Z / X
+              </span>
+            )}
+          </div>
+          <div
+            className={
+              compact
+                ? "flex min-w-0 flex-1 items-center gap-2"
+                : "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3"
+            }
+          >
+            <span className={compact ? "label-xs hidden truncate xl:inline" : "label-xs"}>
+              {onPlay
+                ? "Selected sample"
+                : `Playing ${selected?.name} · ${selected?.instrument ?? "SYNTH"}`}
+            </span>
+            <div className="flex shrink-0 items-center gap-1 sm:ml-auto">
+              <span className={compact ? "label-xs mr-1 hidden 2xl:inline" : "label-xs mr-1"}>
+                OCTAVE
+              </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-6"
+                aria-label="Octave down"
+                disabled={octave <= 1 || locked}
+                onClick={() => slideTo(octave - 1)}
+              >
+                <Minus className="size-3" />
+              </Button>
+              <span className="w-8 text-center font-mono text-xs text-primary">C{octave}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-6"
+                aria-label="Octave up"
+                disabled={octave >= 7 || locked}
+                onClick={() => slideTo(octave + 1)}
+              >
+                <Plus className="size-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-pressed={locked}
+                aria-label={locked ? "Unlock keyboard range" : "Lock keyboard range"}
+                onClick={() => setLocked((l) => !l)}
+                className={`h-6 gap-1 px-2 font-mono text-[10px] tracking-wider ${
+                  locked
+                    ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {locked ? <Lock className="size-3" /> : <Unlock className="size-3" />}
+                {locked ? "LOCKED" : "LOCK"}
+              </Button>
+            </div>
+            <div
+              className={
+                compact
+                  ? "flex w-24 min-w-16 shrink items-center gap-2"
+                  : "col-span-2 flex w-full items-center gap-2 sm:col-auto sm:w-32"
+              }
+            >
+              <span className="label-xs">VEL</span>
+              <Slider
+                value={[velocity]}
+                min={0.1}
+                max={1}
+                step={0.01}
+                onValueChange={([v = 0.9]) => setVelocity(v)}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div
+            className={
+              compact
+                ? "flex min-w-0 shrink-0 flex-nowrap items-center gap-1.5"
+                : "flex flex-wrap items-center gap-2"
+            }
+          >
+            {compact ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1 px-2 text-[11px]"
+                    aria-label="Keyboard options"
+                  >
+                    <SlidersHorizontal className="size-3.5" /> Options
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="max-h-[80dvh] w-[min(92vw,560px)] space-y-3 overflow-y-auto">
+                  {extras}
+                  <SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" aria-label="Keyboard appearance">
+                    <Palette className="size-4" /> Keyboard colors & wallpaper
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="max-h-[80dvh] w-[min(92vw,480px)] overflow-y-auto">
+                  <SkinControls skinKey={skinKey} keyboard image colorLabel="Keyboard surround" />
+                </PopoverContent>
+              </Popover>
+            )}
+            <Button
+              size="sm"
+              variant={typing ? "secondary" : "outline"}
+              aria-pressed={typing}
+              disabled={disabled}
+              title="A W S E D F T G Y H U J K O L play notes; Z / X change octave"
+              onClick={() => {
+                setQwertyEnabled(!typing);
+                if (!typing) setQwertyOctave(octave);
+              }}
+            >
+              <ComputerKeyboard className="size-4" />
+              {compact
+                ? `Typing ${typing ? "ON" : "OFF"}`
+                : `Computer keys ${typing ? "ON" : "OFF"}`}
+            </Button>
+            {typing && !compact && (
+              <span className="font-mono text-xs text-muted-foreground">
+                C{typingOctave} · Z / X
+              </span>
+            )}
+          </div>
+          <div
+            className={
+              compact
+                ? "flex min-w-0 flex-1 items-center gap-2"
+                : "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:gap-3"
+            }
+          >
+            <span className={compact ? "label-xs hidden truncate xl:inline" : "label-xs"}>
+              {onPlay
+                ? "Selected sample"
+                : `Playing ${selected?.name} · ${selected?.instrument ?? "SYNTH"}`}
+            </span>
+            <div className="flex shrink-0 items-center gap-1 sm:ml-auto">
+              <span className={compact ? "label-xs mr-1 hidden 2xl:inline" : "label-xs mr-1"}>
+                OCTAVE
+              </span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-6"
+                aria-label="Octave down"
+                disabled={octave <= 1 || locked}
+                onClick={() => slideTo(octave - 1)}
+              >
+                <Minus className="size-3" />
+              </Button>
+              <span className="w-8 text-center font-mono text-xs text-primary">C{octave}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="size-6"
+                aria-label="Octave up"
+                disabled={octave >= 7 || locked}
+                onClick={() => slideTo(octave + 1)}
+              >
+                <Plus className="size-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-pressed={locked}
+                aria-label={locked ? "Unlock keyboard range" : "Lock keyboard range"}
+                onClick={() => setLocked((l) => !l)}
+                className={`h-6 gap-1 px-2 font-mono text-[10px] tracking-wider ${
+                  locked
+                    ? "bg-primary/15 text-primary shadow-[inset_0_0_0_1px_var(--primary)]"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {locked ? <Lock className="size-3" /> : <Unlock className="size-3" />}
+                {locked ? "LOCKED" : "LOCK"}
+              </Button>
+            </div>
+            <div
+              className={
+                compact
+                  ? "flex w-24 min-w-16 shrink items-center gap-2"
+                  : "col-span-2 flex w-full items-center gap-2 sm:col-auto sm:w-32"
+              }
+            >
+              <span className="label-xs">VEL</span>
+              <Slider
+                value={[velocity]}
+                min={0.1}
+                max={1}
+                step={0.01}
+                onValueChange={([v = 0.9]) => setVelocity(v)}
+              />
+            </div>
+          </div>
+
+          {extras}
+        </>
+      )}
 
       <div
         onWheel={(e) => slideTo(octave + (e.deltaY > 0 ? -1 : 1))}
-        className="keyboard-keybed relative h-48 w-full min-w-0 select-none overflow-hidden rounded-[3px] border border-border bg-background"
+        className={`keyboard-keybed relative ${compact ? "min-h-0 flex-1" : "h-48"} w-full min-w-0 select-none overflow-hidden rounded-[3px] border border-border bg-background`}
         style={{ touchAction: "none" }}
         data-keyboard-keys
       >

@@ -22,7 +22,10 @@ export function MidiLearnButton({ id, param, label }: MidiTarget & { label: stri
   const assigned = Object.entries(midiMap).find(([, v]) => v.id === id && v.param === param);
   const learning = midiLearn?.id === id && midiLearn.param === param;
   return (
-    <span className="inline-flex items-center gap-0.5">
+    <span
+      className="inline-flex items-center gap-0.5"
+      data-midi-learn={learning ? "learning" : assigned ? "assigned" : "idle"}
+    >
       <Button
         type="button"
         size="sm"
