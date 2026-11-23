@@ -3429,6 +3429,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
       buses: structuredClone(buses),
       customBuses: structuredClone(customBuses),
       vcas: structuredClone(vcas),
+      vcaFaderLink: true,
       auxReturns: structuredClone(auxReturns),
       fxChains: structuredClone(fxChains),
       installedPlugins: structuredClone(installedPlugins),
@@ -3455,6 +3456,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
           D: { volume: 1, muted: false },
         },
       ),
+      session.vcaFaderLink === true,
     );
     vcaLinkMemoryRef.current.clear();
     setTracks(legacy.tracks);

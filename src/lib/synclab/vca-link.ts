@@ -115,12 +115,16 @@ export function applyVcaLink(
 /**
  * Older projects stored a VCA level that scaled its channels behind their faders. Bake that
  * level into the channel faders and reset the VCA to 0 dB, so the mix sounds exactly the same
- * now that VCAs move the faders themselves.
+ * now that VCAs move the faders themselves. Snapshots marked `linked` (vcaFaderLink) already
+ * carry the VCA move in their faders and are returned untouched, so undo/reopen never
+ * applies it twice.
  */
 export function bakeLegacyVca(
   tracks: Track[],
   vcas: Record<VcaId, BusState>,
+  linked = false,
 ): { tracks: Track[]; vcas: Record<VcaId, BusState> } {
+  if (linked) return { tracks, vcas };
   const scaled = (Object.keys(vcas) as VcaId[]).filter((id) => vcas[id].volume !== 1);
   if (!scaled.length) return { tracks, vcas };
   const nextTracks = tracks.map((t) =>

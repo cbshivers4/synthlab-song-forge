@@ -31,6 +31,8 @@ export interface CloudSession {
   /** effect buses the producer added in the mixer */
   customBuses?: CustomBus[];
   vcas?: Record<VcaId, BusState>;
+  /** true once VCA moves are already baked into the channel faders (vcas[].volume is only the VCA's own position) */
+  vcaFaderLink?: true;
   auxReturns?: Record<AuxId, BusState>;
   fxChains: Record<string, PluginInstance[]>;
   installedPlugins: PluginDef[];

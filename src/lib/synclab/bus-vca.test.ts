@@ -121,4 +121,14 @@ describe("VCA moves its channels' own controls", () => {
     expect(tracks[1]!.volume).toBe(1);
     expect(vcas.A.volume).toBe(1);
   });
+
+  it("new snapshots already hold the VCA move: undo/reopen keeps a -6 dB VCA at -6 dB", () => {
+    const vcaDown = { volume: dbToGain(-6), muted: false };
+    // the VCA was pulled down 6 dB, so the fader already sits at -6 dB
+    const pulled = applyVcaLink([track("v")], "A", base, vcaDown, new Map(), makeEq);
+    const vcas = { A: vcaDown, B: base, C: base, D: base };
+    const reopened = bakeLegacyVca(pulled, vcas, true);
+    expect(gainToDb(reopened.tracks[0]!.volume)).toBeCloseTo(-6, 5);
+    expect(reopened.vcas.A.volume).toBeCloseTo(dbToGain(-6));
+  });
 });
