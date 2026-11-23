@@ -65,3 +65,18 @@ export function listNames(names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
+
+/**
+ * The other band part a Preview also starts (Live Keys for the drummer, Live Drummer for the keys),
+ * when it will be heard, with any distorting effects on its channel — so a guitar-like sound from the
+ * keys' pedals isn't mistaken for the drummer (and vice versa).
+ */
+export function checkBandPartner(
+  partner: Track | null | undefined,
+  tracks: Track[],
+): { track: Track; drive: PluginInstance[] } | null {
+  if (!partner) return null;
+  const { silent, drive } = checkLiveChannel(partner, tracks);
+  if (silent.length) return null;
+  return { track: partner, drive };
+}

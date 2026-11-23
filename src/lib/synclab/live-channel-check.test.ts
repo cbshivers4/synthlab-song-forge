@@ -3,6 +3,7 @@ import {
   DRUMMER_CHANNEL_VOLUME,
   audiblePatch,
   bypassDrive,
+  checkBandPartner,
   checkLiveChannel,
   listNames,
 } from "./live-channel-check";
@@ -61,6 +62,22 @@ describe("Live player channel check", () => {
       "Lead Amp",
     ]);
     expect(bypassDrive(plugins).map((p) => p.bypass)).toEqual([false, true, true, true]);
+  });
+  it("reports the keys' guitar pedals to the drummer panel", () => {
+    const keys = track({
+      id: "k",
+      name: "KEYS",
+      plugins: [fx("wah", "Wah Pedal"), fx("fuzz", "Fuzz Pedal"), fx("leadamp", "Lead Guitar Amp")],
+    });
+    expect(checkBandPartner(keys, [keys])?.drive.map((p) => p.name)).toEqual([
+      "Fuzz Pedal",
+      "Lead Guitar Amp",
+    ]);
+  });
+  it("ignores a partner that won't be heard or doesn't exist", () => {
+    const keys = track({ id: "k", muted: true, plugins: [fx("fuzz", "Fuzz Pedal")] });
+    expect(checkBandPartner(keys, [keys])).toBeNull();
+    expect(checkBandPartner(null, [])).toBeNull();
   });
   it("joins names", () => {
     expect(listNames(["A", "B", "C"])).toBe("A, B and C");
