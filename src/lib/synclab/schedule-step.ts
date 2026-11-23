@@ -8,6 +8,7 @@ import type { getEngine } from "./audio-engine";
 import { clipRate, laneValueAt, type SynthPatch, type Track, type Transport } from "./types";
 import { songSteps, stepSeconds, stepsPerBar, STEPS_PER_BEAT } from "./timebase";
 import { playbackPreferences } from "./preferences";
+import { stopsOnRelease } from "./sampler-gate";
 import { processMidiThroughPlugins } from "./plugins";
 
 type Engine = ReturnType<typeof getEngine>;
@@ -96,7 +97,9 @@ export function triggerNote(
       );
       return;
     }
-    engine.playSample(t.id, s, shifted, dur, vel, when);
+    // A hand-played Gate note gets its own voice so letting go of that key stops just it.
+    const voice = when === undefined && stopsOnRelease(s) ? `note-${midi}` : undefined;
+    engine.playSample(t.id, s, shifted, dur, vel, when, voice);
     return;
   }
   if (!t.patch) return;

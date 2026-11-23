@@ -315,3 +315,4 @@
 
 - [x] Live Drummer screen explains/fixes a guitar-like sound from Live Keys pedals when Preview plays both. Verified on a copy of "Track 11182026".
 - [x] Own colours for knob ring, knob body, sliders/faders and front panel — all devices + per device (Appearance & themes, and Knobs & panel button on device colour bars). Verified on drum machine and mixer in the preview.
+- [x] Sampler, Pad Sampler and Video Sampler: letting go of a key/pad stops the sound (Gate default for new sounds; saved songs keep their mode). Verified Sampler screen key + typing key in the preview.

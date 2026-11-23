@@ -589,7 +589,8 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Hold several pads at once with Note Repeat on — each repeats on its own.",
       "Video Sampler chops now play through their own VIDEO SAMPLER mixer channel, so faders, sends and effects work on them.",
       "Copy one video chop's sound to all chops, or reset a chop.",
-      "One-shot pads keep ringing after you let go; Note on pads stop when you let go.",
+      "One-shot pads keep ringing after you let go; Note on (Gate) pads stop when you let go.",
+      "Sampler, Pad Sampler and Video Sampler: sounds you load from now on start in Gate, so the sound stops as soon as you let go of the key, pad, typing key or MIDI note (it fades out over the sound's release). Pick One-shot on a sound to let it play to the end. Sounds in songs and video kits saved earlier keep the mode they had.",
     ],
     cant: [
       "Note Repeat starts from the moment you press the pad; it doesn't wait for the song's beat grid.",

@@ -68,6 +68,7 @@ import {
 import { qwertyEnabled } from "@/lib/synclab/qwerty";
 import { NoteRepeatBar } from "./NoteRepeatBar";
 import { PadSoundEditor } from "./PadSoundEditor";
+import { stopsOnRelease } from "@/lib/synclab/sampler-gate";
 import {
   DEFAULT_NOTE_REPEAT,
   clampSwing,
@@ -166,7 +167,8 @@ const makePad = (
   pitch: 0,
   reverse: false,
   loop: false,
-  oneShot: true,
+  // Gate: new pads stop when you let go (One-shot is one click away in the pad's sound).
+  oneShot: false,
   attack: 0.002,
   release: 0.08,
   choke: 0,
@@ -478,6 +480,8 @@ export function PadSampler() {
       when?: number,
       midi = 60,
       region?: { start: number; end: number },
+      /** own voice for keyboard notes, so letting go of one key leaves the others */
+      voice?: string,
     ) => {
       const pad = padsRef.current[i];
       if (!pad) return;
@@ -502,7 +506,7 @@ export function PadSampler() {
         undefined,
         velocity,
         when,
-        padVoiceKey(i, pad),
+        voice ?? padVoiceKey(i, pad),
       );
       // While the transport records, drop the hit into the sampler track's take on the timeline
       // at the moment it sounds (Note Repeat and patterns queue hits a little ahead).
@@ -613,8 +617,8 @@ export function PadSampler() {
     if (!id) return;
     // One-shot sounds keep ringing after you let go, like the normal pads.
     const src = padsRef.current[multiRef.current.source];
-    if (src?.oneShot && !src.loop) return;
-    for (const key of multiPitchVoiceKeys(`mp${pad}`)) getEngine().stopVoiceKey(id, key);
+    if (!stopsOnRelease(src)) return;
+    for (const key of multiPitchVoiceKeys(`mp${pad}`)) getEngine().releaseVoiceKey(id, key);
   }, []);
   const padMidi = useMidiPads(
     "pad-sampler",
@@ -730,11 +734,27 @@ export function PadSampler() {
     },
     [trackId],
   );
-  /** Letting go of a pad: Note Repeat stops, and note-on (or looping) pads stop sounding. */
+  /** Letting go of a pad: Note Repeat stops, and Gate (or looping) pads fade out through their release. */
   const releasePad = (i: number) => {
     repeaterRef.current?.release(`pad:${i}`);
     const pad = padsRef.current[i];
-    if (pad && (!pad.oneShot || pad.loop)) stopPad(i);
+    const id = voiceTrackRef.current ?? trackId;
+    if (!pad || !id || !stopsOnRelease(pad)) return;
+    const engine = getEngine();
+    engine.releaseVoiceKey(id, `pad${i}`);
+    for (const key of polyKeysRef.current.get(i) ?? []) engine.releaseVoiceKey(id, key);
+    polyKeysRef.current.delete(i);
+    if (pad.choke) engine.releaseVoiceKey(id, `choke${pad.choke}`);
+  };
+  /** Letting go of a keyboard key on the pads keyboard (Gate sounds stop). */
+  const releaseKey = (midi: number) => {
+    const id = voiceTrackRef.current ?? trackId;
+    if (!id) return;
+    const multiOnNow = multiRef.current.mode !== "off";
+    const src = multiOnNow ? padsRef.current[multiRef.current.source] : padsRef.current[sel];
+    if (!stopsOnRelease(src)) return;
+    const keys = multiOnNow ? multiPitchVoiceKeys(`mpkey${midi}`) : [`padkey${midi}`];
+    for (const key of keys) getEngine().releaseVoiceKey(id, key);
   };
 
   const loadInto = async (i: number, file: File | undefined) => {
@@ -1571,8 +1591,9 @@ export function PadSampler() {
             onPlay={(midi, velocity) =>
               multiRef.current.mode !== "off"
                 ? playPitches(`mpkey${midi}`, notePitches(midi - 60, multiRef.current), velocity)
-                : trigger(sel, velocity, undefined, midi)
+                : trigger(sel, velocity, undefined, midi, undefined, `padkey${midi}`)
             }
+            onRelease={releaseKey}
           />
         </div>
       )}

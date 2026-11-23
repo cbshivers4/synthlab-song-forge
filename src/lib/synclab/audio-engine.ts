@@ -3040,6 +3040,8 @@ export class SyncLabEngine {
   private liveSamples = new Map<string, AudioBufferSourceNode[]>();
   /** voices grouped by an arbitrary key so pads can choke each other */
   private keyedSamples = new Map<string, AudioBufferSourceNode[]>();
+  /** Each live sample voice's level and release, so a key release can fade it out smoothly. */
+  private sampleAmps = new WeakMap<AudioBufferSourceNode, { amp: GainNode; release: number }>();
   private sampleTriggerVersions = new Map<string, number>();
 
   /** Loudest absolute sample (0..1) in the start..end part of a loaded sample, across all channels; 0 when not loaded. */
@@ -3319,6 +3321,7 @@ export class SyncLabEngine {
     src.start(t0, offset, s.loop ? undefined : window);
     src.stop(t0 + len + rel + 0.02);
 
+    this.sampleAmps.set(src, { amp, release: rel });
     const live = this.liveSamples.get(trackId) ?? [];
     live.push(src);
     this.liveSamples.set(trackId, live);
@@ -3491,6 +3494,32 @@ export class SyncLabEngine {
     for (const src of this.keyedSamples.get(kk) ?? []) {
       try {
         src.stop();
+      } catch {
+        /* already stopped */
+      }
+    }
+    this.keyedSamples.set(kk, []);
+  }
+
+  /**
+   * Key release (Gate): fades out only the voices started with this voice key through their own
+   * release time, instead of cutting them, and cancels a hit still waiting for its sample to load.
+   */
+  releaseVoiceKey(trackId: string, voiceKey: string) {
+    const kk = `${trackId}|${voiceKey}`;
+    this.sampleTriggerVersions.set(kk, (this.sampleTriggerVersions.get(kk) ?? 0) + 1);
+    const ctx = this.ctx;
+    for (const src of this.keyedSamples.get(kk) ?? []) {
+      const voice = this.sampleAmps.get(src);
+      try {
+        if (!ctx || !voice) {
+          src.stop();
+          continue;
+        }
+        const now = ctx.currentTime;
+        holdAt(voice.amp.gain, now);
+        voice.amp.gain.linearRampToValueAtTime(0.0001, now + voice.release);
+        src.stop(now + voice.release + 0.02);
       } catch {
         /* already stopped */
       }

@@ -34,6 +34,24 @@ describe("saved sampler rendering", () => {
     expect(play).toHaveBeenCalledTimes(1);
   });
 
+  it("letting go of a Gate key before its sample loads means it never starts", async () => {
+    const engine = new SyncLabEngine();
+    vi.spyOn(engine, "init").mockReturnValue({} as AudioContext);
+    let finish: ((buffer: AudioBuffer) => void) | undefined;
+    vi.spyOn(engine, "ensureBuffer").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const play = vi.spyOn(engine, "playSample");
+    engine.playSample("sampler", { ...sample, oneShot: false }, 64, 30, 1, undefined, "note-64");
+    engine.releaseVoiceKey("sampler", "note-64");
+    finish?.({} as AudioBuffer);
+    await Promise.resolve();
+    expect(play).toHaveBeenCalledTimes(1);
+  });
+
   it("resolves a saved sample before looking up the render buffer", async () => {
     const engine = new SyncLabEngine();
     vi.spyOn(engine, "init").mockReturnValue({} as AudioContext);

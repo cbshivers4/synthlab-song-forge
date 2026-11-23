@@ -21,6 +21,11 @@ import {
 } from "@/lib/synclab/media-library";
 import { saveToLibrary } from "@/lib/synclab/library";
 import { loadVideoSession, saveVideoSession } from "@/lib/synclab/autosave-media";
+import {
+  KEY_RELEASE_VERSION,
+  loadedVideoChopSounds,
+  stopsOnRelease,
+} from "@/lib/synclab/sampler-gate";
 import { moveVideoChop, snapVideoTime } from "@/lib/synclab/video-chops";
 import {
   VIDEO_PAD_KEYS,
@@ -277,7 +282,10 @@ export function VideoSampler() {
         setSensitivity(kit.sensitivity ?? 0.5);
         setManualSlice(kit.manualSlice ?? false);
         setMidiNotes(kit.midiNotes ?? []);
-        setChopSounds(kit.chopSounds ?? []);
+        // Kits saved before Gate was the default keep their chops One-shot.
+        setChopSounds(
+          loadedVideoChopSounds(kit.chopSounds, kit.chops.length, kit.keyRelease) as ChopSounds,
+        );
         setLearnPad(null);
       } else {
         setNoteGrid(0);
@@ -322,6 +330,7 @@ export function VideoSampler() {
         manualSlice,
         midiNotes,
         chopSounds,
+        keyRelease: KEY_RELEASE_VERSION,
       });
     const id = window.setTimeout(persist, 500);
     const onHide = () => {
@@ -376,6 +385,7 @@ export function VideoSampler() {
             manualSlice,
             midiNotes,
             chopSounds,
+            keyRelease: KEY_RELEASE_VERSION,
           },
         },
       });
@@ -566,14 +576,17 @@ export function VideoSampler() {
     polyKeys.current.set(base, [...(polyKeys.current.get(base) ?? []), key].slice(-32));
     return key;
   };
-  const stopVoices = (base: string, sound: PadSound) => {
+  /** Stops a chop's voices; `fade` (key release) lets them fade through the sound's release. */
+  const stopVoices = (base: string, sound: PadSound, fade = false) => {
     const id = tracksRef.current.find((t) => isVideoSamplerTrack(t))?.id ?? madeTrack.current?.id;
     if (!id) return;
     const engine = getEngine();
-    engine.stopVoiceKey(id, base);
-    for (const key of polyKeys.current.get(base) ?? []) engine.stopVoiceKey(id, key);
+    const stop = (key: string) =>
+      fade ? engine.releaseVoiceKey(id, key) : engine.stopVoiceKey(id, key);
+    stop(base);
+    for (const key of polyKeys.current.get(base) ?? []) stop(key);
     polyKeys.current.delete(base);
-    if (sound.choke) engine.stopVoiceKey(id, `vchoke${sound.choke}`);
+    if (sound.choke) stop(`vchoke${sound.choke}`);
   };
 
   /** The picture follows the hit: it jumps to the chop and plays at the hit's speed. */
@@ -650,8 +663,8 @@ export function VideoSampler() {
   const releaseChop = (i: number) => {
     repeater.current?.release(`chop:${i}`);
     const sound = chopSound(i);
-    if (sound.oneShot && !sound.loop) return;
-    stopVoices(`vchop${i}`, sound);
+    if (!stopsOnRelease(sound)) return;
+    stopVoices(`vchop${i}`, sound, true);
     if (active === i) stopPicture();
   };
 
@@ -713,10 +726,14 @@ export function VideoSampler() {
   };
   const releaseMulti = (pad: number) => {
     repeater.current?.release(`mp:${pad}`);
+    releaseMultiVoice(`mp${pad}`);
+  };
+  /** Gate: letting go fades out the multi pitch notes started under this voice name. */
+  const releaseMultiVoice = (voice: string) => {
     const sound = multi.source >= 0 ? chopSound(multi.source) : DEFAULT_PAD_SOUND;
-    if (sound.oneShot && !sound.loop) return;
+    if (!stopsOnRelease(sound)) return;
     const id = tracksRef.current.find((t) => isVideoSamplerTrack(t))?.id;
-    if (id) for (const key of multiPitchVoiceKeys(`mp${pad}`)) getEngine().stopVoiceKey(id, key);
+    if (id) for (const key of multiPitchVoiceKeys(voice)) getEngine().releaseVoiceKey(id, key);
     stopPicture();
   };
 
@@ -1539,6 +1556,14 @@ export function VideoSampler() {
                 setEditIdx(index);
                 trigger(index);
               }
+            }}
+            onRelease={(note) => {
+              if (multiOn) {
+                releaseMultiVoice(`key${note}`);
+                return;
+              }
+              const index = videoPadForNote(note, chops.length);
+              if (index !== null) releaseChop(index);
             }}
           />
         </section>

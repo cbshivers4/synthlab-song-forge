@@ -27,6 +27,9 @@ export function openShortcutSettings() {
     requestAnimationFrame(() => window.dispatchEvent(new Event("synclab:shortcuts-settings"))),
   );
 }
+/** Typing keys held down right now → the note they started, so letting go stops that note. */
+const typedNotes = new Map<string, { trackId: string; midi: number }>();
+
 export function useShortcuts() {
   const studio = useStudio();
   const { project, setProject } = useApp();
@@ -82,8 +85,11 @@ export function useShortcuts() {
           e.preventDefault();
           if (e.repeat) return;
           if (key === "z" || key === "x") setQwertyOctave(qwertyOctave() + (key === "z" ? -1 : 1));
-          else if (offset != null)
-            studio.previewNote(target.id, (qwertyOctave() + 1) * 12 + offset);
+          else if (offset != null) {
+            const midi = (qwertyOctave() + 1) * 12 + offset;
+            typedNotes.set(key, { trackId: target.id, midi });
+            studio.previewNote(target.id, midi, undefined, true, undefined, true);
+          }
           return;
         }
       }
@@ -265,7 +271,19 @@ export function useShortcuts() {
           break;
       }
     };
+    // Letting go of a typing key stops a Gate sampler sound it started.
+    const onKeyUp = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      const note = typedNotes.get(key);
+      if (!note) return;
+      typedNotes.delete(key);
+      studio.releaseNote(note.trackId, note.midi);
+    };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKeyUp);
+    };
   }, [studio, project, setProject, requirePro, isMobile]);
 }

@@ -74,6 +74,8 @@ export interface VideoKit {
   midiNotes?: import("./video-pad-map").VideoPadMidiNote[];
   /** each chop's own sound (tune, level, pan, envelopes, filter, playback), aligned with chops */
   chopSounds?: (Partial<import("./mpc-pad").PadSound> | null)[];
+  /** set on kits saved once Gate became the default; older kits keep their chops One-shot */
+  keyRelease?: number;
 }
 export function selectLibraryVideo(blob: Blob, name: string, kit?: VideoKit) {
   videoSelection = { blob, name, ...(kit ? { kit } : {}) };

@@ -35,7 +35,6 @@ import { Keyboard } from "./Keyboard";
 import { MultiPitchModeSwitch, MultiPitchPads } from "./MultiPitchPads";
 import {
   MULTI_PITCH_PADS,
-  multiPitchVoiceKeys,
   normalizeMultiPitch,
   padPitches,
   type MultiPitchSettings,
@@ -390,6 +389,7 @@ export function Sampler() {
     clearSample,
     stopSamples,
     previewNote,
+    releaseNote,
     setPanel,
   } = useStudio();
   const [over, setOver] = useState(false);
@@ -738,10 +738,10 @@ export function Sampler() {
     stopSamples(track.id);
     updateSampler(track.id, { multiPitch: next });
   };
+  /** Letting go of a multi pitch pad: Gate stops its notes, One-shot lets them ring. */
   const releaseMulti = (pitches: number[]) => {
     if (!track || !s) return;
-    for (const key of multiPitchVoiceKeys(`mp-${s.rootNote + (pitches[0] ?? 0)}`))
-      getEngine().stopVoiceKey(track.id, key);
+    releaseNote(track.id, s.rootNote + (pitches[0] ?? 0));
   };
   const [pickChop, setPickChop] = useState(0);
   const [padTarget, setPadTarget] = useState(0);
@@ -782,13 +782,14 @@ export function Sampler() {
     setRepeatState(next);
     if (!next.on) repeaterRef.current?.releaseAll();
   };
-  const playRef = useRef<(key: string) => void>(() => {});
-  playRef.current = (key) => {
+  /** `held`: a pad press that will be let go (Gate plays until then); repeat hits pass false. */
+  const playRef = useRef<(key: string, held?: boolean) => void>(() => {});
+  playRef.current = (key, held = false) => {
     if (!track || !s) return;
     const [kind, n] = key.split(":");
     const i = Number(n);
-    if (kind === "mp") previewNote(track.id, s.rootNote + (padPitches(i, mp)[0] ?? 0), s.duration);
-    else previewNote(track.id, s.rootNote + i, s.duration);
+    const midi = kind === "mp" ? s.rootNote + (padPitches(i, mp)[0] ?? 0) : s.rootNote + i;
+    previewNote(track.id, midi, s.duration, true, undefined, held);
   };
   /** Repeat hits waiting for their moment; letting go of the pad cancels them. */
   const pendingRef = useRef(new Map<string, Set<number>>());
@@ -820,7 +821,7 @@ export function Sampler() {
   /** Press a chop pad ("chop:3") or a multi pitch pad ("mp:5"). */
   const pressChopKey = (key: string) => {
     if (repeatRef.current.on) repeaterRef.current?.press(key);
-    else playRef.current(key);
+    else playRef.current(key, true);
   };
   const chopSound = (i: number): ChopSound => s?.chopSounds?.[i] ?? {};
   const setChopSound = (i: number, next: ChopSound) => {
@@ -867,12 +868,8 @@ export function Sampler() {
   const releaseChop = (index: number) => {
     setHeld(null);
     releaseRepeat(`chop:${index}`);
-    // One-shot chops play to their end after you let go; Gate stops them.
-    if (track && s && !s.oneShot)
-      getEngine().stopVoiceKey(
-        track.id,
-        s.chopChoke ? `chop-choke-${s.chopChoke}` : `chop-${index}`,
-      );
+    // One-shot chops play to their end after you let go; Gate (and looping) fades them out.
+    if (track && s) releaseNote(track.id, s.rootNote + index);
   };
   const chopPads = useMidiPads(
     `sampler:${track?.id ?? "none"}`,
@@ -2086,7 +2083,10 @@ export function Sampler() {
             skinKey="sampler-keyboard"
             disabled={!s}
             onPlay={(midi) => {
-              if (track && s) previewNote(track.id, midi, s.duration);
+              if (track && s) previewNote(track.id, midi, s.duration, true, undefined, true);
+            }}
+            onRelease={(midi) => {
+              if (track) releaseNote(track.id, midi);
             }}
           />
         </section>

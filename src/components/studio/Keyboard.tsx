@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { Keyboard as ComputerKeyboard, Lock, Minus, Music2, Plus, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,12 +54,15 @@ const CHORDS = [
 export function Keyboard({
   track,
   onPlay,
+  onRelease,
   disabled = false,
   skinKey = "keyboard",
   mappedPads,
 }: {
   track?: Track;
   onPlay?: (midi: number, velocity: number) => void;
+  /** The key came up again (screen key or typing key); Gate sampler sounds stop here. */
+  onRelease?: (midi: number) => void;
   disabled?: boolean;
   skinKey?: SkinKey;
   mappedPads?: { count: number; active: number | null; keys: string };
@@ -72,7 +75,7 @@ export function Keyboard({
     ...(skin.sharpKeyColor ? { "--keyboard-sharp": skin.sharpKeyColor } : {}),
     ...(skin.activeKeyColor ? { "--keyboard-active": skin.activeKeyColor } : {}),
   } as CSSProperties;
-  const { selected: studioSelected, previewNote } = useStudio();
+  const { selected: studioSelected, previewNote, releaseNote } = useStudio();
   const selected = track ?? studioSelected;
   const [octave, setOctave] = useState(4); // C4 base
   const [velocity, setVelocity] = useState(0.9);
@@ -138,18 +141,33 @@ export function Keyboard({
     return midi;
   };
 
-  const playNotes = (notes: number[]) => {
+  /** Keys held down right now (screen key → note it played), so letting go stops the same note. */
+  const pressed = useRef(new Map<string, number>());
+  const playNotes = (notes: number[], holdKey?: string) => {
     if (disabled || (!onPlay && !selected)) return;
     const fitted = [...new Set(notes.map(fitToScale))];
     setHeld(fitted);
+    const first = fitted[0];
+    if (holdKey && first !== undefined) {
+      if (pressed.current.has(holdKey)) release(holdKey);
+      pressed.current.set(holdKey, first);
+    }
     fitted.forEach((midi) => {
       if (onPlay) onPlay(midi, velocity);
-      else if (selected) previewNote(selected.id, midi);
+      else if (selected) previewNote(selected.id, midi, undefined, true, undefined, !!holdKey);
     });
     window.setTimeout(() => setHeld([]), 240);
   };
+  /** Letting go of a held key: Gate sampler sounds stop (other sounds carry on as before). */
+  const release = (holdKey: string) => {
+    const midi = pressed.current.get(holdKey);
+    if (midi === undefined) return;
+    pressed.current.delete(holdKey);
+    if (onRelease) onRelease(midi);
+    else if (selected && !onPlay) releaseNote(selected.id, midi);
+  };
 
-  const play = (midi: number) => playNotes([midi]);
+  const play = (midi: number, holdKey?: string) => playNotes([midi], holdKey);
   const playChord = (intervals: readonly number[]) =>
     playNotes(intervals.map((interval) => base + root + interval));
 
@@ -178,10 +196,15 @@ export function Keyboard({
         const next = qwertyOctave() + (key === "z" ? -1 : 1);
         setQwertyOctave(next);
         slideTo(next);
-      } else if (offset !== undefined) play((qwertyOctave() + 1) * 12 + offset);
+      } else if (offset !== undefined) play((qwertyOctave() + 1) * 12 + offset, `key:${key}`);
     };
+    const up = (event: KeyboardEvent) => release(`key:${event.key.toLowerCase()}`);
     window.addEventListener("keydown", down, true);
-    return () => window.removeEventListener("keydown", down, true);
+    window.addEventListener("keyup", up, true);
+    return () => {
+      window.removeEventListener("keydown", down, true);
+      window.removeEventListener("keyup", up, true);
+    };
   });
 
   const label = (midi: number) => `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
@@ -224,7 +247,17 @@ export function Keyboard({
                     key={note}
                     variant="ghost"
                     disabled={disabled || index >= mappedPads.count}
-                    onClick={() => onPlay?.(note, 1)}
+                    onPointerDown={() => {
+                      pressed.current.set(`pad:${note}`, note);
+                      onPlay?.(note, 1);
+                    }}
+                    onPointerUp={() => release(`pad:${note}`)}
+                    onPointerLeave={() => release(`pad:${note}`)}
+                    onPointerCancel={() => release(`pad:${note}`)}
+                    onClick={(e) => {
+                      // Enter/Space on a focused key plays it once (pointer presses play on press).
+                      if (e.detail === 0) onPlay?.(note, 1);
+                    }}
                     aria-label={`${label(note)} · Video chop ${index + 1}`}
                     aria-pressed={mappedPads.active === index}
                     data-active={mappedPads.active === index}
@@ -251,7 +284,17 @@ export function Keyboard({
                     key={note}
                     variant="ghost"
                     disabled={disabled || index >= mappedPads.count}
-                    onClick={() => onPlay?.(note, 1)}
+                    onPointerDown={() => {
+                      pressed.current.set(`pad:${note}`, note);
+                      onPlay?.(note, 1);
+                    }}
+                    onPointerUp={() => release(`pad:${note}`)}
+                    onPointerLeave={() => release(`pad:${note}`)}
+                    onPointerCancel={() => release(`pad:${note}`)}
+                    onClick={(e) => {
+                      // Enter/Space on a focused key plays it once (pointer presses play on press).
+                      if (e.detail === 0) onPlay?.(note, 1);
+                    }}
                     aria-label={`${label(note)} · Video chop ${index + 1}`}
                     aria-pressed={mappedPads.active === index}
                     data-active={mappedPads.active === index}
@@ -487,7 +530,10 @@ export function Keyboard({
               <Button
                 key={midi}
                 disabled={disabled}
-                onPointerDown={() => play(midi)}
+                onPointerDown={() => play(midi, `pad:${midi}`)}
+                onPointerUp={() => release(`pad:${midi}`)}
+                onPointerLeave={() => release(`pad:${midi}`)}
+                onPointerCancel={() => release(`pad:${midi}`)}
                 variant="ghost"
                 data-in-scale={inScale(midi)}
                 data-active={litKeys.has(midi)}
@@ -519,7 +565,10 @@ export function Keyboard({
             <Button
               key={midi}
               disabled={disabled}
-              onPointerDown={() => play(midi)}
+              onPointerDown={() => play(midi, `pad:${midi}`)}
+              onPointerUp={() => release(`pad:${midi}`)}
+              onPointerLeave={() => release(`pad:${midi}`)}
+              onPointerCancel={() => release(`pad:${midi}`)}
               variant="ghost"
               data-in-scale={inScale(midi)}
               data-active={litKeys.has(midi)}

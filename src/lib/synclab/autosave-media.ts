@@ -74,6 +74,8 @@ export interface VideoSession {
   manualSlice?: boolean;
   midiNotes?: import("./video-pad-map").VideoPadMidiNote[];
   chopSounds?: (Partial<import("./mpc-pad").PadSound> | null)[];
+  /** set on saves made once Gate became the default; older sessions keep their chops One-shot */
+  keyRelease?: number;
 }
 export const saveVideoSession = (v: VideoSession) =>
   putAutosaveItem("video-sampler", v).catch(() => undefined);

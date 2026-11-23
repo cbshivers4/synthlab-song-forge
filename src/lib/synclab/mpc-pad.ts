@@ -58,7 +58,8 @@ export const DEFAULT_PAD_SOUND: PadSound = {
   pan: 0,
   reverse: false,
   loop: false,
-  oneShot: true,
+  // Gate: new sounds stop when you let go of the pad or key (One-shot plays to the end).
+  oneShot: false,
   attack: 0.002,
   decay: 0,
   sustain: 1,
@@ -297,7 +298,8 @@ export function createNoteRepeater(opts: {
 
 /** Keeps a saved pad sound inside valid ranges (old projects simply get the defaults). */
 export function normalizePadSound<T extends Partial<PadSound>>(value: T): T & PadSound {
-  const v = { ...DEFAULT_PAD_SOUND, ...value } as T & PadSound;
+  // Saved sounds without a play mode predate Gate as the default, so they stay One-shot.
+  const v = { ...DEFAULT_PAD_SOUND, oneShot: true, ...value } as T & PadSound;
   for (const [key, [min, max]] of Object.entries(PAD_SOUND_RANGES)) {
     const k = key as PadSoundRangeKey;
     const n = v[k];

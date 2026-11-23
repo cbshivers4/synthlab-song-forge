@@ -114,6 +114,12 @@ import {
 import { padNote } from "./drum-notes";
 import { markLiveHit, isLiveHit, clearLiveHits, neighbourLiveHits } from "./live-take";
 import { keyDown, keyUp } from "./active-keys";
+import {
+  GATE_HOLD_SECONDS,
+  GATE_RECORD_BASE_SECONDS,
+  liveSampleVoiceKeys,
+  stopsOnRelease,
+} from "./sampler-gate";
 import { arpLiveRelease, arpReleaseAll, stopLiveArps } from "./live-arp";
 import {
   HELD_NOTE_SECONDS,
@@ -538,7 +544,11 @@ interface StudioApi extends StudioState {
     duration?: number,
     capture?: boolean,
     patch?: SynthPatch,
+    /** The caller calls releaseNote when the key comes up, so a Gate sampler sound plays while held. */
+    held?: boolean,
   ) => void;
+  /** Letting go of a key played with previewNote(…, held): a Gate sampler sound fades out and its recorded note gets the held length. */
+  releaseNote: (trackId: string, midi: number) => void;
   /** Writes a note into the live timeline recording without playing it (the caller already sounded it). */
   captureNote: (trackId: string, midi: number, velocity?: number) => void;
   /** Resolves true once the file is decoded onto the sampler; false (after an error toast) when it can't be read. */
@@ -1777,6 +1787,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         const tp = transportRef.current;
         const stepDur = stepSeconds(tp.bpm);
         const holding = holdApplies(target);
+        // Gate samplers play while the key is down and stop when it comes up.
+        const gate = !holding && target.kind === "sampler" && stopsOnRelease(target.sampler);
         if (type === "on") {
           keyDown(pitch, holding ? HELD_NOTE_SECONDS * 1000 : 30000);
           setMidiLearning(true);
@@ -1797,7 +1809,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               engine,
               target,
               pitch,
-              holding ? HELD_NOTE_SECONDS : LIVE_MIDI_NOTE_SECONDS,
+              holding ? HELD_NOTE_SECONDS : gate ? GATE_HOLD_SECONDS : LIVE_MIDI_NOTE_SECONDS,
               Math.max(0.15, velocity),
               undefined,
               holding ? HELD_NOTE_SECONDS : 30,
@@ -1819,7 +1831,10 @@ export function StudioProvider({ children }: { children: ReactNode }) {
                 {
                   id: uid(),
                   step: at,
-                  length: heardNoteSteps(LIVE_MIDI_NOTE_SECONDS, stepDur),
+                  length: heardNoteSteps(
+                    gate ? GATE_RECORD_BASE_SECONDS : LIVE_MIDI_NOTE_SECONDS,
+                    stepDur,
+                  ),
                   pitch: recordedPitch,
                   velocity: Math.max(0.15, velocity),
                 },
@@ -1836,6 +1851,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
               t0: performance.now(),
               startStep: at,
               pitch,
+              ...(gate ? { base: GATE_RECORD_BASE_SECONDS } : {}),
             });
             setTracks((ts) =>
               ts.map((t) =>
@@ -1859,6 +1875,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             return;
           }
           keyUp(pitch);
+          if (gate)
+            for (const key of liveSampleVoiceKeys(target.sampler, pitch))
+              engine.releaseVoiceKey(target.id, key);
           for (const p of processMidiThroughPlugins(
             pitch + (target.octave ?? 0) * 12,
             target.plugins,
@@ -4918,6 +4937,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         duration = PREVIEW_NOTE_SECONDS,
         shouldCapture = true,
         patch,
+        held = false,
       ) => {
         const t = tracksRef.current.find((x) => x.id === trackId);
         const engine = getEngine();
@@ -4925,20 +4945,38 @@ export function StudioProvider({ children }: { children: ReactNode }) {
         engine.syncMixIfChanged(tracksRef.current);
         // HOLD latches played notes (never preset auditions, which pass capture off or their own patch).
         const holding = !!t && shouldCapture && !patch && holdApplies(t);
+        // A Gate sampler key sounds until releaseNote (letting go), not for a fixed time.
+        const gate =
+          held && !holding && !!t && t.kind === "sampler" && stopsOnRelease(t.sampler);
         if (t && holding) retriggerHeld(t, midi);
         if (t)
           triggerNote(
             engine,
             previewTrack(t, patch),
             midi,
-            holding ? HELD_NOTE_SECONDS : duration,
+            holding ? HELD_NOTE_SECONDS : gate ? GATE_HOLD_SECONDS : duration,
             0.9,
             undefined,
             holding ? HELD_NOTE_SECONDS : undefined,
           );
-        keyDown(midi, holding ? HELD_NOTE_SECONDS * 1000 : undefined);
+        keyDown(
+          midi,
+          holding ? HELD_NOTE_SECONDS * 1000 : gate ? GATE_HOLD_SECONDS * 1000 : undefined,
+        );
         // Notes played on screen are captured while the transport records.
-        const note = t && shouldCapture ? capture(t.id, midi, 0.9, duration) : null;
+        const note =
+          t && shouldCapture
+            ? capture(t.id, midi, 0.9, gate ? GATE_RECORD_BASE_SECONDS : duration)
+            : null;
+        if (t && note && gate)
+          heldRef.current.set(`gate:${t.id}:${midi}`, {
+            ids: [note.id],
+            trackId: t.id,
+            t0: performance.now(),
+            startStep: note.step,
+            pitch: midi,
+            base: GATE_RECORD_BASE_SECONDS,
+          });
         if (t && note && holding)
           heldRef.current.set(`latch:${t.id}:${note.id}`, {
             ids: [note.id],
@@ -4949,6 +4987,20 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             latched: true,
             base: duration,
           });
+      },
+      releaseNote: (trackId, midi) => {
+        const key = `gate:${trackId}:${midi}`;
+        const held = heldRef.current.get(key);
+        if (held) {
+          heldRef.current.delete(key);
+          finishHeldNote(held);
+        }
+        const t = tracksRef.current.find((x) => x.id === trackId);
+        if (!t || t.kind !== "sampler" || !stopsOnRelease(t.sampler) || holdApplies(t)) return;
+        keyUp(midi);
+        const engine = getEngine();
+        for (const voice of liveSampleVoiceKeys(t.sampler, midi))
+          engine.releaseVoiceKey(t.id, voice);
       },
       captureNote: (trackId, midi, velocity = 0.9) => {
         capture(trackId, midi, velocity);
@@ -4970,7 +5022,8 @@ export function StudioProvider({ children }: { children: ReactNode }) {
             rootNote: 60,
             loop: false,
             reverse: false,
-            oneShot: true,
+            // Gate: new samples stop when you let go of the key (One-shot is one click away).
+            oneShot: false,
             attack: 0.002,
             release: 0.06,
           };
