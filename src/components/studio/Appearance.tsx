@@ -31,6 +31,7 @@ import {
 } from "@/lib/synclab/color-prefs";
 import synclabLogoAsset from "@/assets/synclab-logo-neon.jpg.asset.json";
 import { toast } from "sonner";
+import { ControlColorsSection } from "./ControlColors";
 
 /** One picture, chosen once, shown behind the studio panels you tick. */
 function WallpaperSection() {
@@ -559,6 +560,7 @@ export function Appearance() {
 
   return (
     <div className="space-y-4">
+      <ControlColorsSection />
       <MenuColorsSection />
       <WallpaperSection />
       <LookPackSection

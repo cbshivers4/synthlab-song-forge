@@ -68,3 +68,4 @@ Prettier/ESLint skip generated Supabase files, payment/webhook code, account del
 Both Paddle webhook paths (/api/public/payments/webhook and legacy /api/public/paddle-webhook) call handlePaddleWebhook in src/lib/paddle-webhook.server.ts, verified by the Paddle SDK, and DB write errors return 400 so Paddle retries instead of losing the event.
 - vite.config optimizeDeps.include pre-bundles server-function client deps so dev never reloads on the first server call.
 - Scroll/play effects use braces (lint-enforced): Chrome scroll Promises returned as cleanup crash panels.
+Knob ring/body, slider and front-panel colours (control-colors.ts) are device-only prefs emitted as one generated <style> scoped by each device root's existing class/attribute (CONTROL_DEVICES order = override order), so effects, mixer and pop-out windows follow without per-component styling.

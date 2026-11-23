@@ -25,6 +25,21 @@ import {
   type Skin,
   type SkinKey,
 } from "@/lib/synclab/skins";
+import type { ControlDeviceId } from "@/lib/synclab/control-colors";
+import { ControlColorsButton } from "./ControlColors";
+
+/** Panels whose colour bar also opens their device's knob/slider/front-panel colours. */
+const PANEL_DEVICE: Partial<Record<SkinKey, ControlDeviceId>> = {
+  drums: "drums",
+  sample: "sampler",
+  sampler: "pads",
+  video: "video",
+  bass: "bass",
+  mastering: "mastering",
+  reel: "tape",
+  hum: "hum",
+  looper: "looper",
+};
 
 type Props = {
   skinKey: SkinKey;
@@ -32,6 +47,8 @@ type Props = {
   padColor?: boolean;
   keyboard?: boolean;
   colorLabel?: string;
+  /** Device whose knobs/sliders/front panel the "Knobs & panel" button colours (default from skinKey). */
+  controls?: ControlDeviceId | undefined;
 };
 
 const safe = (fn: () => void) => {
@@ -203,7 +220,9 @@ export function SkinControls({
   padColor,
   keyboard,
   colorLabel = "Background",
+  controls,
 }: Props) {
+  const device = controls ?? PANEL_DEVICE[skinKey];
   const skin = useSkin(skinKey);
   const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => startSkinSync(), []);
@@ -220,6 +239,7 @@ export function SkinControls({
           className="h-8 w-10 cursor-pointer rounded border border-border bg-transparent"
         />
       </label>
+      {device && <ControlColorsButton device={device} />}
       {padColor && (
         <label className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           Pads

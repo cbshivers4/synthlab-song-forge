@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { refreshPreferences, PREFS_EVENT } from "./preferences";
 import { applyThemeVars, THEMES, themeById, type Theme, type ThemeVars } from "./themes";
 import { startColorPrefs } from "./color-prefs";
+import { startControlColors } from "./control-colors";
 
 export type Stage = "welcome" | "start" | "studio";
 export type UiMode = "simple" | "advanced";
@@ -96,6 +97,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Custom menu colours, track-coloured menus and the timeline logo colour (device-only).
   useEffect(() => startColorPrefs(), []);
+  // Knob, slider and front-panel colours on every device (device-only).
+  useEffect(() => startControlColors(), []);
 
   // hydrate after mount so SSR markup matches
   useEffect(() => {

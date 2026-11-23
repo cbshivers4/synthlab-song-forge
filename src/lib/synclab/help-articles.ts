@@ -1224,6 +1224,26 @@ export const KNOWLEDGE_BASE: Article[] = [
     cant: ["Save menu and logo colours inside look pack files yet."],
   },
   {
+    id: "control-colours",
+    category: "Getting started",
+    title: "Knob, slider and front-panel colours on your devices",
+    tags: "knob ring body slider fader front panel face colour color device custom appearance",
+    body: [
+      "Open Appearance & themes → Knob, slider & device colours. Under All devices, pick a colour for the knob ring, the knob body, sliders & faders and the front panel. Every device with knobs or sliders uses them: drum machine, synths, samplers, effects, mixer, Live Drummer, Live Keys, DJ Decks, Bass Generator, mastering and more.",
+      "Under One device, choose a device and give it its own colours. Its colours win over the All devices ones; parts you leave alone follow All devices.",
+      "On the drum machine, synths, samplers, Bass Generator, mastering, Tape & CD Recorder, Hum to Beat and Live Looper, the Knobs & panel button in the colour bar opens that device's own colours right there.",
+      "Press × next to a colour to go back to the built-in look for that part, or Reset to clear them all.",
+    ],
+    can: [
+      "Give every device the same colours, or each device its own.",
+      "Keep these colours on this device without changing your songs.",
+    ],
+    cant: [
+      "Save these colours inside look pack files or move them to your other computer or phone yet.",
+      "Change the Background colour from here; that stays in each device's colour bar.",
+    ],
+  },
+  {
     id: "reel-designs",
     category: "Recording",
     title: "Reel-to-reel machine designs",

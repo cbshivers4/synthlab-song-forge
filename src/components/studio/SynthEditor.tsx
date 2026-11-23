@@ -306,7 +306,7 @@ function SynthTrackEditor({ track }: { track: Track }) {
                 ? "POLY SYNTH · 8 VOICE"
                 : "SPEC 4 · ANALOG MODELING SYNTH"}
       </div>
-      <SkinControls skinKey="synth" image />
+      <SkinControls skinKey="synth" image controls={`synth-${synthStyle}`} />
       <MidiLearnStrip
         id={track.id}
         label={`${track.name} — every knob below also has its own MIDI button`}

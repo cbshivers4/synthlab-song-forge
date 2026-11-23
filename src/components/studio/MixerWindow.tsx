@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { startControlColors } from "@/lib/synclab/control-colors";
 
 /** Panels that can be popped out into their own window (e.g. a second monitor). */
 export type DetachId = "mixer" | "drums" | "keys" | "synth" | "live" | "looper" | "pads";
@@ -93,6 +94,8 @@ export function DetachedWindow({
     document.querySelectorAll("link[rel='stylesheet'], style").forEach((node) => {
       win.document.head.appendChild(node.cloneNode(true));
     });
+    // keep knob/slider/front-panel colour changes live in the popped-out window too
+    const stopControlColors = startControlColors(win.document);
     win.document.documentElement.className = document.documentElement.className;
     win.document.documentElement.style.cssText = document.documentElement.style.cssText;
     win.document.body.className = "bg-background text-foreground";
@@ -131,6 +134,7 @@ export function DetachedWindow({
     window.addEventListener("beforeunload", closeChild);
     return () => {
       window.clearInterval(poll);
+      stopControlColors();
       window.removeEventListener("beforeunload", closeChild);
       // React Strict Mode replays effects in development. Defer closing so its
       // immediate second setup can reuse the same native/browser window.
