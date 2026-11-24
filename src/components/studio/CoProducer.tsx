@@ -10,6 +10,7 @@ import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { PatternWaveform } from "./PatternWaveform";
 import { useStudio } from "@/lib/synclab/store";
+import { usePlan } from "@/lib/synclab/plan";
 import { askCoProducerFn } from "@/utils/co-producer.functions";
 type CoProducerResult = Extract<
   Awaited<ReturnType<typeof askCoProducerFn>>,
@@ -34,6 +35,7 @@ export function CoProducer() {
   const skinned = !!(skin.image || skin.color);
   const { tracks, transport, addTrack, updateTrack } = useStudio();
   const ask = useServerFn(askCoProducerFn);
+  const { requirePremium } = usePlan();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -94,7 +96,7 @@ export function CoProducer() {
 
   const send = async (q: string) => {
     const question = q.trim();
-    if (!question || busy) return;
+    if (!question || busy || !requirePremium("AI Co-Producer")) return;
     setText("");
     setMsgs((m) => [...m, { role: "user", text: question }]);
     setBusy(true);

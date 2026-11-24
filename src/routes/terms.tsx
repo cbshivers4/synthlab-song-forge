@@ -119,6 +119,13 @@ function TermsRoute() {
         cancel, you keep access until the end of the period you have already paid for. Switching
         between monthly and yearly is prorated automatically.
       </p>
+      <p>
+        <strong>Free Access</strong> lasts 14 days, needs no payment card, can be used once per
+        account and is never charged. The <strong>Premium trial</strong> lasts 14 days and needs a
+        payment card; nothing is charged during the trial. If you do not cancel before the trial
+        ends, the plan you chose renews automatically at the price shown before checkout. You can
+        cancel at any time in Settings → Account.
+      </p>
 
       <h2>10. Merchant of Record</h2>
       <p>

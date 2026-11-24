@@ -78,6 +78,13 @@
       "when": 1795352418085,
       "tag": "0010_live_song_collaboration",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795482642022,
+      "tag": "0011_free_access_trial_and_premium_checks",
+      "breakpoints": true
     }
   ]
 }

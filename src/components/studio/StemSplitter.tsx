@@ -19,6 +19,7 @@ import { GeneratedWaveform } from "./GeneratedWaveform";
 import { AI_STEMS, DRUM_PIECES, type AiStemId, type DrumPieceId } from "@/lib/synclab/ai-stems";
 import type { BleedStrength } from "@/lib/synclab/bleed-cleanup";
 import { AiUsesLeft } from "./AiUsesLeft";
+import { usePlan } from "@/lib/synclab/plan";
 import {
   clearResults,
   decodeBytes,
@@ -61,6 +62,7 @@ export function StemSplitter() {
   const skinDrop = useImageDrop("stemsplit");
   const skinned = !!(skin.image || skin.color);
   const { tracks, addTrack, addClip } = useStudio();
+  const { requirePremium } = usePlan();
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   // The job lives outside this panel, so switching tools or a page reload doesn't lose it.
@@ -156,6 +158,7 @@ export function StemSplitter() {
   const run = async (useMode: "ai" | "device" = mode) => {
     if (!source || isRunning()) return;
     if (useMode === "ai") {
+      if (!requirePremium("AI stem separation")) return;
       if (source.buffer.duration > MAX_STEM_SECONDS) {
         toast("Song too long", { description: "Separate up to 6 minutes at a time." });
         return;

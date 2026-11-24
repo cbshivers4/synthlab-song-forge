@@ -10,6 +10,7 @@ import { usePreviewTrack } from "@/lib/synclab/use-preview-track";
 import { PreviewButtons } from "./PreviewButtons";
 import { GeneratedWaveform } from "./GeneratedWaveform";
 import { useStudio } from "@/lib/synclab/store";
+import { usePlan } from "@/lib/synclab/plan";
 import { peaksOf, separateStems } from "@/lib/synclab/stems";
 import { encodeWav } from "@/lib/synclab/bounce";
 import { generateStemFn } from "@/utils/generate-stem.functions";
@@ -57,6 +58,7 @@ export function StemGenerator() {
   const skinned = !!(skin.image || skin.color);
   const { transport, addTrack, addClip } = useStudio();
   const gen = useServerFn(generateStemFn);
+  const { requirePremium } = usePlan();
   const [instrument, setInstrument] = useState("Drums");
   const [key, setKey] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -78,7 +80,7 @@ export function StemGenerator() {
   );
 
   const generate = async () => {
-    if (busy) return;
+    if (busy || !requirePremium("Generate Stem")) return;
     setBusy(true);
     setError(null);
     audioRef.current?.pause();

@@ -377,7 +377,7 @@ export function WelcomeScreen({ next }: { next?: string | undefined } = {}) {
               START FREE TRIAL
             </Button>
             <p className="login-fine login-trial-note">
-              14-day free trial · card on file · cancel free
+              14 days free · no card needed for Free Access
             </p>
             <p className="login-fine login-browser-note">
               Works in Chrome, Edge, Safari and Firefox. Best on desktop.

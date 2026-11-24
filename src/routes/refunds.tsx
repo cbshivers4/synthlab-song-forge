@@ -24,8 +24,9 @@ function RefundsRoute() {
   return (
     <LegalPage title="Refund Policy" updated="21 September 2026">
       <p>
-        Every SYNCLAB plan starts with a 14-day free trial. A card is required to start it, but
-        nothing is charged during the trial — cancel before day 14 and you won't be charged at all.
+        You can try SYNCLAB free for 14 days in two ways. Free Access needs no card and is never
+        charged. The Premium trial needs a card, but nothing is charged during the 14 days —
+        cancel before the trial ends (Settings → Account) and you won't be charged at all.
       </p>
 
       <h2>30-day money-back guarantee</h2>

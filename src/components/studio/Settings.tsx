@@ -52,7 +52,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MidiSettingsPanel } from "./MidiSettingsPanel";
 import { LibraryPanel } from "./LibraryPanel";
 import { useApp } from "@/lib/synclab/app-state";
-import { usePlan } from "@/lib/synclab/plan";
+import { PlanStatusPanel, usePlan } from "@/lib/synclab/plan";
 import { MarketingEmailSwitch } from "@/components/founder/MarketingEmailSwitch";
 import { FounderNotificationSettings } from "@/components/founder/FounderNotificationSettings";
 import { openFounderDashboard } from "@/lib/founder/links";
@@ -298,7 +298,7 @@ export function Settings() {
       setDeleting(false);
     }
   };
-  const { email, tier, openUpgrade } = usePlan();
+  const { email, tier } = usePlan();
   const [typing, setTyping] = useState(true);
   const [octave, setOctave] = useState(4);
   useEffect(() => {
@@ -1179,12 +1179,10 @@ export function Settings() {
         <Row label="Signed-in account">
           <span className="break-all text-sm text-primary">{email ?? "Not signed in"}</span>
         </Row>
-        <Row label="Access">
-          <span className="text-sm uppercase text-primary">{tier}</span>
-          <Button variant="secondary" onClick={() => openUpgrade()}>
-            Manage plan
-          </Button>
-        </Row>
+        <div className="py-3">
+          <div className="mb-2 text-sm font-semibold">Plan &amp; trial</div>
+          <PlanStatusPanel />
+        </div>
         <Row label="Account / sign out" hint="Save your song before leaving the studio.">
           <Button
             variant="secondary"

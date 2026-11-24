@@ -89,7 +89,17 @@ export async function handlePaddleWebhook(request: Request): Promise<Response> {
     const event = await verifyWebhook(request, env);
     switch (event.eventType) {
       case EventName.SubscriptionCreated: await handleSubscriptionCreated(event.data, env); break;
-      case EventName.SubscriptionUpdated: await handleSubscriptionUpdated(event.data, env); break;
+      case EventName.SubscriptionUpdated:
+      // Status changes (trial ended and billed, payment failed, paused, resumed) carry the full subscription.
+      case EventName.SubscriptionActivated:
+      case EventName.SubscriptionTrialing:
+      case EventName.SubscriptionPastDue:
+      case EventName.SubscriptionPaused:
+      case EventName.SubscriptionResumed:
+        await handleSubscriptionUpdated(event.data, env); break;
+      case EventName.TransactionPaymentFailed:
+        // Paddle retries the card itself; the subscription turns past_due via subscription.updated.
+        console.warn('Payment failed for transaction', (event.data as any)?.id); break;
       case EventName.SubscriptionCanceled: await handleSubscriptionCanceled(event.data, env); break;
       default: console.log('Unhandled event:', event.eventType);
     }

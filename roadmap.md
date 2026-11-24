@@ -318,3 +318,6 @@
 - [x] Sampler, Pad Sampler and Video Sampler: letting go of a key/pad stops the sound (Gate default for new sounds; saved songs keep their mode). Verified Sampler screen key + typing key in the preview.
 
 - [x] No-scroll synth redesign (desktop only; phone unchanged): Spec 4, Acid Bass, Touch, Poly, Modular Tech, Granular — measured at 970×942 and 1440×900, knobs/X-Y/cables verified
+
+- [x] Two 14-day starts: Free Access (no card: save/export/master, no AI) and Premium trial (card, everything); trial countdown + cancel in account; AI tools Premium-only enforced on the server.
+- [ ] 3-day trial-ending reminder email — blocked: needs a verified email sending domain.

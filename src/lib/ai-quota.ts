@@ -14,8 +14,19 @@ export type Reservation =
 export const limitMessage = () =>
   `You've used all ${AI_DAILY_LIMIT} AI uses for today. They reset at midnight UTC (7 PM Detroit time in winter, 8 PM in summer).`;
 
-/** Reserves one use before calling a paid AI service. */
+export const PREMIUM_AI_MESSAGE =
+  "AI tools are part of SYNCLAB Premium. Start the 14-day Premium trial or choose a plan to use them.";
+
+/**
+ * Reserves one use before calling a paid AI service. AI tools are Premium-only
+ * (founder, Premium trial or paid plan) — checked in the database as the caller, so
+ * the browser can't skip it.
+ */
 export async function reserveAiUse(supabase: unknown, tool: string): Promise<Reservation> {
+  const premium = await (supabase as Rpc).rpc("can_use_ai_tools", {});
+  if (premium.error)
+    return { ok: false, error: "Couldn't check your plan. Try again in a moment." };
+  if (premium.data !== true) return { ok: false, error: PREMIUM_AI_MESSAGE };
   const { data, error } = await (supabase as Rpc).rpc("consume_ai_use", {
     _tool: tool,
     _daily_limit: AI_DAILY_LIMIT,

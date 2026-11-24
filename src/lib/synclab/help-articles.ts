@@ -103,7 +103,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     ],
     cant: [
       "There is no autosave — anything not saved is lost when you close.",
-      "The free version can't save projects. Saving needs the free trial or a plan.",
+      "The free version can't save projects. Saving needs Free Access, the Premium trial or a plan.",
     ],
   },
   {
@@ -771,7 +771,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Check how the master holds up on other systems before you release it.",
     ],
     cant: [
-      "Saving the mastered file needs the trial or a plan.",
+      "Saving the mastered file needs Free Access, the Premium trial or a plan.",
       "Sound Check places are modelled from typical speakers and rooms, not measured from a real car or club, and they are never saved into your file.",
     ],
   },
@@ -986,7 +986,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Keep exported MP3/MP4 files in your account library.",
     ],
     cant: [
-      "Exporting needs the trial or a plan.",
+      "Exporting needs Free Access, the Premium trial or a plan.",
       "M4A and OGG depend on what your browser supports.",
     ],
   },
@@ -1080,18 +1080,26 @@ export const KNOWLEDGE_BASE: Article[] = [
   {
     id: "plans",
     category: "Account & billing",
-    title: "Free version, trial and plans",
-    tags: "account billing trial plan price subscription paddle cancel monthly yearly",
+    title: "Free Access, Premium trial and plans",
+    tags: "account billing trial free access premium plan price subscription paddle cancel monthly yearly countdown card payment failed",
     body: [
-      "The free version lets you use the studio, but projects can't be saved.",
-      "The 14-day free trial needs a card on file; cancel before day 14 and you pay nothing. Then it's $9.95/month or $119.40/year.",
-      "On the website, billing, invoices and cancelling are handled by Paddle — open the upgrade panel and choose Manage billing. In the phone apps, the App Store or Google Play handles it.",
+      "There are two ways to try SYNCLAB for 14 days. Free Access needs no card: you can save projects, export WAV/MP3 and master your songs. It can be used once per account and is never charged.",
+      "The Premium trial needs a card and unlocks everything, including the AI tools (Co-Producer, Generate Stem, Separate Stems). Nothing is charged during the 14 days. If you don't cancel, it continues at $9.95/month or $119.40/year on the date shown before checkout.",
+      "Settings → Account → Plan & trial shows your plan, the days remaining (for example \"3 days remaining\" or \"Trial expires tomorrow\") and the exact end date.",
+      "From the same card you can upgrade, switch between monthly and yearly, update your card (Manage payment method) and cancel. Cancelling during the trial means you are never charged; on a paid plan Premium stays on until the paid period ends. Changed your mind? Press Keep my plan.",
+      "If a payment fails, a red notice asks you to update your card. Our payment partner, Paddle, tries again automatically; Premium stays on while it retries.",
+      "When Free Access or a plan ends, the account goes back to the free version: you can still make music and open your songs, but saving, export, mastering and AI tools need a plan. Nothing in your account is deleted.",
+      "In the phone apps, the App Store or Google Play handles billing instead.",
     ],
     can: [
-      "Save, export and save mastered files with the trial or a plan.",
-      "Cancel any time from Manage billing (website) or your store subscriptions (apps).",
+      "Save, export and master with Free Access, the Premium trial or a plan.",
+      "Use the AI tools with the Premium trial or a plan.",
+      "Cancel any time in Settings → Account (website) or your store subscriptions (apps).",
     ],
-    cant: ["Store prices and trials in the phone apps are set by Apple and Google and may differ."],
+    cant: [
+      "The AI tools aren't part of Free Access or the free version.",
+      "Store prices and trials in the phone apps are set by Apple and Google and may differ.",
+    ],
   },
   {
     id: "delete-account",

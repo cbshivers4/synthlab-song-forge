@@ -143,6 +143,27 @@ export type Database = {
         }
         Relationships: []
       }
+      free_access_trials: {
+        Row: {
+          created_at: string
+          ends_at: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       library_items: {
         Row: {
           audio_path: string | null
@@ -591,6 +612,7 @@ export type Database = {
       can_access_project: { Args: { _project: string }; Returns: boolean }
       can_access_project_folder: { Args: { _folder: string }; Returns: boolean }
       can_save_projects: { Args: { _user_id: string }; Returns: boolean }
+      can_use_ai_tools: { Args: never; Returns: boolean }
       consume_ai_use: {
         Args: { _daily_limit?: number; _tool: string }
         Returns: Json
@@ -599,6 +621,8 @@ export type Database = {
         Args: { check_env?: string; user_uuid: string }
         Returns: boolean
       }
+      has_free_access: { Args: { _user_id: string }; Returns: boolean }
+      has_premium_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -608,6 +632,7 @@ export type Database = {
       }
       owns_project: { Args: { _project: string }; Returns: boolean }
       refund_ai_use: { Args: { _id: string }; Returns: undefined }
+      start_free_access: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

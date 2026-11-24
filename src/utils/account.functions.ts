@@ -9,6 +9,7 @@ const USER_TABLES = [
   "marketing_contacts",
   "app_visits",
   "founder_notification_prefs",
+  "free_access_trials",
   "subscriptions",
   "support_tickets",
   "tape_shelf_items",
