@@ -2252,9 +2252,14 @@ main[data-panel-full="true"] .mx-console:not(.mx-phone) .mx-master .mx-row-fader
 .mx-console:not(.mx-phone) .mx-master > .mx-row-scope { order: 11; flex-shrink: 0; }
 .mx-console .mx-master > div { flex-shrink: 0; }
 .phone-console .mx-console[data-touch-console] .mx-master > .mx-row-buttons { height: 104px; }
-.mx-console .mx-channel > .mx-row-scope > button,
-.mx-console:not(.mx-phone) .mx-master > .mx-row-scope > button,
-.mx-phone .phone-mix-channel > .mx-row-scope > button { height: 100% !important; }
+/* Compact scopes live inside their own grid row. The extra wrapper previously left the
+   40px canvas button overflowing the 30px row and covering the instrument icon below. */
+.mx-console .mx-row-scope { min-height: 0; overflow: hidden; }
+.mx-console .mx-row-scope > .scope-expand-host { height: 100%; min-height: 0; overflow: hidden; }
+.mx-console .mx-row-scope > .scope-expand-host > button {
+  height: 100% !important;
+  min-height: 0 !important;
+}
 
 .arrangement-clip[data-bars]::before { content: attr(data-bars); position: absolute; right: 14px; bottom: 4px; z-index: 40; padding: 1px 5px; border-radius: 3px; font: 600 10px/1.3 ui-monospace, monospace; background: var(--popover); color: var(--popover-foreground); pointer-events: none; }
 .arrangement-trim { max-width: 25%; }
