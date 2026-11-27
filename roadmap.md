@@ -1,5 +1,10 @@
 # Roadmap — Source-code audit & DAW repair
 
+## Nov 27 — Phone beat-making workflow
+- [x] Reorganize phone navigation and headers for isolated finger-sized targets.
+- [x] Enlarge drum editing controls and keep pads, patterns and playback in separate areas.
+- [x] Verify four phone sizes, Edit/Files/Mixer and desktop drums; signed-in unsaved beat entry, pattern recall, pad taps and real master output passed. 44 related tests passed. No saved songs changed; physical phones remain untested.
+
 - [x] All 36 factory effects grouped into nine categories in left/Browser/rack, mixer channel/master and timeline Add effect menus. Shared catalog includes newer devices in older projects without changing saved sessions. 43 tests pass; signed-in unsaved timeline/mixer additions read back as two KICK rack modules; catalog counts verified. Saved music untouched; preview only.
 
 - [x] Shared BYPASS controls added to synths, modular/Touch synth, drums, all samplers and rack/mixer/compact effects. Instrument channels/sends silence independently of mixer mute; video mutes preview audio; effects pass dry audio. 50 related tests pass; signed-in unsaved desktop sampler silences/restores and phone button toggles. Track state uses existing manual project persistence; no saved music touched. Preview only; physical devices unverified.

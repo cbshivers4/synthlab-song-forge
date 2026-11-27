@@ -158,7 +158,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       const rows = Math.max(1, root.querySelectorAll("[data-track-row]").length);
       const drop = root.querySelector<HTMLElement>("[data-new-channel-drop]")?.offsetHeight ?? 30;
       const h = Math.floor((scroller.clientHeight - drop - 2) / rows) - 1;
-      root.style.setProperty("--fit-row-h", `${Math.max(118, Math.min(140, h))}px`);
+      root.style.setProperty("--fit-row-h", `${Math.max(224, Math.min(256, h))}px`);
     };
     fit();
     const ro = new ResizeObserver(fit);
@@ -172,13 +172,14 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   }, [editPageOpen, tracks.length]);
   const enter = (next: typeof room) => {
     setTransportOpen(false);
+    setFilesOpen(false);
     setPanel(null);
     setRoom(next);
   };
   const list = room === "sounds" ? sounds : tools;
   const editPage = !panel && room === "edit";
   const header = (
-    <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-3">
+    <header className="phone-project-header grid min-h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-surface px-3">
       <h1 className="min-w-0 truncate text-xs font-semibold">
         {project?.id ? project.name : project ? `${project.name} · not saved yet` : "Untitled song"}
       </h1>
@@ -196,139 +197,138 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
     >
       <div
         className="relative shrink-0 transition-[width] duration-200 ease-out"
-        style={{ width: railOpen ? "5rem" : "3rem" }}
+        style={{ width: railOpen ? "5rem" : "3.5rem" }}
       >
         <nav
           aria-label="Studio navigation"
           data-rail-open={railOpen}
           className="phone-console-rail flex h-full w-full flex-col items-center gap-2 border-r border-border bg-surface px-2 py-3"
         >
-          {railOpen && (
-            <>
-              <Button
-                variant="ghost"
-                className="size-16 shrink-0 p-0"
-                aria-label="Projects"
-                onClick={() => setStage("start")}
-              >
-                <img src={logo.url} alt="SYNCLAB" className="size-16 rounded-md object-cover" />
-              </Button>
-              <div className="my-auto flex shrink-0 flex-col gap-3">
-                {[
-                  {
-                    label: "EDIT",
-                    icon: AudioLines,
-                    active: !panel && room === "edit",
-                    run: () => enter("edit"),
-                  },
-                  {
-                    label: "MIX",
-                    icon: SlidersHorizontal,
-                    active: panel === "mixer",
-                    run: () => setPanel("mixer"),
-                  },
-                  {
-                    label: "SOUNDS",
-                    icon: Music2,
-                    active:
-                      room === "sounds" ||
-                      [
-                        "synth",
-                        "sampler",
-                        "pads",
-                        "drums",
-                        "browser",
-                        "keys",
-                        "live",
-                        "looper",
-                        "drummer",
-                        "livekeys",
-                        "dj",
-                        "amprig",
-                      ].includes(panel ?? ""),
-                    run: () => enter("sounds"),
-                  },
-                  {
-                    label: "TOOLS",
-                    icon: Wand2,
-                    active: room === "tools",
-                    run: () => enter("tools"),
-                  },
-                  {
-                    label: "FILES",
-                    icon: FolderOpen,
-                    active: filesOpen,
-                    run: () => setFilesOpen((o) => !o),
-                  },
-                ].map(({ label, icon: Icon, active, run }) => (
+          <div className="phone-rail-scroll flex min-h-0 w-full flex-1 flex-col items-center gap-2 overflow-auto">
+            {
+              <>
+                {railOpen && (
                   <Button
-                    key={label}
                     variant="ghost"
-                    aria-pressed={active}
-                    className={`phone-room-button h-16 w-16 shrink-0 flex-col gap-1 px-0 text-[10px] font-bold ${active ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
-                    onClick={run}
+                    className="size-16 shrink-0 p-0"
+                    aria-label="Projects"
+                    onClick={() => setStage("start")}
                   >
-                    <Icon className="size-6" />
-                    {label}
+                    <img src={logo.url} alt="SYNCLAB" className="size-16 rounded-md object-cover" />
                   </Button>
-                ))}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-12 shrink-0"
-                aria-label="Home and projects"
-                onClick={() => setStage("start")}
-              >
-                <Home />
-              </Button>
-            </>
-          )}
-          {!railOpen && (
-            <Button
-              variant={panel === "mixer" ? "secondary" : "ghost"}
-              size="icon"
-              className="size-11 shrink-0"
-              aria-label="Open mixer"
-              aria-pressed={panel === "mixer"}
-              title="Mixer"
-              onClick={() => setPanel("mixer")}
-            >
-              <SlidersHorizontal className="size-5" />
-            </Button>
-          )}
+                )}
+                <div className="phone-navigation-items flex w-full shrink-0 flex-col gap-2">
+                  {[
+                    {
+                      label: "EDIT",
+                      icon: AudioLines,
+                      active: !panel && room === "edit",
+                      run: () => enter("edit"),
+                    },
+                    {
+                      label: "MIX",
+                      icon: SlidersHorizontal,
+                      active: panel === "mixer",
+                      run: () => setPanel("mixer"),
+                    },
+                    {
+                      label: "SOUNDS",
+                      icon: Music2,
+                      active:
+                        room === "sounds" ||
+                        [
+                          "synth",
+                          "sampler",
+                          "pads",
+                          "drums",
+                          "browser",
+                          "keys",
+                          "live",
+                          "looper",
+                          "drummer",
+                          "livekeys",
+                          "dj",
+                          "amprig",
+                        ].includes(panel ?? ""),
+                      run: () => enter("sounds"),
+                    },
+                    {
+                      label: "TOOLS",
+                      icon: Wand2,
+                      active: room === "tools",
+                      run: () => enter("tools"),
+                    },
+                    {
+                      label: "FILES",
+                      icon: FolderOpen,
+                      active: filesOpen,
+                      run: () => setFilesOpen((o) => !o),
+                    },
+                  ].map(({ label, icon: Icon, active, run }) => (
+                    <Button
+                      key={label}
+                      variant="ghost"
+                      aria-pressed={active}
+                      aria-label={label}
+                      title={label}
+                      className={`phone-room-button w-full shrink-0 flex-col gap-1 px-0 text-[10px] font-bold ${railOpen ? "h-16" : "h-12"} ${active ? "bg-primary/15 text-primary" : "text-muted-foreground"}`}
+                      onClick={run}
+                    >
+                      <Icon className="size-6" />
+                      {railOpen && label}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-12 shrink-0"
+                  aria-label="Home and projects"
+                  onClick={() => setStage("start")}
+                >
+                  <Home />
+                </Button>
+              </>
+            }
 
-          {panel === "mixer" && (
+            {panel === "mixer" && (
+              <Button
+                variant={mixerFull ? "secondary" : "ghost"}
+                className="h-11 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold"
+                aria-label={mixerFull ? "Exit full mixer" : "Open mixer full screen"}
+                title={mixerFull ? "Exit full mixer" : "Open mixer full screen"}
+                aria-pressed={mixerFull}
+                onClick={() =>
+                  setMixerFull((full) => {
+                    const next = !full;
+                    if (next) setTransportOpen(false);
+                    return next;
+                  })
+                }
+              >
+                {mixerFull ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
+                {railOpen ? "FULL" : ""}
+              </Button>
+            )}
             <Button
-              variant={mixerFull ? "secondary" : "ghost"}
-              className="h-11 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold"
-              aria-label={mixerFull ? "Exit full mixer" : "Open mixer full screen"}
-              title={mixerFull ? "Exit full mixer" : "Open mixer full screen"}
-              aria-pressed={mixerFull}
-              onClick={() =>
-                setMixerFull((full) => {
-                  const next = !full;
-                  if (next) setTransportOpen(false);
-                  return next;
-                })
-              }
+              variant="ghost"
+              className={`h-12 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold ${transport.recording ? "text-destructive" : transportOpen || transport.playing ? "text-primary" : "text-muted-foreground"}`}
+              aria-label={transportOpen ? "Hide transport" : "Show transport"}
+              title={transportOpen ? "Hide transport" : "Show transport"}
+              aria-expanded={transportOpen}
+              aria-controls="phone-transport-overlay"
+              onClick={() => setTransportOpen((open) => !open)}
             >
-              {mixerFull ? <Minimize2 className="size-5" /> : <Maximize2 className="size-5" />}
-              {railOpen ? "FULL" : ""}
+              <PanelTop className="size-5" />
+              {railOpen
+                ? "TRANSPORT"
+                : transport.recording
+                  ? "REC"
+                  : transport.playing
+                    ? "PLAY"
+                    : ""}
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            className={`h-12 w-full shrink-0 flex-col gap-0.5 px-0 text-[9px] font-semibold ${transport.recording ? "text-destructive" : transportOpen || transport.playing ? "text-primary" : "text-muted-foreground"}`}
-            aria-label={transportOpen ? "Hide transport" : "Show transport"}
-            title={transportOpen ? "Hide transport" : "Show transport"}
-            aria-expanded={transportOpen}
-            aria-controls="phone-transport-overlay"
-            onClick={() => setTransportOpen((open) => !open)}
-          >
-            <PanelTop className="size-5" />
-            {railOpen ? "TRANSPORT" : transport.recording ? "REC" : transport.playing ? "PLAY" : ""}
-          </Button>
+          </div>
           <Button
             variant="outline"
             size="icon"
@@ -344,7 +344,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       {filesOpen && (
         <aside
           aria-label="My music files"
-          className="flex w-60 shrink-0 flex-col overflow-hidden border-r border-border bg-surface"
+          className="phone-files-sheet absolute inset-y-0 right-0 z-40 flex w-full max-w-sm flex-col overflow-hidden border-l border-border bg-surface shadow-lg"
         >
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
             <span className="text-sm font-semibold">Files</span>
@@ -366,7 +366,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {/* Same File … Help menus as the computer version, on every phone screen. */}
         <MenuBar phone />
-        {!editPage && header}
+        {!editPage && (!panel || panel === "mixer") && header}
         {!editPage && recordingStrip}
         {panel === "mixer" && !mixerFull && (
           <>
@@ -400,7 +400,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
             ref={editRef}
             className="phone-edit-fit flex min-h-0 flex-1 flex-col overflow-hidden"
           >
-            <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-border bg-surface px-3">
+            <header className="phone-edit-header grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface px-3">
               <h1 className="min-w-0 truncate text-xs font-semibold">
                 {project?.id
                   ? project.name
@@ -408,9 +408,11 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
                     ? `${project.name} · not saved yet`
                     : "Untitled song"}
               </h1>
-              <AddTrackMenu size="sm" />
-              <ShareSongButton compact />
-              <DeviceClock inline />
+              <DeviceClock mobile />
+              <div className="phone-edit-header-actions col-span-2 flex items-center gap-2">
+                <AddTrackMenu size="sm" />
+                <ShareSongButton compact />
+              </div>
             </header>
             {recordingStrip}
             <Timeline desktopStyle />

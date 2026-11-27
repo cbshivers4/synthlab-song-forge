@@ -427,85 +427,86 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           </Button>
         </div>
       ) : null}
-      {fit ? (
-        <details className="drum-fit-bulk">
-          <summary className="text-xs font-semibold">All drums</summary>
+      <div className={fit ? "phone-drum-settings" : "contents"}>
+        {fit ? (
+          <details className="drum-fit-bulk">
+            <summary className="text-xs font-semibold">All drums</summary>
+            <DrumBulkControls track={track} />
+          </details>
+        ) : (
           <DrumBulkControls track={track} />
-        </details>
-      ) : (
-        <DrumBulkControls track={track} />
-      )}
-      <div className="drum-roll-toolbar flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
-        <span className="label-xs whitespace-nowrap px-1" title={track.name}>
-          DRUM ROLL
-        </span>
-        <Select value={String(total)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
-          <SelectTrigger
-            className="h-7 w-28 text-[10px]"
-            aria-label="Drum pattern length"
-            title={`Pattern length — your song is ${transport.bars ?? 4} bars`}
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {lengthOptions.map(({ steps: s, label }) => (
-              <SelectItem key={s} value={String(s)}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className="label-xs px-1">SWING</span>
-        <Slider
-          className="w-28"
-          value={[Math.round((transport.swing ?? 0) * 100)]}
-          min={0}
-          max={70}
-          step={1}
-          onValueChange={([v = 0]) => setTransport({ swing: v / 100 })}
-        />
-        <span className="w-8 font-mono text-[10px] text-primary">
-          {Math.round((transport.swing ?? 0) * 100)}%
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 text-[10px]"
-          onClick={() => pads.forEach((p) => tools(p).humanize())}
-        >
-          HUMANIZE ALL
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 text-[10px]"
-          onClick={() => updateTrack(track.id, clearAllHits(track))}
-        >
-          CLEAR ALL
-        </Button>
-        {fit && (
-          <span
-            className="whitespace-nowrap font-mono text-[11px]"
-            aria-label="Visible drum rows"
-            aria-live="polite"
-          >
-            Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}
-          </span>
         )}
-        {!fit && (
+        <div className="drum-roll-toolbar flex flex-nowrap items-center gap-2 overflow-x-auto rounded-sm border border-border bg-surface/60 p-1.5 [&>*]:shrink-0">
+          <span className="label-xs whitespace-nowrap px-1" title={track.name}>
+            DRUM ROLL
+          </span>
+          <Select value={String(total)} onValueChange={(v) => setStepCount(track.id, Number(v))}>
+            <SelectTrigger
+              className="h-7 w-28 text-[10px]"
+              aria-label="Drum pattern length"
+              title={`Pattern length — your song is ${transport.bars ?? 4} bars`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {lengthOptions.map(({ steps: s, label }) => (
+                <SelectItem key={s} value={String(s)}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="label-xs px-1">SWING</span>
+          <Slider
+            className="w-28"
+            value={[Math.round((transport.swing ?? 0) * 100)]}
+            min={0}
+            max={70}
+            step={1}
+            onValueChange={([v = 0]) => setTransport({ swing: v / 100 })}
+          />
+          <span className="w-8 font-mono text-[10px] text-primary">
+            {Math.round((transport.swing ?? 0) * 100)}%
+          </span>
           <Button
             size="sm"
-            variant={full ? "secondary" : "ghost"}
-            className="h-7 gap-1 text-[10px]"
-            aria-pressed={full}
-            onClick={() => setFull((f) => !f)}
+            variant="ghost"
+            className="h-7 text-[10px]"
+            onClick={() => pads.forEach((p) => tools(p).humanize())}
           >
-            {full ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />}{" "}
-            {full ? "PAGED VIEW" : "FULL VIEW"}
+            HUMANIZE ALL
           </Button>
-        )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 text-[10px]"
+            onClick={() => updateTrack(track.id, clearAllHits(track))}
+          >
+            CLEAR ALL
+          </Button>
+          {fit && (
+            <span
+              className="whitespace-nowrap font-mono text-[11px]"
+              aria-label="Visible drum rows"
+              aria-live="polite"
+            >
+              Rows {visibleRows[0]}–{visibleRows[1]} / {rows.length}
+            </span>
+          )}
+          {!fit && (
+            <Button
+              size="sm"
+              variant={full ? "secondary" : "ghost"}
+              className="h-7 gap-1 text-[10px]"
+              aria-pressed={full}
+              onClick={() => setFull((f) => !f)}
+            >
+              {full ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />}{" "}
+              {full ? "PAGED VIEW" : "FULL VIEW"}
+            </Button>
+          )}
+        </div>
       </div>
-
       {isMobile && !fit && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-2">
@@ -666,6 +667,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
                 ? {
                     gridTemplateRows: `24px repeat(${rows.length}, minmax(34px, 1fr))`,
                     ["--drum-fit-rows" as string]: rows.length,
+                    ["--phone-drum-steps" as string]: total,
                   }
                 : isMobile && full
                   ? { minWidth: 212 + total * (50 * view.zoom) }

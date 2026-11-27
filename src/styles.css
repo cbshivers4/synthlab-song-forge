@@ -5464,3 +5464,127 @@ html:not([data-track-menus="off"]) .app-menu.track-tinted-menu {
 }
 /* The cable list follows the rack's height; a long list scrolls inside itself instead of growing the page. */
 .synth-fit-panel .modular-cable-list { height: 0; min-height: 100%; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
+
+/* Phone workflow: physical tap areas, not expanded invisible hitboxes.
+   Keep these overrides scoped to the phone; the desktop desk is unchanged. */
+.phone-console { --phone-tap: 48px; --phone-step: 48px; }
+.phone-console .phone-console-rail { padding: 8px 4px; gap: 8px; touch-action: pan-x pan-y; overflow: hidden; }
+.phone-console .phone-rail-scroll { touch-action: pan-x pan-y; overscroll-behavior: contain; }
+.phone-console .phone-console-rail[data-rail-open="false"] .phone-room-button { height: var(--phone-tap); }
+.phone-console .phone-rail-toggle { position: static; min-height: var(--phone-tap); width: 100%; background: var(--surface); }
+.phone-console .phone-project-header { min-height: 44px; height: auto; }
+.phone-console .phone-edit-fit > .phone-edit-header { height: auto; min-height: 56px; padding-block: 4px; grid-template-columns: minmax(0,1fr) auto auto; }
+.phone-console .phone-edit-header > h1 { grid-column: 1; grid-row: 1; }
+.phone-console .phone-edit-header > [aria-label^="Device clock"] { grid-column: 3; grid-row: 1; }
+.phone-console .phone-edit-header-actions { grid-column: 2; grid-row: 1; }
+.phone-console .phone-edit-header-actions button { min-height: var(--phone-tap); }
+.phone-console .phone-edit-header-actions { min-width: 0; }
+.phone-console .phone-tool-panel > div:first-of-type { height: auto; min-height: var(--phone-tap); flex-shrink: 0; }
+.phone-console .phone-tool-panel > div:first-of-type button { min-height: var(--phone-tap); height: var(--phone-tap); }
+.phone-console .phone-room-grid { grid-auto-rows: minmax(112px, 1fr); }
+.phone-console .phone-sound-tile { min-height: 112px; font-size: 14px; }
+.phone-console .phone-sound-icon { width: 56px; height: 56px; }
+.phone-console .hardware-knob-dial::before { inset: 0; }
+
+/* Arrangement tools scroll as distinct rows; they never compress targets or wrap
+   over the ruler. Track headers retain their own large controls. */
+.phone-console .phone-edit-fit .workflow-row-top,
+.phone-console .phone-edit-fit .workflow-row-part,
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-edit-toolbar {
+  flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; min-height: 52px; gap: 8px; padding: 4px 8px;
+}
+.phone-console .phone-edit-fit :is(.workflow-row-top, .workflow-row-part, .timeline-edit-toolbar) > * { flex-shrink: 0; }
+.phone-console .phone-edit-fit :is(.workflow-bar, .timeline-edit-toolbar) button,
+.phone-console .phone-edit-fit :is(.workflow-bar, .timeline-edit-toolbar) [role="combobox"] {
+  min-height: var(--phone-tap) !important; height: var(--phone-tap) !important; min-width: var(--phone-tap); font-size: 12px;
+}
+.phone-console .phone-edit-fit .timeline-edit-toolbar > button.size-8,
+.phone-console .phone-edit-fit .workflow-bar button.size-8 { width: var(--phone-tap); }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header { gap: 6px; padding-block: 6px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:first-child button { height: 44px !important; min-height: 44px !important; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions { height: 44px !important; min-height: 44px !important; gap: 8px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button { height: 44px !important; min-height: 44px !important; min-width: 44px; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header > div:nth-child(3) { height: 28px !important; }
+
+/* Pads first, detailed setup below: no destructive controls inside performance pads. */
+.phone-console .drum-machine[data-phone-view="pads"] { display: flex; flex-direction: column; gap: 12px; }
+.phone-console .drum-machine[data-phone-view="pads"] > * { margin-top: 0; flex-shrink: 0; }
+.phone-console .drum-machine[data-phone-view="pads"] > div:first-child { order: 0; }
+.phone-console .drum-machine[data-phone-view="pads"] > [role="tablist"] { order: -5; }
+.phone-console .drum-machine[data-phone-view="pads"] > [aria-label="Drum playback"] { order: -4; }
+.phone-console .drum-machine[data-phone-view="pads"] > .drum-surface { order: -3; }
+.phone-console .drum-machine[data-phone-view="pads"] > .phone-pad-actions { order: -2; padding: 8px; border-block: 1px solid var(--border); }
+.phone-console .drum-machine[data-phone-view="pads"] .drum-pad-grid { grid-template-columns: repeat(4, minmax(112px, 1fr)) !important; gap: 12px; overflow-x: auto; }
+.phone-console .drum-machine[data-phone-view="pads"] .mpc-pad { min-width: 112px; gap: 8px; }
+.phone-console .drum-machine[data-phone-view="pads"] .drum-display { flex-wrap: wrap; gap: 8px; }
+.phone-console .drum-machine[data-phone-view] > :is(.drum-sequences, .drum-patterns) { gap: 8px; padding-block: 4px; }
+.phone-console .drum-machine[data-phone-view] > :is(.drum-sequences, .drum-patterns) > div { gap: 8px; }
+.phone-console .drum-machine[data-phone-view] > [aria-label="Note repeat"] { flex-wrap: wrap; gap: 8px; }
+
+/* Roll has three independent bands: views, patterns/playback, editing/grid.
+   Long patterns keep 48px steps and scroll under pinned instrument names. */
+.phone-console .drum-machine:has(.drum-roll-fit) {
+  grid-template-columns: minmax(0,1fr) 208px !important;
+  grid-template-rows: 48px 56px minmax(0,1fr) !important;
+  gap: 8px; padding: 6px;
+}
+.phone-console .drum-machine:has(.drum-roll-fit) > [role="tablist"] { gap: 8px; min-width: 0; }
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child { height: 48px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [role="tablist"] button,
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child button,
+.phone-console .drum-machine:has(.drum-roll-fit) > [aria-label="Drum playback"] button { height: 48px !important; min-height: 48px !important; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences > *,
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences > div > * { flex: 0 0 auto; flex-shrink: 0; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences > div { flex: 0 0 auto; gap: 8px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences button { height: 48px !important; min-height: 48px !important; min-width: 48px !important; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [aria-label="Drum playback"] { gap: 8px; align-items: center; }
+.phone-console .drum-roll-fit,
+.phone-console .drum-roll-fit:has(.drum-note-dock) { grid-template-columns: minmax(0,1fr) 200px !important; grid-template-rows: minmax(0,1fr) !important; gap: 8px; }
+.phone-console .drum-roll-fit:has(.drum-note-dock) { grid-template-rows: 64px minmax(0,1fr) !important; }
+.phone-console .drum-roll-fit > .phone-drum-settings { grid-column: 2 !important; grid-row: 1 / -1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 8px; background: var(--surface); padding: 4px; }
+.phone-console .drum-roll-fit:has(.drum-note-dock) > .phone-drum-settings { grid-row: 1; }
+.phone-console .phone-drum-settings > .drum-roll-toolbar { flex-wrap: wrap; overflow: visible; padding: 4px; gap: 12px; flex-shrink: 0; }
+.phone-console .phone-drum-settings > .drum-roll-toolbar > * { flex-shrink: 0; }
+.phone-console .phone-drum-settings > .drum-roll-toolbar > .label-xs:first-child { display: none; }
+.phone-console .drum-roll-fit > .drum-roll-grid-wrap,
+.phone-console .drum-roll-fit:has(.drum-note-dock) > .drum-roll-grid-wrap { grid-column: 1 !important; grid-row: 1 / -1; }
+.phone-console .phone-drum-settings > .drum-fit-bulk { height: auto; min-height: 48px; flex-shrink: 0; }
+.phone-console .drum-fit-bulk > summary { min-height: 48px; padding: 14px 8px; cursor: pointer; background: var(--surface); border: 1px solid var(--border); }
+.phone-console .drum-fit-bulk[open] > .drum-bulk { position: static; max-height: 140px; overflow: auto; }
+.phone-console .drum-roll-fit button,
+.phone-console .drum-roll-fit [role="combobox"] { height: 48px !important; min-height: 48px !important; }
+.phone-console .drum-roll-fit:has(.drum-note-dock) > .drum-roll-toolbar > button { display: inline-flex; }
+.phone-console .drum-roll-fit [aria-label="Drum roll grid"] { overflow-x: auto !important; overflow-y: auto !important; }
+.phone-console .drum-roll-fit .drum-fit-rows {
+  width: max(100%, calc(232px + var(--phone-drum-steps,16) * 54px)); min-width: 0;
+  grid-template-rows: 32px repeat(var(--drum-fit-rows,17), 56px) !important;
+}
+.phone-console .drum-machine .drum-roll-fit .drum-fit-rows { grid-template-rows: 32px repeat(var(--drum-fit-rows,17), 56px) !important; }
+.phone-console .drum-roll-fit .drum-row-name { position: sticky; left: 0; z-index: 4; width: 172px; background: var(--surface); padding-inline: 8px; }
+.phone-console .drum-roll-fit .drum-row-mute { position: sticky; left: 176px; z-index: 4; width: 48px; background: var(--surface-2); }
+.phone-console .drum-roll-fit .drum-roll-label-header { position: sticky; left: 0; z-index: 6; width: 232px; background: var(--surface); }
+.phone-console .drum-roll-fit .drum-step { min-width: 48px !important; height: 48px !important; min-height: 48px !important; }
+.phone-console .drum-roll-fit:has(.drum-note-dock) .drum-note-dock { grid-column: 2; grid-row: 2; overflow-y: auto; padding: 8px; gap: 12px; }
+.phone-console .drum-roll-fit .hardware-knob { width: 64px; gap: 6px; }
+.phone-console .drum-roll-fit .drum-note-knobs { gap: 16px !important; }
+.phone-console .drum-roll-fit > p:last-child { display: none; }
+.phone-console .phone-tool-panel:has(.drum-roll-fit) { container-type: inline-size; container-name: phone-beat; }
+.phone-console .editor-panel-header { min-height: 48px; padding: 2px 8px; }
+.phone-console .editor-panel-header > [aria-label^="Device clock"] { padding: 2px 8px; }
+.phone-console .editor-panel-header > [aria-label^="Device clock"] > span:first-child { font-size: 16px; }
+.phone-console .editor-panel-header > [aria-label^="Device clock"] > span:last-child { font-size: 10px; }
+.phone-console .drum-machine:has(.drum-roll-fit) { grid-template-rows: 48px 52px minmax(0,1fr) !important; gap: 4px; padding: 4px; }
+.phone-console .drum-roll-fit,
+.phone-console .drum-roll-fit:has(.drum-note-dock) { grid-template-columns: minmax(0,1fr) 176px !important; }
+.phone-console .drum-roll-fit .drum-fit-rows { width: max(100%, calc(198px + var(--phone-drum-steps,16) * 54px)); }
+.phone-console .drum-roll-fit .drum-row-name { width: 142px; }
+.phone-console .drum-roll-fit .drum-row-mute { left: 146px; }
+.phone-console .drum-roll-fit .drum-roll-label-header { width: 198px; }
+.phone-console .drum-note-scope > div { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; }
+.phone-console .drum-note-scope > div > button { min-width: 0; padding-inline: 3px; font-size: 11px; }
+@container phone-beat (max-width: 600px) {
+  .phone-console .drum-roll-fit,
+  .phone-console .drum-roll-fit:has(.drum-note-dock) { grid-template-columns: minmax(0,1fr) 144px !important; }
+  .phone-console .drum-roll-fit:has(.drum-note-dock) .drum-note-knobs { grid-template-columns: minmax(0,1fr); }
+}

@@ -89,6 +89,7 @@ import { MobileCreate } from "@/components/studio/MobileCreate";
 import { MobileOnboarding } from "@/components/studio/MobileOnboarding";
 import { PhoneStudio } from "@/components/studio/PhoneStudio";
 import { PhonePages } from "@/components/studio/PhonePages";
+import { DeviceClock } from "@/components/studio/DeviceClock";
 import { DesktopUpdateBanner } from "@/components/studio/DesktopUpdateBanner";
 import { AppUpdateBanner } from "@/components/studio/AppUpdateBanner";
 import { DesktopWebsiteStatus } from "@/components/studio/DesktopWebsiteStatus";
@@ -441,6 +442,7 @@ function Panels({
                 </span>
               )}
             </h2>
+            {isMobile && <DeviceClock mobile />}
             <div className="ml-auto flex shrink-0 items-center gap-1">
               {windowControls}
               {!isMobile &&

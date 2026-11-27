@@ -822,6 +822,41 @@ export function DrumMachine({ track }: { track: Track }) {
           </Button>
         </div>
       )}
+      {isMobile && phoneView === "pads" && focusPad && (
+        <div
+          className="phone-pad-actions flex flex-wrap items-center gap-3"
+          role="group"
+          aria-label="Selected pad controls"
+        >
+          <strong className="min-w-0 truncate text-sm">{focusPad.name}</strong>
+          <MidiLearnButton
+            id={track.id}
+            param={`drum-trigger:${focusPad.id}`}
+            label={focusPad.name}
+          />
+          <Button
+            variant={focusPad.solo ? "default" : "outline"}
+            aria-pressed={focusPad.solo}
+            onClick={() => updatePad(track.id, focusPad.id, { solo: !focusPad.solo })}
+          >
+            Solo
+          </Button>
+          <Button
+            variant={focusPad.muted ? "secondary" : "outline"}
+            aria-pressed={focusPad.muted}
+            onClick={() => updatePad(track.id, focusPad.id, { muted: !focusPad.muted })}
+          >
+            Mute
+          </Button>
+          <Button
+            variant="outline"
+            aria-label={`Delete pad ${focusPad.name}`}
+            onClick={() => deletePads([focusPad.id])}
+          >
+            <Trash2 />
+          </Button>
+        </div>
+      )}
       {phoneView === "roll" && <DrumRoll track={track} initialFull />}
       {isMobile && phoneView === "steps" && (
         <div
@@ -1222,6 +1257,7 @@ export function DrumMachine({ track }: { track: Track }) {
                   key={pad.id}
                   role="button"
                   tabIndex={0}
+                  aria-label={`Play ${pad.name}`}
                   aria-pressed={focused}
                   onClick={() => {
                     // With note repeat on, a press rolls from press to release instead of one hit.
@@ -1253,33 +1289,35 @@ export function DrumMachine({ track }: { track: Track }) {
                   )}
                 >
                   <span className="relative min-w-0">
-                    <span
-                      className="pad-manage-controls flex items-center justify-between gap-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Checkbox
-                        aria-label={`Select pad ${pad.name}`}
-                        checked={selectedPads.includes(pad.id)}
-                        onCheckedChange={(checked) =>
-                          setSelectedPads((ids) =>
-                            checked
-                              ? [...ids.filter((id) => id !== pad.id), pad.id]
-                              : ids.filter((id) => id !== pad.id),
-                          )
-                        }
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-7 text-destructive"
-                        aria-label={`Delete pad ${pad.name}`}
-                        title={`Delete pad ${pad.name}`}
-                        disabled={addingSamples}
-                        onClick={() => deletePads([pad.id])}
+                    {!(isMobile && phoneView === "pads") && (
+                      <span
+                        className="pad-manage-controls flex items-center justify-between gap-1"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </span>
+                        <Checkbox
+                          aria-label={`Select pad ${pad.name}`}
+                          checked={selectedPads.includes(pad.id)}
+                          onCheckedChange={(checked) =>
+                            setSelectedPads((ids) =>
+                              checked
+                                ? [...ids.filter((id) => id !== pad.id), pad.id]
+                                : ids.filter((id) => id !== pad.id),
+                            )
+                          }
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-7 text-destructive"
+                          aria-label={`Delete pad ${pad.name}`}
+                          title={`Delete pad ${pad.name}`}
+                          disabled={addingSamples}
+                          onClick={() => deletePads([pad.id])}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </Button>
+                      </span>
+                    )}
                     <span className="block truncate font-mono text-[10px] font-semibold tracking-wider">
                       {padIndex + 1}. {pad.name}
                     </span>
@@ -1288,32 +1326,37 @@ export function DrumMachine({ track }: { track: Track }) {
                       {hasSteps ? " ·" : ""}
                     </span>
                   </span>
-                  <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    <MidiLearnButton
-                      id={track.id}
-                      param={`drum-trigger:${pad.id}`}
-                      label={pad.name}
-                    />
-                    <Button
-                      size="sm"
-                      variant={pad.solo ? "default" : "ghost"}
-                      className="h-5 px-1 text-[9px]"
-                      onClick={() => updatePad(track.id, pad.id, { solo: !pad.solo })}
-                    >
-                      S
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={pad.muted ? "secondary" : "ghost"}
-                      className="h-5 px-1 text-[9px]"
-                      onClick={() => updatePad(track.id, pad.id, { muted: !pad.muted })}
-                    >
-                      M
-                    </Button>
-                    <span className="ml-auto font-mono text-[9px] text-muted-foreground">
-                      {Math.round(pad.volume * 100)}
+                  {isMobile && phoneView === "pads" && (
+                    <DrumInstrumentIcon kind={pad.kind} className="mx-auto size-14" />
+                  )}
+                  {!(isMobile && phoneView === "pads") && (
+                    <span className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                      <MidiLearnButton
+                        id={track.id}
+                        param={`drum-trigger:${pad.id}`}
+                        label={pad.name}
+                      />
+                      <Button
+                        size="sm"
+                        variant={pad.solo ? "default" : "ghost"}
+                        className="h-5 px-1 text-[9px]"
+                        onClick={() => updatePad(track.id, pad.id, { solo: !pad.solo })}
+                      >
+                        S
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={pad.muted ? "secondary" : "ghost"}
+                        className="h-5 px-1 text-[9px]"
+                        onClick={() => updatePad(track.id, pad.id, { muted: !pad.muted })}
+                      >
+                        M
+                      </Button>
+                      <span className="ml-auto font-mono text-[9px] text-muted-foreground">
+                        {Math.round(pad.volume * 100)}
+                      </span>
                     </span>
-                  </span>
+                  )}
                 </div>
               );
             })}

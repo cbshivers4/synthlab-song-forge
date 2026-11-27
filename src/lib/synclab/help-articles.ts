@@ -442,6 +442,7 @@ export const KNOWLEDGE_BASE: Article[] = [
       "Drum roll: tap a step to cycle ghost → normal → accent, drag to paint, right-click to clear. Tap a drum's name for its tools.",
       "Banks A–H and patterns 1–8 hold different beats; Chain plays patterns in the order you add them.",
       "Play pads: tap pads to play and record. Note Repeat rolls a held pad at the chosen rate.",
+      "On a phone, Play pads puts the large performance pads before setup controls. Tap a pad to select it; its Solo, Mute, MIDI Learn and Delete controls sit outside the pad, so playing never hits those buttons by accident. Play beat and Tap REC stay above the pads.",
       "Sound and Kit: shape each drum and load kits.",
       "The drum roll's bars match the block on the timeline. Steps keep the same size however many bars you add; scroll sideways to reach later bars (the drum names stay in place).",
       "Clear all removes every hit in the pattern, even outside the loop markers; a drum's own clear wipes that whole row. Undo brings them back.",
@@ -1018,6 +1019,8 @@ export const KNOWLEDGE_BASE: Article[] = [
     tags: "mobile phone android iphone sideways landscape touch rail menus scroll",
     body: [
       "SYNCLAB opens sideways on a phone. The left rail has Edit, Mix, Sounds, Tools and Files; the same menus as the computer sit at the top.",
+      "The arrow at the bottom of the rail switches between labels and icons. Both keep every destination available; scroll the rail to reach the rest. Files opens separately without squeezing the editor.",
+      "To make a beat, open Sounds → Drum Machine, choose Play pads for finger drumming or Drum roll for step editing. Drum steps stay finger-sized at every pattern length; scroll the grid sideways for later steps and vertically for other drums. The settings and selected-note controls scroll independently beside the grid.",
       "Wide teal scroll bars on the right of Edit, the transport and the live panels let you scroll without touching controls.",
       "In Sounds, synths are under Synth (including Touch and Granular) and Sampler/Pad Sampler under the SAMPLERS switch.",
     ],
@@ -1085,7 +1088,7 @@ export const KNOWLEDGE_BASE: Article[] = [
     body: [
       "There are two ways to try SYNCLAB for 14 days. Free Access needs no card: you can save projects, export WAV/MP3 and master your songs. It can be used once per account and is never charged.",
       "The Premium trial needs a card and unlocks everything, including the AI tools (Co-Producer, Generate Stem, Separate Stems). Nothing is charged during the 14 days. If you don't cancel, it continues at $9.95/month or $119.40/year on the date shown before checkout.",
-      "Settings → Account → Plan & trial shows your plan, the days remaining (for example \"3 days remaining\" or \"Trial expires tomorrow\") and the exact end date.",
+      'Settings → Account → Plan & trial shows your plan, the days remaining (for example "3 days remaining" or "Trial expires tomorrow") and the exact end date.',
       "From the same card you can upgrade, switch between monthly and yearly, update your card (Manage payment method) and cancel. Cancelling during the trial means you are never charged; on a paid plan Premium stays on until the paid period ends. Changed your mind? Press Keep my plan.",
       "If a payment fails, a red notice asks you to update your card. Our payment partner, Paddle, tries again automatically; Premium stays on while it retries.",
       "When Free Access or a plan ends, the account goes back to the free version: you can still make music and open your songs, but saving, export, mastering and AI tools need a plan. Nothing in your account is deleted.",
@@ -1124,7 +1127,10 @@ export const KNOWLEDGE_BASE: Article[] = [
       "SYNCLAB only sends you tips, tutorials and plan offers if you say yes: tick “Email me SYNCLAB tips, tutorials and offers” when you sign in, or turn on Settings → Account → Tips and offers by email.",
       "If you haven't picked a plan, you get a short series over 30 days showing what the studio can do. It stops as soon as you start a trial or pay.",
     ],
-    can: ["Turn the emails on or off any time in Settings → Account.", "Unsubscribe with the link at the bottom of any email."],
+    can: [
+      "Turn the emails on or off any time in Settings → Account.",
+      "Unsubscribe with the link at the bottom of any email.",
+    ],
     cant: ["Account emails, like password resets, still arrive when tips emails are off."],
   },
   {
