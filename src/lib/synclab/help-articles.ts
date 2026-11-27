@@ -71,7 +71,8 @@ export const KNOWLEDGE_BASE: Article[] = [
     tags: "start welcome workspace templates recent cloud open new project",
     body: [
       "The start screen lists your cloud projects, projects opened on this device, starter templates and your own saved templates.",
-      "Pick a template or a blank project to open the studio. The menus at the top (File, Edit, View, Track, Clip, Audio, Transport, MIDI, Tools, Settings, Window, Help) work the same on computer and phone.",
+      "Pick a template or a blank project to open the studio. On a computer the File–Help menus stay at the top. On a phone, open Song & editing with the menu button beside the song name; it holds the same menus and full editing controls.",
+      "Phone playback stays along the bottom: Record, Play, Stop, Return to start and Loop. Tap BPM or the options icon for the full transport. Track names and their separate Mute, Solo, Arm and instrument buttons leave more room for clips. Drum grid Settings opens its inspector; close it for a wider beat grid.",
       "The left menu (SYNCLAB TOOLS) opens every instrument and tool. Search Studio, above the timeline, finds any tool by name.",
     ],
     can: [

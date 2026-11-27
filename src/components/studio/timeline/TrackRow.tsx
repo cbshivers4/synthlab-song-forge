@@ -864,7 +864,7 @@ export function TrackRow({
             ) : (
               <Button
                 variant="ghost"
-                className="h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold"
+                className="phone-track-name h-6 min-w-0 flex-1 justify-start px-0 py-0 text-left font-display text-[11px] font-semibold"
                 title={track.name}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -1682,6 +1682,8 @@ export function TrackRow({
               size="sm"
               variant={track.armed ? "destructive" : "ghost"}
               className="h-6 px-2 text-[10px]"
+              aria-label={`Arm ${track.name}`}
+              aria-pressed={!!track.armed}
               title={
                 track.armed
                   ? "Armed — the microphone meter is live. Press record on the transport to capture it."
@@ -1800,6 +1802,7 @@ export function TrackRow({
               </DropdownMenu>
             }
             {isMobile && <TrackFxMenu track={track} />}
+            {isMobile && editorPanel && <Button variant="ghost" size="icon" className="phone-track-editor" aria-label={editorLabel} onClick={() => openTrackEditor()}><TrackIcon track={track} className="size-6" /></Button>}
             {track.vca && (
               <span
                 className="ml-auto rounded-sm border border-primary/60 px-1 font-mono text-[9px] text-primary"

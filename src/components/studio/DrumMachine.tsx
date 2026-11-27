@@ -610,6 +610,7 @@ export function DrumMachine({ track }: { track: Track }) {
           </Button>
         ))}
       </div>
+      {isMobile && phoneView === "roll" && <Select value={phoneView} onValueChange={(value) => { if (value === "roll" || value === "pads" || value === "sound" || value === "kit") setPhoneView(value); }}><SelectTrigger className="phone-drum-view-picker" aria-label="Drum machine view"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="roll">Drum roll</SelectItem><SelectItem value="pads">Play pads</SelectItem><SelectItem value="sound">Sound</SelectItem><SelectItem value="kit">Kit</SelectItem></SelectContent></Select>}
       <div className="drum-skin">
         <SkinControls skinKey="drums" image />
       </div>
@@ -800,7 +801,7 @@ export function DrumMachine({ track }: { track: Track }) {
         </span>
       </div>
       {phoneView !== "roll" && <DrumBulkControls track={track} />}
-      {isMobile && (phoneView === "roll" || phoneView === "pads") && (
+      {isMobile && phoneView === "pads" && (
         <div className="grid grid-cols-2 gap-2" aria-label="Drum playback">
           <Button
             variant="secondary"

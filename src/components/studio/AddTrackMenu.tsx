@@ -17,7 +17,7 @@ export function AddTrackMenu({ size = "default" }: { size?: "default" | "sm" }) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size={size} className="glow font-display font-semibold tracking-wide">
+        <Button size={size} aria-label="Add track" className="glow font-display font-semibold tracking-wide">
           <Plus className="size-4" /> ADD TRACK
         </Button>
       </DropdownMenuTrigger>

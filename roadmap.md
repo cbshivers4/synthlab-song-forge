@@ -1,5 +1,10 @@
 # Roadmap — Source-code audit & DAW repair
 
+## Nov 27 — Reference phone DAW workflow
+- [x] Replace stacked phone bars with a compact song header, expandable commands and bottom playback dock.
+- [x] Simplify phone track headers and consolidate drum views/patterns into one row; open the drum inspector on demand while preserving the shared grid and audio actions.
+- [x] Checked four phone sizes and a signed-in unsaved beat: add drums, toggle a step, play/stop, inspector and mute read back correctly with no runtime errors. 36 related tests passed; saved songs unchanged. Physical phones and native-app builds remain untested.
+
 ## Nov 27 — Phone beat-making workflow
 - [x] Reorganize phone navigation and headers for isolated finger-sized targets.
 - [x] Enlarge drum editing controls and keep pads, patterns and playback in separate areas.

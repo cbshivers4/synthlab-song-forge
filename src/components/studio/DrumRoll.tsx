@@ -26,7 +26,7 @@ import type { DrumPad, Track } from "@/lib/synclab/types";
 import { useIsMobile, useIsLandscapePhone } from "@/hooks/use-mobile";
 import { editInstrumentNotes, type DrumHitField } from "@/lib/synclab/drum-bulk";
 import { Knob } from "./Knob";
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Minus, Plus, Upload } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Minus, Plus, Upload, Settings2, X } from "lucide-react";
 import { toast } from "sonner";
 import { loopRegion } from "@/lib/synclab/recording-region";
 import { useDrumEditorView } from "@/lib/synclab/drum-editor-view";
@@ -47,6 +47,7 @@ const VELOCITIES = [0, 0.35, 0.7, 1] as const;
 export function DrumRoll({ track, initialFull = false }: { track: Track; initialFull?: boolean }) {
   const isMobile = useIsMobile();
   const fit = useIsLandscapePhone();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [noteScope, setNoteScope] = useState<"one" | "all">("all");
   const { updatePad, updateTrack, setStepCount, transport, setTransport } = useStudio();
   const pads = track.pads ?? [];
@@ -408,6 +409,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
   return (
     <div
       className={`drum-roll space-y-1.5 ${isMobile ? "phone-drum-roll" : ""} ${fit ? "drum-roll-fit" : ""}`}
+      data-settings-open={settingsOpen}
       onPointerUp={() => setPaint(null)}
       onPointerLeave={() => setPaint(null)}
     >
@@ -427,6 +429,7 @@ export function DrumRoll({ track, initialFull = false }: { track: Track; initial
           </Button>
         </div>
       ) : null}
+      {fit && <div className="phone-roll-heading"><span className="truncate text-xs font-semibold">{track.name} · {total / barSteps} bars</span><Button variant={settingsOpen ? "secondary" : "ghost"} className="gap-2" aria-label="Drum grid settings" aria-expanded={settingsOpen} onClick={() => setSettingsOpen((open) => !open)}>{settingsOpen ? <X /> : <Settings2 />} Settings</Button></div>}
       <div className={fit ? "phone-drum-settings" : "contents"}>
         {fit ? (
           <details className="drum-fit-bulk">

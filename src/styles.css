@@ -5588,3 +5588,83 @@ html:not([data-track-menus="off"]) .app-menu.track-tinted-menu {
   .phone-console .drum-roll-fit:has(.drum-note-dock) { grid-template-columns: minmax(0,1fr) 144px !important; }
   .phone-console .drum-roll-fit:has(.drum-note-dock) .drum-note-knobs { grid-template-columns: minmax(0,1fr); }
 }
+
+/* Reference phone DAW: music owns the canvas; commands open on demand. */
+.phone-console .phone-edit-fit > .phone-edit-header { grid-template-columns: minmax(0,1fr) auto auto; min-height: 52px; padding: 2px 8px; gap: 8px; }
+.phone-console .phone-edit-header > h1 { font-size: 13px; }
+.phone-console .phone-edit-header-actions { gap: 4px; }
+.phone-console .phone-edit-header-actions button { height: 48px; min-width: 48px; }
+.phone-console .phone-edit-header-actions > button:first-child { width: 48px; padding: 0; font-size: 0; gap: 0; }
+.phone-console .phone-edit-header-actions > button:first-child svg { width: 22px; height: 22px; }
+.phone-console .phone-edit-header > [aria-label^="Device clock"] { padding: 2px 6px; min-width: 0; }
+.phone-console .phone-edit-header > [aria-label^="Device clock"] > span:first-child { font-size: 16px; }
+.phone-console .phone-edit-header > [aria-label^="Device clock"] > span:last-child { font-size: 10px; }
+.phone-command-sheet { position: absolute; inset: 0 0 60px; z-index: 55; overflow: auto; background: var(--surface); border-bottom: 1px solid var(--border); }
+.phone-command-sheet[hidden] { display: none; }
+.phone-command-heading { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; padding: 4px 12px; border-bottom: 1px solid var(--border); }
+.phone-command-heading button { width: 48px; height: 48px; }
+.phone-command-sheet .phone-menubar { height: auto; min-height: 52px; overflow: visible; }
+.phone-command-sheet [role="menubar"] { flex-wrap: wrap; height: auto; min-width: 0; }
+.phone-command-sheet :is(.workflow-row-top, .workflow-row-part, .timeline-edit-toolbar) { flex-wrap: wrap; gap: 8px; padding: 8px; }
+.phone-command-sheet :is(button, [role="combobox"]) { min-height: 48px !important; min-width: 48px; }
+.phone-command-sheet .timeline-edit-toolbar > .size-8 { width: 48px; }
+.phone-playback-dock { display: flex; align-items: center; gap: 8px; flex-shrink: 0; min-height: 60px; padding: 4px 8px; border-top: 1px solid var(--border); background: var(--surface); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.phone-playback-dock > * { flex-shrink: 0; }
+.phone-playback-controls { display: flex; align-items: center; gap: 4px; }
+.phone-playback-dock button { width: 48px; height: 48px; min-width: 48px; border-radius: 4px; }
+.phone-playback-dock .phone-tempo-button { width: auto; gap: 8px; padding-inline: 8px; }
+.phone-tempo-button span, .phone-song-position { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.phone-tempo-button strong { font-size: 12px; }
+.phone-tempo-button small { font-size: 11px; }
+.phone-song-position { min-width: 88px; height: 48px; padding-inline: 8px; background: var(--background); border: 1px solid var(--border); border-radius: 4px; }
+.phone-song-position strong { font: 600 22px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.phone-song-position small { font-size: 9px; color: var(--muted-foreground); }
+.phone-history-controls { margin-left: auto; }
+.phone-count-in { position: absolute; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: var(--background); pointer-events: none; }
+.phone-count-in strong { font-size: 72px; color: var(--primary); }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .track-touch-header { display: flex !important; flex-direction: column; justify-content: center; gap: 6px; padding: 4px 8px; }
+.phone-console .phone-edit-fit .track-touch-header > div:first-child { display: grid !important; grid-template-columns: minmax(0,1fr) 48px; height: 48px !important; gap: 4px; }
+.phone-console .phone-edit-fit .track-touch-header > div:first-child > :not(.phone-track-name):not(.channel-menu-trigger):not([aria-hidden="true"]) { display: none !important; }
+.phone-console .phone-edit-fit .track-touch-header > div:first-child > [aria-hidden="true"] { position: absolute; }
+.phone-console .phone-edit-fit .track-touch-header > div:first-child .phone-track-name { height: 48px !important; min-height: 48px !important; font-size: 13px; }
+.phone-console .phone-edit-fit .track-touch-header > div:first-child .channel-menu-trigger { width: 48px !important; height: 48px !important; min-height: 48px !important; min-width: 48px; margin: 0; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions { height: 48px !important; min-height: 48px !important; gap: 8px; overflow-x: auto; }
+.phone-console .phone-edit-fit .arrangement-timeline[data-desktop-style="true"] .timeline-track-actions > button { height: 48px !important; min-height: 48px !important; min-width: 48px; padding: 0 8px !important; font-size: 13px; order: 0; }
+.phone-console .phone-edit-fit .timeline-track-actions > :not(button:nth-child(-n+3)):not(.phone-track-editor) { display: none; }
+.phone-console .phone-edit-fit .timeline-track-actions > button:nth-child(3) { font-size: 0 !important; }
+.phone-console .phone-edit-fit .timeline-track-actions > button:nth-child(3)::after { content: "●"; font-size: 18px; }
+.phone-console .phone-edit-fit .timeline-track-actions > button svg { width: 18px; height: 18px; }
+.phone-console .phone-edit-fit .track-touch-header > div:nth-child(3) { display: none !important; }
+.phone-console .phone-edit-fit [data-new-channel-drop] { min-height: 72px; }
+.phone-console .phone-edit-fit [data-new-channel-drop] > .m-2 { display: none; }
+.phone-console .phone-edit-fit [data-new-channel-drop] > div:first-child button { height: 48px !important; min-height: 48px !important; }
+.phone-console .phone-roll-heading { grid-column: 1 / -1; grid-row: 1; display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.phone-console .drum-roll-fit, .phone-console .drum-roll-fit:has(.drum-note-dock) { position: relative; grid-template-rows: minmax(0,1fr) !important; overflow: visible; }
+.phone-console .drum-roll-fit > .drum-roll-grid-wrap, .phone-console .drum-roll-fit:has(.drum-note-dock) > .drum-roll-grid-wrap { grid-row: 1 !important; }
+.phone-console .drum-roll-fit > .phone-drum-settings { grid-row: 1 !important; }
+.phone-console .drum-roll-fit[data-settings-open="false"], .phone-console .drum-roll-fit[data-settings-open="false"]:has(.drum-note-dock) { grid-template-columns: minmax(0,1fr) !important; }
+.phone-console .drum-roll-fit[data-settings-open="false"] > :is(.phone-drum-settings, .drum-note-dock) { display: none !important; }
+.phone-console .drum-roll-fit[data-settings-open="true"] > .drum-note-dock { grid-column: 2; grid-row: 1 !important; margin-top: 0; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-roll-fit[data-settings-open="true"]:has(.drum-note-dock) { grid-template-rows: minmax(0,1fr) minmax(0,1fr) !important; }
+.phone-console .drum-roll-fit[data-settings-open="true"]:has(.drum-note-dock) > .drum-roll-grid-wrap { grid-row: 1 / -1 !important; }
+.phone-console .drum-roll-fit[data-settings-open="true"]:has(.drum-note-dock) > .drum-note-dock { grid-row: 2 !important; }
+.phone-console .drum-roll-fit[data-settings-open="true"]:has(.drum-note-dock) > .phone-drum-settings { display: flex; grid-row: 1 !important; }
+.phone-command-sheet .timeline-edit-toolbar { display: flex !important; }
+.phone-console .drum-machine:has(.drum-roll-fit) { position: relative; grid-template-columns: minmax(0,1fr) 144px !important; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences { grid-column: 1; grid-row: 2; }
+.phone-console .drum-roll-fit > .phone-roll-heading { position: absolute; right: 0; top: -56px; width: 144px; height: 52px; display: flex; justify-content: flex-end; }
+.phone-console .phone-roll-heading > span { display: none; }
+.phone-console .phone-edit-fit .timeline-track-actions > button:nth-child(-n+2) svg { display: none; }
+.phone-console .phone-edit-fit .timeline-track-actions > button:nth-child(-n+2) { font-size: 18px !important; font-weight: 700; }
+.phone-console .drum-machine:has(.drum-roll-fit) { grid-template-columns: 128px minmax(0,1fr) 112px !important; grid-template-rows: 52px minmax(0,1fr) !important; gap: 8px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > [role="tablist"] { display: none; }
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child { grid-column: 3; grid-row: 1; justify-content: flex-start; }
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child button { width: 48px; padding: 0; font-size: 0; gap: 0; }
+.phone-console .drum-machine:has(.drum-roll-fit) > div:first-child button svg { width: 22px; height: 22px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .phone-drum-view-picker { grid-column: 1; grid-row: 1; height: 48px; min-height: 48px; width: 128px; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-sequences { grid-column: 2; grid-row: 1; }
+.phone-console .drum-machine:has(.drum-roll-fit) > .drum-roll-fit { grid-row: 2; }
+.phone-console .drum-roll-fit > .phone-roll-heading { right: 0; top: -60px; bottom: auto; width: 48px; height: 48px; z-index: 10; border: 0; }
+.phone-console .phone-roll-heading button { width: 48px; padding: 0; font-size: 0; gap: 0; background: var(--surface); border: 1px solid var(--border); }
+.phone-console .phone-roll-heading button svg { width: 22px; height: 22px; }
+.phone-console .phone-drum-view-picker ~ .drum-roll-fit > .drum-roll-grid-wrap { margin-bottom: 0; }

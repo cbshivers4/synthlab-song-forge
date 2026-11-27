@@ -1,5 +1,9 @@
 import { canvasPoint, canvasRect } from "@/lib/synclab/canvas-point";
 import { DeviceClock } from "./DeviceClock";
+import { PhonePlayback } from "./PhonePlayback";
+import { WorkflowBar } from "./WorkflowBar";
+import { EditToolbar } from "./timeline/EditToolbar";
+import { SectionLane } from "./SectionLane";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AudioLines,
@@ -31,6 +35,7 @@ import {
   Maximize2,
   Minimize2,
   GripHorizontal,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStudio, type PanelId } from "@/lib/synclab/store";
@@ -88,7 +93,8 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const { panel, setPanel, transport, tracks, select, addTrack, stop } = useStudio();
   const { setStage, project } = useApp();
   const [room, setRoom] = useState<"edit" | "sounds" | "tools">("edit");
-  const [railOpen, setRailOpen] = useState(true);
+  const [railOpen, setRailOpen] = useState(false);
+  const [commandsOpen, setCommandsOpen] = useState(false);
   const [filesOpen, setFilesOpen] = useState(false);
   const [transportOpen, setTransportOpen] = useState(false);
   const [mixerFull, setMixerFull] = useState(true);
@@ -158,7 +164,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
       const rows = Math.max(1, root.querySelectorAll("[data-track-row]").length);
       const drop = root.querySelector<HTMLElement>("[data-new-channel-drop]")?.offsetHeight ?? 30;
       const h = Math.floor((scroller.clientHeight - drop - 2) / rows) - 1;
-      root.style.setProperty("--fit-row-h", `${Math.max(224, Math.min(256, h))}px`);
+      root.style.setProperty("--fit-row-h", `${Math.max(116, Math.min(148, h))}px`);
     };
     fit();
     const ro = new ResizeObserver(fit);
@@ -173,6 +179,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
   const enter = (next: typeof room) => {
     setTransportOpen(false);
     setFilesOpen(false);
+    setCommandsOpen(false);
     setPanel(null);
     setRoom(next);
   };
@@ -279,6 +286,7 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
                     </Button>
                   ))}
                 </div>
+                <Button variant="ghost" size="icon" className="size-12 shrink-0" aria-label="Song commands" onClick={() => setCommandsOpen((open) => !open)}><Menu /></Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -364,8 +372,11 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
         </aside>
       )}
       <main className="phone-console-stage relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Same File … Help menus as the computer version, on every phone screen. */}
-        <MenuBar phone />
+        <div className="phone-command-sheet" hidden={!commandsOpen} data-keep-timeline-selection>
+          <div className="phone-command-heading"><strong>Song & editing</strong><Button variant="ghost" size="icon" aria-label="Close song commands" onClick={() => setCommandsOpen(false)}><X /></Button></div>
+          <MenuBar phone />
+          {editPage && commandsOpen && <><WorkflowBar /><EditToolbar /><SectionLane /></>}
+        </div>
         {!editPage && (!panel || panel === "mixer") && header}
         {!editPage && recordingStrip}
         {panel === "mixer" && !mixerFull && (
@@ -408,14 +419,15 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
                     ? `${project.name} · not saved yet`
                     : "Untitled song"}
               </h1>
-              <DeviceClock mobile />
-              <div className="phone-edit-header-actions col-span-2 flex items-center gap-2">
+              <div className="phone-edit-header-actions flex items-center gap-2">
                 <AddTrackMenu size="sm" />
                 <ShareSongButton compact />
+                <Button variant="ghost" size="icon" aria-label="Open song commands" aria-expanded={commandsOpen} onClick={() => setCommandsOpen((open) => !open)}><Menu /></Button>
               </div>
+              <DeviceClock mobile />
             </header>
             {recordingStrip}
-            <Timeline desktopStyle />
+            <Timeline desktopStyle compactPhone />
           </div>
         )}
         {panel && children}
@@ -514,6 +526,8 @@ export function PhoneStudio({ children }: { children: ReactNode }) {
             />
           </div>
         </div>
+        <PhonePlayback onOptions={() => setTransportOpen((open) => !open)} />
+        {!transportOpen && transport.countInLeft != null && <div className="phone-count-in" role="status" aria-label="Recording count-in"><span>COUNT-IN</span><strong>{Math.floor(((transport.countInBars ?? 1) * (transport.beatsPerBar ?? 4) - transport.countInLeft) / (transport.beatsPerBar ?? 4)) + 1} : {((transport.countInBars ?? 1) * (transport.beatsPerBar ?? 4) - transport.countInLeft) % (transport.beatsPerBar ?? 4) + 1}</strong><span>BAR · BEAT</span></div>}
       </main>
     </div>
   );

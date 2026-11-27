@@ -64,11 +64,13 @@ export function Timeline({
   desktopStyle = false,
   resizeHandlesVisible = true,
   pageScroll = false,
+  compactPhone = false,
 }: {
   phonePaged?: boolean;
   desktopStyle?: boolean;
   resizeHandlesVisible?: boolean;
   pageScroll?: boolean;
+  compactPhone?: boolean;
 }) {
   const {
     tracks,
@@ -576,8 +578,8 @@ export function Timeline({
       style={{ "--timeline-header-width": `${headerWidth}px` } as CSSProperties}
       className={`arrangement-timeline mobile-timeline relative flex min-w-0 flex-col border-x border-b border-border bg-background/60 ${pageScroll ? "" : "min-h-[210px] flex-1 overflow-hidden"}`}
     >
-      <WorkflowBar />
-      {phonePaged ? (
+      {!compactPhone && <WorkflowBar />}
+      {compactPhone ? null : phonePaged ? (
         <div className="phone-timeline-heading grid h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-surface/50 px-3">
           <TrackSearch />
           <div className="flex gap-1">
@@ -624,7 +626,7 @@ export function Timeline({
       <div className="shrink-0 overflow-hidden">
         <div ref={timelineHeaderRef} className="min-w-[720px] sm:min-w-0">
           <Ruler />
-          {!phonePaged && <SectionLane />}
+          {!phonePaged && !compactPhone && <SectionLane />}
         </div>
       </div>
       {selMenu && <SelectionMenu at={selMenu} onClose={closeSelMenu} />}
